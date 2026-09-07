@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edge0"
+version = "0.1.0"
+description = "edge0: streaming MoE inference for Apple Silicon — SSD expert offload, parallel LoRA, prerouter routing prediction. Backend-isolated (MLX now, CUDA-ready)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "edge0 contributors" }]
+keywords = ["mlx", "moe", "inference", "lora", "ssd-offload", "streaming"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    # NOTE: mlx-lm is pinned to 0.31.0 on purpose.  Newer releases crash in
+    # decode with a `tolist()` on lazily-evaluated arrays.  Do not upgrade
+    # without re-running the full test suite.
+    "mlx==0.30.4",
+    "mlx-metal==0.30.4; platform_system == 'Darwin'",
+    "mlx-lm==0.31.0",
+    "numpy>=1.24",
+    "safetensors>=0.4",
+    "tokenizers>=0.15",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+edge0 = "edge0.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: real-weight e2e tests (skip with -m 'not slow')",
+]
+addopts = "-m 'not slow'"

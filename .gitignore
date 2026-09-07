@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage
+
+# Virtualenvs
+.venv/
+
+# Trained adapter artifacts (never committed; see README)
+artifacts/
+
+# macOS
+.DS_Store
+
+# Bench / runtime logs
+*.log

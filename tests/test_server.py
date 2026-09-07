@@ -1,0 +1,317 @@
+"""Server-layer tests: request parsing, chat session, SSE framing and the
+stdlib HTTP transport, all against a fake engine (no real checkpoints).
+
+Covers the OpenAI-compatible surface the deployment servers expose:
+/healthz, /v1/models, POST /v1/chat/completions (non-streaming and SSE
+streaming), and the /v1/completions rejection path.
+"""
+
+from __future__ import annotations
+
+import json
+import threading
+import time
+from http.server import ThreadingHTTPServer
+from types import SimpleNamespace
+from urllib import request as urlrequest
+
+import pytest
+
+from edge0.config import GenerationConfig
+from edge0.server.app import (
+    _chat_once,
+    _chat_stream,
+    _StdlibHandler,
+    build_app_handlers,
+    run_stdlib,
+)
+from edge0.server.chat import (
+    ChatMessage,
+    ChatRequest,
+    ChatSession,
+    QueueServer,
+    decode_tokens,
+    parse_chat_request,
+    sse_format,
+)
+
+
+# ---- fake engine ----------------------------------------------------------
+
+
+class FakeTok:
+    """Minimal tokenizer stub (transformers-like surface)."""
+
+    def __init__(self, ids=(7, 8, 9)):
+        self.ids = list(ids)
+        self.bos_token_id = 0
+
+    def apply_chat_template(self, messages, tokenize=False,
+                            add_generation_prompt=True,
+                            enable_thinking=False):
+        text = "<tpl>" + json.dumps(messages)
+        if add_generation_prompt:
+            text += "<|im_start|>assistant\n"
+        return text
+
+    def encode(self, text):
+        return self.ids
+
+    def decode(self, tokens):
+        return "".join(f"T{t}" for t in tokens)
+
+
+class PlainTok(FakeTok):
+    """Tokenizer without apply_chat_template (stdlib fallback path)."""
+
+    def apply_chat_template(self, *a, **k):  # pragma: no cover - unused
+        raise AttributeError
+
+
+class FakeEngine:
+    """Duck-typed engine: enough of Edge0Engine for the server layer."""
+
+    name = "fake"
+
+    def __init__(self, tok=None):
+        self._tok = tok or FakeTok()
+        self.pos = 3
+        self.cfg = SimpleNamespace(
+            gen=GenerationConfig(temperature=0.7, top_p=0.95))
+        self.generated = []
+
+    def generate(self, ids, gen_config=None, on_token=None, **kw):
+        toks = [11, 12, 13]
+        self.generated.append((list(ids), gen_config))
+        if on_token is not None:
+            for t in toks:
+                on_token(t)
+        return toks
+
+    def stats(self):
+        return {"ok": 1}
+
+
+def _req(**kw) -> ChatRequest:
+    payload = {
+        "model": "fake",
+        "messages": [{"role": "user", "content": "hi"}],
+        **kw,
+    }
+    return parse_chat_request(payload)
+
+
+# ---- parse_chat_request ---------------------------------------------------
+
+
+def test_parse_basic_defaults():
+    req = _req()
+    assert req.model == "fake"
+    assert len(req.messages) == 1
+    assert req.messages[0].role == "user"
+    assert req.messages[0].content == "hi"
+    assert req.temperature is None
+    assert req.stream is False
+
+
+def test_parse_multipart_content_joins_text():
+    req = _req(messages=[{
+        "role": "user",
+        "content": [{"type": "text", "text": "a"},
+                    {"type": "image_url", "image_url": {"url": "x"}},
+                    {"type": "text", "text": "b"}],
+    }])
+    assert req.messages[0].content == "ab"
+
+
+def test_parse_stream_flag_and_sampling():
+    req = _req(temperature=0.3, top_p=0.9, top_k=32, max_tokens=16,
+               stream=True)
+    assert req.temperature == 0.3
+    assert req.top_p == 0.9
+    assert req.top_k == 32
+    assert req.max_tokens == 16
+    assert req.stream is True
+
+
+# ---- sse / decode ---------------------------------------------------------
+
+
+def test_sse_format():
+    line = sse_format({"id": "1", "x": "中文"})
+    assert line.startswith("data: ")
+    assert line.endswith("\n\n")
+    assert json.loads(line[6:-2]) == {"id": "1", "x": "中文"}
+
+
+def test_decode_tokens():
+    eng = FakeEngine()
+    assert decode_tokens(eng, [1, 2]) == "T1T2"
+    eng._tok = None
+    assert decode_tokens(eng, [1]) == ""
+
+
+# ---- ChatSession ----------------------------------------------------------
+
+
+def test_chat_session_prompt_ids_uses_template():
+    eng = FakeEngine()
+    sess = ChatSession(eng, _req())
+    ids = sess.prompt_ids()
+    assert ids == [7, 8, 9]
+    # The template was called with enable_thinking=False (serve.py parity).
+    text = eng._tok.apply_chat_template([{"role": "user", "content": "hi"}])
+    assert "<|im_start|>assistant" in text
+
+
+def test_chat_session_prompt_ids_fallback_text():
+    eng = FakeEngine(tok=PlainTok())
+    sess = ChatSession(eng, _req())
+    ids = sess.prompt_ids()
+    assert ids == [7, 8, 9]
+
+
+def test_chat_session_fallback_text_format():
+    eng = FakeEngine(tok=PlainTok())
+    req = parse_chat_request({"messages": [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "q"},
+        {"role": "assistant", "content": "a"},
+    ]})
+    sess = ChatSession(eng, req)
+    text = sess._chat_text()
+    assert "<|im_start|>system\nsys<|im_end|>\n" in text
+    assert "<|im_start|>user\nq<|im_end|>\n" in text
+    assert "<|im_start|>assistant\na<|im_end|>\n" in text
+    assert text.endswith("<|im_start|>assistant\n")
+
+
+def test_gen_config_overrides_request_fields():
+    eng = FakeEngine()
+    sess = ChatSession(eng, _req(temperature=0.1, max_tokens=5))
+    gen = sess.gen_config()
+    assert gen.temperature == 0.1
+    assert gen.max_new_tokens == 5
+    assert gen.top_p == 0.95  # engine default preserved
+
+
+def test_chat_session_run_usage_and_callback():
+    eng = FakeEngine()
+    seen = []
+    sess = ChatSession(eng, _req())
+    tokens, meta = sess.run(on_token=seen.append)
+    assert tokens == [11, 12, 13]
+    assert seen == [11, 12, 13]
+    assert meta["usage"] == {
+        "prompt_tokens": 3,
+        "completion_tokens": 3,
+        "total_tokens": 6,
+    }
+    assert "wall_s" in meta
+
+
+# ---- QueueServer ----------------------------------------------------------
+
+
+def test_queue_server_health():
+    eng = FakeEngine()
+    srv = QueueServer(eng)
+    h = srv.health()
+    assert h["status"] == "ok"
+    assert h["model"] == "fake"
+    assert h["pos"] == 3
+
+
+def test_queue_server_chat_serializes():
+    eng = FakeEngine()
+    srv = QueueServer(eng)
+    out = srv.chat(_req())
+    assert out["usage"]["completion_tokens"] == 3
+    assert len(eng.generated) == 1
+    gen = eng.generated[0][1]
+    assert gen.temperature == 0.7
+
+
+# ---- handlers -------------------------------------------------------------
+
+
+def test_handlers_healthz_and_models():
+    srv = QueueServer(FakeEngine())
+    handlers = build_app_handlers(srv)
+    assert handlers["GET /healthz"]()["status"] == "ok"
+    models = handlers["GET /v1/models"]()
+    assert models["object"] == "list"
+    assert models["data"][0]["id"] == "fake"
+
+
+def test_handlers_completions_rejected():
+    srv = QueueServer(FakeEngine())
+    handlers = build_app_handlers(srv)
+    body, status = handlers["POST /v1/completions"]({})
+    assert status == 400
+
+
+def test_chat_once_response_shape():
+    srv = QueueServer(FakeEngine())
+    out = _chat_once(srv, {"messages": [{"role": "user", "content": "hi"}]})
+    assert out["object"] == "chat.completion"
+    assert out["model"] == "fake"
+    ch = out["choices"][0]
+    assert ch["message"]["role"] == "assistant"
+    assert ch["message"]["content"] == "T11T12T13"
+    assert ch["finish_reason"] == "stop"
+    assert out["usage"]["completion_tokens"] == 3
+
+
+def test_chat_stream_events_sequence():
+    srv = QueueServer(FakeEngine())
+    raw = _chat_stream(srv, {
+        "messages": [{"role": "user", "content": "hi"}], "stream": True,
+    })
+    body = raw if isinstance(raw, bytes) else raw.get_data()
+    events = [e for e in body.decode("utf-8").split("\n\n") if e]
+    chunks = [json.loads(e[6:]) for e in events[:-1]]  # drop [DONE]
+    deltas = [c["choices"][0]["delta"]["content"] for c in chunks]
+    assert deltas == ["T11", "T12", "T13"]
+    assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
+    assert events[-1] == "data: [DONE]"
+
+
+# ---- stdlib HTTP transport ------------------------------------------------
+
+
+def test_stdlib_http_end_to_end():
+    eng = FakeEngine()
+    srv = QueueServer(eng, model_name="fake")
+    handler = type("Edge0Handler", (_StdlibHandler,), {"server_q": srv})
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    port = httpd.server_address[1]
+    t = threading.Thread(target=httpd.serve_forever, daemon=True)
+    t.start()
+    base = f"http://127.0.0.1:{port}"
+    try:
+        with urlrequest.urlopen(f"{base}/healthz", timeout=10) as r:
+            assert r.status == 200
+            assert json.loads(r.read())["status"] == "ok"
+        with urlrequest.urlopen(f"{base}/v1/models", timeout=10) as r:
+            assert json.loads(r.read())["data"][0]["id"] == "fake"
+        payload = json.dumps({
+            "model": "fake",
+            "messages": [{"role": "user", "content": "hi"}],
+            "max_tokens": 8,
+        }).encode("utf-8")
+        req = urlrequest.Request(f"{base}/v1/chat/completions",
+                                 data=payload,
+                                 headers={"Content-Type": "application/json"})
+        with urlrequest.urlopen(req, timeout=10) as r:
+            assert r.status == 200
+            out = json.loads(r.read())
+            assert out["choices"][0]["message"]["content"] == "T11T12T13"
+        # unknown route -> 404
+        with pytest.raises(Exception) as exc:
+            urlrequest.urlopen(f"{base}/nope", timeout=10)
+        assert getattr(exc.value, "code", None) == 404
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        t.join(timeout=5)

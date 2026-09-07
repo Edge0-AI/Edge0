@@ -1,0 +1,21 @@
+edge0
+=====
+
+This project bundles or adapts the following third-party works:
+
+mlx-lm (MIT License)
+  - `src/edge0/backends/mlx/_impl/qwen3_next.py` is vendored from mlx-lm
+    0.31.0 (https://github.com/ml-explore/mlx-lm), with additive hooks for
+    prerouter routing and layer callbacks.  Non-prerouter paths are kept
+    byte-identical to the upstream file.
+  - mlx-lm is used at runtime for checkpoint / tokenizer loading.
+  Copyright (c) 2023-2024 Apple Inc. and the mlx-lm contributors.
+
+bailing_hybrid (Apache License 2.0)
+  - `src/edge0/backends/mlx/_impl/bailing_hybrid.py` is vendored from the
+    Ling 3.0 MLX implementation (rapid-mlx / Ling-3.0-tiny, Apache-2.0), with
+    prerouter hook identifiers renamed for consistency with the framework.
+  Copyright (c) the bailing / Ling MLX contributors.
+
+All other files are Copyright (c) 2025 edge0 contributors, licensed under
+the Apache License, Version 2.0 (see LICENSE).

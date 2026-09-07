@@ -1,0 +1,253 @@
+"""edge0 command-line entry point (``edge0``).
+
+Commands:
+
+    edge0 demo        one-command quickstart: find a checkpoint, generate
+    edge0 serve       start the HTTP server (one model, queued generations)
+    edge0 chat        one-shot prompt -> answer on the terminal
+    edge0 models      list registered tiers and their default profiles
+    edge0 convert-adapters   one-shot legacy npz -> safetensors migration
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+from edge0 import models  # noqa: F401  (populates MODEL_REGISTRY)
+from edge0.registry import MODEL_REGISTRY
+
+# Checkpoint locations the demo command probes when no --model-dir is
+# given (the dev boxes these tiers were validated on).
+DEMO_DEFAULTS = {
+    "edge0-35b": "/Users/linyu/Documents/qwen35-v7-deploy/model",
+    "edge0-10b": "/Users/linyu/Documents/ling-mlx-server/v7-deploy/model",
+}
+
+DEMO_PROMPTS = {
+    "edge0-35b": "Hello! Write one short sentence about Zhuhai.",
+    "edge0-10b": "你好，用一句话介绍珠海。",
+}
+
+
+def cmd_models(args) -> int:
+    for name in sorted(MODEL_REGISTRY):
+        mod = MODEL_REGISTRY[name]
+        cfg = mod.Config.from_pretrained(None)  # tier defaults
+        print(f"{name}  (port {cfg.port}, target {cfg.target_tok_s} tok/s, "
+              f"peak ≈ {cfg.peak_active_mem_mb:.0f} MB)")
+        print(f"  experts={cfg.moe_spec.num_experts} "
+              f"top_k={cfg.moe_spec.top_k} "
+              f"quant={cfg.moe_spec.quant.bits}bit/"
+              f"g{cfg.moe_spec.quant.group_size} "
+              f"staged_n={cfg.options.staged_n} "
+              f"prefill_full={cfg.options.prefill_full_layers} "
+              f"hot={cfg.options.hot_per_layer}")
+        pr = cfg.prerouter
+        if pr is not None:
+            owners = pr.owners
+            owners_txt = (f"owners={owners[0]}..{owners[-1]} ({len(owners)})"
+                          if owners else "owners=default")
+            print(f"  prerouter: start={pr.start_layer} hidden={pr.hidden} "
+                  f"dtype={pr.dtype} K={cfg.prerouter_top_k} {owners_txt} "
+                  f"weights={pr.weights_file}")
+        if cfg.lora:
+            print(f"  lora: {cfg.lora} (r={cfg.lora_r} alpha={cfg.lora_alpha})")
+    return 0
+
+
+def _engine_kwargs(args) -> dict:
+    """Map CLI flags to from_pretrained overrides (absent key = keep the
+    tier default; explicit None/' ' disables)."""
+    kw: dict = {}
+    if getattr(args, "no_prerouter", False):
+        kw["prerouter"] = None
+    if getattr(args, "no_lora", False):
+        kw["lora"] = ""
+    return kw
+
+
+def _resolve_model(args) -> tuple[str | None, str | None]:
+    """vLLM-style model argument resolution.
+
+    ``edge0 serve <model>`` accepts either a registered tier name
+    (``edge0-35b`` / ``edge0-10b`` — checkpoint found via the matching
+    env var, else the known dev-box default) or a checkpoint path
+    (``edge0 serve /root/edge0-35b`` — tier auto-detected from the
+    checkpoint's ``config.json``).
+
+    Returns ``(model_dir, name)``; either may stay None to keep the
+    legacy ``--model-dir`` / ``--name`` behaviour.
+    """
+    model = getattr(args, "model", None)
+    if not model:
+        return args.model_dir, args.name
+    if model in MODEL_REGISTRY:
+        short = (model.split("-", 1)[-1] if model.startswith("edge0-")
+                 else model)
+        env = os.environ.get(f"EDGE0_{short.upper()}_MODEL")
+        return env or DEMO_DEFAULTS.get(model), model
+    return model, None  # a path: tier auto-detected by the registry
+
+
+def cmd_demo(args) -> int:
+    from edge0 import AutoEngine
+    from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
+
+    model_dir, name = _resolve_model(args)
+    if not model_dir:
+        # No explicit model: probe the known dev-box checkpoints.
+        for d in DEMO_DEFAULTS.values():
+            if os.path.isdir(d):
+                model_dir = d
+                break
+    if not model_dir or not os.path.isdir(model_dir):
+        print(
+            f"[edge0] no checkpoint for {name or 'model'}.\n"
+            "Pass the model explicitly, vLLM-style:\n"
+            f"    edge0 demo {DEMO_DEFAULTS.get(name, '<checkpoint-dir>')}\n"
+            "or point at your own checkpoint:\n"
+            "    edge0 demo /path/to/qwen35/model\n"
+            "Tier names are edge0-35b / edge0-10b (env EDGE0_<TIER>_MODEL "
+            "overrides the default search path).",
+            file=sys.stderr,
+        )
+        return 2
+    engine = AutoEngine.from_pretrained(model_dir, name=name,
+                                        **_engine_kwargs(args))
+    tok = engine._tok
+    if tok is None:
+        engine.close()
+        raise SystemExit("model has no tokenizer; cannot demo")
+    prompt = args.prompt or DEMO_PROMPTS.get(engine.name, "Hello!")
+    req = ChatRequest(model=engine.name, messages=[
+        ChatMessage(role="user", content=prompt)])
+    sess = ChatSession(engine, req)
+    tokens, meta = sess.run()
+    print(f"user : {prompt}")
+    print(f"edge0: {tok.decode(tokens)}")
+    print(f"# {len(tokens)} tokens in {meta['wall_s']}s",
+          file=sys.stderr)
+    engine.close()
+    return 0
+
+
+def cmd_chat(args) -> int:
+    from edge0 import AutoEngine
+
+    model_dir, name = _resolve_model(args)
+    if not model_dir or not os.path.isdir(model_dir):
+        raise SystemExit(
+            "chat requires a checkpoint; pass it as the model argument "
+            "(edge0 chat /path/to/model) or --model-dir")
+    engine = AutoEngine.from_pretrained(model_dir, name=name,
+                                        **_engine_kwargs(args))
+    tok = engine._tok
+    if tok is None:
+        raise SystemExit("model has no tokenizer; cannot chat")
+    if args.prompt:
+        prompts = [args.prompt]
+    elif not sys.stdin.isatty():
+        prompts = [line.rstrip("\n") for line in sys.stdin if line.strip()]
+    else:
+        raise SystemExit("pass --prompt or pipe input on stdin")
+    for p in prompts:
+        from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
+        req = ChatRequest(model=name, messages=[
+            ChatMessage(role="user", content=p)])
+        sess = ChatSession(engine, req)
+        tokens, meta = sess.run()
+        print(tok.decode(tokens))
+        print(f"# {len(tokens)} tokens in {meta['wall_s']}s", file=sys.stderr)
+    engine.close()
+    return 0
+
+
+def cmd_serve(args) -> int:
+    from edge0 import AutoEngine
+    from edge0.server import QueueServer, run_server
+
+    model_dir, name = _resolve_model(args)
+    if not model_dir or not os.path.isdir(model_dir):
+        raise SystemExit(
+            "serve requires a checkpoint; pass it as the model argument "
+            "(edge0 serve /path/to/model) or --model-dir")
+    engine = AutoEngine.from_pretrained(model_dir, name=name,
+                                        **_engine_kwargs(args))
+    server = QueueServer(engine, model_name=name or engine.name)
+    print(f"[edge0] serving {server.model_name} on http://{args.host}:{args.port} "
+          f"(stream={'flask' if args.flask else 'stdlib'})",
+          file=sys.stderr)
+    run_server(server, host=args.host, port=args.port, use_flask=args.flask)
+    return 0
+
+
+def cmd_convert(args) -> int:
+    import runpy
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve()
+                           .parents[1] / "scripts"))
+    runpy.run_path(
+        str(__import__("pathlib").Path(__file__).resolve().parents[1]
+            / "scripts" / "convert_adapters_legacy.py"),
+        run_name="__main__",
+    )
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="edge0", description=__doc__)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("models", help="list registered model tiers")
+    p.set_defaults(fn=cmd_models)
+
+    p = sub.add_parser(
+        "demo",
+        help="one-command quickstart (vLLM-style model argument)")
+    p.add_argument("model", nargs="?", default=None,
+                   help="tier name (edge0-35b) or checkpoint dir")
+    p.add_argument("--model-dir", default=None)
+    p.add_argument("--name", default=None)
+    p.add_argument("--prompt", default=None)
+    p.add_argument("--no-prerouter", action="store_true")
+    p.add_argument("--no-lora", action="store_true")
+    p.set_defaults(fn=cmd_demo)
+
+    p = sub.add_parser(
+        "chat",
+        help="one-shot prompt answering (vLLM-style model argument)")
+    p.add_argument("model", nargs="?", default=None,
+                   help="tier name (edge0-35b) or checkpoint dir")
+    p.add_argument("--model-dir", default=None)
+    p.add_argument("--name", default=None)
+    p.add_argument("--prompt", default=None)
+    p.add_argument("--no-prerouter", action="store_true")
+    p.add_argument("--no-lora", action="store_true")
+    p.set_defaults(fn=cmd_chat)
+
+    p = sub.add_parser(
+        "serve",
+        help="run the HTTP server, vLLM-style: edge0 serve <model>")
+    p.add_argument("model", nargs="?", default=None,
+                   help="tier name (edge0-35b) or checkpoint dir")
+    p.add_argument("--model-dir", default=None)
+    p.add_argument("--name", default=None)
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--flask", action="store_true",
+                   help="use the Flask transport (needs flask installed)")
+    p.add_argument("--no-prerouter", action="store_true")
+    p.add_argument("--no-lora", action="store_true")
+    p.set_defaults(fn=cmd_serve)
+
+    p = sub.add_parser("convert-adapters",
+                       help="one-shot legacy npz -> safetensors migration")
+    p.set_defaults(fn=cmd_convert)
+
+    args = ap.parse_args(argv)
+    return args.fn(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
