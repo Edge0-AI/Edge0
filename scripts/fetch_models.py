@@ -12,8 +12,8 @@ Requirements:
 Repo ids default to the official releases (override via the environment
 if you mirror them):
 
-    export EDGE0_35B_REPO=Edge0/Edge0-35b-a3b   # default
-    export EDGE0_10B_REPO=Edge0/Edge0-10b-a1b   # default
+    export EDGE0_35B_REPO=Edge0/Edge0-35b-a3b-preview   # default
+    export EDGE0_10B_REPO=Edge0/Edge0-10b-a1b-preview   # default
 
 Usage:
     python scripts/fetch_models.py --tier edge0-35b --target-dir models
@@ -33,8 +33,8 @@ import sys
 from pathlib import Path
 
 TIER_REPOS = {
-    "edge0-35b": ("EDGE0_35B_REPO", "Edge0/Edge0-35b-a3b"),
-    "edge0-10b": ("EDGE0_10B_REPO", "Edge0/Edge0-10b-a1b"),
+    "edge0-35b": ("EDGE0_35B_REPO", "Edge0/Edge0-35b-a3b-preview"),
+    "edge0-10b": ("EDGE0_10B_REPO", "Edge0/Edge0-10b-a1b-preview"),
 }
 
 

@@ -15,8 +15,8 @@ trained prerouter heads work together as one unit.
 
 | Tier | Released checkpoint | Inference profile |
 |---|---|---|
-| `edge0-35b` | `Edge0/Edge0-35b-a3b` | 4-bit, 40 layers, 256 experts, prerouter K=4 |
-| `edge0-10b` | `Edge0/Edge0-10b-a1b` | 4-bit, 24 layers, 128 experts, prerouter K=8 |
+| `edge0-35b` | `Edge0/Edge0-35b-a3b-preview` | 4-bit, 40 layers, 256 experts, prerouter K=4 |
+| `edge0-10b` | `Edge0/Edge0-10b-a1b-preview` | 4-bit, 24 layers, 128 experts, prerouter K=8 |
 
 Both checkpoints are built on open sparse-MoE base models (Qwen3.5-MoE
 35B-A3B and the Ling 3.0 bailing hybrid respectively) and ship with the

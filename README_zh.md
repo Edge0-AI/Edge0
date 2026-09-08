@@ -11,8 +11,8 @@
 
 | 档位 | 发布 checkpoint | 推理档 |
 |---|---|---|
-| `edge0-35b` | `Edge0/Edge0-35b-a3b` | 4bit，40 层，256 专家，prerouter K=4 |
-| `edge0-10b` | `Edge0/Edge0-10b-a1b` | 4bit，24 层，128 专家，prerouter K=8 |
+| `edge0-35b` | `Edge0/Edge0-35b-a3b-preview` | 4bit，40 层，256 专家，prerouter K=4 |
+| `edge0-10b` | `Edge0/Edge0-10b-a1b-preview` | 4bit，24 层，128 专家，prerouter K=8 |
 
 两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重——
