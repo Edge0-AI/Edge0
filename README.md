@@ -195,18 +195,7 @@ this exact path).
   file is missing, `edge0` fails with a clear message (or pass
   `--no-prerouter` / `--no-lora` to run the plain base model).
 
-### Stability validation
 
-Both tiers passed long-run sampling tests (temp 0.7, thinking on/off,
-multiple prompts):
-
-- `!` death-spiral collapse: 0/N (NaN clipping in effect);
-- fragment degeneration: 0/N (low-layer prerouter noise eliminated via
-  `start_layer=7`);
-- cross-request state pollution: 0/N (per-request `reset()` +
-  first-token greedy).
-
-## Benchmark
 
 Measured with `examples/bench.py` (3.3k-token prompt prefill → 10 sampled
 warmup steps → 200 timed sampled decode tokens, 2 runs per tier):

@@ -160,14 +160,6 @@ engine.close()   # 释放 mmap / 专家缓存
 - prerouter + LoRA 两条适配器都必需；缺文件时 `edge0` 会给出明确报错
   （也可加 `--no-prerouter` / `--no-lora` 直接跑裸基模）。
 
-### 稳定性验证
-
-两个 tier 均通过长连测（temp 0.7 采样、think 开关混合、多 prompt）：
-
-- `!` 死循环塌缩 0/N（NaN clip 防护生效）；
-- 碎片退化 0/N（低层 prerouter 噪声通过 `start_layer=7` 消除）；
-- 跨请求状态污染 0/N（每请求 `reset()` + 首 token greedy）。
-
 ## 性能实测
 
 `examples/bench.py` 实测（3.3k token prompt prefill → 10 步采样 warmup →
