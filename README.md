@@ -1,6 +1,19 @@
+<div align="center">
+
+<img src="assets/20260908-223115.jpg" alt="edge0" width="100%">
+
 # edge0
 
-[English](README.md) | [中文](README_zh.md)
+**An open-source streaming MoE inference framework — SSD expert offload + parallel LoRA + prerouter routing prediction.**
+
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35b--a3b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--10b--a1b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-10b-a1b-preview)
+[![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2Fedge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/edge0)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
+
+English | [中文](README_zh.md)
+
+</div>
 
 **edge0** is an open-source streaming MoE inference framework. It
 generalizes the production-proven recipe — **SSD expert offload +
@@ -15,8 +28,8 @@ trained prerouter heads work together as one unit.
 
 | Tier | Released checkpoint | Inference profile |
 |---|---|---|
-| `edge0-35b` | `Edge0/Edge0-35b-a3b-preview` | 4-bit, 40 layers, 256 experts, prerouter K=4 |
-| `edge0-10b` | `Edge0/Edge0-10b-a1b-preview` | 4-bit, 24 layers, 128 experts, prerouter K=8 |
+| `edge0-35b` | [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 |
+| `edge0-10b` | [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 |
 
 Both checkpoints are built on open sparse-MoE base models (Qwen3.5-MoE
 35B-A3B and the Ling 3.0 bailing hybrid respectively) and ship with the

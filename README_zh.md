@@ -1,6 +1,19 @@
+<div align="center">
+
+<img src="assets/20260908-223115.jpg" alt="edge0" width="100%">
+
 # edge0
 
+**开源流式 MoE 推理框架 —— SSD 专家 offload + 并行 LoRA + prerouter 路由预判**
+
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35b--a3b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--10b--a1b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-10b-a1b-preview)
+[![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2Fedge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/edge0)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
+
 [English](README.md) | 中文
+
+</div>
 
 **edge0** 是一个开源的流式 MoE 推理框架：把「SSD 专家 offload +
 并行 LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后端隔离设计，
@@ -11,8 +24,8 @@
 
 | 档位 | 发布 checkpoint | 推理档 |
 |---|---|---|
-| `edge0-35b` | `Edge0/Edge0-35b-a3b-preview` | 4bit，40 层，256 专家，prerouter K=4 |
-| `edge0-10b` | `Edge0/Edge0-10b-a1b-preview` | 4bit，24 层，128 专家，prerouter K=8 |
+| `edge0-35b` | [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) | 4bit，40 层，256 专家，prerouter K=4 |
+| `edge0-10b` | [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview) | 4bit，24 层，128 专家，prerouter K=8 |
 
 两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重——
