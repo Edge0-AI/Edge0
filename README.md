@@ -170,7 +170,7 @@ warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 
 | Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory | Test machine |
 |---|---|---|---|---|
-| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 3.3–4.5 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 3.3 GiB | Mac mini M4 Pro, 24 GB |
 | `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 3.1 GiB | Mac mini M4 Pro, 24 GB |
 
 *Cold = first request after process start (expert weights fault in from
