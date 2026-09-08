@@ -50,12 +50,13 @@ class Ling10BConfig(ModelConfig):
                 kind=RouterKind.SIGMOID_GROUP,
                 start_layer=7, hidden=512, dtype="fp16",
                 feature_topk="executed",
-                owners=tuple(range(6, 23)),
-                weights_file=artifact("prerouter_edge0_10b.safetensors"),
+                owners=tuple(range(7, 23)),
+                weights_file=artifact(
+                    "prerouter_edge0_10b_round6.safetensors", model_dir),
                 patch_call=False,
             ),
             prerouter_top_k=8,
-            lora=artifact("lora_edge0_10b.safetensors"),
+            lora=artifact("lora_edge0_10b_round6.safetensors", model_dir),
             lora_r=16, lora_alpha=32.0,
             gen=GenerationConfig(
                 temperature=0.7, top_p=0.95, top_k=64,

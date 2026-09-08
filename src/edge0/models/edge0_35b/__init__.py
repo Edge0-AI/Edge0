@@ -49,11 +49,12 @@ class Qwen35Config(ModelConfig):
                 kind=RouterKind.SOFTMAX_TOPK,
                 start_layer=7, hidden=512, dtype="fp16",
                 feature_topk="executed",
-                weights_file=artifact("prerouter_edge0_35b_k4.safetensors"),
+                weights_file=artifact(
+                    "prerouter_edge0_35b.safetensors", model_dir),
                 patch_call=True,
             ),
             prerouter_top_k=4,
-            lora=artifact("lora_edge0_35b_k4.safetensors"),
+            lora=artifact("lora_edge0_35b.safetensors", model_dir),
             lora_r=16, lora_alpha=32.0,
             gen=GenerationConfig(
                 temperature=0.6, top_p=0.95, top_k=64,
