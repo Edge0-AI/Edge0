@@ -1,7 +1,9 @@
 # 架构总览
 
-**edge0** 是一个面向 Apple Silicon 的开源流式 MoE 推理框架，把生产部署中验证过的
+**edge0** 是一个开源的流式 MoE 推理框架，把生产部署中验证过的
 「SSD 专家 offload + 并行 LoRA + prerouter 路由预判」方案抽象成可扩展的通用框架。
+后端隔离设计：当前实现 MLX 后端（Apple Silicon），核心逻辑与后端解耦，
+其它平台按同一套门面接入。
 开箱支持两个模型：`edge0-35b`（Qwen3.5-MoE，K=4）与 `edge0-10b`（Ling 3.0
 hybrid，K=8）。
 
