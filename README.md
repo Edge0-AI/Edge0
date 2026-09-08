@@ -30,10 +30,9 @@ are co-located with each checkpoint and load automatically, so
   (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
   platforms are supported yet.
 - **Python**: 3.10+ (3.12 recommended).
-- **Memory**: ~3.3 GB peak active memory for `edge0-35b` and ~3.1 GB for
-  `edge0-10b` at 3.3k-token contexts (see [Benchmark](#benchmark); short
-  conversations on `edge0-10b` stay under ~1.4 GB). Add headroom for the
-  OS and tokenizer.
+- **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
+  `edge0-10b` (short contexts; see [Benchmark](#benchmark)). Add
+  headroom for the OS, tokenizer, and long-context KV growth.
 - **Disk**: the 4-bit checkpoints are ~23 GB (`edge0-35b`) and ~4.2 GB
   (`edge0-10b`); expert weights are mmapped and read on demand, they are
   not loaded into RAM up front.
@@ -179,18 +178,18 @@ multiple prompts):
 Measured with `examples/bench.py` (3.3k-token prompt prefill → 10 sampled
 warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 
-| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory | Test machine |
+| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory** | Test machine |
 |---|---|---|---|---|
-| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 3.3 GiB | Mac mini M4 Pro, 24 GB |
-| `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 3.1 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
 *Cold = first request after process start (expert weights fault in from
 SSD); warm = subsequent requests (page cache resident). Prefill numbers
 are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`).*
 
-*Peak active memory is the MLX allocator's peak (model weights + KV cache +
-expert working set), not RSS: expert weights stream from SSD via mmap and the
-OS page cache is not counted.*
+**Peak active memory at short contexts (MLX allocator peak; expert weights
+stream from SSD via mmap and are not resident). Long contexts add KV
+cache: ~3.3 GiB on `edge0-10b` at 3.3k tokens.*
 
 Reproduce:
 

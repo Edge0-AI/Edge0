@@ -24,9 +24,9 @@
 - **系统 / 硬件**：MLX 后端目前仅支持 Apple Silicon 的 macOS
   （M1/M2/M3/M4）；CUDA 后端在路线图中，其余平台暂不支持。
 - **Python**：3.10+（推荐 3.12）。
-- **内存**：3.3k token 上下文下 `edge0-35b` ≈3.3 GB、`edge0-10b`
-  ≈3.1 GB 峰值激活内存（见[性能实测](#性能实测)；10b 短对话在
-  ≈1.4 GB 内）；另需为系统与 tokenizer 预留余量。
+- **内存**：短上下文下 `edge0-35b` ≈2.9 GB、`edge0-10b` ≈1.0 GB
+  峰值激活内存（见[性能实测](#性能实测)）；另为系统、tokenizer 与
+  长上下文 KV 增长预留余量。
 - **磁盘**：4bit checkpoint 约 23 GB（`edge0-35b`）/ 4.2 GB
   （`edge0-10b`）；专家权重 mmap 按需读取，不一次性载入内存。
 
@@ -153,16 +153,14 @@ engine.close()   # 释放 mmap / 专家缓存
 `examples/bench.py` 实测（3.3k token prompt prefill → 10 步采样 warmup →
 200 token 计时段，每档 2 轮）：
 
-| 档位 | 解码速度 | Prefill 吞吐（冷/热）* | 峰值 active 内存 | 测试机器 |
+| 档位 | 解码速度 | Prefill 吞吐（冷/热）* | 峰值 active 内存** | 测试机器 |
 |---|---|---|---|---|
-| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 3.3 GiB | Mac mini M4 Pro, 24 GB |
-| `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 3.1 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
-*冷 = 进程启动后首请求（专家权重从 SSD 逐页换入）；热 = 后续请求（页缓存常驻）。
-Prefill 为 ≈3.3k token 长 prompt 的吞吐（`BENCH_LONG=1`）。*
+*冷 = 进程启动后首请求（专家权重从 SSD 逐页换入）；热 = 后续请求（页缓存常驻）。Prefill 为 ≈3.3k token 长 prompt 的吞吐（`BENCH_LONG=1`）。
 
-*峰值 active 内存为 MLX allocator 的峰值（权重 + KV cache + 专家工作集），
-不含 RSS：专家权重经 mmap 从 SSD 流式读取，OS 页缓存不计入。*
+**短上下文下的峰值 active 内存（MLX allocator 峰值；专家权重经 mmap 流式读取、不常驻内存）。长上下文增加 KV cache：3.3k token 下 `edge0-10b` ≈3.3 GiB。**
 
 复现：
 
