@@ -76,10 +76,7 @@ are co-located with each checkpoint and load automatically, so
   with model size, routed width (K), and memory pressure;
 - **Parallel LoRA**: adapters are applied as a side path at forward
   time instead of being merged — the base stays a read-only mmap and
-  multiple adapter sets share one base;
-- **Numerical guard**: per-layer hidden clipping (`LING_HIDDEN_CLIP`,
-  default 1000) breaks the fp16 overflow → all-NaN logits → token-0
-  death-spiral collapse chain.
+  multiple adapter sets share one base.
 
 ## Quick start
 
