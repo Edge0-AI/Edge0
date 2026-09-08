@@ -112,7 +112,7 @@ class LayerOptions:
     def prod_k8(cls, **overrides) -> "LayerOptions":
         """edge0-10b tier: deployment production profile.
 
-        Mirrors start_server.sh on the ling v7 deploy: STAGED_DECODE=0
+        Mirrors the reference deployment profile: STAGED_DECODE=0
         (staged decode is OFF — the deployment verified staged decode on
         ling degrades output, see the comment in start_server.sh),
         STAGED_SYNC=0, STAGED_SLOTS=8, EXPERT_CACHE_SLOTS=64,

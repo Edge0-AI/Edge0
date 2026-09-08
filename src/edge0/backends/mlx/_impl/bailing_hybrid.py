@@ -798,7 +798,7 @@ class BailingModel(nn.Module):
         # fp16 overflow inside one layer cannot poison the whole network
         # (observed: decode blowup -> all-NaN logits -> argmax falls back
         # to token 0 ('!') death spiral). Off by default.
-        # (v7-deploy NAN_BANG_COLLAPSE_FIX.md parity.)
+        # (production-verified fix.)
         _clip_v = float(os.environ.get("LING_HIDDEN_CLIP", "0"))
         for li, (layer, c) in enumerate(zip(self.layers, cache)):
             if before_layer_cb is not None:

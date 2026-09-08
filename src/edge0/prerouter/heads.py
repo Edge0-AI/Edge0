@@ -1,5 +1,5 @@
 """Prerouter head math — faithful port of the qwen trained-head
-implementation (the legacy ``v7_trained`` file) with identifiers
+implementation with identifiers
 renamed.
 
 Semantics (cross-token):
@@ -8,7 +8,7 @@ Semantics (cross-token):
   * head = fc1(features) -> exact(erf) gelu -> fc2 + linear_init on the
     SAME concat features;
   * fp16 weights by default (the training export precision, and the
-    precision ling v7 production ran the heads at); fp32 for debugging.
+    production precision); fp32 for debugging.
 """
 
 from __future__ import annotations

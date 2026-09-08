@@ -52,7 +52,7 @@ def main() -> int:
     ids = list(tok(PROMPT)["input_ids"])
     print(f"[3] prompt: {len(ids)} tokens: {ids[:12]} ...", flush=True)
 
-    # Deployment parity (bench_v7.py / serve.py): build the prompt with
+    # Build the prompt with
     # the chat template. enable_thinking=False closes an empty <think>
     # block so the model answers directly; --thinking leaves the block
     # open so the model emits reasoning first, then </think> + the answer.

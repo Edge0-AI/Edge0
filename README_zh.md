@@ -18,8 +18,9 @@
 - **系统 / 硬件**：MLX 后端目前仅支持 Apple Silicon 的 macOS
   （M1/M2/M3/M4）；CUDA 后端在路线图中，其余平台暂不支持。
 - **Python**：3.10+（推荐 3.12）。
-- **内存**：`edge0-35b` 峰值激活内存约 3.3 GB，`edge0-10b` 约 1.4 GB
-  （实测）；另需为系统与 tokenizer 预留余量。
+- **内存**：3.3k token 上下文下 `edge0-35b` ≈3.3 GB、`edge0-10b`
+  ≈3.1 GB 峰值激活内存（见[性能实测](#性能实测)；10b 短对话在
+  ≈1.4 GB 内）；另需为系统与 tokenizer 预留余量。
 - **磁盘**：4bit checkpoint 约 23 GB（`edge0-35b`）/ 4.2 GB
   （`edge0-10b`）；专家权重 mmap 按需读取，不一次性载入内存。
 
@@ -32,10 +33,10 @@
   （`edge0/backends/base.py` 的 `core` / `nn` 门面），新增后端实现同一门面
   即可平级接入（`backends/cuda/` 预留插槽），核心代码零改动；
 - **适配器统一为 safetensors**：LoRA 与 prerouter 权重均为带元数据
-  （来源、轮次、owners）的 `.safetensors`，放模型目录或 `artifacts/`
+  （来源、版本、owner 层）的 `.safetensors`，放模型目录或 `artifacts/`
   均可自动解析；
 - **模型 + 适配器同目录布局**：一个模型目录同时放基模（`config.json` /
-  `model*.safetensors` / tokenizer）和该模型的适配器，换轮次只换适配器
+  `model*.safetensors` / tokenizer）和该模型的适配器，升级适配器只换适配器文件
   文件，基模不动、不 merge。
 
 ## 核心机制
@@ -127,8 +128,9 @@ engine.close()   # 释放 mmap / 专家缓存
     `lora_edge0_35b.safetensors` + `prerouter_edge0_35b.safetensors`；
   - `artifacts/`（仓库根，gitignored）：`edge0 convert-adapters` 从
     训练侧 npz 一次性转换。
-- 发布的模型仓库同时包含基模与当前默认适配器（35b = round9，
-  10b = round6），`scripts/fetch_models.py` 下载后即为可运行的模型目录。
+- 发布的模型仓库同时包含基模与当前默认适配器版本，
+  `scripts/fetch_models.py` 下载后即为可运行的模型目录。适配器来源
+  （训练数据、owner 层分布）见各模型文档页。
 - prerouter + LoRA 两条适配器都必需；缺文件时 `edge0` 会给出明确报错
   （也可加 `--no-prerouter` / `--no-lora` 直接跑裸基模）。
 

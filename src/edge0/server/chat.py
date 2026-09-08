@@ -70,9 +70,9 @@ class ChatSession:
 
     def prompt_ids(self) -> list[int]:
         tok = self._tok
-        # ling-mlx-server parity (THINK_FIX_20260907.md): families with a
-        # vendored chat template (ling ``engine.encode_chat`` renders the
-        # deployment chat_template.jinja with enable_thinking) MUST go
+        # Families with a vendored chat template
+        # (``engine.encode_chat`` renders a chat_template.jinja with
+        # enable_thinking) must go
         # through it — the tokenizer's own apply_chat_template renders a
         # DIFFERENT prompt (no think-mode system line, no ``<think>``
         # opener), which is exactly the wrong-template bug.
@@ -134,7 +134,7 @@ class ChatSession:
 
     def run(self, on_token=None) -> tuple[list[int], dict]:
         t0 = time.perf_counter()
-        # ling-mlx-server parity (THINK_FIX_20260907.md §3.1): clean
+        # Per-request clean
         # per-request state.  A previous degenerate/truncated turn leaves
         # bad pregate cross-token state and KV behind, which makes every
         # later request collapse from its first token.

@@ -22,8 +22,10 @@ Two model tiers work out of the box:
   (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
   platforms are supported yet.
 - **Python**: 3.10+ (3.12 recommended).
-- **Memory**: ~3.3 GB peak active memory for `edge0-35b`, ~1.4 GB for
-  `edge0-10b` (measured). Add headroom for the OS and tokenizer.
+- **Memory**: ~3.3 GB peak active memory for `edge0-35b` and ~3.1 GB for
+  `edge0-10b` at 3.3k-token contexts (see [Benchmark](#benchmark); short
+  conversations on `edge0-10b` stay under ~1.4 GB). Add headroom for the
+  OS and tokenizer.
 - **Disk**: the 4-bit checkpoints are ~23 GB (`edge0-35b`) and ~4.2 GB
   (`edge0-10b`); expert weights are mmapped and read on demand, they are
   not loaded into RAM up front.
@@ -38,11 +40,11 @@ Two model tiers work out of the box:
   backend implements the same facade (`backends/cuda/` is a reserved
   slot) with zero changes to core code;
 - **Adapters as safetensors**: LoRA and prerouter weights are
-  `.safetensors` files with provenance metadata (source, round, owners),
-  resolved from the model directory or `artifacts/`;
+  `.safetensors` files with provenance metadata (source, version, owner
+  layers), resolved from the model directory or `artifacts/`;
 - **Model + adapters in one directory**: a model directory holds both
   the base checkpoint (`config.json` / `model*.safetensors` / tokenizer)
-  and that model's adapters; switching training rounds swaps adapter
+  and that model's adapters; upgrading adapters swaps adapter
   files only — the base stays read-only and is never merged.
 
 ## Core mechanisms
@@ -146,8 +148,9 @@ this exact path).
   - `artifacts/` (repo root, gitignored): convert once from
     training-side npz exports via `edge0 convert-adapters --npz-dir ...`.
 - The published model repos bundle both the base checkpoint and the
-  current default adapters (35b = round9, 10b = round6), so
-  `scripts/fetch_models.py` produces a ready-to-run model directory.
+  current default adapter release, so `scripts/fetch_models.py` produces
+  a ready-to-run model directory.  Check each model's doc page for its
+  adapter provenance (training data, owner-layer layout).
 - Both adapters are required for the prerouter + LoRA pipeline; if a
   file is missing, `edge0` fails with a clear message (or pass
   `--no-prerouter` / `--no-lora` to run the plain base model).

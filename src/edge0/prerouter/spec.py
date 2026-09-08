@@ -38,7 +38,7 @@ class PrerouterSpec:
             "executed": the top-k the block actually routed (qwen
             trained semantics — executed == prerouter-selected at decode);
             "teacher": the original gate's top-k, recomputed per layer
-            (ling v7 training semantics).
+            (training semantics).
         owners: explicit owner list override (defaults to
             ``range(start_layer - 1, n_layers - 1)``).
         weights_file: safetensors path with per-owner head weights

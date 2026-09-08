@@ -2,7 +2,7 @@
 """One-shot legacy adapter converter: npz -> safetensors.
 
 The training pipelines exported adapters as ``.npz`` (qwen round-7 and
-ling v7).  edge0 consumes safetensors ONLY — this script converts each
+the training side).  edge0 consumes safetensors ONLY — this script converts each
 legacy pair once into ``artifacts/`` (gitignored), writing the
 conversion provenance (model, kind, K, r/alpha, source md5, format
 version) into the safetensors ``__metadata__``.  The npz sources are
@@ -37,10 +37,10 @@ NPZ_DIRS = [
     Path(os.environ.get("EDGE0_NPZ_DIR", "/path/to/npz/exports")),
 ]
 SOURCES = [
-    ("pregate_qwen35_v7_round7.npz", "edge0-35b", "prerouter"),
-    ("lora_qwen35_v7_round7.npz", "edge0-35b", "lora"),
-    ("pregate_v7_fp16.npz", "edge0-10b", "prerouter"),
-    ("lora_v7_fp16.npz", "edge0-10b", "lora"),
+    ("pregate_<family>.npz", "edge0-35b", "prerouter"),
+    ("lora_<family>.npz", "edge0-35b", "lora"),
+    ("pregate_<family>.npz", "edge0-10b", "prerouter"),
+    ("lora_<family>.npz", "edge0-10b", "lora"),
 ]
 
 
@@ -68,7 +68,7 @@ def rewrite_key(key: str, tier: str, kind: str) -> str:
     namespace the adapter is applied into).
     """
     if kind == "prerouter":
-        # qwen round-7 npz already uses layers.N.*; ling v7 uses pregate.N.*
+        # some families use layers.N.*; others use pregate.N.*
         parts = key.split(".")
         if parts[0] == "pregate":
             return f"layers.{parts[1]}.{parts[2]}.{parts[3]}"

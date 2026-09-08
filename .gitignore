@@ -18,3 +18,4 @@ artifacts/
 
 # Bench / runtime logs
 *.log
+scripts/alignment_results.json

@@ -33,7 +33,7 @@ def _error(status: int, msg: str) -> tuple:
 
 
 def _split_think(text: str, think: bool):
-    """ling-mlx-server server.py parity: with thinking enabled the model
+    """With thinking enabled the model
     streams the reasoning block first and closes it with ``</think>``
     (token 156904); everything before is ``reasoning_content``, after
     is ``content``.  A generation cut off inside the reasoning block

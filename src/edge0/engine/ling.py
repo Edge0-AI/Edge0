@@ -140,7 +140,7 @@ class Ling10BEngine(Edge0Engine):
     # ---- startup warm-up --------------------------------------------------
 
     def _prewarm(self):
-        """Page-cache + kernel warm-up (ling v7 ``_prewarm`` parity).
+        """Page-cache + kernel warm-up.
 
         1. madvise(WILLNEED) + a full sequential read over every shard —
            removes per-expert page-fault cost from the first request.

@@ -1,6 +1,6 @@
 """edge0-10b adapter: Ling 3.0 hybrid (MLA + MoE, 10B tier).
 
-Family facts (production profile, verified against the v7 checkpoint):
+Family facts (production profile, verified against the reference checkpoint):
 
 * 24 layers (layer 0 dense), 128 routed experts (4-bit affine,
   group 64), K=8 native, sigmoid + group-limited routing
@@ -52,11 +52,11 @@ class Ling10BConfig(ModelConfig):
                 feature_topk="executed",
                 owners=tuple(range(7, 23)),
                 weights_file=artifact(
-                    "prerouter_edge0_10b_round6.safetensors", model_dir),
+                    "prerouter_edge0_10b.safetensors", model_dir),
                 patch_call=False,
             ),
             prerouter_top_k=8,
-            lora=artifact("lora_edge0_10b_round6.safetensors", model_dir),
+            lora=artifact("lora_edge0_10b.safetensors", model_dir),
             lora_r=16, lora_alpha=32.0,
             gen=GenerationConfig(
                 temperature=0.7, top_p=0.95, top_k=64,

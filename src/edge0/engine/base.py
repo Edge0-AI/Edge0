@@ -119,8 +119,8 @@ class Edge0Engine:
             if logits is None:
                 raise RuntimeError("no logits available before first step")
             if first_token and gen_config.first_token_greedy:
-                # The FIRST token is always greedy (qwen35-v7-deploy
-                # serve.py pattern, THINK_FIX_20260907.md §3.2): after the
+                # The FIRST token is always greedy
+                # (production-verified pattern): after the
                 # think opener a randomly-sampled first token can derail
                 # the whole block into '!' loops.
                 tid = int(core.argmax(logits, axis=-1).item())

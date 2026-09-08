@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-"""Adapter alignment check: correct demos (round8 / r3traces) vs edge0 artifacts.
+"""Adapter alignment check: reference engines vs edge0.
 
-Runs the SAME prompt through the correct demo engine (production env from
-start_server.sh, with the NEW adapters: qwen round8, ling r3traces) and
-through edge0 (artifacts/*.safetensors), both greedy, and writes both token
-sequences + decoded text to one JSON result file. Identical out-ids =>
-adapters mount identically.
+Runs the SAME prompt through a reference deployment engine (an unmodified
+upstream serving stack, production env) and through edge0, both greedy,
+and writes both token sequences + decoded text to one JSON result file
+(scripts/alignment_results.json, gitignored local evidence).  Identical
+out-ids => the adapters mount identically.
 
 Usage:
     python verify_alignment.py demo qwen
@@ -47,9 +47,9 @@ def save(tag, payload):
 def qwen_demo():
     os.environ.update(
         MODEL_DIR=QMODEL,
-        LORA_ADAPTERS=QDIR + "/lora_qwen35_v7_round8.npz",
+        LORA_ADAPTERS=QDIR + "/lora_qwen35.npz",
         LORA_R="16", LORA_ALPHA="32",
-        PREGATE_NPZ=QDIR + "/pregate_qwen35_v7_round8.npz",
+        PREGATE_NPZ=QDIR + "/pregate_qwen35.npz",
         QWEN_PG_START="7", QWEN_PG_HIDDEN="512",
         QWEN_STAGED="1", QWEN_STAGED_TOP_K="4", QWEN_STAGED_SLOTS="4",
         QWEN_STAGED_REPLACE="0", QWEN_PREGATE_V7="0",

@@ -19,9 +19,9 @@ class GenerationConfig:
         eos_ids: token ids that end generation.
         seed: optional RNG seed.
         first_token_greedy: always argmax the FIRST generated token
-            (qwen35-v7-deploy serve.py / THINK_FIX_20260907.md pattern):
-            after the think opener a randomly-sampled first token can
-            derail the whole block into '!' loops.
+            (production-verified pattern): after the think opener a
+            randomly-sampled first token can derail the whole block into
+            '!' loops.
     """
 
     temperature: float = 0.7

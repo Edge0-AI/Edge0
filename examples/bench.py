@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""edge0 speed + memory benchmark (any tier, bench_v7-equivalent protocol).
+"""edge0 speed + memory benchmark (any tier).
 
 Runs the same measurement shape as the deployment's bench: prefill ->
 sampled warmup steps -> timed sampled decode -> report tok/s and MLX

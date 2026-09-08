@@ -2,7 +2,7 @@
 
 edge0 平台的第一档主力模型：基于 Qwen3.5-MoE（K=4 档）的 35B 级稀疏混合专家模型。通过流式专家加载（streaming experts）、训练前置路由（prerouter）与 LoRA 适配，把整份权重量化后驻留在磁盘、按需装载，在单台设备上即可服务。
 
-性能档案基于 round9 adapter 组合的基准实测，默认由 `Qwen35Config`（`src/edge0/models/edge0_35b/__init__.py`）固定。
+性能档案基于当前发布 adapter 版本的基准实测，默认由 `Qwen35Config`（`src/edge0/models/edge0_35b/__init__.py`）固定。
 
 ## 模型档案
 
@@ -23,8 +23,8 @@ edge0 平台的第一档主力模型：基于 Qwen3.5-MoE（K=4 档）的 35B �
 | 热窗 | 4 |
 | 流式预取历史 | 开（`prefetch_history=True`） |
 | 服务端口 | 8085 |
-| 验收吞吐 | ≈ 13 tok/s |
-| 验收峰值激活内存 | ≈ 3.3 GB |
+| 实测吞吐 | 14.9–17.7 tok/s（M4 Pro） |
+| 实测峰值激活内存 | ≈ 3.3 GB |
 
 > 说明：数值全部取自 `Qwen35Config._defaults()` 与 `LayerOptions.staged_k4()`。头部数量来自显式 `owners` 列表（6 到 38，共 33 个头）；`feature_topk="executed"` 表示喂入头的 top-k 特征即解码时实际路由的集合。
 
@@ -34,8 +34,9 @@ edge0 平台的第一档主力模型：基于 Qwen3.5-MoE（K=4 档）的 35B �
 
 - 固定槽分阶段解码（`staged=True`，`staged_n=4`，`staged_sync=True`），逐层无 host 同步。
 - `staged_replace=False`：路由由训练好的 prerouter 头提供（MoE 块经由 prerouter logits 路由），因此分阶段集合与路由集合完全一致，槽表映射零丢弃。
-- 常驻热专家钉住（`hot_per_layer=32`），预热钉每 4 次 forward 刷新。
-- 整层 prefill（`full_layer_prefill=True`），前 12 层整层装载（E3b），prefill 热栈 32。
+- 按需 prefill（`full_layer_prefill=False`）：prefill 与解码走同一条按需
+  专家装载路径（生产档 `QWEN_PREFILL_FULL=0` 对齐），峰值内存与部署一致；
+- 常驻热专家钉住关闭（`hot_per_layer=0`，生产档 `QWEN_HOT=0` 对齐）。
 
 ## 使用方式
 

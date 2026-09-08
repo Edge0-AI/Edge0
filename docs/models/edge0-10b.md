@@ -2,7 +2,7 @@
 
 edge0 平台的高吞吐轻量档：基于 Ling 3.0 混合架构（MLA + MoE）的 10B 级稀疏混合专家模型。相比 35b 档牺牲一定的参数量，换来更低的峰值内存与更高的生成速率，适合对延迟与显存敏感的场景。
 
-性能档案基于 round6（pgstart-sel1m）adapter 组合的基准实测，默认由 `Ling10BConfig`（`src/edge0/models/edge0_10b/__init__.py`）固定。
+性能档案基于当前发布 adapter 版本的基准实测，默认由 `Ling10BConfig`（`src/edge0/models/edge0_10b/__init__.py`）固定。
 
 ## 模型档案
 
@@ -23,14 +23,14 @@ edge0 平台的高吞吐轻量档：基于 Ling 3.0 混合架构（MLA + MoE）�
 | 热窗 | 1 |
 | 流式预取历史 | 开（`prefetch_history=True`） |
 | 服务端口 | 8083 |
-| 验收吞吐 | ≈ 33 tok/s |
-| 验收峰值激活内存 | ≈ 1.4 GB |
+| 实测吞吐 | 23.9–25.3 tok/s（M4 Pro） |
+| 实测峰值激活内存 | ≈ 1.0 GB（短上下文）/ 3.1 GB（3.3k token 上下文） |
 
-> 说明：数值全部取自 `Ling10BConfig._defaults()` 与 `LayerOptions.prod_k8()`。头部数量来自显式 `owners=range(7, 23)`，共 16 个头（round6 训练头部分布，L7 起消费预测，L1–6 走原始 router）；`feature_topk="executed"`。
+> 说明：数值全部取自 `Ling10BConfig._defaults()` 与 `LayerOptions.prod_k8()`。头部数量来自显式 `owners=range(7, 23)`，共 16 个头（当前发布头部分布，L7 起消费预测，L1–6 走原始 router）；`feature_topk="executed"`。
 
 ## 分阶段解码（staged decode）
 
-该档使用 `LayerOptions.prod_k8()` 预设（对齐 ling v7 部署的生产开关）：
+该档使用 `LayerOptions.prod_k8()` 预设（对齐参考部署的生产开关）：
 
 - 分阶段解码关闭（`staged=False`，`staged_sync=False`，`staged_n=8`）——部署验证
   该档上 staged decode 会劣化输出，prerouter 直接驱动下一 token 的专家

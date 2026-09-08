@@ -27,8 +27,8 @@ ARTIFACTS_DIR = Path(__file__).resolve().parents[3] / "artifacts"
 
 def artifact(name: str, model_dir: str | None = None) -> str:
     """Path of one adapter file: the model's own directory first
-    (v7-deploy layout — model and its adapters side by side in ONE
-    dir), falling back to ``artifacts/`` (legacy conversion cache)."""
+    (model and its adapters side by side in one
+    directory), falling back to ``artifacts/`` (conversion cache)."""
     if model_dir:
         cand = Path(model_dir) / name
         if cand.is_file():

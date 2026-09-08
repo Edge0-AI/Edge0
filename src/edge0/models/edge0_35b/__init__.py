@@ -1,6 +1,6 @@
 """edge0-35b adapter: Qwen3.5-MoE (K=4 tier, 35B-class).
 
-Family facts (production profile, verified against the round-9
+Family facts (production profile, verified against the current
 checkpoint):
 
 * 40 layers, 256 routed experts (4-bit affine, group 64), K=4,
