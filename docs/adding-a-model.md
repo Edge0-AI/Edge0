@@ -1,71 +1,55 @@
-# 接入一个新模型
+# Adding a New Model
 
-本文档给出向 edge0 接入一个新模型族的分步指南，用 `edge0-35b`（`src/edge0/models/
-edge0_35b/__init__.py`）作为逐步示例，逐处标注真实代码行号。`edge0-10b`
-（`src/edge0/models/edge0_10b/__init__.py`）是第二个活例子，路径解析与契约完全一致。
+This document is a step-by-step guide for adding a new model family to edge0, using `edge0-35b` (`src/edge0/models/edge0_35b/__init__.py`) as the running example, with real code line numbers noted throughout. `edge0-10b` (`src/edge0/models/edge0_10b/__init__.py`) is a second live example; its path resolution and contract are identical.
 
-接入目标：让 `AutoConfig` / `AutoModel` / `AutoEngine` 能按模型名（或 checkpoint 的
-`config.json` 的 `model_type`）解析你的模型，且流式 MoE 层能由一个通用的
-`StreamingSwitchGLU` 驱动。
+Integration goal: let `AutoConfig` / `AutoModel` / `AutoEngine` resolve your model by name (or by the `model_type` in the checkpoint's `config.json`), and have the streaming MoE layers driven by a common `StreamingSwitchGLU`.
 
-## 接入总览（契约）
+## Integration overview (the contract)
 
-`edge0.registry` 的契约是：**一个适配器模块暴露三件套**：
+The contract of `edge0.registry` is: **one adapter module exposes three things**:
 
-- `Config` —— 一个 `ModelConfig` 子类（含 `from_pretrained`）；
-- `build_model(model_dir, **overrides)` —— 装配好的模型骨架；
-- `build_engine(model_dir, **overrides)` —— 可生成引擎。
+- `Config` — a `ModelConfig` subclass (with `from_pretrained`);
+- `build_model(model_dir, **overrides)` — the assembled model skeleton;
+- `build_engine(model_dir, **overrides)` — a generation-capable engine.
 
-`register_model(name, adapter)` 注册；`TYPE_ALIASES` 把 checkpoint 的 `model_type`
-映射到注册名。见 `registry.py` 的 `_resolve_name` 与 `AutoConfig.from_pretrained`
-（registry.py:73–101）。
+`register_model(name, adapter)` performs the registration; `TYPE_ALIASES` maps a checkpoint's `model_type` to a registered name. See `_resolve_name` and `AutoConfig.from_pretrained` in `registry.py` (registry.py:73–101).
 
-## 第 1 步：创建适配器模块与目录
+## Step 1: Create the adapter module and directory
 
-在 `src/edge0/models/` 下建一个包，名取你的档位，例如 `edge0_35b/`。目录内至少一个
-`__init__.py` 作为适配器。模型目录布局要求见「模型目录布局」一节。
+Create a package under `src/edge0/models/` named after your tier, e.g. `edge0_35b/`. The directory needs at least one `__init__.py`, which acts as the adapter. For the model directory layout requirements, see the "Model directory layout requirements" section.
 
-## 第 2 步：定义 `Config` 子类与 `_defaults`
+## Step 2: Define the `Config` subclass and `_defaults`
 
-`Config` 是 `ModelConfig`（`models/base.py`）的子类。`ModelConfig` 的字段即「跑起一个
-模型档位需要的一切」：
+`Config` is a subclass of `ModelConfig` (`models/base.py`). The fields of `ModelConfig` are "everything needed to run a model tier":
 
-| 字段 | 类型 | 语义 |
+| Field | Type | Semantics |
 | --- | --- | --- |
-| `name` | `str` | 注册名 |
-| `model_dir` | `str` | checkpoint 目录 |
-| `moe_spec` | `MoESpec` | MoE 规格（见 moe.md） |
-| `options` | `LayerOptions` | 流式层选项 |
-| `prerouter` | `PrerouterSpec \| None` | 预路由头规格 |
-| `prerouter_top_k` | `int` | 预路由宽度（0 → 用 `options.top_k`） |
-| `lora` / `lora_r` / `lora_alpha` | `str` / `int` / `float` | LoRA 权重路径与超参（`""` 禁用） |
-| `gen` | `GenerationConfig` | 采样默认（温度 / top-p / top-k / eos 等） |
-| `prefill_chunk` / `hot_window` / `intra_staging` / `prefetch_history` | — | 流式与预取行为 |
-| `port` | `int` | 服务端口 |
-| `target_tok_s` / `peak_active_mem_mb` | `float` | 验收指标（基准环境实测） |
+| `name` | `str` | registered name |
+| `model_dir` | `str` | checkpoint directory |
+| `moe_spec` | `MoESpec` | MoE spec (see moe.md) |
+| `options` | `LayerOptions` | streaming layer options |
+| `prerouter` | `PrerouterSpec \| None` | prerouter head spec |
+| `prerouter_top_k` | `int` | prerouter width (0 → use `options.top_k`) |
+| `lora` / `lora_r` / `lora_alpha` | `str` / `int` / `float` | LoRA weight path and hyperparameters (`""` disables) |
+| `gen` | `GenerationConfig` | sampling defaults (temperature / top-p / top-k / eos, etc.) |
+| `prefill_chunk` / `hot_window` / `intra_staging` / `prefetch_history` | — | streaming and prefetch behavior |
+| `port` | `int` | serving port |
+| `target_tok_s` / `peak_active_mem_mb` | `float` | acceptance metrics (measured on the benchmark environment) |
 
-子类只需实现类方法 `_defaults(model_dir) -> Config`，返回族默认配置。edge0-35b 的
-实现见 `edge0_35b/__init__.py:31–69`：`_defaults` 用一份完整的 `MoESpec`、`LayerOptions`
-预设 `staged_k4()`、`PrerouterSpec`、采样默认与验收指标构造 `Qwen35Config`。
+The subclass only needs to implement the class method `_defaults(model_dir) -> Config`, which returns the family's default configuration. The edge0-35b implementation lives at `edge0_35b/__init__.py:31–69`: `_defaults` builds a `Qwen35Config` from a complete `MoESpec`, the `LayerOptions` preset `staged_k4()`, a `PrerouterSpec`, sampling defaults, and acceptance metrics.
 
-`from_pretrained(model_dir=None, **overrides)` 是 `ModelConfig` 提供的模板方法
-（`models/base.py:60–73`）：它调用 `_defaults` 得到基配置，再对每个 override 校验后
-`replace` 覆盖；未知字段抛 `TypeError` 并列出已知字段。因此**每个 public 属性都能被
-用户 override**。
+`from_pretrained(model_dir=None, **overrides)` is a template method provided by `ModelConfig` (`models/base.py:60–73`): it calls `_defaults` to obtain the base configuration, then validates each override before applying it via `replace`; unknown fields raise a `TypeError` that lists the known fields. As a result, **every public attribute can be overridden by the user**.
 
-要点：
+Key points:
 
-- 仓库根目录有 `scripts/convert_adapters_legacy.py` 一次性把训练 npz 导出转成
-  safetensors 产物到 `artifacts/`；`ModelConfig.artifact(name)`（`models/base.py:28–30`）
-  返回这些产物的绝对路径，适配器用它填 LoRA / prerouter 权重路径。
-- LoRA override 走 `resolve_lora`（`models/base.py:88–95`）：裸模型名解析为该档产物，
-  `"model_dir"` 表示「保留训练权重在原位」，空串禁用。
+- The repository root ships `scripts/convert_adapters_legacy.py`, which one-shot converts the training npz exports into safetensors artifacts under `artifacts/`; `ModelConfig.artifact(name)` (`models/base.py:28–30`) returns the absolute paths of those artifacts, and the adapter uses them to fill in the LoRA / prerouter weight paths.
+- LoRA overrides go through `resolve_lora` (`models/base.py:88–95`): a bare model name resolves to that tier's artifacts, `"model_dir"` means "keep the training weights in place", and an empty string disables it.
 
-## 第 3 步：`build_model` / `build_engine`
+## Step 3: `build_model` / `build_engine`
 
-两个模块级函数，复用引擎自己的构建路径（DRY）。
+Two module-level functions that reuse the engine's own construction path (DRY).
 
-`edge0_35b/__init__.py:72–79`：
+`edge0_35b/__init__.py:72–79`:
 
 ```python
 def build_model(model_dir=None, **overrides):
@@ -75,7 +59,7 @@ def build_model(model_dir=None, **overrides):
     return model
 ```
 
-`edge0_35b/__init__.py:82–87`：
+`edge0_35b/__init__.py:82–87`:
 
 ```python
 def build_engine(model_dir=None, **overrides):
@@ -84,14 +68,11 @@ def build_engine(model_dir=None, **overrides):
     return Qwen35Engine(cfg.model_dir, cfg)
 ```
 
-你的模型若族数学不同（如 edge0-10b 的 `SIGMOID_GROUP` + 混合 MLA），在
-`src/edge0/engine/` 写一个对应引擎（参照 `engine/qwen.py` / `engine/ling.py`），
-`build_model` / `build_engine` 引用它。`load_installed` 负责装配流式孪生 / LoRA /
-prerouter，是框架给引擎提供的构建路径。
+If your model family's math differs (e.g. edge0-10b's `SIGMOID_GROUP` + hybrid MLA), write a matching engine under `src/edge0/engine/` (model it on `engine/qwen.py` / `engine/ling.py`) and reference it from `build_model` / `build_engine`. `load_installed` assembles the streaming twins / LoRA / prerouter; it is the construction path the framework provides to engines.
 
-## 第 4 步：注册到注册表
+## Step 4: Register with the registry
 
-文件末尾调用 `register_model`，并把 `Config` 暴露为模块属性（契约要求）：
+At the end of the file, call `register_model` and expose `Config` as a module attribute (required by the contract):
 
 ```python
 # edge0_35b/__init__.py:90–93
@@ -99,17 +80,13 @@ register_model("edge0-35b", sys.modules[__name__])
 Config = Qwen35Config  # registry contract: adapter.Config
 ```
 
-- `register_model`（`registry.py:25–28`）：重名抛 `ValueError`。
-- 适配器模块必须被 import 才会注册。`edge0.models.__init__`（models/__init__.py:15）
-  显式 import 各档包来 populate 注册表，`AutoConfig.from_pretrained` 里也会
-  `from edge0 import models` 兜底。
-- 你的模型包应加进 `edge0/models/__init__.py` 的 import 列表。
+- `register_model` (`registry.py:25–28`): a duplicate name raises `ValueError`.
+- An adapter module must be imported for it to register. `edge0.models.__init__` (models/__init__.py:15) explicitly imports each tier's package to populate the registry, and `AutoConfig.from_pretrained` also runs `from edge0 import models` as a fallback.
+- Your model package should be added to the import list in `edge0/models/__init__.py`.
 
-## 第 5 步：`TYPE_ALIASES`
+## Step 5: `TYPE_ALIASES`
 
-`TYPE_ALIASES`（`registry.py:15–22`）把 checkpoint `config.json` 的 `model_type`
-映射到注册名，使 `AutoEngine.from_pretrained(model_dir=...)` 能**直接从目录解析**而无需
-显式传 name。例：
+`TYPE_ALIASES` (`registry.py:15–22`) maps the `model_type` in a checkpoint's `config.json` to a registered name, so that `AutoEngine.from_pretrained(model_dir=...)` can **resolve directly from the directory** without passing a name explicitly. For example:
 
 ```python
 TYPE_ALIASES = {
@@ -120,46 +97,31 @@ TYPE_ALIASES = {
 }
 ```
 
-`_resolve_name`（registry.py:42–56）的查找顺序：显式 `name` → 目录的 `model_type`
-（`_model_type_from_dir` 读 `config.json`，失败则退回目录 basename）→ 匹配
-`MODEL_REGISTRY` → 匹配 `TYPE_ALIASES` → 否则 `KeyError` 列出已注册模型。
-未知名会因 `test_unknown_name_lists_registry` 之类的断言被测试钉住。
+The lookup order of `_resolve_name` (registry.py:42–56): explicit `name` → the directory's `model_type` (`_model_type_from_dir` reads `config.json`, falling back to the directory basename on failure) → match against `MODEL_REGISTRY` → match against `TYPE_ALIASES` → otherwise a `KeyError` listing the registered models. Unknown names are pinned by tests through assertions such as `test_unknown_name_lists_registry`.
 
-## 模型目录布局要求
+## Model directory layout requirements
 
-`AutoConfig.from_pretrained(model_dir=...)` 会读 `model_dir/config.json` 的
-`model_type` 字段（`registry.py:58–70`）。因此 checkpoint 目录至少要满足：
+`AutoConfig.from_pretrained(model_dir=...)` reads the `model_type` field of `model_dir/config.json` (`registry.py:58–70`). The checkpoint directory must therefore at least satisfy:
 
-- `config.json` 存在，且 `model_type` 已登记（或你的 `TYPE_ALIASES` 覆盖该值）；
-- 权重为 safetensors 格式，key 前缀与 `moe_spec.key_template` 一致（如
-  `language_model.model.layers.N.mlp.switch_mlp`）；
-- LoRA / prerouter 权重为带元数据的 `.safetensors`（`models/base.py` 顶部注释：由
-  `convert_adapters_legacy.py` 从训练 npz 一次性转换）。
+- `config.json` exists, and its `model_type` is registered (or covered by your `TYPE_ALIASES`);
+- the weights are in safetensors format, with key prefixes matching `moe_spec.key_template` (e.g. `language_model.model.layers.N.mlp.switch_mlp`);
+- the LoRA / prerouter weights are `.safetensors` files carrying metadata (see the comment at the top of `models/base.py`: they are converted one-shot from the training npz by `convert_adapters_legacy.py`).
 
-目录 basename 是最后兜底的解析手段（`_model_type_from_dir`），所以目录名最好与
-注册名对齐，但不是必须。
+The directory basename is the last-resort resolution fallback (`_model_type_from_dir`), so aligning the directory name with the registered name is recommended, but not required.
 
-## 第 6 步：测试建议
+## Step 6: Testing recommendations
 
-参考 `tests/test_moe_spec.py` 与 `tests/test_registry.py`（纯逻辑单测，无需真实
-checkpoint）。
+Refer to `tests/test_moe_spec.py` and `tests/test_registry.py` (pure-logic unit tests; no real checkpoint needed).
 
-- **注册与别名**（test_registry.py:12–20）：断言 `MODEL_REGISTRY` 含你的注册名、
-  `TYPE_ALIASES` 解析正确。
-- **Config 默认值**（test_registry.py:23–33）：`AutoConfig.from_pretrained(name=...)`
-  的 `moe_spec` / `options` / `prerouter` / `prerouter_top_k` 等字段符合预期。
-- **profile 细化**（test_registry.py:35–71）：逐字段断言你的档位数值（专家数、top_k、
-  quant、端口、验收指标等）。
-- **override 与拒绝**（test_registry.py:74–81）：`from_pretrained(..., prerouter=None,
-  lora="")` 生效；未知字段抛 `TypeError`。
-- **适配器契约**（test_registry.py:89–92）：断言 `MODEL_REGISTRY` 每个条目都暴露
-  `Config` / `build_model` / `build_engine`。
-- **路径解析**（test_moe_spec.py）：`keys` 模板、`block_of` 数字段下标、`layer_of`
-  从 `block_path` 推出的默认、`bundle_projs` 随布局切换。
-- **数学 parity**：路由数学必须与 vendored 模型 bit 级一致（`moe/routing.py` 用 parity
-  测试钉死），若你的模型引入新路由种类需补对照。
+- **Registration and aliases** (test_registry.py:12–20): assert that `MODEL_REGISTRY` contains your registered name and that `TYPE_ALIASES` resolves correctly.
+- **Config defaults** (test_registry.py:23–33): the `moe_spec` / `options` / `prerouter` / `prerouter_top_k` fields of `AutoConfig.from_pretrained(name=...)` match expectations.
+- **Profile refinement** (test_registry.py:35–71): assert your tier's values field by field (expert count, top_k, quant, port, acceptance metrics, etc.).
+- **Overrides and rejection** (test_registry.py:74–81): `from_pretrained(..., prerouter=None, lora="")` takes effect; unknown fields raise `TypeError`.
+- **Adapter contract** (test_registry.py:89–92): assert that every `MODEL_REGISTRY` entry exposes `Config` / `build_model` / `build_engine`.
+- **Path resolution** (test_moe_spec.py): the `keys` template, `block_of` numeric-field indexing, the `layer_of` default derived from `block_path`, and `bundle_projs` switching with the layout.
+- **Math parity**: routing math must match the vendored model bit-for-bit (pinned by parity tests in `moe/routing.py`); if your model introduces a new routing kind, add the corresponding comparison.
 
-## 完整最小骨架（对照 edge0-35b）
+## Complete minimal skeleton (modeled on edge0-35b)
 
 ```python
 # src/edge0/models/my_model/__init__.py
@@ -183,25 +145,25 @@ class MyConfig(ModelConfig):
                 block_path="model.layers.{layer}.mlp",
                 layer_path="model.layers.{layer}",
             ),
-            options=LayerOptions.staged_k4(),  # 你的档位用 staged_k4 / staged_k8 等预设
+            options=LayerOptions.staged_k4(),  # use your tier's preset, e.g. staged_k4 / staged_k8
             prerouter=...,
         )
 
 def build_model(model_dir=None, **overrides):
     cfg = MyConfig.from_pretrained(model_dir, **overrides)
-    return ...  # load_installed 或你的装配路径
+    return ...  # load_installed or your own assembly path
 
 def build_engine(model_dir=None, **overrides):
     cfg = MyConfig.from_pretrained(model_dir, **overrides)
-    return ...  # 你的引擎
+    return ...  # your engine
 
 register_model("my-model", sys.modules[__name__])
 Config = MyConfig
 ```
 
-## 参考
+## References
 
-- `src/edge0/registry.py` —— 注册表 + Auto 三件套
-- `src/edge0/models/base.py` —— `ModelConfig` / `from_pretrained` / artifact 解析
-- `src/edge0/models/edge0_35b/__init__.py`、`edge0_10b/__init__.py` —— 两个活例子
-- `tests/test_registry.py`、`tests/test_moe_spec.py` —— 行为示例
+- `src/edge0/registry.py` — the registry + the Auto trio
+- `src/edge0/models/base.py` — `ModelConfig` / `from_pretrained` / artifact resolution
+- `src/edge0/models/edge0_35b/__init__.py`, `edge0_10b/__init__.py` — the two live examples
+- `tests/test_registry.py`, `tests/test_moe_spec.py` — behavior examples

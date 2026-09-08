@@ -49,9 +49,14 @@
 
 - **SSD 专家 offload**：MoE 专家权重从磁盘 mmap 按需流式加载，
   激活集驻留 LRU，长尾专家按层预取 —— 大模型小显存跑得动；
-- **prerouter 路由预判**：前一 token 的隐层状态经轻量头预测下一 token
-  的专家路由，SSD 预取与下一层前向重叠，路由零等待
-  （qwen 系 `start_layer=7`，ling 系同）；
+- **prerouter 路由预判**：MoE 解码的固有瓶颈是「等专家装载」——路由依赖
+  前一层输出，等路由选出专家时，SSD 装载甚至还没开始。edge0 用一个轻量
+  训练头打破这条串行链：基于上一 token 的隐层状态提前一步预测下一 token
+  的专家路由（双移位：层移位 + token 移位），专家装载在 step 边界即提前
+  提交，SSD 读取延迟完全隐藏在前向计算之下（`start_layer=7`）。同模型
+  原生路由 A/B 交替实测（同适配器、同负载）：**最高 +59%**（本测试机）。
+  **存储越慢，收益越大**：该机制消除的正是专家工作集超出常驻容量时占
+  主导的冷读等待，因此收益随模型规模、路由宽度（K）与内存压力增大；
 - **并行 LoRA**：适配器不合并进基模，前向时旁路叠加，
   基模保持只读 mmap、多套适配器共享同一份基模；
 - **数值防护**：per-layer hidden clip（`LING_HIDDEN_CLIP`，默认 1000）
@@ -59,50 +64,67 @@
 
 ## 快速开始
 
-```bash
-# 1) 安装（Python ≥3.10；MLX 后端需 macOS + Apple Silicon）
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+### 1) 安装
 
-# 2) 下载模型：基模 + 训练好的 LoRA/prerouter 适配器在一个目录里
-#    （把 EDGE0_35B_REPO / EDGE0_10B_REPO 设为发布的 Hugging Face 仓库 id）
-.venv/bin/python scripts/fetch_models.py --tier edge0-35b
-.venv/bin/python scripts/fetch_models.py --tier edge0-10b
+```bash
+# Python ≥3.10；MLX 后端需 macOS + Apple Silicon
+python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+```
+
+### 2) 下载模型
+
+两个档位发布在 Hugging Face——每个仓库把基模 checkpoint 与训练好的
+LoRA + prerouter 适配器打包在**同一目录**，一次下载即为可运行的模型：
+
+- [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)（约 23 GB）
+- [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview)（约 4.2 GB）
+
+```bash
+# 用仓库自带脚本（默认即上述两个仓库）：
+.venv/bin/python scripts/fetch_models.py --tier edge0-35b --target-dir models
+.venv/bin/python scripts/fetch_models.py --tier edge0-10b --target-dir models
+
+# 或直接用 CLI：
+.venv/bin/huggingface-cli download Edge0/Edge0-35b-a3b-preview \
+    --local-dir models/edge0-35b
+.venv/bin/huggingface-cli download Edge0/Edge0-10b-a1b-preview \
+    --local-dir models/edge0-10b
+```
+
+下载完成后目录结构：
+
+```
+models/edge0-35b/
+├── config.json, model-*.safetensors, tokenizer 文件   # 基模 checkpoint
+├── lora_edge0_35b.safetensors          # 训练好的 LoRA 适配器
+└── prerouter_edge0_35b.safetensors     # 训练好的 prerouter 头
+```
+
+### 3) 指向模型目录
+
+档位名经环境变量解析到本地目录（放哪由你决定）：
+
+```bash
 export EDGE0_35B_MODEL=$PWD/models/edge0-35b
 export EDGE0_10B_MODEL=$PWD/models/edge0-10b
+```
 
-# 3) 快速演示：指定 tier 名或 checkpoint 目录
+也可以不用环境变量，直接传目录——框架从 checkpoint 的 `config.json`
+自动识别档位：
+
+```bash
+edge0 demo models/edge0-35b
+edge0 serve models/edge0-10b
+```
+
+### 4) 运行
+
+```bash
+# 快速演示
 edge0 demo edge0-35b
-edge0 demo /path/to/qwen35/model
 
-# 4) 启动推理服务（OpenAI 兼容 /v1/chat/completions；模型为位置参数，
-#    checkpoint 类型按 config.json 自动识别）
+# 起服务（OpenAI 兼容 /v1/chat/completions）
 edge0 serve edge0-35b
-```
-
-```bash
-curl http://127.0.0.1:8000/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"messages":[{"role":"user","content":"Hello!"}],"max_tokens":32}'
-
-# 5) 命令行一问一答（用 --max-new 控制长度，加 --show-thinking 打印思考过程）
-edge0 chat edge0-35b --prompt "用一句话介绍流式推理。"
-```
-
-`python -m edge0 ...` 与 `edge0 ...` 完全等价。
-
-如果本机已有 checkpoint，直接传路径即可，tier 按 `config.json` 自动识别：
-
-```bash
-edge0 demo /path/to/model
-edge0 serve /path/to/model
-```
-
-tier 名（`edge0-35b` / `edge0-10b`）通过环境变量解析到本机 checkpoint
-目录：
-
-```bash
-export EDGE0_35B_MODEL=/path/to/qwen35/model
-export EDGE0_10B_MODEL=/path/to/ling/model
 ```
 
 ### Python API

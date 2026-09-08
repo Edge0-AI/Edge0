@@ -1,109 +1,84 @@
-# SSD 流式专家层（streaming）
+# SSD Streaming Expert Layers (streaming)
 
-## 问题
+## The Problem
 
-Qwen3.5-MoE 有 40 层 × 256 专家，每层 MoE 权重约 310MB（4-bit 量化后）——全量
-常驻远超 Apple Silicon 统一内存预算。edge0 的方案：**权重留在 SSD，按需 mmap
-加载进 GPU，用 LRU + 预取 + 固定槽把「每步只动几十 MB」变成「每步几乎不动」**。
+Qwen3.5-MoE has 40 layers × 256 experts, with each layer's MoE weights around 310MB after 4-bit quantization — keeping them all resident far exceeds the Apple Silicon unified-memory budget. edge0's approach: **keep the weights on SSD, mmap them into the GPU on demand, and use LRU + prefetch + fixed slots to turn "tens of MB moved per step" into "almost nothing moved per step"**.
 
-核心部件（`edge0/streaming/`）：
+Core components (`edge0/streaming/`):
 
-| 模块 | 职责 |
+| Module | Responsibility |
 |---|---|
-| `mmap.py` | `SafetensorsMmap`：单文件 byte-range mmap，按张量名惰性读原始字节 |
-| `cache.py` | `SharedExpertCache`：跨层共享的 LRU，容量 `cache_slots` |
-| `layer.py` | `StreamingSwitchGLU`：每层一个实例，持有全部执行路径与状态 |
-| `options.py` | `LayerOptions`：typed 配置（部署期 env 旋钮的替代品） |
+| `mmap.py` | `SafetensorsMmap`: single-file byte-range mmap, lazily reads raw bytes by tensor name |
+| `cache.py` | `SharedExpertCache`: cross-layer shared LRU with capacity `cache_slots` |
+| `layer.py` | `StreamingSwitchGLU`: one instance per layer, holding all execution paths and state |
+| `options.py` | `LayerOptions`: typed configuration (a replacement for deployment-time env knobs) |
 
-## 数学契约（必须与 vendored 模型 bit 级一致）
+## Math Contract (must be bit-identical to the vendored model)
 
-MoE 块数学为 `down(silu(gate(x)) * up(x))`，即
-`_swiglu(up, gate) = nn.silu(gate) * up`。**bundle 顺序直接对应数学参数顺序**，
-权重栈不需要任何重排：
+The MoE block math is `down(silu(gate(x)) * up(x))`, i.e. `_swiglu(up, gate) = nn.silu(gate) * up`. **The bundle order maps directly onto the order of the math parameters**, so the weight stack needs no reordering:
 
-- **separate（未融合）**：bundle 顺序为
-  `("up_proj", "gate_proj", "down_proj")` —— up 在前！堆栈后的 wargs 顺序与
-  `_swiglu(up, gate)` 签名逐位对应：`(w_u, s_u, b_u, w_g, s_g, b_g, w_d, s_d, b_d)`。
-- **fused gate+up**：bundle 顺序为 `("gate_up_proj", "down_proj")`；gate_up 行内
-  布局为 **gate 行在上、up 行在下**（沿输出特征轴拼接），`mx.split(x_gu, 2, -1)`
-  得到 `(gate, up)`。
+- **separate (unfused)**: the bundle order is `("up_proj", "gate_proj", "down_proj")` — up first! After stacking, the wargs order matches the `_swiglu(up, gate)` signature position by position: `(w_u, s_u, b_u, w_g, s_g, b_g, w_d, s_d, b_d)`.
+- **fused gate+up**: the bundle order is `("gate_up_proj", "down_proj")`; the row layout of gate_up is **gate rows on top, up rows below** (concatenated along the output feature axis), and `mx.split(x_gu, 2, -1)` yields `(gate, up)`.
 
-任何一处重排（如历史上把 bundle 写成 gate-first）都会在
-`tests/test_streaming_math.py` 的参考对比中暴露（相对 L2 从 ≈0.2% 跳到 ≈100%）。
+Any reordering (e.g. the historical gate-first bundle order) is exposed by the reference comparison in `tests/test_streaming_math.py` (relative L2 jumps from ≈0.2% to ≈100%).
 
-### 量化布局
+### Quantized Layout
 
-- `switch_mlp.<proj>.weight`：打包 u32 `[E, out, in/8]`（4-bit affine，组 64）；
-- `scales` / `biases`：bf16 位型，按组 `[E, out, in/64]`；
-- 内核：`backends.quant.gather_qmm`（MLX 量化 gather matmul），dequant 后 bf16
-  内部精度（相对 L2 ≈0.24%，测试容差按此标定）。
+- `switch_mlp.<proj>.weight`: packed u32 `[E, out, in/8]` (4-bit affine, group size 64);
+- `scales` / `biases`: bf16 dtype, per group `[E, out, in/64]`;
+- Kernel: `backends.quant.gather_qmm` (MLX quantized gather matmul), with bf16 internal precision after dequantization (relative L2 ≈0.24%; the test tolerance is calibrated against this).
 
-## 执行路径（由快到全）
+## Execution Paths (from fast to full)
 
-### 1. exact（on-demand bundle）
+### 1. exact (on-demand bundle)
 
-路由索引去重 → `_get_bundles(unique)` 逐专家构建（从 LRU 或 mmap 读）→ 堆栈 →
-`gather_qmm`。最慢但最通用，是其他路径的正确性基准。
+Deduplicate the routing indices → `_get_bundles(unique)` builds per expert (read from the LRU or mmap) → stack → `gather_qmm`. The slowest but most general path; it is the correctness baseline for the other paths.
 
-### 2. staged（固定槽双缓冲，decode 主力）
+### 2. staged (fixed-slot double buffering, the decode workhorse)
 
-- `staged_n` 个固定槽位 + 溢出零槽；
-- 路由索引 → `mx.take` 槽位表，**索引不离开 GPU**（每层每步零 host 同步）；
-- `staged_sync`：step 边界同步填充；`asm_cache`：按专家集缓存槽表与堆栈图节点，
-  重复集不重建；`incr_stack`：把 9 个 `mx.stack` 节点换成增量栈的
-  `put_along_axis` 行写入（staged 期间从 LRU 去重，`incr_writeback` 归还）；
-- 缺专家映射到溢出零槽、贡献丢弃；槽未就绪时回退 exact 路径。
+- `staged_n` fixed slots plus an overflow zero slot;
+- Routing indices → `mx.take` on the slot table, **indices never leave the GPU** (zero host synchronization per layer per step);
+- `staged_sync`: fill synchronized at step boundaries; `asm_cache`: caches the slot table and the stacked graph nodes per expert set, so repeated sets are not rebuilt; `incr_stack`: replaces the 9 `mx.stack` nodes with incremental-stack `put_along_axis` row writes (deduplicated against the LRU while staged is active, and returned by `incr_writeback`);
+- Missing experts map to the overflow zero slot and their contribution is dropped; if a slot is not ready, the path falls back to exact.
 
-### 3. hot（LRU 常驻 top-N）
+### 3. hot (LRU-resident top-N)
 
-- 每层按衰减计数 `_hot_counts` 选 top-N（`hot_per_layer`），LRU 命中的专家以
-  常驻堆栈形式存在（`load_hot_layer` / `materialize_hot`，滑动窗口
-  `hot_window` 控制同时驻留的层数）；
-- 命中走堆栈 gather，未命中走 exact 并 scatter-add。
+- Each layer picks its top-N (`hot_per_layer`) from the decayed counts `_hot_counts`; experts that hit in the LRU live as a resident stack (`load_hot_layer` / `materialize_hot`, with the sliding window `hot_window` controlling how many layers stay resident at once);
+- Hits take the stacked gather; misses take exact with a scatter-add.
 
-### 4. full-layer（E3b 整层装载，prefill 主力）
+### 4. full-layer (whole-layer loading for E3b, the prefill workhorse)
 
-- `load_full_layer()`：整层 9 个张量直接装入（checkpoint 本来就是逐层堆叠的
-  单张量，mmap 位型转换 ≈9ms/层，CPU 装载隐藏在上一层的 GPU 执行下）；
-- `_gather_sort` 把 batch 并入 token 维 → 排序 gather → `_scatter_unsort`
-  反排序并恢复 batch 维；
-- `prefill_full_layers` 只对前导层整层装载（qwen 为 12 层），其余层走 hot/exact；
-- 用后 `clear_full_layer()` 释放 GPU 副本，页缓存承担热数据。
+- `load_full_layer()`: loads the layer's 9 tensors directly (the checkpoint already stores each layer as a single stacked tensor; the mmap dtype conversion costs ≈9ms per layer, and the CPU load is hidden under the previous layer's GPU execution);
+- `_gather_sort` folds the batch into the token dimension → sorted gather → `_scatter_unsort` un-sorts and restores the batch dimension;
+- `prefill_full_layers` loads whole layers only for the leading layers (12 for Qwen); the remaining layers go through hot/exact;
+- After use, `clear_full_layer()` frees the GPU copy, and the page cache carries the hot data.
 
-## 排序与编译
+## Sorting and Compilation
 
-`use_compile` 时，staged/exact 路径包进 `mx.compile`：
+With `use_compile`, the staged/exact paths are wrapped in `mx.compile`:
 
-- 集合规模 ≥64 时用排序变体 `_moe_math_sorted`（`_gather_sort` 预处理 +
-  排序 gather + `_scatter_unsort` 还原）；
-- 否则用直接 gather 变体 `_moe_math`；
-- 两者数学等价，测试对每条路径都做了 exact 对比。
+- set sizes ≥64 use the sorted variant `_moe_math_sorted` (`_gather_sort` preprocessing + sorted gather + `_scatter_unsort` restore);
+- otherwise the direct gather variant `_moe_math` is used;
+- the two are mathematically equivalent, and the tests compare every path against exact.
 
-## 关键选项（`LayerOptions`）
+## Key Options (`LayerOptions`)
 
-| 字段 | 含义 | 默认 |
+| Field | Meaning | Default |
 |---|---|---|
-| `staged` / `staged_n` / `staged_trigger` | 固定槽 decode 开关/槽数/触发 top-k | False / 8 / 8 |
-| `staged_replace` | staged 集**取代**路由（配合 prerouter，零 drop） | False |
-| `staged_sync` / `asm_cache` / `incr_stack` / `incr_writeback` | 填充同步 / 图节点缓存 / 增量栈 / 归还 LRU | True / True / False / False |
-| `hot_per_layer` / `hot_update_interval` / `hot_decay` / `pin_bonus` | 热专家驻留数与刷新 | 0 / 4 / 0.75 / 2.0 |
-| `cache_slots` / `prefetch_cap` | LRU 容量 / 预取缓冲 | 64 / 48 |
-| `load_threads` / `prefetch_threads` | 构建 / 预取线程数 | 8 / 4 |
-| `full_layer_prefill` / `prefill_full_layers` | 整层装载 prefill / 前导层数 | False / 0 |
-| `prefill_hot` | prefill 期 hot 栈规模 | 0 |
-| `use_compile` / `top_k` | 编译包装 / 路由 top-k 覆盖 | True / None |
+| `staged` / `staged_n` / `staged_trigger` | Fixed-slot decode toggle / slot count / trigger top-k | False / 8 / 8 |
+| `staged_replace` | The staged set **replaces** routing (paired with the prerouter; zero drops) | False |
+| `staged_sync` / `asm_cache` / `incr_stack` / `incr_writeback` | Fill synchronization / graph-node cache / incremental stack / writeback to the LRU | True / True / False / False |
+| `hot_per_layer` / `hot_update_interval` / `hot_decay` / `pin_bonus` | Hot-expert residency count and refresh | 0 / 4 / 0.75 / 2.0 |
+| `cache_slots` / `prefetch_cap` | LRU capacity / prefetch buffer | 64 / 48 |
+| `load_threads` / `prefetch_threads` | Build / prefetch thread counts | 8 / 4 |
+| `full_layer_prefill` / `prefill_full_layers` | Whole-layer prefill loading / number of leading layers | False / 0 |
+| `prefill_hot` | hot stack size during prefill | 0 |
+| `use_compile` / `top_k` | compile wrapping / routing top-k override | True / None |
 
-预设：`staged_k4()`（edge0-35b：staged 4 槽 + hot 32 + 整层 prefill 12 层）、
-`staged_k8()`（edge0-10b：staged 8 槽，无 hot 驻留）。两档共用
-`cache_slots=64`。
+Presets: `staged_k4()` (edge0-35b: staged with 4 slots + 32 hot + whole-layer prefill over 12 layers), `staged_k8()` (edge0-10b: staged with 8 slots, no hot residency). Both tiers share `cache_slots=64`.
 
-## 为什么「整层」加载也快
+## Why Whole-Layer Loading Is Also Fast
 
-checkpoint 的 MoE 权重本来就是逐层堆叠的单张量（`[256, 512, 256]` 这类），
-整层装载是 9 次直接读 + 位型 view，不是 256×9 次逐专家构建。CPU 装载与 GPU
-执行通过 `before_layer_cb` + `async_eval_per_layer` 流水线重叠。
+The MoE weights in the checkpoint are already single per-layer stacked tensors (such as `[256, 512, 256]`), so a whole-layer load is 9 direct reads + a dtype view, not 256×9 per-expert builds. CPU loading and GPU execution are overlapped through the `before_layer_cb` + `async_eval_per_layer` pipeline.
 
-> 注意 fused gate_up 的整层装载必须**逐专家交错** gate/up 行（与 `_build`
-> 的逐专家拼接一致）；把两个 `[E, ...]` 张量整体拼接再 reshape 会产生行错位
-> （早期版本的真实 bug，已由 `test_full_layer_prefill_matches_exact[fused]`
-> 钉死）。
+> Note that a fused gate_up whole-layer load must **interleave the gate/up rows per expert** (consistent with the per-expert concatenation in `_build`); concatenating the two `[E, ...]` tensors wholesale and then reshaping produces misaligned rows (a real bug in an early version, now pinned down by `test_full_layer_prefill_matches_exact[fused]`).

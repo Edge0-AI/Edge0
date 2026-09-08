@@ -1,64 +1,63 @@
 # edge0-35b
 
-edge0 平台的第一档主力模型：基于 Qwen3.5-MoE（K=4 档）的 35B 级稀疏混合专家模型。通过流式专家加载（streaming experts）、训练前置路由（prerouter）与 LoRA 适配，把整份权重量化后驻留在磁盘、按需装载，在单台设备上即可服务。
+The flagship first tier of the edge0 platform: a 35B-class sparse mixture-of-experts model built on Qwen3.5-MoE (K=4 tier). Through streaming expert loading, a trained prerouter, and LoRA adaptation, the full quantized weight set resides on disk and is loaded on demand, so the model can be served on a single device.
 
-性能档案基于当前发布 adapter 版本的基准实测，默认由 `Qwen35Config`（`src/edge0/models/edge0_35b/__init__.py`）固定。
+The performance profile is based on benchmarks of the current release adapter version and is pinned by default in `Qwen35Config` (`src/edge0/models/edge0_35b/__init__.py`).
 
-## 模型档案
+## Model profile
 
-| 项目 | 值 |
+| Item | Value |
 | --- | --- |
-| 参数量级 | 35B 级 |
-| 层数 | 40 |
-| 专家数 | 256（路由专家）+ 1 常驻共享专家 |
-| top_k（K） | 4 |
-| 路由方式 | `SOFTMAX_TOPK`（softmax → top-k → renormalize，`norm_topk_prob=True`） |
-| 专家量化 | 4-bit affine，group 64 |
-| 权重布局 | `WeightLayout.SEPARATE`（gate/up/down 分离张量堆叠） |
-| 专家权重路径 | `language_model.model.layers.N.mlp.switch_mlp` |
-| 前置路由（prerouter） | 33 个头（owners 6..38），start_layer 7，hidden 512，fp16 |
-| 解码调用方式 | `patch_call=True`，跨 token 分阶段解码，K=4 |
+| Parameter scale | 35B-class |
+| Number of layers | 40 |
+| Number of experts | 256 routed experts + 1 always-resident shared expert |
+| top_k (K) | 4 |
+| Routing | `SOFTMAX_TOPK` (softmax → top-k → renormalize, `norm_topk_prob=True`) |
+| Expert quantization | 4-bit affine, group 64 |
+| Weight layout | `WeightLayout.SEPARATE` (gate/up/down stacked as separate tensors) |
+| Expert weight path | `language_model.model.layers.N.mlp.switch_mlp` |
+| Prerouter | 33 heads (owners 6..38), start_layer 7, hidden 512, fp16 |
+| Decode invocation | `patch_call=True`, staged decode across tokens, K=4 |
 | LoRA | `r=16, alpha=32.0` |
-| 预填分块 | 2048 |
-| 热窗 | 4 |
-| 流式预取历史 | 开（`prefetch_history=True`） |
-| 服务端口 | 8085 |
-| 实测吞吐 | 14.9–17.7 tok/s（M4 Pro） |
-| 实测峰值激活内存 | ≈ 3.3 GB |
+| Prefill chunk | 2048 |
+| Hot window | 4 |
+| Streaming prefetch history | on (`prefetch_history=True`) |
+| Serving port | 8085 |
+| Measured throughput | 14.9–17.7 tok/s (M4 Pro) |
+| Measured peak activation memory | ≈ 3.3 GB |
 
-> 说明：数值全部取自 `Qwen35Config._defaults()` 与 `LayerOptions.staged_k4()`。头部数量来自显式 `owners` 列表（6 到 38，共 33 个头）；`feature_topk="executed"` 表示喂入头的 top-k 特征即解码时实际路由的集合。
+> Note: all values are taken from `Qwen35Config._defaults()` and `LayerOptions.staged_k4()`. The head count comes from the explicit `owners` list (6 through 38, 33 heads in total); `feature_topk="executed"` means the top-k features fed to the heads are exactly the set actually routed at decode time.
 
-## 分阶段解码（staged decode）
+## Staged decode
 
-该档使用 `LayerOptions.staged_k4()` 预设：
+This tier uses the `LayerOptions.staged_k4()` preset:
 
-- 固定槽分阶段解码（`staged=True`，`staged_n=4`，`staged_sync=True`），逐层无 host 同步。
-- `staged_replace=False`：路由由训练好的 prerouter 头提供（MoE 块经由 prerouter logits 路由），因此分阶段集合与路由集合完全一致，槽表映射零丢弃。
-- 按需 prefill（`full_layer_prefill=False`）：prefill 与解码走同一条按需
-  专家装载路径（生产档 `QWEN_PREFILL_FULL=0` 对齐），峰值内存与部署一致；
-- 常驻热专家钉住关闭（`hot_per_layer=0`，生产档 `QWEN_HOT=0` 对齐）。
+- Fixed-slot staged decode (`staged=True`, `staged_n=4`, `staged_sync=True`), with no per-layer host synchronization.
+- `staged_replace=False`: routing is supplied by the trained prerouter heads (the MoE blocks route via prerouter logits), so the staged set and the routed set are exactly identical and the slot-table mapping discards nothing.
+- On-demand prefill (`full_layer_prefill=False`): prefill and decode take the same on-demand expert loading path (aligned with the production profile's `QWEN_PREFILL_FULL=0`), so peak memory matches deployment;
+- Always-resident hot-expert pinning is off (`hot_per_layer=0`, aligned with the production profile's `QWEN_HOT=0`).
 
-## 使用方式
+## Usage
 
-### CLI 起服务
+### Serving via the CLI
 
 ```bash
 edge0 serve /path/to/checkpoint --host 127.0.0.1 --port 8085
 ```
 
-可选参数：
+Optional arguments:
 
-- `--no-prerouter`：禁用前置路由（`prerouter=None`）。
-- `--no-lora`：禁用 LoRA（`lora=""`）。
-- `--flask`：改用 Flask 传输（需要安装 flask，支持 SSE 流式）。
+- `--no-prerouter`: disable the prerouter (`prerouter=None`).
+- `--no-lora`: disable LoRA (`lora=""`).
+- `--flask`: switch to the Flask transport (requires flask to be installed; supports SSE streaming).
 
-单轮对话（终端）可改用 `chat`：
+For single-turn chat in the terminal, use `chat` instead:
 
 ```bash
-edge0 chat --name edge0-35b --model-dir /path/to/checkpoint --prompt "你好"
+edge0 chat --name edge0-35b --model-dir /path/to/checkpoint --prompt "Hello"
 ```
 
-查看该档默认档案：
+To view this tier's default profile:
 
 ```bash
 edge0 models
@@ -69,48 +68,48 @@ edge0 models
 ```python
 from edge0 import AutoEngine, AutoModel, AutoConfig
 
-# 直接可生成的引擎
+# an engine ready to generate
 engine = AutoEngine.from_pretrained(
     "/path/to/checkpoint", name="edge0-35b",
 )
-ids = engine.generate([248044])          # 内部使用配置里的默认采样
+ids = engine.generate([248044])          # uses the default sampling from the config
 text = engine._tok.decode(ids)
 engine.close()
 
-# 仅加载权重（流式专家 + prerouter + LoRA 已装配）
+# weights only (streaming experts + prerouter + LoRA installed)
 model = AutoModel.from_pretrained("/path/to/checkpoint", name="edge0-35b")
 
-# 仅拿配置
+# config only
 cfg = AutoConfig.from_pretrained("/path/to/checkpoint", name="edge0-35b")
 ```
 
-`AutoEngine` / `AutoModel` / `AutoConfig` 三者也可省略 `name`，从 checkpoint 的 `config.json` 的 `model_type` 或目录 basename 自动解析（见 `src/edge0/registry.py`）。
+`AutoEngine` / `AutoModel` / `AutoConfig` can all omit `name` and resolve automatically from the `model_type` in the checkpoint's `config.json` or from the directory basename (see `src/edge0/registry.py`).
 
 ## HTTP API
 
-`edge0 serve` 暴露一个 OpenAI 兼容的单模型端点。引擎一次独占一个请求，生成以 FIFO 队列串行执行。
+`edge0 serve` exposes a single OpenAI-compatible model endpoint. The engine serves one exclusive request at a time; generation is serialized through a FIFO queue.
 
-| 方法 | 路径 | 说明 |
+| Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/healthz` | 健康检查 |
-| `GET` | `/v1/models` | 列出已加载模型 |
-| `POST` | `/v1/chat/completions` | 对话补全（支持 `stream`） |
-| `POST` | `/v1/completions` | 不支持，返回 400 |
+| `GET` | `/healthz` | Health check |
+| `GET` | `/v1/models` | List loaded models |
+| `POST` | `/v1/chat/completions` | Chat completions (supports `stream`) |
+| `POST` | `/v1/completions` | Not supported; returns 400 |
 
-### 非流式对话
+### Non-streaming chat
 
 ```bash
 curl -s http://127.0.0.1:8085/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "edge0-35b",
-    "messages": [{"role": "user", "content": "介绍你自己"}],
+    "messages": [{"role": "user", "content": "Introduce yourself"}],
     "temperature": 0.6,
     "max_tokens": 256
   }'
 ```
 
-响应字段（非流式）：
+Response fields (non-streaming):
 
 ```json
 {
@@ -127,25 +126,25 @@ curl -s http://127.0.0.1:8085/v1/chat/completions \
 }
 ```
 
-请求可选字段：`model`、`messages`（含 `role`/`content`，content 支持多段文本自动拼接）、`temperature`、`top_p`、`top_k`、`max_tokens`、`seed`、`stream`。
+Optional request fields: `model`, `messages` (with `role`/`content`; content supports multiple text segments that are concatenated automatically), `temperature`, `top_p`, `top_k`, `max_tokens`, `seed`, `stream`.
 
-### 流式对话（需 Flask）
+### Streaming chat (requires Flask)
 
 ```bash
 curl -N http://127.0.0.1:8085/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "edge0-35b",
-    "messages": [{"role": "user", "content": "数到五"}],
+    "messages": [{"role": "user", "content": "Count to five"}],
     "stream": true
   }'
 ```
 
-每个 token 输出一段 `data: {"object":"chat.completion.chunk", ...}` SSE 事件，结束以 `data: [DONE]` 收尾。
+Each token emits one `data: {"object":"chat.completion.chunk", ...}` SSE event, and the stream ends with `data: [DONE]`.
 
-## 配置覆盖
+## Configuration overrides
 
-`from_pretrained` 支持对任意公开字段做覆盖（未知字段会抛 `TypeError`）。
+`from_pretrained` supports overriding any public field (unknown fields raise a `TypeError`).
 
 ```python
 from edge0 import AutoEngine
@@ -153,12 +152,12 @@ from edge0 import AutoEngine
 engine = AutoEngine.from_pretrained(
     "/path/to/checkpoint",
     name="edge0-35b",
-    port=9090,                    # 覆盖默认端口 8085
-    target_tok_s=14.0,            # 覆盖验收吞吐目标
-    prerouter=None,               # 关闭前置路由
-    lora="",                      # 关闭 LoRA
-    prefill_chunk=1024,           # 缩小预填分块
+    port=9090,                    # override the default port 8085
+    target_tok_s=14.0,            # override the acceptance throughput target
+    prerouter=None,               # disable the prerouter
+    lora="",                      # disable LoRA
+    prefill_chunk=1024,           # smaller prefill chunk
 )
 ```
 
-CLI 里对应的覆盖是 `--no-prerouter` / `--no-lora`（见 `src/edge0/cli.py` 的 `_engine_kwargs`）。引擎参数覆盖请直接走 `Qwen35Config.from_pretrained(model_dir, **overrides)`。
+The corresponding CLI overrides are `--no-prerouter` / `--no-lora` (see `_engine_kwargs` in `src/edge0/cli.py`). To override engine parameters, call `Qwen35Config.from_pretrained(model_dir, **overrides)` directly.

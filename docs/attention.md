@@ -1,19 +1,14 @@
-# 注意力规格（AttentionSpec）
+# Attention Specification (`AttentionSpec`)
 
-`edge0` 不重新实现注意力内核：具体的序列混合计算由 **vendored 基础模型**携带
-（`edge0.backends.mlx._impl` 中的 GQA / GatedDeltaNet 对应 edge0-35b，
-MLA / DeltaNet 对应 edge0-10b）。注意力内核属于**后端模型资产**，不属于框架。
+`edge0` does not re-implement attention kernels: the concrete sequence-mixing computation is carried by the **vendored base model** (GQA / GatedDeltaNet in `edge0.backends.mlx._impl` for edge0-35b; MLA / DeltaNet for edge0-10b). Attention kernels are **backend model assets**, not part of the framework.
 
-那为什么还要一个 `AttentionSpec`？因为框架需要在**不依赖具体实现**的情况下
-**审视（introspect）**一个模型：缓存尺寸、层角色、文档、未来的内核适配。
-`AttentionSpec` 就是这层「注意力分类学」的载体。本文档说明它是什么、字段语义、
-引擎如何使用，以及为什么单独抽象（MLA/MHA 的差异）。
+So why have an `AttentionSpec` at all? Because the framework needs to **introspect** a model **without depending on a concrete implementation**: cache sizing, layer roles, documentation, and future kernel adaptation. `AttentionSpec` is the carrier for this "attention taxonomy" layer. This document explains what it is, the field semantics, how the engine uses it, and why it is a separate abstraction (the MLA/MHA differences).
 
-源码：`src/edge0/attention/spec.py`。
+Source: `src/edge0/attention/spec.py`.
 
-## 设计动机
+## Design Motivation
 
-模块头部的 docstring 明确了边界：
+The docstring at the top of the module draws the boundary explicitly:
 
 ```
 edge0 does not re-implement attention kernels: the vendored base model
@@ -24,103 +19,87 @@ sizing, layer roles, documentation, and future kernels — without knowing
 the concrete implementation.
 ```
 
-新增一种注意力类型 = 一个新的 `AttentionKind` 成员 + 一份 `AttentionSpec` 描述 +
-一个内核实现（在 vendored 基础模型或某个后端的 `_impl` 模块里）。
+Adding a new attention type = a new `AttentionKind` member + an `AttentionSpec` description + a kernel implementation (in the vendored base model or in a backend's `_impl` module).
 
-## 注意力种类：`AttentionKind`
+## Attention Kinds: `AttentionKind`
 
-`AttentionKind` 是 `str` 枚举，标识 edge0 支持的注意力 / 序列混合家族。
+`AttentionKind` is a `str` enum identifying the attention / sequence-mixing families edge0 supports.
 
-| 成员 | 值 | 含义 |
+| Member | Value | Meaning |
 | --- | --- | --- |
-| `GQA` | `"gqa"` | 分组查询注意力，softmax + KV cache |
-| `MLA` | `"mla"` | 多头潜在注意力（压缩 KV） |
-| `DELTANET` | `"deltanet"` | DeltaNet 线性注意力（门控 delta 规则，无 KV cache） |
-| `GATED_DELTANET` | `"gated_deltanet"` | GatedDeltaNet（带衰减的门控 delta / 线性注意力） |
-| `DENSE_MLP` | `"dense_mlp"` | 无序列混合（纯 MLP 层） |
+| `GQA` | `"gqa"` | Grouped-query attention, softmax + KV cache |
+| `MLA` | `"mla"` | Multi-head latent attention (compressed KV) |
+| `DELTANET` | `"deltanet"` | DeltaNet linear attention (gated delta rule, no KV cache) |
+| `GATED_DELTANET` | `"gated_deltanet"` | GatedDeltaNet (gated delta / linear attention with decay) |
+| `DENSE_MLP` | `"dense_mlp"` | No sequence mixing (pure MLP layer) |
 
-`DENSE_MLP` 的存在说明：一个模型的某些层可能根本没有注意力块（例如 edge0-10b 的
-layer 0 是 dense 层），分类学要能显式表达「这一层不做序列混合」。
+The existence of `DENSE_MLP` says that some layers of a model may have no attention block at all (for example, layer 0 of edge0-10b is a dense layer), and the taxonomy must be able to state explicitly that "this layer does no sequence mixing".
 
-## 规格：`AttentionSpec`
+## The Spec: `AttentionSpec`
 
-`AttentionSpec` 是一个 `frozen=True` 的 dataclass，描述**一个层**的序列混合块。
+`AttentionSpec` is a `frozen=True` dataclass describing the sequence-mixing block of **a single layer**.
 
-| 字段 | 类型 | 默认值 | 语义 |
+| Field | Type | Default | Semantics |
 | --- | --- | --- | --- |
-| `kind` | `AttentionKind` | （必填） | 注意力家族 |
-| `layer_indices` | `tuple[int, ...]` | （必填） | 该规格覆盖的 0 基层号 |
-| `num_heads` | `int \| None` | `None` | 头数（仅 GQA/MLA；否则为 `None`） |
-| `num_kv_heads` | `int \| None` | `None` | KV 头数（仅 GQA/MLA） |
-| `head_dim` | `int \| None` | `None` | 每头维度（仅 GQA/MLA） |
-| `cache` | `bool` | `True` | 该块是否维护 KV 式缓存（线性注意力层为 `False`） |
-| `notes` | `str` | `""` | 自由说明（例如混合调度计划） |
+| `kind` | `AttentionKind` | (required) | Attention family |
+| `layer_indices` | `tuple[int, ...]` | (required) | 0-based layer indices covered by this spec |
+| `num_heads` | `int \| None` | `None` | Number of heads (GQA/MLA only; otherwise `None`) |
+| `num_kv_heads` | `int \| None` | `None` | Number of KV heads (GQA/MLA only) |
+| `head_dim` | `int \| None` | `None` | Per-head dimension (GQA/MLA only) |
+| `cache` | `bool` | `True` | Whether this block maintains a KV-style cache (`False` for linear-attention layers) |
+| `notes` | `str` | `""` | Free-form notes (e.g. a hybrid scheduling plan) |
 
-要点：
+Key points:
 
-- `cache` 字段区分了「softmax 注意力（要 KV cache）」与「线性注意力（无 KV cache）」，
-  这是缓存尺寸计算的关键分叉。
-- `layer_indices` 是一个元组而非单层，因为**一个规格可以覆盖多个层**（例如一个
-  GatedDeltaNet 规格可以描述连续的若干层），也便于表达混合调度。
-- `__repr__` 被设计为**紧凑单行**，便于打日志 / 文档，例如：
-  `AttentionSpec(gated_deltanet, layers=0..19, cache=False)`。
+- The `cache` field distinguishes "softmax attention (needs a KV cache)" from "linear attention (no KV cache)" — the key fork in cache-size computation.
+- `layer_indices` is a tuple rather than a single layer because **one spec can cover multiple layers** (for example, a single GatedDeltaNet spec can describe a run of consecutive layers), and it also makes hybrid scheduling easy to express.
+- `__repr__` is designed to be a **compact single line**, convenient for logging / documentation, e.g. `AttentionSpec(gated_deltanet, layers=0..19, cache=False)`.
 
-### 汇总：`summarize()`
+### Summary: `summarize()`
 
 ```python
 def summarize(specs: list[AttentionSpec]) -> str
 ```
 
-把一份规格列表压缩成一行人类可读摘要，例如用于 CLI 启动横幅：
+Compresses a list of specs into a one-line human-readable summary, e.g. for the CLI startup banner:
 
 ```
 gated_deltanetx20, dense_mlpx1
 ```
 
-即 `{kind.value}x{len(layer_indices)}` 的逗号拼接。文档标注它用于 CLI banner。
+That is, comma-joined `{kind.value}x{len(layer_indices)}`. The documentation notes it is used for the CLI banner.
 
-## 引擎如何使用
+## How the Engine Uses It
 
-当前源码里，`AttentionSpec` 及其辅助函数**尚未被任何引擎 / 模型代码引用**——它是一份
-「先定义、后接线」的分类学模块（`grep` 全仓仅命中 `attention/spec.py` 自身）。
-这一点需要诚实标注：`AttentionKind` / `AttentionSpec` / `summarize` 目前的消费方只有
-本模块，属于面向未来的框架设施，其设计意图（缓存尺寸、层角色、文档、未来内核）由
-docstring 与字段定义承载。
+In the current source, `AttentionSpec` and its helpers **are not yet referenced by any engine / model code** — it is a "define first, wire up later" taxonomy module (a repo-wide `grep` only hits `attention/spec.py` itself). This deserves an honest note: the current consumers of `AttentionKind` / `AttentionSpec` / `summarize` are only this module itself; it is forward-looking framework infrastructure whose design intent (cache sizing, layer roles, documentation, future kernels) is carried by the docstring and the field definitions.
 
-即便如此，抽象方向已经明确：
+Even so, the direction of the abstraction is already clear:
 
-- **缓存尺寸**：`cache` 字段让框架无需理解内核细节即可判断该层要不要分配 KV cache、
-  以及（对 GQA/MLA）按 `num_heads` / `num_kv_heads` / `head_dim` 计算尺寸。
-- **层角色**：`kind` 把「softmax 注意力 / 线性注意力 / 无混合」区分开，供调度、文档与
-  性能剖析参考。
-- **未来内核**：新增注意力类型无需改动框架其余部分，只要新加枚举成员 + 规格 + 内核。
+- **Cache sizing**: the `cache` field lets the framework decide — without understanding kernel internals — whether a layer needs a KV cache allocated, and (for GQA/MLA) compute its size from `num_heads` / `num_kv_heads` / `head_dim`.
+- **Layer roles**: `kind` separates "softmax attention / linear attention / no mixing", for scheduling, documentation, and profiling to refer to.
+- **Future kernels**: adding a new attention type requires no changes to the rest of the framework — just a new enum member + spec + kernel.
 
-这与后端抽象（`edge0.backends`）是一致的思想：框架代码只依赖抽象的规格 / 命名空间，
-具体数学由后端或 vendored 模型实现。
+This is the same idea as the backend abstraction (`edge0.backends`): framework code depends only on abstract specs / namespaces, while the concrete math is implemented by a backend or the vendored model.
 
-## 为什么单独抽象（MLA / MHA 差异）
+## Why a Separate Abstraction (MLA / MHA Differences)
 
-与其说「引擎在跑 attention」，不如说引擎在编排「一层序列混合」。把注意力显式抽象出来，
-是为了容纳差异巨大的实现而不改框架：
+Rather than "the engine runs attention", it is more accurate to say the engine orchestrates "a layer of sequence mixing". Making attention an explicit abstraction exists to accommodate wildly different implementations without changing the framework:
 
-| 维度 | MHA / GQA（softmax） | MLA / 线性注意力 |
+| Dimension | MHA / GQA (softmax) | MLA / linear attention |
 | --- | --- | --- |
-| KV 表示 | 完整缓存，随层增长 | 压缩潜在 KV |
-| 缓存需求 | 需要 KV cache（`cache=True`） | 无 / 极简缓存（`cache=False`） |
-| 头几何 | `num_heads` / `num_kv_heads` / `head_dim` 有意义 | 通常不适用（`None`） |
-| 混合层级 | 几乎每层 | 可能只有部分层（含 dense 层） |
+| KV representation | Full cache, growing with layers | Compressed latent KV |
+| Cache requirement | Needs a KV cache (`cache=True`) | None / minimal cache (`cache=False`) |
+| Head geometry | `num_heads` / `num_kv_heads` / `head_dim` are meaningful | Usually not applicable (`None`) |
+| Mixing layer coverage | Nearly every layer | Possibly only some layers (incl. dense layers) |
 
-`AttentionSpec` 用统一的字段集表达这两类差异：`kind` 表达家族，`cache` 表达缓存有无，
-头几何字段仅在 GQA/MLA 下填充，`layer_indices` 表达混合层级与调度。这样框架对
-edge0-35b 的 GatedDeltaNet 与 edge0-10b 的 MLA 可以走同一套审视逻辑，而不必各自
-硬编码。
+`AttentionSpec` expresses both families with a single, uniform field set: `kind` carries the family, `cache` carries cache presence, the head-geometry fields are populated only for GQA/MLA, and `layer_indices` carries the mixing layer coverage and scheduling. The framework can then run the same introspection logic for edge0-35b's GatedDeltaNet and edge0-10b's MLA, without hardcoding each of them.
 
-## 新增一种注意力的步骤
+## Steps to Add a New Attention Type
 
-按模块 docstring，新增 `Xxx` 注意力：
+Per the module docstring, adding an `Xxx` attention:
 
-1. 在 `AttentionKind` 加一个成员；
-2. 写一份 `AttentionSpec` 描述；
-3. 提供内核实现（vendored 基础模型或某后端 `_impl` 模块）。
+1. Add a member to `AttentionKind`;
+2. Write an `AttentionSpec` description;
+3. Provide a kernel implementation (in the vendored base model or a backend's `_impl` module).
 
-以上即 `src/edge0/attention/spec.py` 的全部内容与意图。
+The above is the entire content and intent of `src/edge0/attention/spec.py`.

@@ -60,10 +60,20 @@ are co-located with each checkpoint and load automatically, so
   streamed on demand; the active set stays resident in an LRU and
   long-tail experts are prefetched per layer — large models run in
   modest memory;
-- **Prerouter routing prediction**: a lightweight head predicts the next
-  token's expert routing from the previous token's hidden state, so SSD
-  prefetch overlaps the next forward pass with zero routing latency
-  (`start_layer=7` on both tiers);
+- **Prerouter routing prediction**: MoE decode waits on expert loads —
+  routing depends on the previous layer's output, so by the time the
+  router picks the experts, their SSD load has not even started.  A
+  lightweight trained head breaks this serialization: it predicts the
+  next token's expert routing from the previous token's hidden state
+  one step ahead (double shift: prev-layer + prev-token), so expert
+  loads are submitted at the step boundary and SSD read latency hides
+  completely behind the forward pass (`start_layer=7` on both tiers).
+  Measured A/B decode speedup vs the same model with native routing
+  (identical adapters and load, alternating rounds): **up to +59%** on
+  this test machine.  The slower the storage, the bigger the win: the
+  mechanism removes exactly the cold-read wait that dominates when the
+  expert working set exceeds what stays resident, so the gain scales
+  with model size, routed width (K), and memory pressure;
 - **Parallel LoRA**: adapters are applied as a side path at forward
   time instead of being merged — the base stays a read-only mmap and
   multiple adapter sets share one base;
@@ -73,24 +83,66 @@ are co-located with each checkpoint and load automatically, so
 
 ## Quick start
 
-```bash
-# 1) Install (Python >= 3.10; MLX backend requires macOS + Apple Silicon)
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+### 1) Install
 
-# 2) Get a model: base checkpoint + trained LoRA/prerouter adapters in ONE dir.
-#    (Set EDGE0_35B_REPO / EDGE0_10B_REPO to the published Hugging Face
-#    repo ids, then:)
-.venv/bin/python scripts/fetch_models.py --tier edge0-35b
-.venv/bin/python scripts/fetch_models.py --tier edge0-10b
+```bash
+# Python >= 3.10; the MLX backend requires macOS with Apple Silicon
+python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+```
+
+### 2) Download a model
+
+The two tiers are published on Hugging Face — each repo bundles the
+base checkpoint and the trained LoRA + prerouter adapters in **one
+directory**, so a single download is a ready-to-run model:
+
+- [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) (~23 GB)
+- [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview) (~4.2 GB)
+
+```bash
+# with the repo's helper (defaults to the two repos above):
+.venv/bin/python scripts/fetch_models.py --tier edge0-35b --target-dir models
+.venv/bin/python scripts/fetch_models.py --tier edge0-10b --target-dir models
+
+# or directly with the CLI:
+.venv/bin/huggingface-cli download Edge0/Edge0-35b-a3b-preview     --local-dir models/edge0-35b
+.venv/bin/huggingface-cli download Edge0/Edge0-10b-a1b-preview     --local-dir models/edge0-10b
+```
+
+Either way you end up with a directory like:
+
+```
+models/edge0-35b/
+├── config.json, model-*.safetensors, tokenizer files   # base checkpoint
+├── lora_edge0_35b.safetensors          # trained LoRA adapters
+└── prerouter_edge0_35b.safetensors     # trained prerouter heads
+```
+
+### 3) Point edge0 at it
+
+Tier names resolve to local directories via environment variables
+(where you put the download is up to you):
+
+```bash
 export EDGE0_35B_MODEL=$PWD/models/edge0-35b
 export EDGE0_10B_MODEL=$PWD/models/edge0-10b
+```
 
-# 3) Quick demo: pass a tier name or a checkpoint directory
+Or skip the env vars entirely and pass the directory directly — the
+tier is auto-detected from the checkpoint's `config.json`:
+
+```bash
+edge0 demo models/edge0-35b
+edge0 serve models/edge0-10b
+```
+
+### 4) Run
+
+```bash
+# quick demo
 edge0 demo edge0-35b
-edge0 demo /path/to/qwen35/model
 
-# 4) Serve (OpenAI-compatible /v1/chat/completions; the model is a
-#    positional argument, tier auto-detected from config.json)
+# serve (OpenAI-compatible /v1/chat/completions)
 edge0 serve edge0-35b
 ```
 
@@ -105,22 +157,6 @@ edge0 chat edge0-35b --prompt "Explain streaming inference in one sentence."
 ```
 
 `python -m edge0 ...` is equivalent to `edge0 ...`.
-
-If you already have a checkpoint on disk, just point at it — the tier is
-auto-detected from the checkpoint's `config.json`:
-
-```bash
-edge0 demo /path/to/model
-edge0 serve /path/to/model
-```
-
-Tier names (`edge0-35b` / `edge0-10b`) resolve to local checkpoint
-directories through environment variables:
-
-```bash
-export EDGE0_35B_MODEL=/path/to/qwen35/model
-export EDGE0_10B_MODEL=/path/to/ling/model
-```
 
 ### Python API
 

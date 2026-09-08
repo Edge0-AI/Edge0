@@ -1,64 +1,62 @@
 # edge0-10b
 
-edge0 平台的高吞吐轻量档：基于 Ling 3.0 混合架构（MLA + MoE）的 10B 级稀疏混合专家模型。相比 35b 档牺牲一定的参数量，换来更低的峰值内存与更高的生成速率，适合对延迟与显存敏感的场景。
+The lightweight, high-throughput tier of the edge0 platform: a 10B-class sparse mixture-of-experts model built on the Ling 3.0 hybrid architecture (MLA + MoE). It trades some parameter count versus the 35b tier for lower peak memory and a higher generation rate, making it a good fit for latency- and memory-sensitive scenarios.
 
-性能档案基于当前发布 adapter 版本的基准实测，默认由 `Ling10BConfig`（`src/edge0/models/edge0_10b/__init__.py`）固定。
+The performance profile is based on benchmarks of the current release adapter version and is pinned by default in `Ling10BConfig` (`src/edge0/models/edge0_10b/__init__.py`).
 
-## 模型档案
+## Model profile
 
-| 项目 | 值 |
+| Item | Value |
 | --- | --- |
-| 参数量级 | 10B 级 |
-| 层数 | 24（第 0 层为 dense） |
-| 专家数 | 128（路由专家）+ 1 常驻共享专家 |
-| top_k（K） | 8（原生路由宽度） |
-| 路由方式 | `SIGMOID_GROUP`（sigmoid + group 限制 top-k：`n_group=8, topk_group=4, routed_scaling=2.5, norm_topk_prob=True`） |
-| 专家量化 | 4-bit affine，group 64 |
-| 权重布局 | `WeightLayout.SEPARATE`（gate/up/down 分离张量堆叠） |
-| 专家权重路径 | `model.layers.N.mlp.experts` |
-| 前置路由（prerouter） | 16 个头（显式 owners 7..22），start_layer 7，hidden 512，fp16 |
-| 解码调用方式 | `patch_call=False`（头内建在 `BailingSparseMoE` 中，从 `prerouter_cache` logits 消费） |
+| Parameter scale | 10B-class |
+| Number of layers | 24 (layer 0 is dense) |
+| Number of experts | 128 routed experts + 1 always-resident shared expert |
+| top_k (K) | 8 (native routing width) |
+| Routing | `SIGMOID_GROUP` (sigmoid + group-constrained top-k: `n_group=8, topk_group=4, routed_scaling=2.5, norm_topk_prob=True`) |
+| Expert quantization | 4-bit affine, group 64 |
+| Weight layout | `WeightLayout.SEPARATE` (gate/up/down stacked as separate tensors) |
+| Expert weight path | `model.layers.N.mlp.experts` |
+| Prerouter | 16 heads (explicit owners 7..22), start_layer 7, hidden 512, fp16 |
+| Decode invocation | `patch_call=False` (heads are built into `BailingSparseMoE` and consume logits from `prerouter_cache`) |
 | LoRA | `r=16, alpha=32.0` |
-| 预填分块 | 2048 |
-| 热窗 | 1 |
-| 流式预取历史 | 开（`prefetch_history=True`） |
-| 服务端口 | 8083 |
-| 实测吞吐 | 23.9–25.3 tok/s（M4 Pro） |
-| 实测峰值激活内存 | ≈ 1.0 GB（短上下文）/ 3.1 GB（3.3k token 上下文） |
+| Prefill chunk | 2048 |
+| Hot window | 1 |
+| Streaming prefetch history | on (`prefetch_history=True`) |
+| Serving port | 8083 |
+| Measured throughput | 23.9–25.3 tok/s (M4 Pro) |
+| Measured peak activation memory | ≈ 1.0 GB (short context) / 3.1 GB (3.3k-token context) |
 
-> 说明：数值全部取自 `Ling10BConfig._defaults()` 与 `LayerOptions.prod_k8()`。头部数量来自显式 `owners=range(7, 23)`，共 16 个头（当前发布头部分布，L7 起消费预测，L1–6 走原始 router）；`feature_topk="executed"`。
+> Note: all values are taken from `Ling10BConfig._defaults()` and `LayerOptions.prod_k8()`. The head count comes from the explicit `owners=range(7, 23)` — 16 heads in total (the current release head distribution: prediction is consumed from L7 onward, and L1–6 use the original router); `feature_topk="executed"`.
 
-## 分阶段解码（staged decode）
+## Staged decode
 
-该档使用 `LayerOptions.prod_k8()` 预设（对齐参考部署的生产开关）：
+This tier uses the `LayerOptions.prod_k8()` preset (aligned with the reference deployment's production switches):
 
-- 分阶段解码关闭（`staged=False`，`staged_sync=False`，`staged_n=8`）——部署验证
-  该档上 staged decode 会劣化输出，prerouter 直接驱动下一 token 的专家
-  预取（step 边界 `stage_all` + prefill 尾部各一次）。
-- 专家缓存 `cache_slots=64`，热专家钉住关闭（`hot_per_layer=0`）。
-- 整层 E3b prefill（`full_layer_prefill=True`，`prefill_chunk=2048`）。
+- Staged decode is off (`staged=False`, `staged_sync=False`, `staged_n=8`) — deployment verification showed that staged decode degrades output on this tier, so the prerouter directly drives expert prefetch for the next token (one `stage_all` at the step boundary and one at the prefill tail).
+- Expert cache `cache_slots=64`, hot-expert pinning off (`hot_per_layer=0`).
+- Full-layer E3b prefill (`full_layer_prefill=True`, `prefill_chunk=2048`).
 
-## 使用方式
+## Usage
 
-### CLI 起服务
+### Serving via the CLI
 
 ```bash
 edge0 serve /path/to/checkpoint --host 127.0.0.1 --port 8083
 ```
 
-可选参数：
+Optional arguments:
 
-- `--no-prerouter`：禁用前置路由（`prerouter=None`）。
-- `--no-lora`：禁用 LoRA（`lora=""`）。
-- `--flask`：改用 Flask 传输（需要安装 flask，支持 SSE 流式）。
+- `--no-prerouter`: disable the prerouter (`prerouter=None`).
+- `--no-lora`: disable LoRA (`lora=""`).
+- `--flask`: switch to the Flask transport (requires flask to be installed; supports SSE streaming).
 
-单轮对话（终端）可改用 `chat`：
+For single-turn chat in the terminal, use `chat` instead:
 
 ```bash
-edge0 chat --name edge0-10b --model-dir /path/to/checkpoint --prompt "你好"
+edge0 chat --name edge0-10b --model-dir /path/to/checkpoint --prompt "Hello"
 ```
 
-查看该档默认档案：
+To view this tier's default profile:
 
 ```bash
 edge0 models
@@ -69,48 +67,48 @@ edge0 models
 ```python
 from edge0 import AutoEngine, AutoModel, AutoConfig
 
-# 直接可生成的引擎
+# an engine ready to generate
 engine = AutoEngine.from_pretrained(
     "/path/to/checkpoint", name="edge0-10b",
 )
-ids = engine.generate([156895])          # 内部使用配置里的默认采样
+ids = engine.generate([156895])          # uses the default sampling from the config
 text = engine._tok.decode(ids)
 engine.close()
 
-# 仅加载权重（流式专家 + prerouter + LoRA 已装配）
+# weights only (streaming experts + prerouter + LoRA installed)
 model = AutoModel.from_pretrained("/path/to/checkpoint", name="edge0-10b")
 
-# 仅拿配置
+# config only
 cfg = AutoConfig.from_pretrained("/path/to/checkpoint", name="edge0-10b")
 ```
 
-`AutoEngine` / `AutoModel` / `AutoConfig` 三者也可省略 `name`，从 checkpoint 的 `config.json` 的 `model_type` 或目录 basename 自动解析（见 `src/edge0/registry.py`）。
+`AutoEngine` / `AutoModel` / `AutoConfig` can all omit `name` and resolve automatically from the `model_type` in the checkpoint's `config.json` or from the directory basename (see `src/edge0/registry.py`).
 
 ## HTTP API
 
-`edge0 serve` 暴露一个 OpenAI 兼容的单模型端点。引擎一次独占一个请求，生成以 FIFO 队列串行执行。
+`edge0 serve` exposes a single OpenAI-compatible model endpoint. The engine serves one exclusive request at a time; generation is serialized through a FIFO queue.
 
-| 方法 | 路径 | 说明 |
+| Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/healthz` | 健康检查 |
-| `GET` | `/v1/models` | 列出已加载模型 |
-| `POST` | `/v1/chat/completions` | 对话补全（支持 `stream`） |
-| `POST` | `/v1/completions` | 不支持，返回 400 |
+| `GET` | `/healthz` | Health check |
+| `GET` | `/v1/models` | List loaded models |
+| `POST` | `/v1/chat/completions` | Chat completions (supports `stream`) |
+| `POST` | `/v1/completions` | Not supported; returns 400 |
 
-### 非流式对话
+### Non-streaming chat
 
 ```bash
 curl -s http://127.0.0.1:8083/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "edge0-10b",
-    "messages": [{"role": "user", "content": "介绍一下 Ling"}],
+    "messages": [{"role": "user", "content": "Introduce Ling"}],
     "temperature": 0.7,
     "max_tokens": 256
   }'
 ```
 
-响应字段（非流式）：
+Response fields (non-streaming):
 
 ```json
 {
@@ -127,25 +125,25 @@ curl -s http://127.0.0.1:8083/v1/chat/completions \
 }
 ```
 
-请求可选字段：`model`、`messages`（含 `role`/`content`，content 支持多段文本自动拼接）、`temperature`、`top_p`、`top_k`、`max_tokens`、`seed`、`stream`。
+Optional request fields: `model`, `messages` (with `role`/`content`; content supports multiple text segments that are concatenated automatically), `temperature`, `top_p`, `top_k`, `max_tokens`, `seed`, `stream`.
 
-### 流式对话（需 Flask）
+### Streaming chat (requires Flask)
 
 ```bash
 curl -N http://127.0.0.1:8083/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "edge0-10b",
-    "messages": [{"role": "user", "content": "数到五"}],
+    "messages": [{"role": "user", "content": "Count to five"}],
     "stream": true
   }'
 ```
 
-每个 token 输出一段 `data: {"object":"chat.completion.chunk", ...}` SSE 事件，结束以 `data: [DONE]` 收尾。
+Each token emits one `data: {"object":"chat.completion.chunk", ...}` SSE event, and the stream ends with `data: [DONE]`.
 
-## 配置覆盖
+## Configuration overrides
 
-`from_pretrained` 支持对任意公开字段做覆盖（未知字段会抛 `TypeError`）。
+`from_pretrained` supports overriding any public field (unknown fields raise a `TypeError`).
 
 ```python
 from edge0 import AutoEngine
@@ -153,12 +151,12 @@ from edge0 import AutoEngine
 engine = AutoEngine.from_pretrained(
     "/path/to/checkpoint",
     name="edge0-10b",
-    port=9083,                    # 覆盖默认端口 8083
-    target_tok_s=35.0,            # 覆盖验收吞吐目标
-    prerouter=None,               # 关闭前置路由
-    lora="",                      # 关闭 LoRA
-    prefill_chunk=1024,           # 缩小预填分块
+    port=9083,                    # override the default port 8083
+    target_tok_s=35.0,            # override the acceptance throughput target
+    prerouter=None,               # disable the prerouter
+    lora="",                      # disable LoRA
+    prefill_chunk=1024,           # smaller prefill chunk
 )
 ```
 
-CLI 里对应的覆盖是 `--no-prerouter` / `--no-lora`（见 `src/edge0/cli.py` 的 `_engine_kwargs`）。引擎参数覆盖请直接走 `Ling10BConfig.from_pretrained(model_dir, **overrides)`。
+The corresponding CLI overrides are `--no-prerouter` / `--no-lora` (see `_engine_kwargs` in `src/edge0/cli.py`). To override engine parameters, call `Ling10BConfig.from_pretrained(model_dir, **overrides)` directly.
