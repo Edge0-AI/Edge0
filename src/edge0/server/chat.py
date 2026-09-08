@@ -84,17 +84,25 @@ class ChatSession:
             return encode(
                 [m.__dict__ for m in self.req.messages], think=bool(think))
         if hasattr(tok, "apply_chat_template"):
-            # Deployment parity with the correct demo (serve.py
-            # encode_chat): the qwen35 template's default IS the thinking
-            # mode (<think> opener).  Passing enable_thinking=False on
-            # this template renders an EMPTY <think>\n\n</think> block
-            # instead of omitting thinking — a different prompt than the
-            # demo, so it must not be passed.
-            text = tok.apply_chat_template(
-                [m.__dict__ for m in self.req.messages],
-                tokenize=False, add_generation_prompt=True)
-        else:
-            text = self._chat_text()
+            # The qwen35 template supports ``enable_thinking``: False
+            # renders the canonical no-think prompt — an EMPTY think
+            # block closer, the model's direct-answer form.  Default OFF
+            # (CLI demo parity).
+            think = self.req.enable_thinking
+            if think is None:
+                think = False
+            try:
+                text = tok.apply_chat_template(
+                    [m.__dict__ for m in self.req.messages],
+                    tokenize=False, add_generation_prompt=True,
+                    enable_thinking=bool(think))
+            except TypeError:
+                # tokenizer template without the kwarg: plain render
+                text = tok.apply_chat_template(
+                    [m.__dict__ for m in self.req.messages],
+                    tokenize=False, add_generation_prompt=True)
+            else:
+                text = self._chat_text()
         ids = tok.encode(text)
         if not ids:
             ids = [tok.bos_token_id or 0]

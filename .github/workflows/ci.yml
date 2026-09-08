@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test-macos:
+    name: Unit tests (macOS + MLX)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e '.[dev]'
+      - name: Test
+        run: pytest -m 'not slow'
+
+  hygiene:
+    name: Repo hygiene (pure Python, no MLX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Hygiene checks
+        run: pytest tests/test_repo_hygiene.py

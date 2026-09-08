@@ -57,7 +57,7 @@ def test_qwen35_profile():
     assert cfg.prerouter.hidden == 512
     assert cfg.prerouter.dtype == "fp16"
     assert cfg.prerouter.feature_topk == "executed"
-    assert cfg.gen.temperature == 0.6
+    assert cfg.gen.temperature == 0.7
     assert 248046 in cfg.gen.eos_ids
     assert cfg.port == 8085
 

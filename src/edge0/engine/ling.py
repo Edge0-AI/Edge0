@@ -129,6 +129,45 @@ class Ling10BEngine(Edge0Engine):
             self._all_stream_layers, enabled=cfg.prefetch_history)
 
         self.cache = self.model.make_cache()
+        # start_server.sh LING_PREWARM=1 parity (opt-in): warm the OS page
+        # cache over the whole checkpoint (madvise + sequential read) and
+        # run a tiny dummy prefill+step so the first real request runs at
+        # near-steady-state speed (kernel JIT + LRU + hot pins warm).
+        if os.environ.get("EDGE0_PREWARM", os.environ.get(
+                "LING_PREWARM", "0")) == "1":
+            self._prewarm()
+
+    # ---- startup warm-up --------------------------------------------------
+
+    def _prewarm(self):
+        """Page-cache + kernel warm-up (ling v7 ``_prewarm`` parity).
+
+        1. madvise(WILLNEED) + a full sequential read over every shard —
+           removes per-expert page-fault cost from the first request.
+        2. A dummy prefill + one decode step — materializes attention /
+           router / shared weights, warms the LRU and hot pins, and
+           pre-compiles the single-token decode kernels.
+        KV state is reset afterwards; only page-cache warmth remains.
+        """
+        import time as _t
+        t0 = _t.perf_counter()
+        try:
+            for shard in self.shards:
+                shard.advise_willneed() if hasattr(
+                    shard, "advise_willneed") else None
+                shard.seq_read() if hasattr(shard, "seq_read") else None
+        except Exception:  # noqa: BLE001 — advisory only
+            pass
+        dummy = [self._tok.bos_token_id or 0] if self._tok else [0]
+        try:
+            self.reset()
+            self.prefill(dummy * 4)
+            self.step(dummy[0])
+            self.reset()
+        except Exception:  # noqa: BLE001 — advisory only
+            pass
+        print(f"[edge0-10b] prewarm done in "
+              f"{_t.perf_counter() - t0:.1f}s", flush=True)
 
     # ---- forward ----------------------------------------------------------
 

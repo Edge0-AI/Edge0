@@ -13,6 +13,16 @@
 | `edge0-35b` | Qwen3.6-35B-A3B 4bit（40 层，256 专家） | prerouter K=4 |
 | `edge0-10b` | Ling-10B 4bit（24 层，128 专家） | prerouter K=8 |
 
+## 环境要求
+
+- **系统 / 硬件**：MLX 后端目前仅支持 Apple Silicon 的 macOS
+  （M1/M2/M3/M4）；CUDA 后端在路线图中，其余平台暂不支持。
+- **Python**：3.10+（推荐 3.12）。
+- **内存**：`edge0-35b` 峰值激活内存约 3.3 GB，`edge0-10b` 约 1.4 GB
+  （实测）；另需为系统与 tokenizer 预留余量。
+- **磁盘**：4bit checkpoint 约 23 GB（`edge0-35b`）/ 4.2 GB
+  （`edge0-10b`）；专家权重 mmap 按需读取，不一次性载入内存。
+
 ## 设计
 
 - **像 transformers 一样使用**：`AutoModel` / `AutoConfig` / `AutoEngine`
@@ -43,30 +53,45 @@
 ## 快速开始
 
 ```bash
-# 1) 安装（Python ≥3.10；MLX 后端需 mlx 环境当前支持的平台）
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev]'
+# 1) 安装（Python ≥3.10；MLX 后端需 macOS + Apple Silicon）
+python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
 
-# 2) 快速演示：指定 checkpoint 目录或 tier 名（tier 路径见环境变量）
+# 2) 下载模型：基模 + 训练好的 LoRA/prerouter 适配器在一个目录里
+#    （把 EDGE0_35B_REPO / EDGE0_10B_REPO 设为发布的 Hugging Face 仓库 id）
+.venv/bin/python scripts/fetch_models.py --tier edge0-35b
+.venv/bin/python scripts/fetch_models.py --tier edge0-10b
+export EDGE0_35B_MODEL=$PWD/models/edge0-35b
+export EDGE0_10B_MODEL=$PWD/models/edge0-10b
+
+# 3) 快速演示：指定 tier 名或 checkpoint 目录
+edge0 demo edge0-35b
 edge0 demo /path/to/qwen35/model
-edge0 demo edge0-10b            # 由 EDGE0_10B_MODEL 指向的 checkpoint
 
-# 3) 启动推理服务（OpenAI 兼容 /v1/chat/completions；模型为位置参数，
+# 4) 启动推理服务（OpenAI 兼容 /v1/chat/completions；模型为位置参数，
 #    checkpoint 类型按 config.json 自动识别）
-edge0 serve /path/to/qwen35/model
-edge0 serve edge0-35b           # tier 名，checkpoint 路径同上由环境变量解析
+edge0 serve edge0-35b
+```
 
+```bash
 curl http://127.0.0.1:8000/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Hello!"}],"max_tokens":32}'
 
-# 4) 命令行一问一答（同样接受路径或 tier 名）
-edge0 chat /path/to/model --prompt "用一句话介绍流式推理。"
+# 5) 命令行一问一答（用 --max-new 控制长度，加 --show-thinking 打印思考过程）
+edge0 chat edge0-35b --prompt "用一句话介绍流式推理。"
 ```
 
 `python -m edge0 ...` 与 `edge0 ...` 完全等价。
 
+如果本机已有 checkpoint，直接传路径即可，tier 按 `config.json` 自动识别：
+
+```bash
+edge0 demo /path/to/model
+edge0 serve /path/to/model
+```
+
 tier 名（`edge0-35b` / `edge0-10b`）通过环境变量解析到本机 checkpoint
-目录，二者都未设置时按目录内 `config.json` 自动识别：
+目录：
 
 ```bash
 export EDGE0_35B_MODEL=/path/to/qwen35/model
@@ -77,13 +102,20 @@ export EDGE0_10B_MODEL=/path/to/ling/model
 
 ```python
 from edge0 import AutoEngine
+from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
 
-eng = AutoEngine.from_pretrained("/path/to/model")   # tier 自动识别
-ids = eng.encode_chat([{"role": "user", "content": "你好"}], think=True)
-tokens = eng.generate(ids, max_new_tokens=512)
-print(eng._tok.decode(tokens))
-eng.reset()      # 每请求前清状态（跨请求 KV / prerouter 缓存）
+engine = AutoEngine.from_pretrained("/path/to/model")  # tier 自动识别
+req = ChatRequest(
+    model=engine.name,
+    messages=[ChatMessage(role="user", content="你好！")],
+    max_tokens=64,
+)
+tokens, meta = ChatSession(engine, req).run()
+print(engine._tok.decode(tokens))
+engine.close()   # 释放 mmap / 专家缓存
 ```
+
+`examples/demo.py` 就是这条最小路径（`edge0 demo` 内部等价运行）。
 
 ### 模型与适配器
 
@@ -95,8 +127,10 @@ eng.reset()      # 每请求前清状态（跨请求 KV / prerouter 缓存）
     `lora_edge0_35b.safetensors` + `prerouter_edge0_35b.safetensors`；
   - `artifacts/`（仓库根，gitignored）：`edge0 convert-adapters` 从
     训练侧 npz 一次性转换。
-- 当前默认适配器轮次：35b = round9，10b = round6（pgstart-sel1m，
-  owners L7–22 与 `start_layer=7` 一致）。
+- 发布的模型仓库同时包含基模与当前默认适配器（35b = round9，
+  10b = round6），`scripts/fetch_models.py` 下载后即为可运行的模型目录。
+- prerouter + LoRA 两条适配器都必需；缺文件时 `edge0` 会给出明确报错
+  （也可加 `--no-prerouter` / `--no-lora` 直接跑裸基模）。
 
 ### 稳定性验证
 
@@ -105,6 +139,25 @@ eng.reset()      # 每请求前清状态（跨请求 KV / prerouter 缓存）
 - `!` 死循环塌缩 0/N（NaN clip 防护生效）；
 - 碎片退化 0/N（低层 prerouter 噪声通过 `start_layer=7` 消除）；
 - 跨请求状态污染 0/N（每请求 `reset()` + 首 token greedy）。
+
+## 性能实测
+
+`examples/bench.py` 实测（prefill → 10 步采样 warmup → 200 token 计时段，每档 2 轮）：
+
+| 档位 | 解码速度 | 峰值 active 内存 | 测试机器 |
+|---|---|---|---|
+| `edge0-35b` | 14.9–17.7 tok/s | 2.9–3.1 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-10b` | 25.3 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
+
+*峰值 active 内存为 MLX allocator 的峰值（权重 + KV cache + 专家工作集），
+不含 RSS：专家权重经 mmap 从 SSD 流式读取，OS 页缓存不计入。*
+
+复现：
+
+```bash
+python examples/bench.py edge0-35b    # 经 $EDGE0_35B_MODEL
+python examples/bench.py edge0-10b    # 经 $EDGE0_10B_MODEL
+```
 
 ## 验证
 
@@ -125,4 +178,4 @@ examples/demo.py       # 最小 API walkthrough（edge0 demo 的等价代码）
 
 ## License
 
-Apache-2.0，含 vendored 第三方代码（详见 [NOTICE](NOTICE.md)）。
+Apache-2.0，含 vendored 第三方代码（详见 [NOTICE](NOTICE)）。

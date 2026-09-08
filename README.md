@@ -16,6 +16,18 @@ Two model tiers work out of the box:
 | `edge0-35b` | Qwen3.6-35B-A3B 4-bit (40 layers, 256 experts) | prerouter K=4 |
 | `edge0-10b` | Ling-10B 4-bit bailing hybrid (24 layers, 128 experts) | prerouter K=8 |
 
+## Requirements
+
+- **OS / hardware**: the MLX backend runs on macOS with Apple Silicon
+  (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
+  platforms are supported yet.
+- **Python**: 3.10+ (3.12 recommended).
+- **Memory**: ~3.3 GB peak active memory for `edge0-35b`, ~1.4 GB for
+  `edge0-10b` (measured). Add headroom for the OS and tokenizer.
+- **Disk**: the 4-bit checkpoints are ~23 GB (`edge0-35b`) and ~4.2 GB
+  (`edge0-10b`); expert weights are mmapped and read on demand, they are
+  not loaded into RAM up front.
+
 ## Design
 
 - **transformers-style usage**: `AutoModel` / `AutoConfig` / `AutoEngine`
@@ -53,28 +65,24 @@ Two model tiers work out of the box:
 ## Quick start
 
 ```bash
-# 1) Install (Python >= 3.10; MLX backend requires an mlx-supported platform)
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev]'
+# 1) Install (Python >= 3.10; MLX backend requires macOS + Apple Silicon)
+python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
 
-# 2) Quick demo: pass a checkpoint directory or tier name
+# 2) Get a model: base checkpoint + trained LoRA/prerouter adapters in ONE dir.
+#    (Set EDGE0_35B_REPO / EDGE0_10B_REPO to the published Hugging Face
+#    repo ids, then:)
+.venv/bin/python scripts/fetch_models.py --tier edge0-35b
+.venv/bin/python scripts/fetch_models.py --tier edge0-10b
+export EDGE0_35B_MODEL=$PWD/models/edge0-35b
+export EDGE0_10B_MODEL=$PWD/models/edge0-10b
+
+# 3) Quick demo: pass a tier name or a checkpoint directory
+edge0 demo edge0-35b
 edge0 demo /path/to/qwen35/model
-edge0 demo edge0-10b            # checkpoint resolved via env vars (below)
 
-# 3) Serve (OpenAI-compatible /v1/chat/completions; the model is a
+# 4) Serve (OpenAI-compatible /v1/chat/completions; the model is a
 #    positional argument, tier auto-detected from config.json)
-edge0 serve /path/to/qwen35/model
 edge0 serve edge0-35b
-```
-
-`python -m edge0 ...` is equivalent to `edge0 ...`.
-
-Tier names (`edge0-35b` / `edge0-10b`) resolve to local checkpoint
-directories through environment variables; without them, the tier is
-auto-detected from the checkpoint's `config.json`:
-
-```bash
-export EDGE0_35B_MODEL=/path/to/qwen35/model
-export EDGE0_10B_MODEL=/path/to/ling/model
 ```
 
 ```bash
@@ -82,21 +90,48 @@ curl http://127.0.0.1:8000/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Hello!"}],"max_tokens":32}'
 
-# 4) One-shot chat
-edge0 chat /path/to/model --prompt "Explain streaming inference in one sentence."
+# 5) One-shot chat (pass --max-new to cap length; add --show-thinking to
+#    print the model's reasoning block too)
+edge0 chat edge0-35b --prompt "Explain streaming inference in one sentence."
+```
+
+`python -m edge0 ...` is equivalent to `edge0 ...`.
+
+If you already have a checkpoint on disk, just point at it — the tier is
+auto-detected from the checkpoint's `config.json`:
+
+```bash
+edge0 demo /path/to/model
+edge0 serve /path/to/model
+```
+
+Tier names (`edge0-35b` / `edge0-10b`) resolve to local checkpoint
+directories through environment variables:
+
+```bash
+export EDGE0_35B_MODEL=/path/to/qwen35/model
+export EDGE0_10B_MODEL=/path/to/ling/model
 ```
 
 ### Python API
 
 ```python
 from edge0 import AutoEngine
+from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
 
-eng = AutoEngine.from_pretrained("/path/to/model")   # tier auto-detected
-ids = eng.encode_chat([{"role": "user", "content": "Hello"}], think=True)
-tokens = eng.generate(ids, max_new_tokens=512)
-print(eng._tok.decode(tokens))
-eng.reset()      # clear per-request state (cross-request KV / prerouter cache)
+engine = AutoEngine.from_pretrained("/path/to/model")  # tier auto-detected
+req = ChatRequest(
+    model=engine.name,
+    messages=[ChatMessage(role="user", content="Hello!")],
+    max_tokens=64,
+)
+tokens, meta = ChatSession(engine, req).run()
+print(engine._tok.decode(tokens))
+engine.close()   # release mmaps / expert cache
 ```
+
+`examples/demo.py` is the same minimal walkthrough (`edge0 demo` runs
+this exact path).
 
 ### Models and adapters
 
@@ -110,8 +145,12 @@ eng.reset()      # clear per-request state (cross-request KV / prerouter cache)
     `lora_edge0_35b.safetensors` + `prerouter_edge0_35b.safetensors`;
   - `artifacts/` (repo root, gitignored): convert once from
     training-side npz exports via `edge0 convert-adapters --npz-dir ...`.
-- Current default adapter rounds: 35b = round9, 10b = round6
-  (pgstart-sel1m, owners L7–22 matching `start_layer=7`).
+- The published model repos bundle both the base checkpoint and the
+  current default adapters (35b = round9, 10b = round6), so
+  `scripts/fetch_models.py` produces a ready-to-run model directory.
+- Both adapters are required for the prerouter + LoRA pipeline; if a
+  file is missing, `edge0` fails with a clear message (or pass
+  `--no-prerouter` / `--no-lora` to run the plain base model).
 
 ### Stability validation
 
@@ -123,6 +162,27 @@ multiple prompts):
   `start_layer=7`);
 - cross-request state pollution: 0/N (per-request `reset()` +
   first-token greedy).
+
+## Benchmark
+
+Measured with `examples/bench.py` (prefill → 10 sampled warmup steps → 200
+timed sampled decode tokens, 2 runs per tier):
+
+| Tier | Decode speed | Peak active memory | Test machine |
+|---|---|---|---|
+| `edge0-35b` | 14.9–17.7 tok/s | 2.9–3.1 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-10b` | 25.3 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
+
+*Peak active memory is the MLX allocator's peak (model weights + KV cache +
+expert working set), not RSS: expert weights stream from SSD via mmap and the
+OS page cache is not counted.*
+
+Reproduce:
+
+```bash
+python examples/bench.py edge0-35b    # via $EDGE0_35B_MODEL
+python examples/bench.py edge0-10b    # via $EDGE0_10B_MODEL
+```
 
 ## Tests
 
@@ -143,4 +203,4 @@ examples/demo.py       # minimal API walkthrough
 
 ## License
 
-Apache-2.0, including vendored third-party code (see [NOTICE](NOTICE.md)).
+Apache-2.0, including vendored third-party code (see [NOTICE](NOTICE)).

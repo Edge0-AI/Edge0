@@ -73,6 +73,15 @@ def install_prerouter(
         if not pspec.weights_file:
             raise ValueError(
                 "install_prerouter needs weights or PrerouterSpec.weights_file")
+        import os
+        if not os.path.isfile(pspec.weights_file):
+            raise FileNotFoundError(
+                f"prerouter weights file not found: {pspec.weights_file}\n"
+                "edge0 tiers are shipped with trained LoRA + prerouter "
+                "adapters; download them for this tier (README -> 'Getting "
+                "the models & adapters') and place them in the model "
+                "directory, or disable the prerouter with "
+                "prerouter=None / --no-prerouter.")
         weights = load_safetensors(pspec.weights_file)
     dtype = core.float16 if pspec.dtype == "fp16" else core.float32
     head_weights = _parse_weights(weights, dtype)

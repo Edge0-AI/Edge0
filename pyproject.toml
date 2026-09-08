@@ -38,6 +38,9 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+fetch = [
+    "huggingface_hub>=0.23",
+]
 
 [project.scripts]
 edge0 = "edge0.cli:main"

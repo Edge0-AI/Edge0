@@ -57,7 +57,7 @@ class Qwen35Config(ModelConfig):
             lora=artifact("lora_edge0_35b.safetensors", model_dir),
             lora_r=16, lora_alpha=32.0,
             gen=GenerationConfig(
-                temperature=0.6, top_p=0.95, top_k=64,
+                temperature=0.7, top_p=0.95, top_k=64,
                 repetition_penalty=1.0, max_new_tokens=2048,
                 eos_ids=(248046, 248044)),
             prefill_chunk=2048,

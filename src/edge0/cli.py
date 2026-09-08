@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 
 from edge0 import models  # noqa: F401  (populates MODEL_REGISTRY)
@@ -101,6 +102,24 @@ def _missing_model_help(name) -> str:
     )
 
 
+def _strip_thinking(text: str) -> str:
+    """Strip a leading `` thinking... response`` reasoning block for display.
+
+    The qwen chat template defaults to thinking mode, so a raw generation
+    echoes the reasoning chain before the ``response`` marker.  The demo
+    and chat commands show only the final answer unless ``--show-thinking``
+    is given; the engine/server output is never modified.
+    """
+    m = re.search(r"\n\s*response\b", text)
+    if m:
+        return text[m.end():].strip()
+    return text.strip()
+
+
+def _display_text(text: str, show_thinking: bool) -> str:
+    return text if show_thinking else _strip_thinking(text)
+
+
 def cmd_demo(args) -> int:
     from edge0 import AutoEngine
     from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
@@ -117,11 +136,12 @@ def cmd_demo(args) -> int:
         raise SystemExit("model has no tokenizer; cannot demo")
     prompt = args.prompt or DEMO_PROMPTS.get(engine.name, "Hello!")
     req = ChatRequest(model=engine.name, messages=[
-        ChatMessage(role="user", content=prompt)])
+        ChatMessage(role="user", content=prompt)],
+        max_tokens=args.max_new)
     sess = ChatSession(engine, req)
     tokens, meta = sess.run()
     print(f"user : {prompt}")
-    print(f"edge0: {tok.decode(tokens)}")
+    print(f"edge0: {_display_text(tok.decode(tokens), args.show_thinking)}")
     print(f"# {len(tokens)} tokens in {meta['wall_s']}s",
           file=sys.stderr)
     engine.close()
@@ -150,10 +170,11 @@ def cmd_chat(args) -> int:
     for p in prompts:
         from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
         req = ChatRequest(model=name, messages=[
-            ChatMessage(role="user", content=p)])
+            ChatMessage(role="user", content=p)],
+            max_tokens=args.max_new)
         sess = ChatSession(engine, req)
         tokens, meta = sess.run()
-        print(tok.decode(tokens))
+        print(_display_text(tok.decode(tokens), args.show_thinking))
         print(f"# {len(tokens)} tokens in {meta['wall_s']}s", file=sys.stderr)
     engine.close()
     return 0
@@ -205,6 +226,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--model-dir", default=None)
     p.add_argument("--name", default=None)
     p.add_argument("--prompt", default=None)
+    p.add_argument("--max-new", type=int, default=None,
+                   help="max tokens to generate (default: tier config)")
+    p.add_argument("--show-thinking", action="store_true",
+                   help="print the model's reasoning block too")
     p.add_argument("--no-prerouter", action="store_true")
     p.add_argument("--no-lora", action="store_true")
     p.set_defaults(fn=cmd_demo)
@@ -217,6 +242,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--model-dir", default=None)
     p.add_argument("--name", default=None)
     p.add_argument("--prompt", default=None)
+    p.add_argument("--max-new", type=int, default=None,
+                   help="max tokens to generate (default: tier config)")
+    p.add_argument("--show-thinking", action="store_true",
+                   help="print the model's reasoning block too")
     p.add_argument("--no-prerouter", action="store_true")
     p.add_argument("--no-lora", action="store_true")
     p.set_defaults(fn=cmd_chat)

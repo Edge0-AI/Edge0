@@ -40,6 +40,25 @@ class SafetensorsMmap:
                 "shape": tuple(meta["shape"]),
             }
 
+    def advise_willneed(self):
+        """OS readahead hint over the whole shard (advisory)."""
+        try:
+            mmap_madv = getattr(mmap, "MADV_WILLNEED", None)
+            if mmap_madv is not None:
+                self._mm.madvise(mmap_madv)
+        except Exception:  # noqa: BLE001 — advisory only
+            pass
+
+    def seq_read(self, chunk: int = 1 << 24):
+        """Force every page resident: one sequential pass over the shard.
+
+        macOS madvise only warms roughly half the file, so a full read is
+        the reliable way to remove per-expert page-fault cost from the
+        first request (ling v7 ``_prewarm`` step 2 parity)."""
+        total = len(self._mm)
+        for off in range(0, total, chunk):
+            _ = self._mm[off:off + chunk]
+
     def raw(self, name: str) -> np.ndarray:
         e = self.entries[name]
         return np.frombuffer(

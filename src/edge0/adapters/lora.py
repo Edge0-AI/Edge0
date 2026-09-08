@@ -23,6 +23,8 @@ migration (see ``scripts/convert_adapters_legacy.py``).
 
 from __future__ import annotations
 
+import os
+
 from edge0.backends import core
 from edge0.backends import nn
 
@@ -76,6 +78,13 @@ def install_lora(model: nn.Module, adapters_path: str,
     Returns ``{applied: [...], not_found: [...], skipped: [...],
     scale: float, dtype: str}``.
     """
+    if not os.path.isfile(adapters_path):
+        raise FileNotFoundError(
+            f"LoRA adapter file not found: {adapters_path}\n"
+            "edge0 tiers are shipped with trained LoRA + prerouter "
+            "adapters; download them for this tier (README -> 'Getting "
+            "the models & adapters') and place them in the model "
+            "directory, or disable LoRA with lora="" / --no-lora.")
     lora = load_safetensors(adapters_path)
     if not lora:
         raise ValueError("adapters has no lora tensors")

@@ -124,7 +124,8 @@ class LayerOptions:
         return cls(
             staged=False, staged_replace=False, staged_n=8,
             staged_trigger=8, staged_sync=False, history_prefetch=False,
-            hot_per_layer=0, cache_slots=64, prefetch_cap=48,
+            hot_per_layer=0,
+            cache_slots=64, prefetch_cap=48,
             load_threads=8, prefetch_threads=4, use_compile=True, top_k=8,
             full_layer_prefill=True, prefill_hot=0, **overrides)
 
