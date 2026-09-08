@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "edge0"
 version = "0.1.0"
-description = "edge0: streaming MoE inference for Apple Silicon — SSD expert offload, parallel LoRA, prerouter routing prediction. Backend-isolated (MLX now, CUDA-ready)."
+description = "edge0: streaming MoE inference framework — SSD expert offload, parallel LoRA, prerouter routing prediction. Backend-isolated (MLX now, more platforms coming)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }

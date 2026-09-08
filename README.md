@@ -1,7 +1,8 @@
 # edge0
 
-**edge0** 是一个面向 Apple Silicon 的开源流式 MoE 推理框架：把「SSD 专家 offload +
-并行 LoRA + prerouter 路由预判」方案抽象成可扩展的通用框架，开箱支持两个模型：
+**edge0** 是一个开源的流式 MoE 推理框架：把「SSD 专家 offload +
+并行 LoRA + prerouter 路由预判」方案抽象成可扩展的通用框架，后端隔离设计
+（当前 MLX / Apple Silicon，后续将适配其它平台），开箱支持两个模型：
 
 | 模型 | 说明 | 推理档 |
 |---|---|---|
