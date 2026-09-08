@@ -1,9 +1,9 @@
-"""Complete end-to-end example: generate an English introduction to
-Zhuhai with edge0-35b (prerouter + LoRA + SSD offload, default tier
-profile — staged decode on, K=4).
+"""Complete end-to-end example: generate an English introduction to a
+seaside city with edge0-35b (prerouter + LoRA + SSD offload, default
+tier profile — staged decode on, K=4).
 
 Usage:
-    .venv/bin/python scripts/zhuhai_example.py [--max-new N] [--temp T]
+    .venv/bin/python scripts/generate_example.py [--max-new N] [--temp T]
 
 The example walks through the full pipeline a user of the framework
 would hit:
@@ -19,6 +19,7 @@ would hit:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 
@@ -28,7 +29,7 @@ from edge0.config import GenerationConfig
 
 
 PROMPT = (
-    "Write a short introduction to Zhuhai, a city in southern China, "
+    "Write a short introduction to a seaside city in southern China, "
     "in English. Keep it to 3-4 sentences."
 )
 
@@ -41,7 +42,7 @@ def main() -> int:
                     help="enable the <think> block (enable_thinking=True)")
     args = ap.parse_args()
 
-    model_dir = "/Users/linyu/Documents/qwen35-v7-deploy/model"
+    model_dir = os.environ.get("EDGE0_35B_MODEL", "/path/to/qwen35/model")
     print(f"[1] loading tokenizer + edge0-35b from {model_dir}", flush=True)
     tok = io.load_tokenizer(model_dir)
     t0 = time.time()

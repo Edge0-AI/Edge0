@@ -22,13 +22,13 @@ import sys
 
 N = 14  # max new tokens (greedy)
 PROMPTS = {
-    "qwen": "Hello! Write one short sentence about Zhuhai.",
-    "ling": "你好，用一句话介绍珠海。",
+    "qwen": "Hello! Write one short sentence about the seaside.",
+    "ling": "你好，用一句话介绍海滨城市。",
 }
-QMODEL = "/Users/linyu/Documents/qwen35-v7-deploy/model"
-LMODEL = "/Users/linyu/Documents/ling-mlx-server/v7-deploy/model"
-QDIR = "/Users/linyu/Documents/qwen35-v7-deploy"
-LDIR = "/Users/linyu/Documents/ling-mlx-server/v7-deploy"
+QMODEL = os.environ.get("EDGE0_35B_MODEL", "/path/to/qwen35/model")
+LMODEL = os.environ.get("EDGE0_10B_MODEL", "/path/to/ling/model")
+QDIR = os.path.dirname(QMODEL)
+LDIR = os.path.dirname(LMODEL)
 RESULT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                       "alignment_results.json")
 

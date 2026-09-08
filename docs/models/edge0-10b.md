@@ -2,7 +2,7 @@
 
 edge0 平台的高吞吐轻量档：基于 Ling 3.0 混合架构（MLA + MoE）的 10B 级稀疏混合专家模型。相比 35b 档牺牲一定的参数量，换来更低的峰值内存与更高的生成速率，适合对延迟与显存敏感的场景。
 
-生产档案基于 v7 checkpoint 实测，默认由 `Ling10BConfig`（`src/edge0/models/edge0_10b/__init__.py`）固定。
+性能档案基于 round6（pgstart-sel1m）adapter 组合的基准实测，默认由 `Ling10BConfig`（`src/edge0/models/edge0_10b/__init__.py`）固定。
 
 ## 模型档案
 
@@ -16,7 +16,7 @@ edge0 平台的高吞吐轻量档：基于 Ling 3.0 混合架构（MLA + MoE）�
 | 专家量化 | 4-bit affine，group 64 |
 | 权重布局 | `WeightLayout.SEPARATE`（gate/up/down 分离张量堆叠） |
 | 专家权重路径 | `model.layers.N.mlp.experts` |
-| 前置路由（prerouter） | 22 个头（显式 owners 1..22），start_layer 1，hidden 512，fp16 |
+| 前置路由（prerouter） | 16 个头（显式 owners 7..22），start_layer 7，hidden 512，fp16 |
 | 解码调用方式 | `patch_call=False`（头内建在 `BailingSparseMoE` 中，从 `prerouter_cache` logits 消费） |
 | LoRA | `r=16, alpha=32.0` |
 | 预填分块 | 2048 |
@@ -26,23 +26,24 @@ edge0 平台的高吞吐轻量档：基于 Ling 3.0 混合架构（MLA + MoE）�
 | 验收吞吐 | ≈ 33 tok/s |
 | 验收峰值激活内存 | ≈ 1.4 GB |
 
-> 说明：数值全部取自 `Ling10BConfig._defaults()` 与 `LayerOptions.staged_k8()`。头部数量来自显式 `owners=range(1, 23)`，共 22 个头；`feature_topk="executed"`。
+> 说明：数值全部取自 `Ling10BConfig._defaults()` 与 `LayerOptions.prod_k8()`。头部数量来自显式 `owners=range(7, 23)`，共 16 个头（round6 训练头部分布，L7 起消费预测，L1–6 走原始 router）；`feature_topk="executed"`。
 
 ## 分阶段解码（staged decode）
 
-该档使用 `LayerOptions.staged_k8()` 预设：
+该档使用 `LayerOptions.prod_k8()` 预设（对齐 ling v7 部署的生产开关）：
 
-- 固定槽分阶段解码（`staged=True`，`staged_n=8`，`staged_trigger=8`，`staged_sync=True`），逐层无 host 同步。
-- `staged_replace=False`：路由由内建的混合 prerouter 提供，分阶段集合与路由集合一致，槽表映射零丢弃。
-- 不使用热专家钉住（`hot_per_layer=0`），`prefill_hot=0`。
-- 整层 E3b prefill（`full_layer_prefill=True`）。
+- 分阶段解码关闭（`staged=False`，`staged_sync=False`，`staged_n=8`）——部署验证
+  该档上 staged decode 会劣化输出，prerouter 直接驱动下一 token 的专家
+  预取（step 边界 `stage_all` + prefill 尾部各一次）。
+- 专家缓存 `cache_slots=64`，热专家钉住关闭（`hot_per_layer=0`）。
+- 整层 E3b prefill（`full_layer_prefill=True`，`prefill_chunk=2048`）。
 
 ## 使用方式
 
 ### CLI 起服务
 
 ```bash
-edge0 serve --name edge0-10b --model-dir /path/to/checkpoint --host 127.0.0.1 --port 8083
+edge0 serve /path/to/checkpoint --host 127.0.0.1 --port 8083
 ```
 
 可选参数：

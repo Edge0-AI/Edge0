@@ -91,10 +91,10 @@ class LayerOptions:
         return cls(
             staged=True, staged_replace=False, staged_n=4,
             staged_trigger=4, staged_sync=True, history_prefetch=True,
-            hot_per_layer=32, hot_update_interval=4, hot_decay=0.75,
+            hot_per_layer=0, hot_update_interval=4, hot_decay=0.75,
             cache_slots=64, prefetch_cap=48, load_threads=8,
             prefetch_threads=4, use_compile=True, top_k=4,
-            full_layer_prefill=True, prefill_full_layers=12,
+            full_layer_prefill=False, prefill_full_layers=0,
             prefill_hot=32, **overrides)
 
     @classmethod

@@ -62,10 +62,17 @@ class FakeTok:
 
 
 class PlainTok(FakeTok):
-    """Tokenizer without apply_chat_template (stdlib fallback path)."""
+    """Tokenizer without apply_chat_template (stdlib fallback path).
 
-    def apply_chat_template(self, *a, **k):  # pragma: no cover - unused
-        raise AttributeError
+    Deleting the method (vs raising) keeps hasattr() False so the
+    server's plain-text fallback renders instead."""
+
+    def __init__(self):
+        super().__init__()
+        try:
+            del self.apply_chat_template
+        except AttributeError:
+            pass
 
 
 class FakeEngine:
@@ -90,6 +97,10 @@ class FakeEngine:
 
     def stats(self):
         return {"ok": 1}
+
+    def reset(self):
+        """Per-request state clear (server parity with the real engine)."""
+        self.pos = 0
 
 
 def _req(**kw) -> ChatRequest:
@@ -225,8 +236,8 @@ def test_queue_server_health():
 def test_queue_server_chat_serializes():
     eng = FakeEngine()
     srv = QueueServer(eng)
-    out = srv.chat(_req())
-    assert out["usage"]["completion_tokens"] == 3
+    tokens, meta = srv.chat(_req())
+    assert meta["usage"]["completion_tokens"] == 3
     assert len(eng.generated) == 1
     gen = eng.generated[0][1]
     assert gen.temperature == 0.7
@@ -270,11 +281,13 @@ def test_chat_stream_events_sequence():
     })
     body = raw if isinstance(raw, bytes) else raw.get_data()
     events = [e for e in body.decode("utf-8").split("\n\n") if e]
+    assert events[-1] == "data: [DONE]"
     chunks = [json.loads(e[6:]) for e in events[:-1]]  # drop [DONE]
-    deltas = [c["choices"][0]["delta"]["content"] for c in chunks]
+    deltas = [c["choices"][0]["delta"]["content"]
+              for c in chunks if c["choices"][0]["delta"]]
     assert deltas == ["T11", "T12", "T13"]
     assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
-    assert events[-1] == "data: [DONE]"
+    assert chunks[-1]["choices"][0]["delta"] == {}
 
 
 # ---- stdlib HTTP transport ------------------------------------------------

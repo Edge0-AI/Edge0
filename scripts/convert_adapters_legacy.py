@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import json
 import sys
 from datetime import datetime, timezone
@@ -30,16 +31,25 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "artifacts"
 
 # (npz path, tier, kind) — every legacy source this script understands.
-SOURCES = [
-    ("/Users/linyu/Documents/qwen35-v7-deploy/pregate_qwen35_v7_round7.npz",
-     "edge0-35b", "prerouter"),
-    ("/Users/linyu/Documents/qwen35-v7-deploy/lora_qwen35_v7_round7.npz",
-     "edge0-35b", "lora"),
-    ("/Users/linyu/Documents/ling-mlx-server/v7-deploy/pregate_v7_fp16.npz",
-     "edge0-10b", "prerouter"),
-    ("/Users/linyu/Documents/ling-mlx-server/v7-deploy/lora_v7_fp16.npz",
-     "edge0-10b", "lora"),
+# Training-side npz exports discovered per machine; pass --npz-dir (or
+# edit this list) to point at your own exports.
+NPZ_DIRS = [
+    Path(os.environ.get("EDGE0_NPZ_DIR", "/path/to/npz/exports")),
 ]
+SOURCES = [
+    ("pregate_qwen35_v7_round7.npz", "edge0-35b", "prerouter"),
+    ("lora_qwen35_v7_round7.npz", "edge0-35b", "lora"),
+    ("pregate_v7_fp16.npz", "edge0-10b", "prerouter"),
+    ("lora_v7_fp16.npz", "edge0-10b", "lora"),
+]
+
+
+def _find_source(name: str) -> Path | None:
+    for d in NPZ_DIRS:
+        p = d / name
+        if p.is_file():
+            return p
+    return None
 
 
 def md5(path: Path) -> str:
@@ -113,21 +123,31 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--force", action="store_true",
                     help="reconvert even if the artifact exists")
+    ap.add_argument("--npz-dir", default=None,
+                    help="directory holding the legacy npz exports "
+                         "(default: $EDGE0_NPZ_DIR)")
     args = ap.parse_args(argv)
 
+    if args.npz_dir:
+        NPZ_DIRS.insert(0, Path(args.npz_dir))
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
-    missing = [s[0] for s in SOURCES if not Path(s[0]).is_file()]
+    missing = []
+    resolved = []
+    for name, tier, kind in SOURCES:
+        p = _find_source(name)
+        if p is None:
+            missing.append(name)
+        else:
+            resolved.append((p, tier, kind))
     if missing:
         print("missing legacy sources (skip their conversion):")
         for m in missing:
             print("  -", m)
-    for path, tier, kind in SOURCES:
-        if not Path(path).is_file():
-            continue
+    for path, tier, kind in resolved:
         try:
-            convert(Path(path), tier, kind, force=args.force)
+            convert(path, tier, kind, force=args.force)
         except Exception as exc:  # noqa: BLE001 — report and continue
-            print(f"FAIL {Path(path).name}: {exc}", file=sys.stderr)
+            print(f"FAIL {path.name}: {exc}", file=sys.stderr)
             return 1
     return 0
 

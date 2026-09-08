@@ -42,7 +42,7 @@ edge0_35b/__init__.py`）作为逐步示例，逐处标注真实代码行号。`
 | `gen` | `GenerationConfig` | 采样默认（温度 / top-p / top-k / eos 等） |
 | `prefill_chunk` / `hot_window` / `intra_staging` / `prefetch_history` | — | 流式与预取行为 |
 | `port` | `int` | 服务端口 |
-| `target_tok_s` / `peak_active_mem_mb` | `float` | 验收指标（生产机实测） |
+| `target_tok_s` / `peak_active_mem_mb` | `float` | 验收指标（基准环境实测） |
 
 子类只需实现类方法 `_defaults(model_dir) -> Config`，返回族默认配置。edge0-35b 的
 实现见 `edge0_35b/__init__.py:31–69`：`_defaults` 用一份完整的 `MoESpec`、`LayerOptions`

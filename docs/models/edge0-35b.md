@@ -1,8 +1,8 @@
 # edge0-35b
 
-edge0 平台的第一档主力模型：基于 Qwen3.5-MoE（K=4 档）的 35B 级稀疏混合专家模型。通过流式专家加载（streaming experts）、训练前置路由（prerouter）与 LoRA 适配，把整份权重量化后驻留在磁盘、按需装载，在一块消费级设备上即可服务。
+edge0 平台的第一档主力模型：基于 Qwen3.5-MoE（K=4 档）的 35B 级稀疏混合专家模型。通过流式专家加载（streaming experts）、训练前置路由（prerouter）与 LoRA 适配，把整份权重量化后驻留在磁盘、按需装载，在单台设备上即可服务。
 
-生产档案基于 round-7 checkpoint 实测，默认由 `Qwen35Config`（`src/edge0/models/edge0_35b/__init__.py`）固定。
+性能档案基于 round9 adapter 组合的基准实测，默认由 `Qwen35Config`（`src/edge0/models/edge0_35b/__init__.py`）固定。
 
 ## 模型档案
 
@@ -42,7 +42,7 @@ edge0 平台的第一档主力模型：基于 Qwen3.5-MoE（K=4 档）的 35B �
 ### CLI 起服务
 
 ```bash
-edge0 serve --name edge0-35b --model-dir /path/to/checkpoint --host 127.0.0.1 --port 8085
+edge0 serve /path/to/checkpoint --host 127.0.0.1 --port 8085
 ```
 
 可选参数：

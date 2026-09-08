@@ -28,7 +28,7 @@ def main() -> int:
     ap.add_argument("--model-dir", default=None,
                     help="checkpoint directory (tier auto-detected)")
     ap.add_argument("--prompt",
-                    default="Hello! Write one short sentence about Zhuhai.")
+                    default="Hello! Write one short sentence about the seaside.")
     ap.add_argument("--max-new", type=int, default=24)
     args = ap.parse_args()
 

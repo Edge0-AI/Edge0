@@ -48,8 +48,11 @@ def test_qwen35_profile():
     assert cfg.moe_spec.layout.value == "separate"
     assert "language_model.model.layers" in cfg.moe_spec.key_template
     assert cfg.options.staged_n == 4
-    assert cfg.options.prefill_full_layers == 12
-    assert cfg.options.hot_per_layer == 32
+    # demo production profile: on-demand prefill (QWEN_PREFILL_FULL=0),
+    # no resident hot pins (QWEN_HOT=0)
+    assert cfg.options.prefill_full_layers == 0
+    assert cfg.options.full_layer_prefill is False
+    assert cfg.options.hot_per_layer == 0
     assert cfg.prerouter.start_layer == 7
     assert cfg.prerouter.hidden == 512
     assert cfg.prerouter.dtype == "fp16"
@@ -68,9 +71,10 @@ def test_ling10b_profile():
     assert cfg.moe_spec.n_group == 8
     assert cfg.moe_spec.topk_group == 4
     assert cfg.options.staged_n == 8
-    assert cfg.prerouter.start_layer == 1
-    assert cfg.prerouter.owners == tuple(range(1, 23))
+    assert cfg.prerouter.start_layer == 7
+    assert cfg.prerouter.owners == tuple(range(7, 23))
     assert cfg.prerouter.patch_call is False
+    assert cfg.gen.repetition_penalty == 1.1
     assert 156895 in cfg.gen.eos_ids
     assert cfg.port == 8083
 

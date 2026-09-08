@@ -129,7 +129,7 @@ MLX 后端是参考实现；未来 CUDA 后端实现同一表面即可复用全�
   dequant 参考逐元素对比（相对 L2 < 1%），防 gate/up 交换、行错位类回归；
 - `tests/test_moe_spec.py`、`tests/test_registry.py`、`tests/test_sampling.py` ——
   纯逻辑层单测，无需真实 checkpoint；
-- 验收指标：`target_tok_s` 与 `peak_active_mem_mb` 记录在生产机器上实测的
+- 验收指标：`target_tok_s` 与 `peak_active_mem_mb` 记录的基准环境实测
   吞吐与峰值活跃内存，作为回归标尺。
 
 ## License

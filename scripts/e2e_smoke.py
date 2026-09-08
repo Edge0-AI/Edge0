@@ -20,8 +20,8 @@ from edge0.backends import io
 from edge0.config import GenerationConfig
 from edge0.streaming.options import LayerOptions
 
-QWEN_DEFAULT = "/Users/linyu/Documents/qwen35-v7-deploy/model"
-LING_DEFAULT = "/Users/linyu/Documents/ling-mlx-server/v7-deploy/model"
+QWEN_DEFAULT = os.environ.get("EDGE0_35B_MODEL", "/path/to/qwen35/model")
+LING_DEFAULT = os.environ.get("EDGE0_10B_MODEL", "/path/to/ling/model")
 
 
 def _prompt_ids(model_dir: str, text: str) -> list[int]:

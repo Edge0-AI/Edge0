@@ -18,16 +18,16 @@ import sys
 from edge0 import models  # noqa: F401  (populates MODEL_REGISTRY)
 from edge0.registry import MODEL_REGISTRY
 
-# Checkpoint locations the demo command probes when no --model-dir is
-# given (the dev boxes these tiers were validated on).
-DEMO_DEFAULTS = {
-    "edge0-35b": "/Users/linyu/Documents/qwen35-v7-deploy/model",
-    "edge0-10b": "/Users/linyu/Documents/ling-mlx-server/v7-deploy/model",
+# Tier name -> environment variable that locates that tier's checkpoint
+# (no built-in paths: every machine resolves its own checkpoints).
+TIER_ENV = {
+    "edge0-35b": "EDGE0_35B_MODEL",
+    "edge0-10b": "EDGE0_10B_MODEL",
 }
 
 DEMO_PROMPTS = {
-    "edge0-35b": "Hello! Write one short sentence about Zhuhai.",
-    "edge0-10b": "你好，用一句话介绍珠海。",
+    "edge0-35b": "Hello! Write one short sentence about the seaside.",
+    "edge0-10b": "你好，用一句话介绍海滨城市。",
 }
 
 
@@ -69,26 +69,36 @@ def _engine_kwargs(args) -> dict:
 
 
 def _resolve_model(args) -> tuple[str | None, str | None]:
-    """vLLM-style model argument resolution.
+    """Resolve the positional ``model`` argument.
 
     ``edge0 serve <model>`` accepts either a registered tier name
-    (``edge0-35b`` / ``edge0-10b`` — checkpoint found via the matching
-    env var, else the known dev-box default) or a checkpoint path
-    (``edge0 serve /root/edge0-35b`` — tier auto-detected from the
-    checkpoint's ``config.json``).
+    (``edge0-35b`` / ``edge0-10b`` — checkpoint located via the matching
+    ``EDGE0_<TIER>_MODEL`` environment variable) or a checkpoint path
+    (tier auto-detected from the checkpoint's ``config.json``).
 
     Returns ``(model_dir, name)``; either may stay None to keep the
-    legacy ``--model-dir`` / ``--name`` behaviour.
+    ``--model-dir`` / ``--name`` behaviour.
     """
     model = getattr(args, "model", None)
     if not model:
         return args.model_dir, args.name
     if model in MODEL_REGISTRY:
-        short = (model.split("-", 1)[-1] if model.startswith("edge0-")
-                 else model)
-        env = os.environ.get(f"EDGE0_{short.upper()}_MODEL")
-        return env or DEMO_DEFAULTS.get(model), model
+        env = os.environ.get(TIER_ENV.get(model, ""))
+        return env, model
     return model, None  # a path: tier auto-detected by the registry
+
+
+def _missing_model_help(name) -> str:
+    tier_env = TIER_ENV.get(name, "EDGE0_<TIER>_MODEL")
+    return (
+        f"[edge0] no checkpoint for {name or 'model'}.\n"
+        f"Set {tier_env} to the checkpoint directory, e.g.\n"
+        f"    export {tier_env}=/path/to/model\n"
+        "or pass the checkpoint explicitly:\n"
+        "    edge0 demo /path/to/model\n"
+        "or point at any compatible checkpoint (tier auto-detected from"
+        " config.json)."
+    )
 
 
 def cmd_demo(args) -> int:
@@ -96,23 +106,8 @@ def cmd_demo(args) -> int:
     from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
 
     model_dir, name = _resolve_model(args)
-    if not model_dir:
-        # No explicit model: probe the known dev-box checkpoints.
-        for d in DEMO_DEFAULTS.values():
-            if os.path.isdir(d):
-                model_dir = d
-                break
     if not model_dir or not os.path.isdir(model_dir):
-        print(
-            f"[edge0] no checkpoint for {name or 'model'}.\n"
-            "Pass the model explicitly, vLLM-style:\n"
-            f"    edge0 demo {DEMO_DEFAULTS.get(name, '<checkpoint-dir>')}\n"
-            "or point at your own checkpoint:\n"
-            "    edge0 demo /path/to/qwen35/model\n"
-            "Tier names are edge0-35b / edge0-10b (env EDGE0_<TIER>_MODEL "
-            "overrides the default search path).",
-            file=sys.stderr,
-        )
+        print(_missing_model_help(name), file=sys.stderr)
         return 2
     engine = AutoEngine.from_pretrained(model_dir, name=name,
                                         **_engine_kwargs(args))
@@ -204,7 +199,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser(
         "demo",
-        help="one-command quickstart (vLLM-style model argument)")
+        help="one-shot generation demo")
     p.add_argument("model", nargs="?", default=None,
                    help="tier name (edge0-35b) or checkpoint dir")
     p.add_argument("--model-dir", default=None)
@@ -216,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser(
         "chat",
-        help="one-shot prompt answering (vLLM-style model argument)")
+        help="one-shot prompt answering")
     p.add_argument("model", nargs="?", default=None,
                    help="tier name (edge0-35b) or checkpoint dir")
     p.add_argument("--model-dir", default=None)
@@ -228,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser(
         "serve",
-        help="run the HTTP server, vLLM-style: edge0 serve <model>")
+        help="run the OpenAI-compatible HTTP server: edge0 serve <model>")
     p.add_argument("model", nargs="?", default=None,
                    help="tier name (edge0-35b) or checkpoint dir")
     p.add_argument("--model-dir", default=None)
