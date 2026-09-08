@@ -9,9 +9,13 @@ from the checkpoint (or forced via the model name).
 Usage:
     python examples/bench.py /path/to/model [--ntok 200] [--warmup 10]
     python examples/bench.py edge0-35b        # via $EDGE0_35B_MODEL
+    BENCH_LONG=1 python examples/bench.py edge0-35b   # ~3k-token prefill
 
 Env (sampling knobs, defaults follow the tier's GenerationConfig):
     BENCH_TEMP / BENCH_PROMPT / BENCH_SEED
+    BENCH_LONG=1  use a ~3k-token synthetic prompt so the prefill timing
+                  is meaningful (short prompts only measure fixed
+                  overhead; set BENCH_PROMPT for your own long text)
 """
 
 from __future__ import annotations
@@ -31,10 +35,38 @@ PROMPTS = {
 }
 DEFAULT_PROMPT = "什么是混合专家模型（MoE）？简单介绍一下。"
 
+# Synthetic long-context prompt (~3k tokens after tokenization): two
+# non-repetitive paragraphs alternating 40 times, prefixed with a task
+# instruction.  Prefill timing on a few dozen tokens only measures fixed
+# overhead; a long prompt exercises the real chunked prefill path
+# (per-layer expert loading, KV growth).
+_PARA_ZH = (
+    "流式推理框架的设计要点在于把磁盘带宽、缓存层级与计算核心三者重叠"
+    "起来。混合专家模型每一层只在少数专家上激活，路由器给出的稀疏选择"
+    "恰好为按需加载提供了天然的批粒度。若能在前一步的隐状态基础上预判"
+    "下一步的专家集合，固态硬盘的读取延迟就能被计算完全掩盖，这对边缘"
+    "设备上的大模型部署具有直接意义。")
+_PARA_EN = (
+    "The design of a streaming inference framework hinges on overlapping "
+    "disk bandwidth, cache hierarchy, and compute. A mixture-of-experts "
+    "layer activates only a handful of experts per token, and the router "
+    "sparsity provides a natural granularity for on-demand loading. If "
+    "the expert set of the next step can be predicted from the previous "
+    "hidden state, SSD read latency hides behind compute entirely, which "
+    "matters for large-model deployment on edge hardware.")
+
+
+def _long_prompt() -> str:
+    paras = [_PARA_ZH if i % 2 == 0 else _PARA_EN for i in range(40)]
+    return "请仔细阅读以下材料并用一句话总结其核心思想：" + " ".join(paras)
+
 
 def _prompt_for(engine) -> str:
-    return os.environ.get("BENCH_PROMPT") or PROMPTS.get(engine.name,
-                                                         DEFAULT_PROMPT)
+    if os.environ.get("BENCH_PROMPT"):
+        return os.environ["BENCH_PROMPT"]
+    if os.environ.get("BENCH_LONG") == "1":
+        return _long_prompt()
+    return PROMPTS.get(engine.name, DEFAULT_PROMPT)
 
 
 def run_bench(engine, ntok: int, warmup: int) -> dict:
@@ -89,7 +121,9 @@ def run_bench(engine, ntok: int, warmup: int) -> dict:
         results.append(dict(prefill_s=t_prefill, decode_s=t_decode,
                             ntok=len(out), peak_gib=peak_gib,
                             tok_s=len(out) / t_decode if t_decode else 0.0))
-        print(f"prompt={len(ids)} tok  prefill={t_prefill:.2f}s  "
+        pf_tps = (len(ids) / t_prefill) if t_prefill else 0.0
+        print(f"prompt={len(ids)} tok  prefill={t_prefill:.2f}s "
+              f"({pf_tps:.0f} tok/s)  "
               f"decode={len(out)}/{t_decode:.2f}s  "
               f"tok/s={results[-1]['tok_s']:.1f}  "
               f"peak_active={peak_gib:.2f} GiB", flush=True)

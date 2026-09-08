@@ -165,17 +165,17 @@ multiple prompts):
 
 ## Benchmark
 
-Measured with `examples/bench.py` (prefill → 10 sampled warmup steps → 200
-timed sampled decode tokens, 2 runs per tier):
+Measured with `examples/bench.py` (3.3k-token prompt prefill → 10 sampled
+warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 
-| Tier | Decode speed | Prefill (cold / warm)* | Peak active memory | Test machine |
+| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory | Test machine |
 |---|---|---|---|---|
-| `edge0-35b` | 14.9–17.7 tok/s | 4.4 s / 0.8 s (27 tok) | 2.9–3.1 GiB | Mac mini M4 Pro, 24 GB |
-| `edge0-10b` | 25.3 tok/s | 0.15 s / 0.25 s (37 tok) | 1.0 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 3.3–4.5 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 3.1 GiB | Mac mini M4 Pro, 24 GB |
 
 *Cold = first request after process start (expert weights fault in from
-SSD); warm = subsequent requests (page cache resident). Prompt length in
-parentheses.*
+SSD); warm = subsequent requests (page cache resident). Prefill numbers
+are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`).*
 
 *Peak active memory is the MLX allocator's peak (model weights + KV cache +
 expert working set), not RSS: expert weights stream from SSD via mmap and the
