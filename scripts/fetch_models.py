@@ -9,10 +9,11 @@ download produces a ready-to-run model directory that ``edge0 demo`` /
 Requirements:
     pip install 'edge0[fetch]'        # or: pip install huggingface_hub
 
-Repo ids come from the environment (set them once, e.g. in ~/.zshrc):
+Repo ids default to the official releases (override via the environment
+if you mirror them):
 
-    export EDGE0_35B_REPO=<your-hf-org>/edge0-35b
-    export EDGE0_10B_REPO=<your-hf-org>/edge0-10b
+    export EDGE0_35B_REPO=Edge0/Edge0-35b-a3b   # default
+    export EDGE0_10B_REPO=Edge0/Edge0-10b-a1b   # default
 
 Usage:
     python scripts/fetch_models.py --tier edge0-35b --target-dir models
@@ -32,20 +33,14 @@ import sys
 from pathlib import Path
 
 TIER_REPOS = {
-    "edge0-35b": "EDGE0_35B_REPO",
-    "edge0-10b": "EDGE0_10B_REPO",
+    "edge0-35b": ("EDGE0_35B_REPO", "Edge0/Edge0-35b-a3b"),
+    "edge0-10b": ("EDGE0_10B_REPO", "Edge0/Edge0-10b-a1b"),
 }
 
 
 def _repo_for(tier: str) -> str:
-    env = TIER_REPOS[tier]
-    repo = os.environ.get(env, "")
-    if not repo:
-        raise SystemExit(
-            f"[fetch] {tier} needs a repo id.\n"
-            f"Set {env} to your Hugging Face repo, e.g.\n"
-            f"    export {env}=<your-hf-org>/{tier}\n"
-            f"then re-run this script.")
+    env, default = TIER_REPOS[tier]
+    repo = os.environ.get(env, default)
     return repo
 
 

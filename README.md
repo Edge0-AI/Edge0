@@ -9,12 +9,20 @@ framework. The backend is isolated by design: the current MLX backend
 runs on Apple Silicon, and additional platforms (CUDA, …) plug into the
 same core abstractions.
 
-Two model tiers work out of the box:
+Two model tiers ship with the framework. Each tier is an end-to-end
+release: the released checkpoint, the trained LoRA adapters, and the
+trained prerouter heads work together as one unit.
 
-| Tier | Model | Inference profile |
+| Tier | Released checkpoint | Inference profile |
 |---|---|---|
-| `edge0-35b` | Qwen3.6-35B-A3B 4-bit (40 layers, 256 experts) | prerouter K=4 |
-| `edge0-10b` | Ling-10B 4-bit bailing hybrid (24 layers, 128 experts) | prerouter K=8 |
+| `edge0-35b` | `Edge0/Edge0-35b-a3b` | 4-bit, 40 layers, 256 experts, prerouter K=4 |
+| `edge0-10b` | `Edge0/Edge0-10b-a1b` | 4-bit, 24 layers, 128 experts, prerouter K=8 |
+
+Both checkpoints are built on open sparse-MoE base models (Qwen3.5-MoE
+35B-A3B and the Ling 3.0 bailing hybrid respectively) and ship with the
+LoRA and prerouter training done for this framework — the adapter files
+are co-located with each checkpoint and load automatically, so
+`edge0 serve <tier>` runs the trained pipeline out of the box.
 
 ## Requirements
 

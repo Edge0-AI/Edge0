@@ -6,12 +6,18 @@
 并行 LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后端隔离设计，
 当前实现 MLX 后端（Apple Silicon），更多平台（CUDA 等）即将接入。
 
-开箱支持两个模型 tier：
+框架随附两个模型档位。每个档位是一个端到端发布：发布的 checkpoint、
+训练好的 LoRA 适配器与训练好的 prerouter 头作为整体协同工作。
 
-| 模型 | 说明 | 推理档 |
+| 档位 | 发布 checkpoint | 推理档 |
 |---|---|---|
-| `edge0-35b` | Qwen3.6-35B-A3B 4bit（40 层，256 专家） | prerouter K=4 |
-| `edge0-10b` | Ling-10B 4bit（24 层，128 专家） | prerouter K=8 |
+| `edge0-35b` | `Edge0/Edge0-35b-a3b` | 4bit，40 层，256 专家，prerouter K=4 |
+| `edge0-10b` | `Edge0/Edge0-10b-a1b` | 4bit，24 层，128 专家，prerouter K=8 |
+
+两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
+与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重——
+适配器文件与 checkpoint 同目录、自动加载，`edge0 serve <tier>` 开箱即跑
+训练好的完整管线。
 
 ## 环境要求
 
