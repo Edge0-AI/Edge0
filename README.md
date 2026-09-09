@@ -215,7 +215,7 @@ original fp16 base models — the loss is small: **3.9 points on average for
 edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). All scores
 self-run, max 100:
 
-| Benchmark | edge0-35b (int4) | Base fp16 | edge0-8b (int4) | Base fp16 |
+| Benchmark | edge0-35b (int4) | Qwen3.5-MoE 35B-A3B (fp16) | edge0-8b (int4) | Ling 3.0 tiny (fp16) |
 |---|---:|---:|---:|---:|
 | AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
 | HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
