@@ -6,7 +6,7 @@
 
 **An open-source streaming MoE inference framework — SSD expert offload + parallel LoRA + prerouter routing prediction.**
 
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35b--a3b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2Fedge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/edge0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
@@ -28,7 +28,7 @@ trained prerouter heads work together as one unit.
 
 | Tier | Released checkpoint | Inference profile |
 |---|---|---|
-| `edge0-35b` | [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 |
+| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 |
 
 Both checkpoints are built on open sparse-MoE base models (Qwen3.5-MoE
@@ -106,7 +106,7 @@ The two tiers are published on Hugging Face — each repo bundles the
 base checkpoint and the trained LoRA + prerouter adapters in **one
 directory**, so a single download is a ready-to-run model:
 
-- [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) (~23 GB)
+- [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) (~23 GB)
 - [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) (~4.2 GB)
 
 ```bash
@@ -115,7 +115,7 @@ directory**, so a single download is a ready-to-run model:
 .venv/bin/python scripts/fetch_models.py --tier edge0-8b --target-dir models
 
 # or directly with the CLI:
-.venv/bin/huggingface-cli download Edge0/Edge0-35b-a3b-preview     --local-dir models/edge0-35b
+.venv/bin/huggingface-cli download Edge0/Edge0-35B-A3B-preview     --local-dir models/edge0-35b
 .venv/bin/huggingface-cli download Edge0/Edge0-8B-A1B-preview     --local-dir models/edge0-8b
 ```
 

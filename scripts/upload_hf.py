@@ -72,7 +72,7 @@ HfApi._validate_yaml = lambda self, content, repo_type, token=None: None
 
 REPOS = {
     "edge0-8b": ("EDGE0_8B_MODEL", "Edge0/Edge0-8B-A1B-preview"),
-    "edge0-35b": ("EDGE0_35B_MODEL", "Edge0/Edge0-35b-a3b-preview"),
+    "edge0-35b": ("EDGE0_35B_MODEL", "Edge0/Edge0-35B-A3B-preview"),
 }
 
 

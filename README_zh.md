@@ -6,7 +6,7 @@
 
 **开源流式 MoE 推理框架 —— SSD 专家 offload + 并行 LoRA + prerouter 路由预判**
 
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35b--a3b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2Fedge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/edge0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
@@ -24,7 +24,7 @@
 
 | 档位 | 发布 checkpoint | 推理档 |
 |---|---|---|
-| `edge0-35b` | [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) | 4bit，40 层，256 专家，prerouter K=4 |
+| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) | 4bit，40 层，256 专家，prerouter K=4 |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) | 4bit，24 层，128 专家，prerouter K=8 |
 
 两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
@@ -87,7 +87,7 @@ python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
 两个档位发布在 Hugging Face——每个仓库把基模 checkpoint 与训练好的
 LoRA + prerouter 适配器打包在**同一目录**，一次下载即为可运行的模型：
 
-- [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)（约 23 GB）
+- [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)（约 23 GB）
 - [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)（约 4.2 GB）
 
 ```bash
@@ -96,7 +96,7 @@ LoRA + prerouter 适配器打包在**同一目录**，一次下载即为可运�
 .venv/bin/python scripts/fetch_models.py --tier edge0-8b --target-dir models
 
 # 或直接用 CLI：
-.venv/bin/huggingface-cli download Edge0/Edge0-35b-a3b-preview \
+.venv/bin/huggingface-cli download Edge0/Edge0-35B-A3B-preview \
     --local-dir models/edge0-35b
 .venv/bin/huggingface-cli download Edge0/Edge0-8B-A1B-preview \
     --local-dir models/edge0-8b
