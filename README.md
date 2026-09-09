@@ -87,9 +87,16 @@ are co-located with each checkpoint and load automatically, so
   mechanism removes exactly the cold-read wait that dominates when the
   expert working set exceeds what stays resident, so the gain scales
   with model size, routed width (K), and memory pressure;
-- **Parallel LoRA**: adapters are applied as a side path at forward
-  time instead of being merged — the base stays a read-only mmap and
-  multiple adapter sets share one base.
+- **Recover-LoRA** (parallel LoRA): quantization costs accuracy; we
+  recover it after the fact.  The recipe: quantize the base model to
+  int4 and **freeze it** → insert LoRA adapters → distill training data
+  from the FP teacher (the original unquantized model, on real and
+  synthetic corpora, with on-policy distillation) → train the LoRA on
+  the distillation loss.  At inference the trained LoRA stays resident
+  and is applied as a side path at forward time instead of being
+  merged — the base stays a read-only mmap and multiple adapter sets
+  share one base.  This is what keeps the released checkpoints within
+  a few points of their fp16 base models (see Quality) at 4-bit.
 
 ## Quick start
 
