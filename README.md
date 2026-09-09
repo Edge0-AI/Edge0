@@ -4,7 +4,7 @@
 
 # edge0
 
-**An open-source streaming MoE inference framework — SSD expert offload + parallel LoRA + prerouter routing prediction.**
+**An open-source streaming MoE inference framework — SSD expert offload + Recover-LoRA + prerouter routing prediction.**
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
@@ -17,7 +17,7 @@ English | [中文](README_zh.md)
 
 **edge0** is an open-source streaming MoE inference framework. It
 generalizes the production-proven recipe — **SSD expert offload +
-parallel LoRA + prerouter routing prediction** — into an extensible
+Recover-LoRA + prerouter routing prediction** — into an extensible
 framework. The backend is isolated by design: the current MLX backend
 runs on Apple Silicon, and additional platforms (CUDA, …) plug into the
 same core abstractions.
@@ -87,7 +87,7 @@ are co-located with each checkpoint and load automatically, so
   mechanism removes exactly the cold-read wait that dominates when the
   expert working set exceeds what stays resident, so the gain scales
   with model size, routed width (K), and memory pressure;
-- **Recover-LoRA** (parallel LoRA): quantization costs accuracy; we
+- **Recover-LoRA**: quantization costs accuracy; we
   recover it after the fact.  The recipe: quantize the base model to
   int4 and **freeze it** → insert LoRA adapters → distill training data
   from the FP teacher (the original unquantized model, on real and

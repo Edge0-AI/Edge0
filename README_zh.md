@@ -4,7 +4,7 @@
 
 # edge0
 
-**开源流式 MoE 推理框架 —— SSD 专家 offload + 并行 LoRA + prerouter 路由预判**
+**开源流式 MoE 推理框架 —— SSD 专家 offload + Recover-LoRA + prerouter 路由预判**
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
@@ -16,7 +16,7 @@
 </div>
 
 **edge0** 是一个开源的流式 MoE 推理框架：把「SSD 专家 offload +
-并行 LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后端隔离设计，
+Recover-LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后端隔离设计，
 当前实现 MLX 后端（Apple Silicon），更多平台（CUDA 等）即将接入。
 
 框架随附两个模型档位。每个档位是一个端到端发布：发布的 checkpoint、
@@ -70,7 +70,7 @@
   原生路由 A/B 交替实测（同适配器、同负载）：**最高 +59%**（本测试机）。
   **存储越慢，收益越大**：该机制消除的正是专家工作集超出常驻容量时占
   主导的冷读等待，因此收益随模型规模、路由宽度（K）与内存压力增大；
-- **Recover-LoRA**（并行 LoRA）：量化有精度损失，我们在量化之后
+- **Recover-LoRA**：量化有精度损失，我们在量化之后
   把它补回来。流程：基模 int4 量化并**冻结** → 插入 LoRA 适配器 →
   由 FP teacher（原未量化模型，真实 + 合成语料，on-policy 蒸馏）
   产出蒸馏数据 → 用蒸馏损失训练 LoRA。推理时训练好的 LoRA 常驻、
