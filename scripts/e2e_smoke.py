@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 
@@ -22,6 +23,13 @@ from edge0.streaming.options import LayerOptions
 
 QWEN_DEFAULT = os.environ.get("EDGE0_35B_MODEL", "/path/to/qwen35/model")
 LING_DEFAULT = os.environ.get("EDGE0_8B_MODEL", "/path/to/ling/model")
+
+
+def _available(label: str, model_dir: str) -> bool:
+    if os.path.isdir(model_dir):
+        return True
+    print(f"[skip] {label} checkpoint not found: {model_dir}")
+    return False
 
 
 def _prompt_ids(model_dir: str, text: str) -> list[int]:
@@ -57,24 +65,33 @@ def main() -> int:
     ap.add_argument("--max-new", type=int, default=16)
     args = ap.parse_args()
 
-    qwen_prompt = _prompt_ids(args.qwen_dir, "Hello!")
-    ling_prompt = _prompt_ids(args.ling_dir, "你好")
+    ran = False
+    if _available("edge0-35b", args.qwen_dir):
+        qwen_prompt = _prompt_ids(args.qwen_dir, "Hello!")
+        staged = run("edge0-35b", args.qwen_dir, qwen_prompt, args.max_new,
+                     label="[staged]")
+        exact = run("edge0-35b", args.qwen_dir, qwen_prompt, args.max_new,
+                    options=LayerOptions(staged=False, staged_replace=False,
+                                         full_layer_prefill=False,
+                                         hot_per_layer=0, use_compile=False,
+                                         history_prefetch=False),
+                    label="[exact]")
+        if staged != exact:
+            print("MISMATCH: staged vs exact greedy sequences differ "
+                  f"(staged={staged} exact={exact})")
+            return 1
+        print("qwen staged == exact greedy: OK")
+        ran = True
 
-    staged = run("edge0-35b", args.qwen_dir, qwen_prompt, args.max_new,
-                 label="[staged]")
-    exact = run("edge0-35b", args.qwen_dir, qwen_prompt, args.max_new,
-                options=LayerOptions(staged=False, staged_replace=False,
-                                     full_layer_prefill=False,
-                                     hot_per_layer=0, use_compile=False,
-                                     history_prefetch=False),
-                label="[exact]")
-    if staged != exact:
-        print("MISMATCH: staged vs exact greedy sequences differ "
-              f"(staged={staged} exact={exact})")
+    if _available("edge0-8b", args.ling_dir):
+        ling_prompt = _prompt_ids(args.ling_dir, "你好")
+        run("edge0-8b", args.ling_dir, ling_prompt, args.max_new,
+            label="[staged]")
+        ran = True
+
+    if not ran:
+        print("edge0 e2e smoke: no checkpoints available", file=sys.stderr)
         return 1
-    print("qwen staged == exact greedy: OK")
-
-    run("edge0-8b", args.ling_dir, ling_prompt, args.max_new, label="[staged]")
     print("edge0 e2e smoke OK")
     return 0
 

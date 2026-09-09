@@ -253,8 +253,11 @@ python examples/bench.py edge0-8b    # via $EDGE0_8B_MODEL
 
 ```bash
 pytest                 # unit tests (no real weights)
-pytest -m slow         # end-to-end with real checkpoints (generation + HTTP)
-scripts/e2e_smoke.py   # staged vs exact numerical consistency smoke
+EDGE0_8B_MODEL=/path/to/edge0-8b pytest -m slow -q
+                        # real-weight generation; missing tiers are skipped
+.venv/bin/python scripts/e2e_smoke.py \
+  --qwen-dir /path/to/edge0-35b --ling-dir /path/to/edge0-8b
+                        # staged vs exact consistency + generation smoke
 scripts/generate_example.py   # full-pipeline API example
 examples/demo.py       # minimal API walkthrough
 ```

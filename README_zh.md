@@ -214,8 +214,11 @@ python examples/bench.py edge0-8b    # 经 $EDGE0_8B_MODEL
 
 ```bash
 pytest                 # 单元测试（不含真实权重）
-pytest -m slow         # 真实 checkpoint 端到端（qwen/ling 生成 + HTTP）
-scripts/e2e_smoke.py   # 两档模型 staged vs exact 数值一致性冒烟
+EDGE0_8B_MODEL=/path/to/edge0-8b pytest -m slow -q
+                        # 真实权重生成测试；缺少的档位会明确 skip
+.venv/bin/python scripts/e2e_smoke.py \
+  --qwen-dir /path/to/edge0-35b --ling-dir /path/to/edge0-8b
+                        # staged vs exact 一致性 + 生成冒烟
 scripts/generate_example.py   # 完整 API 上手例子（prefill→生成→解码全链路）
 examples/demo.py       # 最小 API walkthrough（edge0 demo 的等价代码）
 ```
