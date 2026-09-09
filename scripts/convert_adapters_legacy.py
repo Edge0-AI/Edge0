@@ -39,8 +39,8 @@ NPZ_DIRS = [
 SOURCES = [
     ("pregate_<family>.npz", "edge0-35b", "prerouter"),
     ("lora_<family>.npz", "edge0-35b", "lora"),
-    ("pregate_<family>.npz", "edge0-10b", "prerouter"),
-    ("lora_<family>.npz", "edge0-10b", "lora"),
+    ("pregate_<family>.npz", "edge0-8b", "prerouter"),
+    ("lora_<family>.npz", "edge0-8b", "lora"),
 ]
 
 
@@ -82,8 +82,8 @@ def convert(source: Path, tier: str, kind: str, force: bool = False) -> Path:
     name = {
         ("edge0-35b", "prerouter"): "prerouter_edge0_35b_k4.safetensors",
         ("edge0-35b", "lora"): "lora_edge0_35b_k4.safetensors",
-        ("edge0-10b", "prerouter"): "prerouter_edge0_10b.safetensors",
-        ("edge0-10b", "lora"): "lora_edge0_10b.safetensors",
+        ("edge0-8b", "prerouter"): "prerouter_edge0_8b.safetensors",
+        ("edge0-8b", "lora"): "lora_edge0_8b.safetensors",
     }[(tier, kind)]
     out = ARTIFACTS / name
     if out.exists() and not force:

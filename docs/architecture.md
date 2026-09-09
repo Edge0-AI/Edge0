@@ -6,7 +6,7 @@ validated in production deployments — into an extensible, general-purpose
 framework. Backends are isolated by design: the current release implements the
 MLX backend (Apple Silicon), core logic is decoupled from the backend, and other
 platforms plug in through the same facade. Two models are supported out of the
-box: `edge0-35b` (Qwen3.5-MoE, K=4) and `edge0-10b` (Ling 3.0 hybrid, K=8).
+box: `edge0-35b` (Qwen3.5-MoE, K=4) and `edge0-8b` (Ling 3.0 hybrid, K=8).
 
 ## Core Design Goals
 
@@ -53,12 +53,12 @@ src/edge0/
 ├── engine/                # inference orchestration (prefill/decode loop, subclassed per model)
 │   ├── base.py            #   shared loop (via backends.core)
 │   ├── qwen.py            #   Qwen35Engine (K=4 tier)
-│   └── ling.py            #   Ling10BEngine (K=8 tier)
+│   └── ling.py            #   Ling8BEngine (K=8 tier)
 ├── adapters/lora.py       # parallel LoRA installation (backends.nn)
 ├── models/                # model adapter layer (transformers-style)
 │   ├── base.py            #   ModelConfig base class + artifact path resolution
 │   ├── edge0_35b/         #   edge0-35b tier (registered name "edge0-35b")
-│   └── edge0_10b/         #   edge0-10b tier (registered name "edge0-10b")
+│   └── edge0_8b/         #   edge0-8b tier (registered name "edge0-8b")
 └── server/                # OpenAI-compatible HTTP service (pure stdlib)
     ├── app.py             #   ThreadingHTTPServer + routing
     └── chat.py            #   /v1/chat/completions session state

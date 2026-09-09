@@ -7,7 +7,7 @@
 **An open-source streaming MoE inference framework — SSD expert offload + parallel LoRA + prerouter routing prediction.**
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35b--a3b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--10b--a1b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-10b-a1b-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8b--a1b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8b-a1b-preview)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2Fedge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/edge0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 
@@ -29,7 +29,7 @@ trained prerouter heads work together as one unit.
 | Tier | Released checkpoint | Inference profile |
 |---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 |
-| `edge0-10b` | [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 |
+| `edge0-8b` | [`Edge0/Edge0-8b-a1b-preview`](https://huggingface.co/Edge0/Edge0-8b-a1b-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 |
 
 Both checkpoints are built on open sparse-MoE base models (Qwen3.5-MoE
 35B-A3B and the Ling 3.0 bailing hybrid respectively) and ship with the
@@ -44,10 +44,10 @@ are co-located with each checkpoint and load automatically, so
   platforms are supported yet.
 - **Python**: 3.10+ (3.12 recommended).
 - **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
-  `edge0-10b` (short contexts; see [Benchmark](#benchmark)). Add
+  `edge0-8b` (short contexts; see [Benchmark](#benchmark)). Add
   headroom for the OS, tokenizer, and long-context KV growth.
 - **Disk**: the 4-bit checkpoints are ~23 GB (`edge0-35b`) and ~4.2 GB
-  (`edge0-10b`); expert weights are mmapped and read on demand, they are
+  (`edge0-8b`); expert weights are mmapped and read on demand, they are
   not loaded into RAM up front.
 
 ## Design
@@ -107,16 +107,16 @@ base checkpoint and the trained LoRA + prerouter adapters in **one
 directory**, so a single download is a ready-to-run model:
 
 - [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) (~23 GB)
-- [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview) (~4.2 GB)
+- [`Edge0/Edge0-8b-a1b-preview`](https://huggingface.co/Edge0/Edge0-8b-a1b-preview) (~4.2 GB)
 
 ```bash
 # with the repo's helper (defaults to the two repos above):
 .venv/bin/python scripts/fetch_models.py --tier edge0-35b --target-dir models
-.venv/bin/python scripts/fetch_models.py --tier edge0-10b --target-dir models
+.venv/bin/python scripts/fetch_models.py --tier edge0-8b --target-dir models
 
 # or directly with the CLI:
 .venv/bin/huggingface-cli download Edge0/Edge0-35b-a3b-preview     --local-dir models/edge0-35b
-.venv/bin/huggingface-cli download Edge0/Edge0-10b-a1b-preview     --local-dir models/edge0-10b
+.venv/bin/huggingface-cli download Edge0/Edge0-8b-a1b-preview     --local-dir models/edge0-8b
 ```
 
 Either way you end up with a directory like:
@@ -135,7 +135,7 @@ Tier names resolve to local directories via environment variables
 
 ```bash
 export EDGE0_35B_MODEL=$PWD/models/edge0-35b
-export EDGE0_10B_MODEL=$PWD/models/edge0-10b
+export EDGE0_8B_MODEL=$PWD/models/edge0-8b
 ```
 
 Or skip the env vars entirely and pass the directory directly — the
@@ -143,7 +143,7 @@ tier is auto-detected from the checkpoint's `config.json`:
 
 ```bash
 edge0 demo models/edge0-35b
-edge0 serve models/edge0-10b
+edge0 serve models/edge0-8b
 ```
 
 ### 4) Run
@@ -212,10 +212,10 @@ this exact path).
 Internal self-evaluation, included only to quantify the loss of the edge0
 pipeline (int4 + trained adapters + prerouter routing) relative to the
 original fp16 base models — the loss is small: **3.9 points on average for
-edge0-35b, 2.8 for edge0-10b** (MMLU-Pro is even above the base). All scores
+edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). All scores
 self-run, max 100:
 
-| Benchmark | edge0-35b (int4) | Base fp16 | edge0-10b (int4) | Base fp16 |
+| Benchmark | edge0-35b (int4) | Base fp16 | edge0-8b (int4) | Base fp16 |
 |---|---:|---:|---:|---:|
 | AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
 | HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
@@ -232,7 +232,7 @@ warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 | Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory** | Test machine |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
-| `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
 *Cold = first request after process start (expert weights fault in from
 SSD); warm = subsequent requests (page cache resident). Prefill numbers
@@ -240,13 +240,13 @@ are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`).*
 
 **Peak active memory at short contexts (MLX allocator peak; expert weights
 stream from SSD via mmap and are not resident). Long contexts add KV
-cache: ~3.3 GiB on `edge0-10b` at 3.3k tokens.*
+cache: ~3.3 GiB on `edge0-8b` at 3.3k tokens.*
 
 Reproduce:
 
 ```bash
 python examples/bench.py edge0-35b    # via $EDGE0_35B_MODEL
-python examples/bench.py edge0-10b    # via $EDGE0_10B_MODEL
+python examples/bench.py edge0-8b    # via $EDGE0_8B_MODEL
 ```
 
 ## Tests
@@ -264,7 +264,7 @@ examples/demo.py       # minimal API walkthrough
 - [Architecture](docs/architecture.md)
 - [Attention](docs/attention.md) / [MoE](docs/moe.md) / [SSD streaming](docs/streaming.md) / [prerouter](docs/prerouter.md)
 - [Adding a model](docs/adding-a-model.md)
-- [edge0-35b](docs/models/edge0-35b.md) / [edge0-10b](docs/models/edge0-10b.md)
+- [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
 
 ## License
 

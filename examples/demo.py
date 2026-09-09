@@ -5,7 +5,7 @@ Install:
 
 Run (checkpoint path or registered tier name):
     .venv/bin/python examples/demo.py --model-dir /path/to/qwen35/model
-    .venv/bin/python examples/demo.py --model edge0-10b
+    .venv/bin/python examples/demo.py --model edge0-8b
 
 Three lines do everything: build the engine (prerouter + LoRA + SSD
 offload installed automatically from the tier config), template the

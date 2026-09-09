@@ -31,7 +31,7 @@ from edge0.sampling import sample
 
 PROMPTS = {
     "edge0-35b": "什么是混合专家模型（MoE）？它和普通 Transformer 有什么区别？",
-    "edge0-10b": "9.11 和 9.8 哪个大？请仔细比较。",
+    "edge0-8b": "9.11 和 9.8 哪个大？请仔细比较。",
 }
 DEFAULT_PROMPT = "什么是混合专家模型（MoE）？简单介绍一下。"
 

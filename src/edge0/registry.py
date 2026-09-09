@@ -17,9 +17,9 @@ TYPE_ALIASES: dict[str, str] = {
     "qwen3_5_moe_text": "edge0-35b",
     "qwen3_5_moe": "edge0-35b",
     # ling family (config.json carries architectures, not model_type)
-    "bailing_hybrid": "edge0-10b",
-    "bailing_moe_linear": "edge0-10b",
-    "BailingMoeV3ForCausalLM": "edge0-10b",
+    "bailing_hybrid": "edge0-8b",
+    "bailing_moe_linear": "edge0-8b",
+    "BailingMoeV3ForCausalLM": "edge0-8b",
 }
 
 

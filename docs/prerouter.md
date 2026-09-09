@@ -62,7 +62,7 @@ per `start_layer`/`owners`. Family differences are expressed through three hooks
 
 ## Model tiers
 
-| | edge0-35b | edge0-10b |
+| | edge0-35b | edge0-8b |
 |---|---|---|
 | Routing family | SOFTMAX_TOPK (precise softmax → top-k → normalization) | SIGMOID_GROUP (sigmoid + group-limited top-k, n_group 8 / topk_group 4, routed_scaling 2.5) |
 | start_layer | 7 (first consumer layer) | 1 |
@@ -70,7 +70,7 @@ per `start_layer`/`owners`. Family differences are expressed through three hooks
 | hidden | 512 (fp16) | 512 (fp16) |
 | feature_topk | executed | executed |
 | patch_call | True (qwen3_next needs the patch) | False (built-in model hook) |
-| weight file | `artifacts/prerouter_edge0_35b_k4.safetensors` | `artifacts/prerouter_edge0_10b.safetensors` |
+| weight file | `artifacts/prerouter_edge0_35b_k4.safetensors` | `artifacts/prerouter_edge0_8b.safetensors` |
 
 ## Tests and regression
 

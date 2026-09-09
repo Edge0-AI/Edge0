@@ -10,17 +10,17 @@ from edge0.registry import MODEL_REGISTRY, TYPE_ALIASES
 
 
 def test_both_tiers_registered():
-    assert set(MODEL_REGISTRY) == {"edge0-35b", "edge0-10b"}
+    assert set(MODEL_REGISTRY) == {"edge0-35b", "edge0-8b"}
 
 
 def test_type_aliases_resolve():
     assert TYPE_ALIASES["qwen3_5_moe"] == "edge0-35b"
     assert TYPE_ALIASES["qwen3_5_moe_text"] == "edge0-35b"
-    assert TYPE_ALIASES["bailing_hybrid"] == "edge0-10b"
-    assert TYPE_ALIASES["bailing_moe_linear"] == "edge0-10b"
+    assert TYPE_ALIASES["bailing_hybrid"] == "edge0-8b"
+    assert TYPE_ALIASES["bailing_moe_linear"] == "edge0-8b"
 
 
-@pytest.mark.parametrize("name", ["edge0-35b", "edge0-10b"])
+@pytest.mark.parametrize("name", ["edge0-35b", "edge0-8b"])
 def test_auto_config_defaults(name):
     cfg = AutoConfig.from_pretrained(name=name)
     assert cfg.name == name
@@ -62,8 +62,8 @@ def test_qwen35_profile():
     assert cfg.port == 8085
 
 
-def test_ling10b_profile():
-    cfg = AutoConfig.from_pretrained(name="edge0-10b")
+def test_ling8b_profile():
+    cfg = AutoConfig.from_pretrained(name="edge0-8b")
     assert cfg.moe_spec.num_experts == 128
     assert cfg.moe_spec.top_k == 8
     assert cfg.moe_spec.router.value == "sigmoid_group"
@@ -80,13 +80,13 @@ def test_ling10b_profile():
 
 
 def test_override_and_reject():
-    cfg = AutoConfig.from_pretrained(name="edge0-10b", prerouter=None,
+    cfg = AutoConfig.from_pretrained(name="edge0-8b", prerouter=None,
                                      lora="", prerouter_top_k=0)
     assert cfg.prerouter is None
     assert cfg.lora == ""
     assert cfg.prerouter_top_k == 0
     with pytest.raises(TypeError, match="unknown"):
-        AutoConfig.from_pretrained(name="edge0-10b", bogus_field=1)
+        AutoConfig.from_pretrained(name="edge0-8b", bogus_field=1)
 
 
 def test_unknown_name_lists_registry():

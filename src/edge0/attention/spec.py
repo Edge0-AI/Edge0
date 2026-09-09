@@ -2,7 +2,7 @@
 
 edge0 does not re-implement attention kernels: the vendored base model
 implementations (``edge0.backends.mlx._impl``) carry the kernels (GQA /
-GatedDeltaNet for edge0-35b, MLA / DeltaNet for edge0-10b).  This module
+GatedDeltaNet for edge0-35b, MLA / DeltaNet for edge0-8b).  This module
 describes attention so the framework can introspect a model — cache
 sizing, layer roles, documentation, and future kernels — without knowing
 the concrete implementation.

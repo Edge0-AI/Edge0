@@ -21,7 +21,7 @@ from edge0.config import GenerationConfig
 from edge0.streaming.options import LayerOptions
 
 QWEN_DEFAULT = os.environ.get("EDGE0_35B_MODEL", "/path/to/qwen35/model")
-LING_DEFAULT = os.environ.get("EDGE0_10B_MODEL", "/path/to/ling/model")
+LING_DEFAULT = os.environ.get("EDGE0_8B_MODEL", "/path/to/ling/model")
 
 
 def _prompt_ids(model_dir: str, text: str) -> list[int]:
@@ -74,7 +74,7 @@ def main() -> int:
         return 1
     print("qwen staged == exact greedy: OK")
 
-    run("edge0-10b", args.ling_dir, ling_prompt, args.max_new, label="[staged]")
+    run("edge0-8b", args.ling_dir, ling_prompt, args.max_new, label="[staged]")
     print("edge0 e2e smoke OK")
     return 0
 

@@ -99,7 +99,7 @@ class LayerOptions:
 
     @classmethod
     def staged_k8(cls, **overrides) -> "LayerOptions":
-        """edge0-10b tier: staged decode with K=8 (native routing width),
+        """edge0-8b tier: staged decode with K=8 (native routing width),
         no hot pins, E3b whole-layer prefill."""
         return cls(
             staged=True, staged_replace=False, staged_n=8,
@@ -110,7 +110,7 @@ class LayerOptions:
 
     @classmethod
     def prod_k8(cls, **overrides) -> "LayerOptions":
-        """edge0-10b tier: deployment production profile.
+        """edge0-8b tier: deployment production profile.
 
         Mirrors the reference deployment profile: STAGED_DECODE=0
         (staged decode is OFF — the deployment verified staged decode on

@@ -23,12 +23,12 @@ from edge0.registry import MODEL_REGISTRY
 # (no built-in paths: every machine resolves its own checkpoints).
 TIER_ENV = {
     "edge0-35b": "EDGE0_35B_MODEL",
-    "edge0-10b": "EDGE0_10B_MODEL",
+    "edge0-8b": "EDGE0_8B_MODEL",
 }
 
 DEMO_PROMPTS = {
     "edge0-35b": "Hello! Write one short sentence about the seaside.",
-    "edge0-10b": "你好，用一句话介绍海滨城市。",
+    "edge0-8b": "你好，用一句话介绍海滨城市。",
 }
 
 
@@ -73,7 +73,7 @@ def _resolve_model(args) -> tuple[str | None, str | None]:
     """Resolve the positional ``model`` argument.
 
     ``edge0 serve <model>`` accepts either a registered tier name
-    (``edge0-35b`` / ``edge0-10b`` — checkpoint located via the matching
+    (``edge0-35b`` / ``edge0-8b`` — checkpoint located via the matching
     ``EDGE0_<TIER>_MODEL`` environment variable) or a checkpoint path
     (tier auto-detected from the checkpoint's ``config.json``).
 

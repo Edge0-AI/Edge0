@@ -1,8 +1,8 @@
-# edge0-10b
+# edge0-8b
 
 The lightweight, high-throughput tier of the edge0 platform: an 8B-class sparse mixture-of-experts model built on the Ling 3.0 hybrid architecture (MLA + MoE). It trades some parameter count versus the 35b tier for lower peak memory and a higher generation rate, making it a good fit for latency- and memory-sensitive scenarios.
 
-The performance profile is based on benchmarks of the current release adapter version and is pinned by default in `Ling10BConfig` (`src/edge0/models/edge0_10b/__init__.py`).
+The performance profile is based on benchmarks of the current release adapter version and is pinned by default in `Ling8BConfig` (`src/edge0/models/edge0_8b/__init__.py`).
 
 ## Model profile
 
@@ -26,7 +26,7 @@ The performance profile is based on benchmarks of the current release adapter ve
 | Measured throughput | 23.9–25.3 tok/s (M4 Pro) |
 | Measured peak activation memory | ≈ 1.0 GB (short context) / 3.1 GB (3.3k-token context) |
 
-> Note: all values are taken from `Ling10BConfig._defaults()` and `LayerOptions.prod_k8()`. The head count comes from the explicit `owners=range(7, 23)` — 16 heads in total (the current release head distribution: prediction is consumed from L7 onward, and L1–6 use the original router); `feature_topk="executed"`.
+> Note: all values are taken from `Ling8BConfig._defaults()` and `LayerOptions.prod_k8()`. The head count comes from the explicit `owners=range(7, 23)` — 16 heads in total (the current release head distribution: prediction is consumed from L7 onward, and L1–6 use the original router); `feature_topk="executed"`.
 
 ## Staged decode
 
@@ -53,7 +53,7 @@ Optional arguments:
 For single-turn chat in the terminal, use `chat` instead:
 
 ```bash
-edge0 chat --name edge0-10b --model-dir /path/to/checkpoint --prompt "Hello"
+edge0 chat --name edge0-8b --model-dir /path/to/checkpoint --prompt "Hello"
 ```
 
 To view this tier's default profile:
@@ -69,17 +69,17 @@ from edge0 import AutoEngine, AutoModel, AutoConfig
 
 # an engine ready to generate
 engine = AutoEngine.from_pretrained(
-    "/path/to/checkpoint", name="edge0-10b",
+    "/path/to/checkpoint", name="edge0-8b",
 )
 ids = engine.generate([156895])          # uses the default sampling from the config
 text = engine._tok.decode(ids)
 engine.close()
 
 # weights only (streaming experts + prerouter + LoRA installed)
-model = AutoModel.from_pretrained("/path/to/checkpoint", name="edge0-10b")
+model = AutoModel.from_pretrained("/path/to/checkpoint", name="edge0-8b")
 
 # config only
-cfg = AutoConfig.from_pretrained("/path/to/checkpoint", name="edge0-10b")
+cfg = AutoConfig.from_pretrained("/path/to/checkpoint", name="edge0-8b")
 ```
 
 `AutoEngine` / `AutoModel` / `AutoConfig` can all omit `name` and resolve automatically from the `model_type` in the checkpoint's `config.json` or from the directory basename (see `src/edge0/registry.py`).
@@ -101,7 +101,7 @@ cfg = AutoConfig.from_pretrained("/path/to/checkpoint", name="edge0-10b")
 curl -s http://127.0.0.1:8083/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "edge0-10b",
+    "model": "edge0-8b",
     "messages": [{"role": "user", "content": "Introduce Ling"}],
     "temperature": 0.7,
     "max_tokens": 256
@@ -115,7 +115,7 @@ Response fields (non-streaming):
   "id": "chatcmpl-...",
   "object": "chat.completion",
   "created": 1750000000,
-  "model": "edge0-10b",
+  "model": "edge0-8b",
   "choices": [{
     "index": 0,
     "message": {"role": "assistant", "content": "..."},
@@ -133,7 +133,7 @@ Optional request fields: `model`, `messages` (with `role`/`content`; content sup
 curl -N http://127.0.0.1:8083/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "edge0-10b",
+    "model": "edge0-8b",
     "messages": [{"role": "user", "content": "Count to five"}],
     "stream": true
   }'
@@ -150,7 +150,7 @@ from edge0 import AutoEngine
 
 engine = AutoEngine.from_pretrained(
     "/path/to/checkpoint",
-    name="edge0-10b",
+    name="edge0-8b",
     port=9083,                    # override the default port 8083
     target_tok_s=35.0,            # override the acceptance throughput target
     prerouter=None,               # disable the prerouter
@@ -159,4 +159,4 @@ engine = AutoEngine.from_pretrained(
 )
 ```
 
-The corresponding CLI overrides are `--no-prerouter` / `--no-lora` (see `_engine_kwargs` in `src/edge0/cli.py`). To override engine parameters, call `Ling10BConfig.from_pretrained(model_dir, **overrides)` directly.
+The corresponding CLI overrides are `--no-prerouter` / `--no-lora` (see `_engine_kwargs` in `src/edge0/cli.py`). To override engine parameters, call `Ling8BConfig.from_pretrained(model_dir, **overrides)` directly.

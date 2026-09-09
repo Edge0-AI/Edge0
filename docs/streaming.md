@@ -75,7 +75,7 @@ With `use_compile`, the staged/exact paths are wrapped in `mx.compile`:
 | `prefill_hot` | hot stack size during prefill | 0 |
 | `use_compile` / `top_k` | compile wrapping / routing top-k override | True / None |
 
-Presets: `staged_k4()` (edge0-35b: staged with 4 slots + 32 hot + whole-layer prefill over 12 layers), `staged_k8()` (edge0-10b: staged with 8 slots, no hot residency). Both tiers share `cache_slots=64`.
+Presets: `staged_k4()` (edge0-35b: staged with 4 slots + 32 hot + whole-layer prefill over 12 layers), `staged_k8()` (edge0-8b: staged with 8 slots, no hot residency). Both tiers share `cache_slots=64`.
 
 ## Why Whole-Layer Loading Is Also Fast
 

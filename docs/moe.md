@@ -18,7 +18,7 @@ subsystem consumes that spec (layout + key templates), so **one generic
 | `SOFTMAX_TOPK` | `"softmax_topk"` | exact softmax → top-k → re-normalization (Qwen3.5-MoE style, `norm_topk_prob=True`) |
 | `SIGMOID_GROUP` | `"sigmoid_group"` | sigmoid scores + group-limited top-k + routed scaling (DeepSeek-V3 / Bailing style) |
 
-The two families correspond to the two models: edge0-35b uses `SOFTMAX_TOPK`, edge0-10b
+The two families correspond to the two models: edge0-35b uses `SOFTMAX_TOPK`, edge0-8b
 uses `SIGMOID_GROUP`. See the "Routing functions" section for the matching math
 implementations.
 
@@ -199,7 +199,7 @@ Returns `(inds [..., k], scores [..., k])`. Note that "who is selected" uses the
 selection score (bias included) while the "weights" use the raw sigmoid (bias excluded) —
 the key distinction of DeepSeek-style routing.
 
-The two models each use one: edge0-35b uses `select_from_logits`, edge0-10b uses
+The two models each use one: edge0-35b uses `select_from_logits`, edge0-8b uses
 `group_select_from_logits`; the prerouter stager also reuses these two functions for
 cross-token teacher routing.
 

@@ -7,7 +7,7 @@
 **开源流式 MoE 推理框架 —— SSD 专家 offload + 并行 LoRA + prerouter 路由预判**
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35b--a3b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--10b--a1b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-10b-a1b-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8b--a1b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8b-a1b-preview)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2Fedge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/edge0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 
@@ -25,7 +25,7 @@
 | 档位 | 发布 checkpoint | 推理档 |
 |---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) | 4bit，40 层，256 专家，prerouter K=4 |
-| `edge0-10b` | [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview) | 4bit，24 层，128 专家，prerouter K=8 |
+| `edge0-8b` | [`Edge0/Edge0-8b-a1b-preview`](https://huggingface.co/Edge0/Edge0-8b-a1b-preview) | 4bit，24 层，128 专家，prerouter K=8 |
 
 两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重——
@@ -37,11 +37,11 @@
 - **系统 / 硬件**：MLX 后端目前仅支持 Apple Silicon 的 macOS
   （M1/M2/M3/M4）；CUDA 后端在路线图中，其余平台暂不支持。
 - **Python**：3.10+（推荐 3.12）。
-- **内存**：短上下文下 `edge0-35b` ≈2.9 GB、`edge0-10b` ≈1.0 GB
+- **内存**：短上下文下 `edge0-35b` ≈2.9 GB、`edge0-8b` ≈1.0 GB
   峰值激活内存（见[性能实测](#性能实测)）；另为系统、tokenizer 与
   长上下文 KV 增长预留余量。
 - **磁盘**：4bit checkpoint 约 23 GB（`edge0-35b`）/ 4.2 GB
-  （`edge0-10b`）；专家权重 mmap 按需读取，不一次性载入内存。
+  （`edge0-8b`）；专家权重 mmap 按需读取，不一次性载入内存。
 
 ## 设计
 
@@ -88,18 +88,18 @@ python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
 LoRA + prerouter 适配器打包在**同一目录**，一次下载即为可运行的模型：
 
 - [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)（约 23 GB）
-- [`Edge0/Edge0-10b-a1b-preview`](https://huggingface.co/Edge0/Edge0-10b-a1b-preview)（约 4.2 GB）
+- [`Edge0/Edge0-8b-a1b-preview`](https://huggingface.co/Edge0/Edge0-8b-a1b-preview)（约 4.2 GB）
 
 ```bash
 # 用仓库自带脚本（默认即上述两个仓库）：
 .venv/bin/python scripts/fetch_models.py --tier edge0-35b --target-dir models
-.venv/bin/python scripts/fetch_models.py --tier edge0-10b --target-dir models
+.venv/bin/python scripts/fetch_models.py --tier edge0-8b --target-dir models
 
 # 或直接用 CLI：
 .venv/bin/huggingface-cli download Edge0/Edge0-35b-a3b-preview \
     --local-dir models/edge0-35b
-.venv/bin/huggingface-cli download Edge0/Edge0-10b-a1b-preview \
-    --local-dir models/edge0-10b
+.venv/bin/huggingface-cli download Edge0/Edge0-8b-a1b-preview \
+    --local-dir models/edge0-8b
 ```
 
 下载完成后目录结构：
@@ -117,7 +117,7 @@ models/edge0-35b/
 
 ```bash
 export EDGE0_35B_MODEL=$PWD/models/edge0-35b
-export EDGE0_10B_MODEL=$PWD/models/edge0-10b
+export EDGE0_8B_MODEL=$PWD/models/edge0-8b
 ```
 
 也可以不用环境变量，直接传目录——框架从 checkpoint 的 `config.json`
@@ -125,7 +125,7 @@ export EDGE0_10B_MODEL=$PWD/models/edge0-10b
 
 ```bash
 edge0 demo models/edge0-35b
-edge0 serve models/edge0-10b
+edge0 serve models/edge0-8b
 ```
 
 ### 4) 运行
@@ -177,10 +177,10 @@ engine.close()   # 释放 mmap / 专家缓存
 
 内部自测分数，仅用于对比 edge0 管线（int4 量化 + 训练适配器 + prerouter
 路由）相对原 fp16 基座模型的**损失——损失很小：edge0-35b 平均仅落后
-3.9 分、edge0-10b 落后 2.8 分**（MMLU-Pro 甚至反超基座）。均为自测，
+3.9 分、edge0-8b 落后 2.8 分**（MMLU-Pro 甚至反超基座）。均为自测，
 满分 100：
 
-| 评测项 | edge0-35b (int4) | 基座 fp16 | edge0-10b (int4) | 基座 fp16 |
+| 评测项 | edge0-35b (int4) | 基座 fp16 | edge0-8b (int4) | 基座 fp16 |
 |---|---:|---:|---:|---:|
 | AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
 | HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
@@ -197,17 +197,17 @@ engine.close()   # 释放 mmap / 专家缓存
 | 档位 | 解码速度 | Prefill 吞吐（冷/热）* | 峰值 active 内存** | 测试机器 |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
-| `edge0-10b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
+| `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
 *冷 = 进程启动后首请求（专家权重从 SSD 逐页换入）；热 = 后续请求（页缓存常驻）。Prefill 为 ≈3.3k token 长 prompt 的吞吐（`BENCH_LONG=1`）。
 
-**短上下文下的峰值 active 内存（MLX allocator 峰值；专家权重经 mmap 流式读取、不常驻内存）。长上下文增加 KV cache：3.3k token 下 `edge0-10b` ≈3.3 GiB。**
+**短上下文下的峰值 active 内存（MLX allocator 峰值；专家权重经 mmap 流式读取、不常驻内存）。长上下文增加 KV cache：3.3k token 下 `edge0-8b` ≈3.3 GiB。**
 
 复现：
 
 ```bash
 python examples/bench.py edge0-35b    # 经 $EDGE0_35B_MODEL
-python examples/bench.py edge0-10b    # 经 $EDGE0_10B_MODEL
+python examples/bench.py edge0-8b    # 经 $EDGE0_8B_MODEL
 ```
 
 ## 验证
@@ -225,7 +225,7 @@ examples/demo.py       # 最小 API walkthrough（edge0 demo 的等价代码）
 - [架构总览](docs/architecture.md)
 - [注意力抽象](docs/attention.md) / [MoE 抽象](docs/moe.md) / [SSD 流式](docs/streaming.md) / [prerouter](docs/prerouter.md)
 - [如何接入新模型](docs/adding-a-model.md)
-- [edge0-35b](docs/models/edge0-35b.md) / [edge0-10b](docs/models/edge0-10b.md)
+- [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
 
 ## License
 

@@ -1,4 +1,4 @@
-"""edge0-10b adapter: Ling 3.0 hybrid (MLA + MoE, 10B tier).
+"""edge0-8b adapter: Ling 3.0 hybrid (MLA + MoE, 8B tier).
 
 Family facts (production profile, verified against the reference checkpoint):
 
@@ -26,13 +26,13 @@ from edge0.registry import register_model
 from edge0.streaming.options import LayerOptions
 
 
-class Ling10BConfig(ModelConfig):
-    """edge0-10b family config (Ling 3.0 hybrid, K=8)."""
+class Ling8BConfig(ModelConfig):
+    """edge0-8b family config (Ling 3.0 hybrid, K=8)."""
 
     @classmethod
-    def _defaults(cls, model_dir: str) -> "Ling10BConfig":
+    def _defaults(cls, model_dir: str) -> "Ling8BConfig":
         return cls(
-            name="edge0-10b",
+            name="edge0-8b",
             model_dir=model_dir,
             moe_spec=MoESpec(
                 num_experts=128, top_k=8, intermediate_size=512,
@@ -52,11 +52,11 @@ class Ling10BConfig(ModelConfig):
                 feature_topk="executed",
                 owners=tuple(range(7, 23)),
                 weights_file=artifact(
-                    "prerouter_edge0_10b.safetensors", model_dir),
+                    "prerouter_edge0_8b.safetensors", model_dir),
                 patch_call=False,
             ),
             prerouter_top_k=8,
-            lora=artifact("lora_edge0_10b.safetensors", model_dir),
+            lora=artifact("lora_edge0_8b.safetensors", model_dir),
             lora_r=16, lora_alpha=32.0,
             gen=GenerationConfig(
                 temperature=0.7, top_p=0.95, top_k=64,
@@ -77,25 +77,25 @@ def build_model(model_dir: str | None = None, **overrides):
     installed (the engine's own build path, DRY-shared)."""
     from edge0.engine.ling import load_installed
 
-    cfg = Ling10BConfig.from_pretrained(model_dir, **overrides)
+    cfg = Ling8BConfig.from_pretrained(model_dir, **overrides)
     model, _mcfg, _shards, _installs = load_installed(cfg.model_dir, cfg)
     return model
 
 
 def build_engine(model_dir: str | None = None, **overrides):
-    """Build a ready-to-generate Ling10BEngine.
+    """Build a ready-to-generate Ling8BEngine.
 
     ``think`` (THINK_MODE parity, default False) selects the
     chat-template thinking mode for ``encode_chat``.
     """
-    from edge0.engine.ling import Ling10BEngine
+    from edge0.engine.ling import Ling8BEngine
 
     think = overrides.pop("think", False)
-    cfg = Ling10BConfig.from_pretrained(model_dir, **overrides)
-    return Ling10BEngine(cfg.model_dir, cfg, think=think)
+    cfg = Ling8BConfig.from_pretrained(model_dir, **overrides)
+    return Ling8BEngine(cfg.model_dir, cfg, think=think)
 
 
-register_model("edge0-10b", sys.modules[__name__])
+register_model("edge0-8b", sys.modules[__name__])
 
 
-Config = Ling10BConfig  # registry contract: adapter.Config
+Config = Ling8BConfig  # registry contract: adapter.Config

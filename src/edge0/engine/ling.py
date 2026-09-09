@@ -1,4 +1,4 @@
-"""edge0-10b engine: Ling 3.0 hybrid (MLA + MoE, 10B tier).
+"""edge0-8b engine: Ling 3.0 hybrid (MLA + MoE, 8B tier).
 
 Port of the deployment's ling ``engine.py`` hybrid-prerouter path:
 
@@ -78,7 +78,7 @@ def load_installed(model_dir: str, cfg):
             model=model, spec=spec, pspec=cfg.prerouter,
             state=pg_state, stream_layers=stream_layers,
             top_k=cfg.prerouter_top_k)
-        print(f"[edge0-10b] prerouter installed: {len(heads)} heads, "
+        print(f"[edge0-8b] prerouter installed: {len(heads)} heads, "
               f"start={cfg.prerouter.start_layer}, "
               f"K={cfg.prerouter_top_k}", flush=True)
     installs = dict(all_stream_layers=all_stream,
@@ -87,10 +87,10 @@ def load_installed(model_dir: str, cfg):
     return model, model_config, shards, installs
 
 
-class Ling10BEngine(Edge0Engine):
+class Ling8BEngine(Edge0Engine):
     """Streaming Ling-3.0 engine (staged decode + hybrid prerouter)."""
 
-    name = "edge0-10b"
+    name = "edge0-8b"
 
     def __init__(self, model_dir: str, cfg, tokenizer=None,
                  think: bool = False):
@@ -166,7 +166,7 @@ class Ling10BEngine(Edge0Engine):
             self.reset()
         except Exception:  # noqa: BLE001 — advisory only
             pass
-        print(f"[edge0-10b] prewarm done in "
+        print(f"[edge0-8b] prewarm done in "
               f"{_t.perf_counter() - t0:.1f}s", flush=True)
 
     # ---- forward ----------------------------------------------------------

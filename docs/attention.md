@@ -1,6 +1,6 @@
 # Attention Specification (`AttentionSpec`)
 
-`edge0` does not re-implement attention kernels: the concrete sequence-mixing computation is carried by the **vendored base model** (GQA / GatedDeltaNet in `edge0.backends.mlx._impl` for edge0-35b; MLA / DeltaNet for edge0-10b). Attention kernels are **backend model assets**, not part of the framework.
+`edge0` does not re-implement attention kernels: the concrete sequence-mixing computation is carried by the **vendored base model** (GQA / GatedDeltaNet in `edge0.backends.mlx._impl` for edge0-35b; MLA / DeltaNet for edge0-8b). Attention kernels are **backend model assets**, not part of the framework.
 
 So why have an `AttentionSpec` at all? Because the framework needs to **introspect** a model **without depending on a concrete implementation**: cache sizing, layer roles, documentation, and future kernel adaptation. `AttentionSpec` is the carrier for this "attention taxonomy" layer. This document explains what it is, the field semantics, how the engine uses it, and why it is a separate abstraction (the MLA/MHA differences).
 
@@ -13,7 +13,7 @@ The docstring at the top of the module draws the boundary explicitly:
 ```
 edge0 does not re-implement attention kernels: the vendored base model
 implementations (edge0.backends.mlx._impl) carry the kernels (GQA /
-GatedDeltaNet for edge0-35b, MLA / DeltaNet for edge0-10b).  This module
+GatedDeltaNet for edge0-35b, MLA / DeltaNet for edge0-8b).  This module
 describes attention so the framework can introspect a model — cache
 sizing, layer roles, documentation, and future kernels — without knowing
 the concrete implementation.
@@ -33,7 +33,7 @@ Adding a new attention type = a new `AttentionKind` member + an `AttentionSpec` 
 | `GATED_DELTANET` | `"gated_deltanet"` | GatedDeltaNet (gated delta / linear attention with decay) |
 | `DENSE_MLP` | `"dense_mlp"` | No sequence mixing (pure MLP layer) |
 
-The existence of `DENSE_MLP` says that some layers of a model may have no attention block at all (for example, layer 0 of edge0-10b is a dense layer), and the taxonomy must be able to state explicitly that "this layer does no sequence mixing".
+The existence of `DENSE_MLP` says that some layers of a model may have no attention block at all (for example, layer 0 of edge0-8b is a dense layer), and the taxonomy must be able to state explicitly that "this layer does no sequence mixing".
 
 ## The Spec: `AttentionSpec`
 
@@ -92,7 +92,7 @@ Rather than "the engine runs attention", it is more accurate to say the engine o
 | Head geometry | `num_heads` / `num_kv_heads` / `head_dim` are meaningful | Usually not applicable (`None`) |
 | Mixing layer coverage | Nearly every layer | Possibly only some layers (incl. dense layers) |
 
-`AttentionSpec` expresses both families with a single, uniform field set: `kind` carries the family, `cache` carries cache presence, the head-geometry fields are populated only for GQA/MLA, and `layer_indices` carries the mixing layer coverage and scheduling. The framework can then run the same introspection logic for edge0-35b's GatedDeltaNet and edge0-10b's MLA, without hardcoding each of them.
+`AttentionSpec` expresses both families with a single, uniform field set: `kind` carries the family, `cache` carries cache presence, the head-geometry fields are populated only for GQA/MLA, and `layer_indices` carries the mixing layer coverage and scheduling. The framework can then run the same introspection logic for edge0-35b's GatedDeltaNet and edge0-8b's MLA, without hardcoding each of them.
 
 ## Steps to Add a New Attention Type
 

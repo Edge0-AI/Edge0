@@ -1,6 +1,6 @@
 # Adding a New Model
 
-This document is a step-by-step guide for adding a new model family to edge0, using `edge0-35b` (`src/edge0/models/edge0_35b/__init__.py`) as the running example, with real code line numbers noted throughout. `edge0-10b` (`src/edge0/models/edge0_10b/__init__.py`) is a second live example; its path resolution and contract are identical.
+This document is a step-by-step guide for adding a new model family to edge0, using `edge0-35b` (`src/edge0/models/edge0_35b/__init__.py`) as the running example, with real code line numbers noted throughout. `edge0-8b` (`src/edge0/models/edge0_8b/__init__.py`) is a second live example; its path resolution and contract are identical.
 
 Integration goal: let `AutoConfig` / `AutoModel` / `AutoEngine` resolve your model by name (or by the `model_type` in the checkpoint's `config.json`), and have the streaming MoE layers driven by a common `StreamingSwitchGLU`.
 
@@ -68,7 +68,7 @@ def build_engine(model_dir=None, **overrides):
     return Qwen35Engine(cfg.model_dir, cfg)
 ```
 
-If your model family's math differs (e.g. edge0-10b's `SIGMOID_GROUP` + hybrid MLA), write a matching engine under `src/edge0/engine/` (model it on `engine/qwen.py` / `engine/ling.py`) and reference it from `build_model` / `build_engine`. `load_installed` assembles the streaming twins / LoRA / prerouter; it is the construction path the framework provides to engines.
+If your model family's math differs (e.g. edge0-8b's `SIGMOID_GROUP` + hybrid MLA), write a matching engine under `src/edge0/engine/` (model it on `engine/qwen.py` / `engine/ling.py`) and reference it from `build_model` / `build_engine`. `load_installed` assembles the streaming twins / LoRA / prerouter; it is the construction path the framework provides to engines.
 
 ## Step 4: Register with the registry
 
@@ -92,8 +92,8 @@ Config = Qwen35Config  # registry contract: adapter.Config
 TYPE_ALIASES = {
     "qwen3_5_moe_text": "edge0-35b",
     "qwen3_5_moe": "edge0-35b",
-    "bailing_hybrid": "edge0-10b",
-    "bailing_moe_linear": "edge0-10b",
+    "bailing_hybrid": "edge0-8b",
+    "bailing_moe_linear": "edge0-8b",
 }
 ```
 
@@ -165,5 +165,5 @@ Config = MyConfig
 
 - `src/edge0/registry.py` — the registry + the Auto trio
 - `src/edge0/models/base.py` — `ModelConfig` / `from_pretrained` / artifact resolution
-- `src/edge0/models/edge0_35b/__init__.py`, `edge0_10b/__init__.py` — the two live examples
+- `src/edge0/models/edge0_35b/__init__.py`, `edge0_8b/__init__.py` — the two live examples
 - `tests/test_registry.py`, `tests/test_moe_spec.py` — behavior examples
