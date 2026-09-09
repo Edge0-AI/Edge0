@@ -69,31 +69,16 @@ are co-located with each checkpoint and load automatically, so
 
 ## Core mechanisms
 
-edge0 reduces serving a large MoE on memory-constrained hardware to
-three composable mechanisms:
-
-- **SSD expert offload.**  Expert weights live on disk and are mmapped
-  on demand; an LRU keeps the active set resident and long-tail
-  experts are prefetched per layer.  Peak memory is bounded by the
-  active set, not the parameter count.
-- **Prerouter.**  In standard MoE decode, expert selection at layer
-  *N* depends on the layer *N−1* output, so each expert load begins
-  only after the routing decision and stalls the step.  The prerouter
-  is a lightweight trained head that predicts layer-*N* routing from
-  the token-*t−1* hidden state — one layer and one token ahead — so
-  loads are issued at the step boundary and I/O latency overlaps the
-  forward pass.  Against the same model with native routing (same
-  adapters, same load), this yields **up to +59%** decode throughput;
-  the gain grows with storage latency and with the fraction of the
-  expert working set that exceeds residency, i.e. with model size,
-  routed width *K*, and memory pressure.
-- **Recover-LoRA.**  Quantization loss is repaired post hoc: freeze
-  the int4 base, attach LoRA adapters, and train them with a
-  distillation loss against the FP teacher on real and synthetic
-  corpora (on-policy).  Adapters stay unmerged at inference — a
-  side path over a read-only, mmap-shared base — so one base serves
-  many adapter sets.  On the released checkpoints this holds 4-bit
-  quality within a few points of fp16 (see [Quality](#quality)).
+- **SSD expert offload**: expert weights are mmapped on demand; peak
+  memory is bounded by the active set, not the parameter count.
+- **Prerouter**: a trained head predicts expert routing one step
+  ahead, so expert loads overlap the forward pass instead of stalling
+  it — **up to +59%** decode throughput; the gain grows with storage
+  latency, model size, and routed width *K*.
+- **Recover-LoRA**: the int4 base is frozen and LoRA adapters are
+  trained by distillation from the FP teacher, recovering most of the
+  quantization loss at 4-bit (see [Quality](#quality)).  Adapters stay
+  unmerged: one read-only base serves multiple adapter sets.
 
 ## Quick start
 
