@@ -7,7 +7,7 @@
 **开源流式 MoE 推理框架 —— SSD 专家 offload + 并行 LoRA + prerouter 路由预判**
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35b--a3b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8b--a1b--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8b-a1b-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2Fedge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/edge0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
 
@@ -25,7 +25,7 @@
 | 档位 | 发布 checkpoint | 推理档 |
 |---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview) | 4bit，40 层，256 专家，prerouter K=4 |
-| `edge0-8b` | [`Edge0/Edge0-8b-a1b-preview`](https://huggingface.co/Edge0/Edge0-8b-a1b-preview) | 4bit，24 层，128 专家，prerouter K=8 |
+| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) | 4bit，24 层，128 专家，prerouter K=8 |
 
 两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重——
@@ -88,7 +88,7 @@ python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
 LoRA + prerouter 适配器打包在**同一目录**，一次下载即为可运行的模型：
 
 - [`Edge0/Edge0-35b-a3b-preview`](https://huggingface.co/Edge0/Edge0-35b-a3b-preview)（约 23 GB）
-- [`Edge0/Edge0-8b-a1b-preview`](https://huggingface.co/Edge0/Edge0-8b-a1b-preview)（约 4.2 GB）
+- [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)（约 4.2 GB）
 
 ```bash
 # 用仓库自带脚本（默认即上述两个仓库）：
@@ -98,7 +98,7 @@ LoRA + prerouter 适配器打包在**同一目录**，一次下载即为可运�
 # 或直接用 CLI：
 .venv/bin/huggingface-cli download Edge0/Edge0-35b-a3b-preview \
     --local-dir models/edge0-35b
-.venv/bin/huggingface-cli download Edge0/Edge0-8b-a1b-preview \
+.venv/bin/huggingface-cli download Edge0/Edge0-8B-A1B-preview \
     --local-dir models/edge0-8b
 ```
 
@@ -205,8 +205,11 @@ python examples/bench.py edge0-8b    # 经 $EDGE0_8B_MODEL
 
 ```bash
 pytest                 # 单元测试（不含真实权重）
-pytest -m slow         # 真实 checkpoint 端到端（qwen/ling 生成 + HTTP）
-scripts/e2e_smoke.py   # 两档模型 staged vs exact 数值一致性冒烟
+EDGE0_8B_MODEL=/path/to/edge0-8b pytest -m slow -q
+                        # 真实权重生成测试；缺少的档位会明确 skip
+.venv/bin/python scripts/e2e_smoke.py \
+  --qwen-dir /path/to/edge0-35b --ling-dir /path/to/edge0-8b
+                        # staged vs exact 一致性 + 生成冒烟
 scripts/generate_example.py   # 完整 API 上手例子（prefill→生成→解码全链路）
 examples/demo.py       # 最小 API walkthrough（edge0 demo 的等价代码）
 ```

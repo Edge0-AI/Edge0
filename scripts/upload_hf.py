@@ -14,6 +14,7 @@ Two mirror quirks must be worked around:
 
 Usage:
     export HF_TOKEN=...
+    export EDGE0_8B_MODEL=/path/to/edge0-8b-checkpoint
     python scripts/upload_hf.py [edge0-8b|edge0-35b]
 """
 import os
@@ -70,14 +71,22 @@ _lfs.fix_hf_endpoint_in_url = _fix
 HfApi._validate_yaml = lambda self, content, repo_type, token=None: None
 
 REPOS = {
-    "edge0-8b": ("/Users/linyu/Documents/edge0-8b", "Edge0/Edge0-8b-a1b-preview"),
-    "edge0-35b": ("/Users/linyu/Documents/edge0-35b", "Edge0/Edge0-35b-a3b-preview"),
+    "edge0-8b": ("EDGE0_8B_MODEL", "Edge0/Edge0-8B-A1B-preview"),
+    "edge0-35b": ("EDGE0_35B_MODEL", "Edge0/Edge0-35b-a3b-preview"),
 }
 
 
 def main():
     tier = sys.argv[1] if len(sys.argv) > 1 else "edge0-8b"
-    local_dir, repo_id = REPOS[tier]
+    env_name, repo_id = REPOS[tier]
+    local_dir = os.environ.get(env_name)
+    if not local_dir:
+        raise SystemExit(
+            f"set {env_name} to the local checkpoint directory before "
+            "uploading")
+    local_dir = os.path.abspath(os.path.expanduser(local_dir))
+    if not os.path.isdir(local_dir):
+        raise SystemExit(f"checkpoint directory not found: {local_dir}")
     api = HfApi()
     print(f"uploading {local_dir} -> {repo_id} via {os.environ['HF_ENDPOINT']} (no xet)", flush=True)
     names = sorted(

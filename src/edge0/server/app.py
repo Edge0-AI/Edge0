@@ -2,14 +2,15 @@
 
 Preference order: if ``flask`` is importable it is used (the full
 OpenAI-compatible surface with SSE streaming); otherwise a minimal
-stdlib ``http.server`` handler serves the same JSON contract
-(non-streaming).  Both share ``build_app_handlers`` so the route
+stdlib ``http.server`` handler serves the same JSON contract and SSE
+streaming.  Both share ``build_app_handlers`` so the route
 semantics stay identical.
 """
 
 from __future__ import annotations
 
 import json
+import queue
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -73,27 +74,45 @@ def _chat_once(server: QueueServer, payload: dict):
 
 def _chat_stream(server: QueueServer, payload: dict):
     req = parse_chat_request(payload)
-    events: list[bytes] = []
+    events = queue.Queue()
+    finished = object()
+    request_id = f"chatcmpl-{int(time.time() * 1000)}"
+    created = int(time.time())
 
     def on_token(tid: int):
         text = decode_tokens(server.engine, [tid])
-        events.append(sse_format({
-            "id": "chatcmpl-1", "object": "chat.completion.chunk",
-            "created": int(time.time()), "model": server.model_name,
+        events.put(sse_format({
+            "id": request_id, "object": "chat.completion.chunk",
+            "created": created, "model": server.model_name,
             "choices": [{"index": 0,
                          "delta": {"content": text},
                          "finish_reason": None}],
         }).encode("utf-8"))
 
-    tokens, meta = server.chat(req, on_token=on_token)
-    events.append(sse_format({
-        "id": "chatcmpl-1", "object": "chat.completion.chunk",
-        "created": int(time.time()), "model": server.model_name,
-        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
-        "usage": meta["usage"],
-    }).encode("utf-8"))
-    events.append(b"data: [DONE]\n\n")
-    return b"".join(events)
+    def produce():
+        try:
+            _, meta = server.chat(req, on_token=on_token)
+            events.put(sse_format({
+                "id": request_id, "object": "chat.completion.chunk",
+                "created": created, "model": server.model_name,
+                "choices": [{"index": 0, "delta": {},
+                             "finish_reason": "stop"}],
+                "usage": meta["usage"],
+            }).encode("utf-8"))
+            events.put(b"data: [DONE]\n\n")
+        except Exception as exc:  # pragma: no cover - transport-dependent
+            events.put(sse_format({
+                "error": {"message": str(exc), "type": "server_error"},
+            }).encode("utf-8"))
+        finally:
+            events.put(finished)
+
+    threading.Thread(target=produce, daemon=True).start()
+    while True:
+        event = events.get()
+        if event is finished:
+            return
+        yield event
 
 
 def build_app_handlers(server: QueueServer):
@@ -102,10 +121,15 @@ def build_app_handlers(server: QueueServer):
     def handle_chat(payload: dict):
         if payload.get("stream"):
             if _HAS_FLASK:
-                return Response(_chat_stream(server, payload),
-                                mimetype="text/event-stream")
-            return (_chat_stream(server, payload), 200,
-                    {"Content-Type": "text/event-stream"})
+                return Response(
+                    _chat_stream(server, payload),
+                    mimetype="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "X-Accel-Buffering": "no",
+                    },
+                )
+            return _chat_stream(server, payload)
         return _chat_once(server, payload)
 
     handlers = {
@@ -164,6 +188,7 @@ def create_app(server: QueueServer):
 
 class _StdlibHandler(BaseHTTPRequestHandler):
     server_q = None  # type: QueueServer
+    protocol_version = "HTTP/1.1"
 
     def _json(self, status: int, obj):
         body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
@@ -172,6 +197,27 @@ class _StdlibHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _sse(self, events):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-Accel-Buffering", "no")
+        self.send_header("Transfer-Encoding", "chunked")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.close_connection = True
+        try:
+            for body in events:
+                if not body:
+                    continue
+                size = f"{len(body):X}".encode("ascii")
+                self.wfile.write(size + b"\r\n" + body + b"\r\n")
+                self.wfile.flush()
+            self.wfile.write(b"0\r\n\r\n")
+            self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def do_GET(self):  # noqa: N802
         path = urlparse(self.path).path
@@ -191,6 +237,9 @@ class _StdlibHandler(BaseHTTPRequestHandler):
             return
         length = int(self.headers.get("Content-Length", 0))
         payload = json.loads(self.rfile.read(length) or b"{}")
+        if path == "/v1/chat/completions" and payload.get("stream"):
+            self._sse(_chat_stream(self.server_q, payload))
+            return
         out = handlers[("POST " + path)](payload)
         if isinstance(out, tuple):
             body, status, headers = out
