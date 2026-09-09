@@ -70,7 +70,7 @@ _lfs.fix_hf_endpoint_in_url = _fix
 HfApi._validate_yaml = lambda self, content, repo_type, token=None: None
 
 REPOS = {
-    "edge0-8b": ("/Users/linyu/Documents/edge0-8b", "Edge0/Edge0-8b-a1b-preview"),
+    "edge0-8b": ("/Users/linyu/Documents/edge0-8b", "Edge0/Edge0-8B-A1B-preview"),
     "edge0-35b": ("/Users/linyu/Documents/edge0-35b", "Edge0/Edge0-35b-a3b-preview"),
 }
 
