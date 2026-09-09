@@ -69,34 +69,31 @@ are co-located with each checkpoint and load automatically, so
 
 ## Core mechanisms
 
-- **SSD expert offload**: MoE expert weights are mmapped from disk and
-  streamed on demand; the active set stays resident in an LRU and
-  long-tail experts are prefetched per layer — large models run in
-  modest memory;
-- **Prerouter routing prediction**: MoE decode waits on expert loads —
-  routing depends on the previous layer's output, so by the time the
-  router picks the experts, their SSD load has not even started.  A
-  lightweight trained head breaks this serialization: it predicts the
-  next token's expert routing from the previous token's hidden state
-  one step ahead (double shift: prev-layer + prev-token), so expert
-  loads are submitted at the step boundary and SSD read latency hides
-  completely behind the forward pass (`start_layer=7` on both tiers).
-  Measured A/B decode speedup vs the same model with native routing
-  (identical adapters and load, alternating rounds): **up to +59%** on
-  this test machine.  The slower the storage, the bigger the win: the
-  mechanism removes exactly the cold-read wait that dominates when the
-  expert working set exceeds what stays resident, so the gain scales
-  with model size, routed width (K), and memory pressure;
-- **Recover-LoRA**: quantization costs accuracy; we
-  recover it after the fact.  The recipe: quantize the base model to
-  int4 and **freeze it** → insert LoRA adapters → distill training data
-  from the FP teacher (the original unquantized model, on real and
-  synthetic corpora, with on-policy distillation) → train the LoRA on
-  the distillation loss.  At inference the trained LoRA stays resident
-  and is applied as a side path at forward time instead of being
-  merged — the base stays a read-only mmap and multiple adapter sets
-  share one base.  This is what keeps the released checkpoints within
-  a few points of their fp16 base models (see Quality) at 4-bit.
+edge0 reduces serving a large MoE on memory-constrained hardware to
+three composable mechanisms:
+
+- **SSD expert offload.**  Expert weights live on disk and are mmapped
+  on demand; an LRU keeps the active set resident and long-tail
+  experts are prefetched per layer.  Peak memory is bounded by the
+  active set, not the parameter count.
+- **Prerouter.**  In standard MoE decode, expert selection at layer
+  *N* depends on the layer *N−1* output, so each expert load begins
+  only after the routing decision and stalls the step.  The prerouter
+  is a lightweight trained head that predicts layer-*N* routing from
+  the token-*t−1* hidden state — one layer and one token ahead — so
+  loads are issued at the step boundary and I/O latency overlaps the
+  forward pass.  Against the same model with native routing (same
+  adapters, same load), this yields **up to +59%** decode throughput;
+  the gain grows with storage latency and with the fraction of the
+  expert working set that exceeds residency, i.e. with model size,
+  routed width *K*, and memory pressure.
+- **Recover-LoRA.**  Quantization loss is repaired post hoc: freeze
+  the int4 base, attach LoRA adapters, and train them with a
+  distillation loss against the FP teacher on real and synthetic
+  corpora (on-policy).  Adapters stay unmerged at inference — a
+  side path over a read-only, mmap-shared base — so one base serves
+  many adapter sets.  On the released checkpoints this holds 4-bit
+  quality within a few points of fp16 (see [Quality](#quality)).
 
 ## Quick start
 
