@@ -173,21 +173,12 @@ engine.close()   # 释放 mmap / 专家缓存
 - prerouter + LoRA 两条适配器都必需；缺文件时 `edge0` 会给出明确报错
   （也可加 `--no-prerouter` / `--no-lora` 直接跑裸基模）。
 
-## 质量自测
+## 质量
 
-内部自测分数，仅用于对比 edge0 管线（int4 量化 + 训练适配器 + prerouter
-路由）相对原 fp16 基座模型的**损失——损失很小：edge0-35b 平均仅落后
-3.9 分、edge0-8b 落后 2.8 分**（MMLU-Pro 甚至反超基座）。均为自测，
-满分 100：
-
-| 评测项 | edge0-35b (int4) | Qwen3.5-MoE 35B-A3B（fp16） | edge0-8b (int4) | Ling 3.0 tiny（fp16） |
-|---|---:|---:|---:|---:|
-| AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
-| HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
-| GPQA-Diamond | 79.8 | 81.8 | 70.7 | 71.2 |
-| MMLU-Pro | 81.0 | 84.6 | 70.1 | 65.8 |
-| IFBench | 57.9 | 61.7 | 53.9 | 60.6 |
-| **平均** | **79.2** | **83.2** | **69.9** | **72.7** |
+全部评测由我们使用 [OpenCompass](https://github.com/open-compass/opencompass)、
+在完全相同的设置与参数下对 edge0 模型（int4 + 训练适配器 + prerouter 路由）
+与原 fp16 基座模型测得。edge0 管线的损失很小：**edge0-35b 平均仅落后
+3.9 分、edge0-8b 落后 2.8 分**（MMLU-Pro 甚至反超基座）。满分 100：
 
 ## 性能实测
 

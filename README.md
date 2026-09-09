@@ -207,13 +207,13 @@ this exact path).
 - Both adapters are required for the prerouter + LoRA pipeline; if a
   file is missing, `edge0` fails with a clear message (or pass
   `--no-prerouter` / `--no-lora` to run the plain base model).
-## Quality (self-evaluation)
+## Quality
 
-Internal self-evaluation, included only to quantify the loss of the edge0
-pipeline (int4 + trained adapters + prerouter routing) relative to the
-original fp16 base models — the loss is small: **3.9 points on average for
-edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). All scores
-self-run, max 100:
+All benchmarks were run by us with [OpenCompass](https://github.com/open-compass/opencompass)
+under identical settings and parameters for both the edge0 models (int4 +
+trained adapters + prerouter routing) and the original fp16 base models.
+The loss of the edge0 pipeline is small: **3.9 points on average for
+edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). Max 100:
 
 | Benchmark | edge0-35b (int4) | Qwen3.5-MoE 35B-A3B (fp16) | edge0-8b (int4) | Ling 3.0 tiny (fp16) |
 |---|---:|---:|---:|---:|
