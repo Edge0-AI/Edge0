@@ -69,8 +69,9 @@ are co-located with each checkpoint and load automatically, so
 
 ## Core mechanisms
 
-- **SSD expert offload**: expert weights are mmapped on demand; peak
-  memory is bounded by the active set, not the parameter count.
+- **SSD expert offload**: expert weights are streamed from storage on
+  demand; peak memory is bounded by the active set, not the parameter
+  count.
 - **Prerouter**: a trained head predicts expert routing one step
   ahead, so expert loads overlap the forward pass instead of stalling
   it — **up to +59%** decode throughput; the gain grows with storage
