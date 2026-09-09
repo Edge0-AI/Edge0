@@ -1,6 +1,6 @@
 # edge0-10b
 
-The lightweight, high-throughput tier of the edge0 platform: a 10B-class sparse mixture-of-experts model built on the Ling 3.0 hybrid architecture (MLA + MoE). It trades some parameter count versus the 35b tier for lower peak memory and a higher generation rate, making it a good fit for latency- and memory-sensitive scenarios.
+The lightweight, high-throughput tier of the edge0 platform: an 8B-class sparse mixture-of-experts model built on the Ling 3.0 hybrid architecture (MLA + MoE). It trades some parameter count versus the 35b tier for lower peak memory and a higher generation rate, making it a good fit for latency- and memory-sensitive scenarios.
 
 The performance profile is based on benchmarks of the current release adapter version and is pinned by default in `Ling10BConfig` (`src/edge0/models/edge0_10b/__init__.py`).
 
@@ -8,7 +8,7 @@ The performance profile is based on benchmarks of the current release adapter ve
 
 | Item | Value |
 | --- | --- |
-| Parameter scale | 10B-class |
+| Parameter scale | 8B-class (≈7.9B total / ≈1.2B active) |
 | Number of layers | 24 (layer 0 is dense) |
 | Number of experts | 128 routed experts + 1 always-resident shared expert |
 | top_k (K) | 8 (native routing width) |
