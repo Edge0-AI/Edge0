@@ -19,10 +19,12 @@ import pytest
 
 from edge0.config import GenerationConfig
 from edge0.server.app import (
+    _HAS_FLASK,
     _chat_once,
     _chat_stream,
     _StdlibHandler,
     build_app_handlers,
+    create_app,
     run_stdlib,
 )
 from edge0.server.chat import (
@@ -276,10 +278,10 @@ def test_chat_once_response_shape():
 
 def test_chat_stream_events_sequence():
     srv = QueueServer(FakeEngine())
-    raw = _chat_stream(srv, {
+    events = _chat_stream(srv, {
         "messages": [{"role": "user", "content": "hi"}], "stream": True,
     })
-    body = raw if isinstance(raw, bytes) else raw.get_data()
+    body = b"".join(events)
     events = [e for e in body.decode("utf-8").split("\n\n") if e]
     assert events[-1] == "data: [DONE]"
     chunks = [json.loads(e[6:]) for e in events[:-1]]  # drop [DONE]
@@ -288,6 +290,47 @@ def test_chat_stream_events_sequence():
     assert deltas == ["T11", "T12", "T13"]
     assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
     assert chunks[-1]["choices"][0]["delta"] == {}
+
+
+class PausingFakeEngine(FakeEngine):
+    """Pause after the first callback so transport buffering is observable."""
+
+    def __init__(self):
+        super().__init__()
+        self.first_token = threading.Event()
+        self.resume = threading.Event()
+        self.finished = threading.Event()
+
+    def generate(self, ids, gen_config=None, on_token=None, **kw):
+        toks = [11, 12, 13]
+        self.generated.append((list(ids), gen_config))
+        if on_token is not None:
+            on_token(toks[0])
+            self.first_token.set()
+            self.resume.wait(timeout=5)
+            for tid in toks[1:]:
+                on_token(tid)
+        self.finished.set()
+        return toks
+
+
+def test_chat_stream_yields_before_generation_finishes():
+    eng = PausingFakeEngine()
+    srv = QueueServer(eng)
+    stream = iter(_chat_stream(srv, {
+        "messages": [{"role": "user", "content": "hi"}],
+        "stream": True,
+    }))
+    try:
+        first = next(stream)
+        assert first.startswith(b"data: ")
+        assert eng.first_token.is_set()
+        assert not eng.finished.is_set()
+        eng.resume.set()
+        body = first + b"".join(stream)
+    finally:
+        eng.resume.set()
+    assert b"data: [DONE]\n\n" in body
 
 
 # ---- stdlib HTTP transport ------------------------------------------------
@@ -328,3 +371,68 @@ def test_stdlib_http_end_to_end():
         httpd.shutdown()
         httpd.server_close()
         t.join(timeout=5)
+
+
+def test_stdlib_http_streams_before_generation_finishes():
+    eng = PausingFakeEngine()
+    srv = QueueServer(eng, model_name="fake")
+    handler = type("Edge0Handler", (_StdlibHandler,), {"server_q": srv})
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    port = httpd.server_address[1]
+    t = threading.Thread(target=httpd.serve_forever, daemon=True)
+    t.start()
+    payload = json.dumps({
+        "model": "fake",
+        "messages": [{"role": "user", "content": "hi"}],
+        "stream": True,
+    }).encode("utf-8")
+    req = urlrequest.Request(
+        f"http://127.0.0.1:{port}/v1/chat/completions",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=10) as response:
+            assert response.status == 200
+            assert response.headers["Transfer-Encoding"] == "chunked"
+            first = response.readline()
+            assert first.startswith(b"data: ")
+            assert eng.first_token.is_set()
+            assert not eng.finished.is_set()
+            eng.resume.set()
+            rest = response.read()
+        assert b"data: [DONE]\n\n" in first + rest
+    finally:
+        eng.resume.set()
+        httpd.shutdown()
+        httpd.server_close()
+        t.join(timeout=5)
+
+
+@pytest.mark.skipif(not _HAS_FLASK, reason="flask is not installed")
+def test_flask_http_streams_before_generation_finishes():
+    eng = PausingFakeEngine()
+    app = create_app(QueueServer(eng, model_name="fake"))
+    response = app.test_client().post(
+        "/v1/chat/completions",
+        json={
+            "model": "fake",
+            "messages": [{"role": "user", "content": "hi"}],
+            "stream": True,
+        },
+        buffered=False,
+    )
+    try:
+        assert response.status_code == 200
+        assert response.headers["Cache-Control"] == "no-cache"
+        stream = iter(response.response)
+        first = next(stream)
+        assert first.startswith(b"data: ")
+        assert eng.first_token.is_set()
+        assert not eng.finished.is_set()
+        eng.resume.set()
+        body = first + b"".join(stream)
+    finally:
+        eng.resume.set()
+        response.close()
+    assert b"data: [DONE]\n\n" in body
