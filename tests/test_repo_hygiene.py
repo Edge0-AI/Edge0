@@ -1,8 +1,9 @@
 """Repository-hygiene guards for a clean open-source release.
 
 These tests import nothing from ``edge0`` (and nothing from ``mlx``), so
-they can run on any platform — including the Linux CI job where MLX has no
-wheels.  They enforce the "no dependency on the author's machine" rule:
+they can run on any platform, independent of whatever MLX wheels happen
+to be available on the CI runner's platform. They enforce the "no
+dependency on the author's machine" rule:
 
 * no personal / hardcoded absolute paths in shipped code, docs or scripts;
 * the MLX backend boundary is respected (``import mlx`` only inside
