@@ -67,6 +67,18 @@ are co-located with each checkpoint and load automatically, so
   and that model's adapters; upgrading adapters swaps adapter
   files only — the base stays read-only and is never merged.
 
+<div align="center">
+
+<video
+  src="https://huggingface.co/Edge0/Edge0-35B-A3B-preview/resolve/main/20260910-105854.mp4"
+  controls
+  playsinline
+  preload="metadata"
+  width="80%">
+</video>
+
+</div>
+
 ## Core mechanisms
 
 - **SSD expert offload**: expert weights are streamed from storage on
