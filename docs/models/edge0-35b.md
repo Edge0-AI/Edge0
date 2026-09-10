@@ -128,6 +128,8 @@ Response fields (non-streaming):
 
 Optional request fields: `model`, `messages` (with `role`/`content`; content supports multiple text segments that are concatenated automatically), `temperature`, `top_p`, `top_k`, `max_tokens`, `seed`, `stream`.
 
+The serve API is unauthenticated and binds loopback by default. Request bodies are capped at 1 MiB (`413`); `max_tokens` is clamped to 2048; message count and prompt size are bounded. See [HARDENING.md](../HARDENING.md).
+
 ### Streaming chat (requires Flask)
 
 ```bash

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import queue
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,6 +19,11 @@ from urllib.parse import urlparse
 
 from edge0.server.chat import (QueueServer, parse_chat_request, sse_format,
                                decode_tokens)
+from edge0.server.limits import (
+    MAX_REQUEST_BYTES,
+    ChatRequestError,
+    insecure_bind_warning,
+)
 
 try:  # pragma: no cover - environment dependent
     from flask import Flask, Response, jsonify, request  # type: ignore
@@ -28,9 +34,8 @@ except ImportError:  # pragma: no cover
 
 
 def _error(status: int, msg: str) -> tuple:
-    if _HAS_FLASK:
-        return jsonify({"error": {"message": msg, "type": "invalid_request"}}), status
-    return (json.dumps({"error": {"message": msg}}), status)
+    """Transport-agnostic error: ``(payload_dict, status)``."""
+    return {"error": {"message": msg, "type": "invalid_request"}}, status
 
 
 def _split_think(text: str, think: bool):
@@ -73,6 +78,8 @@ def _chat_once(server: QueueServer, payload: dict):
 
 
 def _chat_stream(server: QueueServer, payload: dict):
+    # Parse eagerly so invalid requests 400 *before* SSE headers are sent.
+    # The inner generator is what the transports iterate.
     req = parse_chat_request(payload)
     events = queue.Queue()
     finished = object()
@@ -107,30 +114,36 @@ def _chat_stream(server: QueueServer, payload: dict):
         finally:
             events.put(finished)
 
-    threading.Thread(target=produce, daemon=True).start()
-    while True:
-        event = events.get()
-        if event is finished:
-            return
-        yield event
+    def generate():
+        threading.Thread(target=produce, daemon=True).start()
+        while True:
+            event = events.get()
+            if event is finished:
+                return
+            yield event
+
+    return generate()
 
 
 def build_app_handlers(server: QueueServer):
     """Return a handler dispatch dict shared by both transports."""
 
     def handle_chat(payload: dict):
-        if payload.get("stream"):
-            if _HAS_FLASK:
-                return Response(
-                    _chat_stream(server, payload),
-                    mimetype="text/event-stream",
-                    headers={
-                        "Cache-Control": "no-cache",
-                        "X-Accel-Buffering": "no",
-                    },
-                )
-            return _chat_stream(server, payload)
-        return _chat_once(server, payload)
+        try:
+            if payload.get("stream"):
+                if _HAS_FLASK:
+                    return Response(
+                        _chat_stream(server, payload),
+                        mimetype="text/event-stream",
+                        headers={
+                            "Cache-Control": "no-cache",
+                            "X-Accel-Buffering": "no",
+                        },
+                    )
+                return _chat_stream(server, payload)
+            return _chat_once(server, payload)
+        except ChatRequestError as exc:
+            return _error(exc.status, exc.message)
 
     handlers = {
         "GET /healthz": lambda: {"status": "ok", "model": server.model_name},
@@ -155,7 +168,17 @@ def create_app(server: QueueServer):
         raise ImportError("flask is required for create_app(); "
                           "use run_stdlib instead")
     app = Flask("edge0")
+    app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
     handlers = build_app_handlers(server)
+
+    @app.errorhandler(413)
+    def _too_large(_err):
+        return jsonify({
+            "error": {
+                "message": "request body too large",
+                "type": "invalid_request",
+            },
+        }), 413
 
     @app.get("/healthz")
     def healthz():
@@ -168,11 +191,17 @@ def create_app(server: QueueServer):
     @app.post("/v1/chat/completions")
     def chat():
         payload = request.get_json(force=True, silent=True) or {}
+        if not isinstance(payload, dict):
+            body, status = _error(400, "JSON object required")
+            return jsonify(body), status
         out = handlers["POST /v1/chat/completions"](payload)
         if isinstance(out, Response):
             return out
-        if isinstance(out, tuple) and out and isinstance(out[0], Response):
-            return out
+        if isinstance(out, tuple):
+            body, status = out[0], out[1]
+            if isinstance(body, Response):
+                return body, status
+            return jsonify(body), status
         return jsonify(out)
 
     @app.post("/v1/completions")
@@ -180,7 +209,8 @@ def create_app(server: QueueServer):
         payload = request.get_json(force=True, silent=True) or {}
         out = handlers["POST /v1/completions"](payload)
         if isinstance(out, tuple):
-            return out
+            body, status = out[0], out[1]
+            return jsonify(body), status
         return jsonify(out)
 
     return app
@@ -229,28 +259,88 @@ class _StdlibHandler(BaseHTTPRequestHandler):
         else:
             self._json(404, {"error": {"message": f"no route {path}"}})
 
+    def _write_handler_result(self, out):
+        """Serialize a handler return value (dict, 2-tuple, or 3-tuple)."""
+        if not isinstance(out, tuple):
+            self._json(200, out)
+            return
+        body, status = out[0], out[1]
+        extra = dict(out[2]) if len(out) > 2 else {}
+        if isinstance(body, dict):
+            self._json(status, body)
+            return
+        get_data = getattr(body, "get_data", None)
+        if callable(get_data):
+            raw = get_data()
+            ctype = getattr(body, "mimetype", None) or "application/json"
+        else:
+            raw = body.encode("utf-8") if isinstance(body, str) else body
+            ctype = "application/json"
+        self.send_response(status)
+        sent_ct = False
+        for k, v in extra.items():
+            self.send_header(k, v)
+            if k.lower() == "content-type":
+                sent_ct = True
+        if not sent_ct:
+            self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
+    def _read_json_body(self):
+        """Read a POST body capped at ``MAX_REQUEST_BYTES``.
+
+        Returns the parsed object, or None if an error response was already
+        written.
+        """
+        raw_len = self.headers.get("Content-Length", "0")
+        try:
+            length = int(raw_len)
+        except (TypeError, ValueError):
+            self._json(400, {"error": {"message": "invalid Content-Length",
+                                       "type": "invalid_request"}})
+            return None
+        if length < 0:
+            self._json(400, {"error": {"message": "invalid Content-Length",
+                                       "type": "invalid_request"}})
+            return None
+        if length > MAX_REQUEST_BYTES:
+            self.close_connection = True
+            self._json(413, {"error": {"message": "request body too large",
+                                       "type": "invalid_request"}})
+            return None
+        raw = self.rfile.read(length) or b"{}"
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            self._json(400, {"error": {"message": "invalid JSON",
+                                       "type": "invalid_request"}})
+            return None
+
     def do_POST(self):  # noqa: N802
         path = urlparse(self.path).path
         handlers = build_app_handlers(self.server_q)
         if path not in ("/v1/chat/completions", "/v1/completions"):
             self._json(404, {"error": {"message": f"no route {path}"}})
             return
-        length = int(self.headers.get("Content-Length", 0))
-        payload = json.loads(self.rfile.read(length) or b"{}")
-        if path == "/v1/chat/completions" and payload.get("stream"):
-            self._sse(_chat_stream(self.server_q, payload))
+        payload = self._read_json_body()
+        if payload is None:
             return
-        out = handlers[("POST " + path)](payload)
-        if isinstance(out, tuple):
-            body, status, headers = out
-            self.send_response(status)
-            for k, v in headers.items():
-                self.send_header(k, v)
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        else:
-            self._json(200, out)
+        if not isinstance(payload, dict):
+            self._json(400, {"error": {"message": "JSON object required",
+                                       "type": "invalid_request"}})
+            return
+        try:
+            if path == "/v1/chat/completions" and payload.get("stream"):
+                self._sse(_chat_stream(self.server_q, payload))
+                return
+            out = handlers[("POST " + path)](payload)
+        except ChatRequestError as exc:
+            self._json(exc.status, {"error": {"message": exc.message,
+                                              "type": "invalid_request"}})
+            return
+        self._write_handler_result(out)
 
     def log_message(self, fmt, *args):  # quiet by default
         pass
@@ -266,6 +356,9 @@ def run_stdlib(server: QueueServer, host: str, port: int):
 def run_server(server: QueueServer, host: str = "127.0.0.1",
                port: int = 8000, use_flask: bool | None = None):
     """Run the HTTP server in the foreground (blocking)."""
+    warning = insecure_bind_warning(host, port)
+    if warning:
+        print(warning, file=sys.stderr)
     if use_flask is None:
         use_flask = _HAS_FLASK
     if use_flask:

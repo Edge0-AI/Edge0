@@ -22,9 +22,13 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    # NOTE: mlx-lm is pinned to 0.31.0 on purpose.  Newer releases crash in
+        # NOTE: mlx-lm is pinned to 0.31.0 on purpose.  Newer releases crash in
     # decode with a `tolist()` on lazily-evaluated arrays.  Do not upgrade
     # without re-running the full test suite.
+    # PyPI yanked 0.31.0 ("Batched KV cache cross contamination").  edge0
+    # serializes generations (one request at a time), so that batch-cache
+    # bug is off the serving path; the pin remains until a later mlx-lm is
+    # verified.  See docs/HARDENING.md.
     "mlx==0.30.4",
     "mlx-metal==0.30.4; platform_system == 'Darwin'",
     "mlx-lm==0.31.0",

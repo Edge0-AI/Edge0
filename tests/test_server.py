@@ -11,9 +11,11 @@ from __future__ import annotations
 import json
 import threading
 import time
+from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
 from types import SimpleNamespace
 from urllib import request as urlrequest
+from urllib.error import HTTPError
 
 import pytest
 
@@ -35,6 +37,15 @@ from edge0.server.chat import (
     decode_tokens,
     parse_chat_request,
     sse_format,
+)
+from edge0.server.limits import (
+    MAX_MAX_TOKENS,
+    MAX_MESSAGES,
+    MAX_PROMPT_CHARS,
+    MAX_REQUEST_BYTES,
+    ChatRequestError,
+    insecure_bind_warning,
+    is_loopback_host,
 )
 
 
@@ -145,6 +156,47 @@ def test_parse_stream_flag_and_sampling():
     assert req.top_k == 32
     assert req.max_tokens == 16
     assert req.stream is True
+
+
+def test_parse_clamps_max_tokens():
+    req = _req(max_tokens=MAX_MAX_TOKENS + 1000)
+    assert req.max_tokens == MAX_MAX_TOKENS
+
+
+def test_parse_rejects_non_positive_max_tokens():
+    with pytest.raises(ChatRequestError, match="max_tokens"):
+        _req(max_tokens=0)
+    with pytest.raises(ChatRequestError, match="max_tokens"):
+        _req(max_tokens=-8)
+    with pytest.raises(ChatRequestError, match="integer"):
+        _req(max_tokens="nope")
+
+
+def test_parse_rejects_too_many_messages():
+    with pytest.raises(ChatRequestError, match="too many messages"):
+        parse_chat_request({
+            "messages": [{"role": "user", "content": "x"}]
+            * (MAX_MESSAGES + 1),
+        })
+
+
+def test_parse_rejects_oversized_prompt():
+    with pytest.raises(ChatRequestError, match="prompt too large"):
+        parse_chat_request({
+            "messages": [{"role": "user", "content": "a" * (MAX_PROMPT_CHARS + 1)}],
+        })
+
+
+def test_parse_rejects_non_list_messages():
+    with pytest.raises(ChatRequestError, match="array"):
+        parse_chat_request({"messages": "not-a-list"})
+
+
+def test_gen_config_uses_clamped_max_tokens():
+    eng = FakeEngine()
+    sess = ChatSession(eng, _req(max_tokens=10_000))
+    gen = sess.gen_config()
+    assert gen.max_new_tokens == MAX_MAX_TOKENS
 
 
 # ---- sse / decode ---------------------------------------------------------
@@ -262,6 +314,27 @@ def test_handlers_completions_rejected():
     handlers = build_app_handlers(srv)
     body, status = handlers["POST /v1/completions"]({})
     assert status == 400
+    assert body["error"]["type"] == "invalid_request"
+
+
+def test_handlers_reject_too_many_messages():
+    srv = QueueServer(FakeEngine())
+    handlers = build_app_handlers(srv)
+    payload = {
+        "messages": [{"role": "user", "content": "x"}] * (MAX_MESSAGES + 1),
+    }
+    body, status = handlers["POST /v1/chat/completions"](payload)
+    assert status == 400
+    assert "too many messages" in body["error"]["message"]
+
+
+def test_chat_stream_rejects_invalid_before_yielding():
+    srv = QueueServer(FakeEngine())
+    with pytest.raises(ChatRequestError, match="too many messages"):
+        _chat_stream(srv, {
+            "messages": [{"role": "user", "content": "x"}] * (MAX_MESSAGES + 1),
+            "stream": True,
+        })
 
 
 def test_chat_once_response_shape():
@@ -436,3 +509,137 @@ def test_flask_http_streams_before_generation_finishes():
         eng.resume.set()
         response.close()
     assert b"data: [DONE]\n\n" in body
+
+
+def _stdlib_server(eng=None):
+    eng = eng or FakeEngine()
+    srv = QueueServer(eng, model_name="fake")
+    handler = type("Edge0Handler", (_StdlibHandler,), {"server_q": srv})
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    port = httpd.server_address[1]
+    t = threading.Thread(target=httpd.serve_forever, daemon=True)
+    t.start()
+    return httpd, t, port, f"http://127.0.0.1:{port}"
+
+
+def test_stdlib_http_completions_rejected():
+    httpd, t, _port, base = _stdlib_server()
+    try:
+        req = urlrequest.Request(
+            f"{base}/v1/completions", data=b"{}",
+            headers={"Content-Type": "application/json"})
+        with pytest.raises(HTTPError) as exc:
+            urlrequest.urlopen(req, timeout=10)
+        assert exc.value.code == 400
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        t.join(timeout=5)
+
+
+def test_stdlib_http_rejects_too_many_messages():
+    httpd, t, _port, base = _stdlib_server()
+    payload = json.dumps({
+        "messages": [{"role": "user", "content": "x"}] * (MAX_MESSAGES + 1),
+    }).encode("utf-8")
+    try:
+        req = urlrequest.Request(
+            f"{base}/v1/chat/completions", data=payload,
+            headers={"Content-Type": "application/json"})
+        with pytest.raises(HTTPError) as exc:
+            urlrequest.urlopen(req, timeout=10)
+        assert exc.value.code == 400
+        err = json.loads(exc.value.read())
+        assert "too many messages" in err["error"]["message"]
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        t.join(timeout=5)
+
+
+def test_stdlib_http_stream_rejects_too_many_messages():
+    httpd, t, _port, base = _stdlib_server()
+    payload = json.dumps({
+        "messages": [{"role": "user", "content": "x"}] * (MAX_MESSAGES + 1),
+        "stream": True,
+    }).encode("utf-8")
+    try:
+        req = urlrequest.Request(
+            f"{base}/v1/chat/completions", data=payload,
+            headers={"Content-Type": "application/json"})
+        with pytest.raises(HTTPError) as exc:
+            urlrequest.urlopen(req, timeout=10)
+        assert exc.value.code == 400
+        err = json.loads(exc.value.read())
+        assert "too many messages" in err["error"]["message"]
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        t.join(timeout=5)
+
+
+def test_stdlib_http_rejects_oversize_content_length():
+    httpd, t, port, _base = _stdlib_server()
+    conn = HTTPConnection("127.0.0.1", port, timeout=5)
+    try:
+        conn.putrequest("POST", "/v1/chat/completions")
+        conn.putheader("Content-Type", "application/json")
+        conn.putheader("Content-Length", str(MAX_REQUEST_BYTES + 1))
+        conn.endheaders()
+        conn.send(b"{}")
+        resp = conn.getresponse()
+        assert resp.status == 413
+        body = json.loads(resp.read())
+        assert "too large" in body["error"]["message"]
+    finally:
+        conn.close()
+        httpd.shutdown()
+        httpd.server_close()
+        t.join(timeout=5)
+
+
+def test_stdlib_http_clamps_max_tokens():
+    eng = FakeEngine()
+    httpd, t, _port, base = _stdlib_server(eng)
+    payload = json.dumps({
+        "messages": [{"role": "user", "content": "hi"}],
+        "max_tokens": MAX_MAX_TOKENS + 50,
+    }).encode("utf-8")
+    try:
+        req = urlrequest.Request(
+            f"{base}/v1/chat/completions", data=payload,
+            headers={"Content-Type": "application/json"})
+        with urlrequest.urlopen(req, timeout=10) as r:
+            assert r.status == 200
+        gen = eng.generated[0][1]
+        assert gen.max_new_tokens == MAX_MAX_TOKENS
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        t.join(timeout=5)
+
+
+@pytest.mark.skipif(not _HAS_FLASK, reason="flask is not installed")
+def test_flask_rejects_oversize_body():
+    app = create_app(QueueServer(FakeEngine(), model_name="fake"))
+    resp = app.test_client().post(
+        "/v1/chat/completions",
+        data="x" * (MAX_REQUEST_BYTES + 1),
+        content_type="application/json",
+    )
+    assert resp.status_code == 413
+
+
+def test_loopback_bind_helpers():
+    assert is_loopback_host("127.0.0.1")
+    assert is_loopback_host("127.0.0.2")
+    assert is_loopback_host("localhost")
+    assert is_loopback_host("::1")
+    assert is_loopback_host("[::1]")
+    assert not is_loopback_host("0.0.0.0")
+    assert not is_loopback_host("::")
+    assert not is_loopback_host("192.168.1.10")
+    assert not is_loopback_host("example.com")
+    warning = insecure_bind_warning("0.0.0.0", 8000)
+    assert warning and "unauthenticated" in warning
+    assert insecure_bind_warning("127.0.0.1", 8000) is None
