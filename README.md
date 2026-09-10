@@ -70,7 +70,7 @@ are co-located with each checkpoint and load automatically, so
 <div align="center">
 
 <video
-  src="https://huggingface.co/Edge0/Edge0-35B-A3B-preview/resolve/main/20260910-105854.mp4"
+  src="https://hf-mirror.com/Edge0/Edge0-35B-A3B-preview/resolve/main/20260910-105854.mp4"
   controls
   playsinline
   preload="metadata"
