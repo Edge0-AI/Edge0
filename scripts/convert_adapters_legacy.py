@@ -37,9 +37,9 @@ NPZ_DIRS = [
     Path(os.environ.get("EDGE0_NPZ_DIR", "/path/to/npz/exports")),
 ]
 SOURCES = [
-    ("pregate_<family>.npz", "edge0-35b", "prerouter"),
+    ("prerouter_<family>.npz", "edge0-35b", "prerouter"),
     ("lora_<family>.npz", "edge0-35b", "lora"),
-    ("pregate_<family>.npz", "edge0-8b", "prerouter"),
+    ("prerouter_<family>.npz", "edge0-8b", "prerouter"),
     ("lora_<family>.npz", "edge0-8b", "lora"),
 ]
 
@@ -68,9 +68,12 @@ def rewrite_key(key: str, tier: str, kind: str) -> str:
     namespace the adapter is applied into).
     """
     if kind == "prerouter":
-        # some families use layers.N.*; others use pregate.N.*
+        # Some families use layers.N.*; others namespace the layer index
+        # with a prefix segment (<ns>.<N>.<part>.weight).  Both are
+        # normalized to layers.<N>.<part>.weight.
         parts = key.split(".")
-        if parts[0] == "pregate":
+        if (len(parts) >= 4 and parts[0] != "layers"
+                and parts[1].isdigit()):
             return f"layers.{parts[1]}.{parts[2]}.{parts[3]}"
         return key
     if kind == "lora" and tier == "edge0-35b" and key.startswith("model.layers."):

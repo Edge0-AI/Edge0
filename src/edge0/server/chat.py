@@ -136,7 +136,7 @@ class ChatSession:
         t0 = time.perf_counter()
         # Per-request clean
         # per-request state.  A previous degenerate/truncated turn leaves
-        # bad pregate cross-token state and KV behind, which makes every
+        # bad pre-routing cross-token state and KV behind, which makes every
         # later request collapse from its first token.
         self.engine.reset()
         ids = self.prompt_ids()

@@ -137,12 +137,13 @@ class Qwen35Engine(Edge0Engine):
         logits = self._lm.lm_head(h[0, -1])
         core.eval(logits)
         # Step boundary: ONE stacked head batch -> ONE tolist -> fills.
-        # Demo parity (engine_qwen._forward: `if (pregate or trained_state)
-        # and not full_layer`): stage_all+swap run after EVERY forward,
-        # including prefill chunks — so the last prefill token's
-        # predictions fill pred_inds and oh_prev, and the FIRST decode
-        # step consumes a real prediction at L7 instead of falling back
-        # to the router (a different, cleaner-but-divergent trajectory).
+        # Demo parity (engine_qwen._forward: the deployment's pre-routing /
+        # trained-state condition and not full_layer): stage_all+swap run
+        # after EVERY forward, including prefill chunks — so the last
+        # prefill token's predictions fill pred_inds and oh_prev, and the
+        # FIRST decode step consumes a real prediction at L7 instead of
+        # falling back to the router (a different, cleaner-but-divergent
+        # trajectory).
         if (self._pg_stager is not None and not full_layer):
             self._pg_stager.stage_all()
             self._pg_state.swap()

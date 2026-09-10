@@ -49,10 +49,10 @@ def qwen_demo():
         MODEL_DIR=QMODEL,
         LORA_ADAPTERS=QDIR + "/lora_qwen35.npz",
         LORA_R="16", LORA_ALPHA="32",
-        PREGATE_NPZ=QDIR + "/pregate_qwen35.npz",
+        PREROUTER_NPZ=QDIR + "/prerouter_qwen35.npz",
         QWEN_PG_START="7", QWEN_PG_HIDDEN="512",
         QWEN_STAGED="1", QWEN_STAGED_TOP_K="4", QWEN_STAGED_SLOTS="4",
-        QWEN_STAGED_REPLACE="0", QWEN_PREGATE_V7="0",
+        QWEN_STAGED_REPLACE="0", QWEN_PREROUTER_V7="0",
         QWEN_HISTORY_PREFETCH="0", QWEN_INTRA_STAGE="0", QWEN_ASM_CACHE="0",
     )
     sys.path.insert(0, QDIR)
@@ -99,9 +99,9 @@ def edge0_qwen():
 def ling_demo():
     os.environ.update(
         CHECKPOINT_DIR=LMODEL,
-        PREGATE_HYBRID="1", PREGATE_INTRA="0", PREGATE_START_LAYER="1",
-        PREGATE_FEATURE_TOPK="executed", PREGATE_DTYPE="fp16",
-        PREGATE_NPZ=LDIR + "/pregate_r3traces.npz",
+        PREROUTER_HYBRID="1", PREROUTER_INTRA="0", PREROUTER_START_LAYER="1",
+        PREROUTER_FEATURE_TOPK="executed", PREROUTER_DTYPE="fp16",
+        PREROUTER_NPZ=LDIR + "/prerouter_r3traces.npz",
         LORA_ADAPTERS=LDIR + "/lora_r3traces.npz",
         THINK_MODE="0", REPETITION_PENALTY="1.0",
         STAGED_DECODE="0", STAGED_SYNC="0",
