@@ -12,9 +12,18 @@ import json
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from edge0.engine.base import Edge0Engine
+if TYPE_CHECKING:
+    from edge0.engine.base import Edge0Engine
+
+from edge0.server.limits import (
+    MAX_MESSAGES,
+    MAX_PROMPT_CHARS,
+    ChatRequestError,
+    clamp_max_tokens,
+    message_text,
+)
 
 
 @dataclass
@@ -38,21 +47,31 @@ class ChatRequest:
 
 
 def parse_chat_request(payload: dict) -> ChatRequest:
+    raw_msgs = payload.get("messages", [])
+    if not isinstance(raw_msgs, list):
+        raise ChatRequestError("messages must be an array")
+    if len(raw_msgs) > MAX_MESSAGES:
+        raise ChatRequestError(
+            f"too many messages (max {MAX_MESSAGES})")
     msgs = []
-    for m in payload.get("messages", []):
+    prompt_chars = 0
+    for m in raw_msgs:
+        if not isinstance(m, dict):
+            raise ChatRequestError("each message must be an object")
         role = str(m.get("role", "user"))
-        content = m.get("content", "")
-        if isinstance(content, list):  # multi-part content: join text parts
-            content = "".join(
-                p.get("text", "") for p in content if isinstance(p, dict))
-        msgs.append(ChatMessage(role=role, content=str(content)))
+        content = message_text(m.get("content", ""))
+        prompt_chars += len(content)
+        if prompt_chars > MAX_PROMPT_CHARS:
+            raise ChatRequestError(
+                f"prompt too large (max {MAX_PROMPT_CHARS} characters)")
+        msgs.append(ChatMessage(role=role, content=content))
     return ChatRequest(
         model=str(payload.get("model", "")),
         messages=msgs,
         temperature=payload.get("temperature"),
         top_p=payload.get("top_p"),
         top_k=payload.get("top_k"),
-        max_tokens=payload.get("max_tokens"),
+        max_tokens=clamp_max_tokens(payload.get("max_tokens")),
         seed=payload.get("seed"),
         stream=bool(payload.get("stream", False)),
         enable_thinking=payload.get("enable_thinking"),

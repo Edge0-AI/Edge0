@@ -258,6 +258,7 @@ examples/demo.py       # minimal API walkthrough
 - [Attention](docs/attention.md) / [MoE](docs/moe.md) / [SSD streaming](docs/streaming.md) / [prerouter](docs/prerouter.md)
 - [Adding a model](docs/adding-a-model.md)
 - [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
+- [Hardening `edge0 serve`](docs/HARDENING.md) — loopback default, request caps, residual checkpoint trust
 
 ## License
 

@@ -16,8 +16,14 @@ import os
 import re
 import sys
 
-from edge0 import models  # noqa: F401  (populates MODEL_REGISTRY)
-from edge0.registry import MODEL_REGISTRY
+from edge0.server.limits import insecure_bind_warning
+
+
+def _registry():
+    from edge0 import models  # noqa: F401  (populates MODEL_REGISTRY)
+    from edge0.registry import MODEL_REGISTRY
+    return MODEL_REGISTRY
+
 
 # Tier name -> environment variable that locates that tier's checkpoint
 # (no built-in paths: every machine resolves its own checkpoints).
@@ -33,8 +39,9 @@ DEMO_PROMPTS = {
 
 
 def cmd_models(args) -> int:
-    for name in sorted(MODEL_REGISTRY):
-        mod = MODEL_REGISTRY[name]
+    registry = _registry()
+    for name in sorted(registry):
+        mod = registry[name]
         cfg = mod.Config.from_pretrained(None)  # tier defaults
         print(f"{name}  (port {cfg.port}, target {cfg.target_tok_s} tok/s, "
               f"peak ≈ {cfg.peak_active_mem_mb:.0f} MB)")
@@ -83,7 +90,8 @@ def _resolve_model(args) -> tuple[str | None, str | None]:
     model = getattr(args, "model", None)
     if not model:
         return args.model_dir, args.name
-    if model in MODEL_REGISTRY:
+    registry = _registry()
+    if model in registry:
         env = os.environ.get(TIER_ENV.get(model, ""))
         return env, model
     return model, None  # a path: tier auto-detected by the registry
@@ -184,6 +192,10 @@ def cmd_serve(args) -> int:
     from edge0 import AutoEngine
     from edge0.server import QueueServer, run_server
 
+    warning = insecure_bind_warning(args.host, args.port)
+    if warning:
+        print(warning, file=sys.stderr)
+
     model_dir, name = _resolve_model(args)
     if not model_dir or not os.path.isdir(model_dir):
         raise SystemExit(
@@ -211,7 +223,7 @@ def cmd_convert(args) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="edge0", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -257,7 +269,10 @@ def main(argv: list[str] | None = None) -> int:
                    help="tier name (edge0-35b) or checkpoint dir")
     p.add_argument("--model-dir", default=None)
     p.add_argument("--name", default=None)
-    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument(
+        "--host", default="127.0.0.1",
+        help="bind address (default: 127.0.0.1 loopback). "
+             "Non-loopback binds expose an unauthenticated /v1/* API.")
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--flask", action="store_true",
                    help="use the Flask transport (needs flask installed)")
@@ -268,8 +283,11 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("convert-adapters",
                        help="one-shot legacy npz -> safetensors migration")
     p.set_defaults(fn=cmd_convert)
+    return ap
 
-    args = ap.parse_args(argv)
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
     return args.fn(args)
 
 
