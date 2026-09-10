@@ -56,7 +56,7 @@ def _download(tier: str, target_dir: Path) -> None:
     print(f"[fetch] {tier} <- {repo}  (-> {dest})", flush=True)
     snapshot_download(repo_id=repo, local_dir=str(dest))
     print(f"[fetch] done: {dest}\n"
-          f"        export {TIER_REPOS[tier].replace('_REPO','_MODEL')}"
+          f"        export {TIER_REPOS[tier][0].replace('_REPO','_MODEL')}"
           f"={dest}")
 
 
