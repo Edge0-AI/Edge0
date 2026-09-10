@@ -15,18 +15,6 @@ English | [中文](README_zh.md)
 
 </div>
 
-<div align="center">
-
-<video
-  src="https://huggingface.co/Edge0/Edge0-35B-A3B-preview/resolve/main/20260910-105854.mp4"
-  controls
-  playsinline
-  preload="metadata"
-  width="80%">
-</video>
-
-</div>
-
 **edge0** is an open-source streaming MoE inference framework. It
 generalizes the production-proven recipe — **SSD expert offload +
 Recover-LoRA + prerouter routing prediction** — into an extensible
