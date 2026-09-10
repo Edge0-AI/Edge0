@@ -299,3 +299,35 @@ def test_double_buffered_swap(layer):
         ref2 = lay(x, mx.array([second], dtype=mx.int32))
         assert mx.allclose(out1, ref1).item()
         assert mx.allclose(out2, ref2).item()
+
+
+def test_warm_pages_selects_only_requested_expert_ranges(layer, monkeypatch):
+    lay, mm, _ = layer
+    calls = []
+    monkeypatch.setattr(mm, "touch", lambda offset, length: calls.append((offset, length)))
+    selected = [0, N_EXPERTS - 1]
+    lay.warm_pages(selected)
+    expected = []
+    for expert in selected:
+        for proj in ("gate_proj", "up_proj", "down_proj"):
+            for part in ("weight", "scales", "biases"):
+                entry = mm.entries[f"layers.0.mlp.switch_mlp.{proj}.{part}"]
+                per = entry["size"] // N_EXPERTS
+                expected.append((entry["offset"] + expert * per, per))
+    assert calls == expected
+    calls.clear()
+    lay.warm_pages([])
+    assert calls == []
+
+
+def test_warm_pages_preserves_exact_outputs(layer):
+    lay, mm, _ = layer
+    x = mx.random.normal((1, 2, DIM)).astype(mx.float16)
+    inds = _inds(tokens=2)
+    before = lay(x, inds)
+    mx.eval(before)
+    lay.warm_pages(range(N_EXPERTS))
+    mm.seq_read()
+    after = lay(x, inds)
+    mx.eval(after)
+    assert mx.array_equal(before, after).item()

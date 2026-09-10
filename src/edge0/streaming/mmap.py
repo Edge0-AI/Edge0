@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import mmap
+import operator
 import struct
 
 import numpy as np
@@ -49,15 +50,48 @@ class SafetensorsMmap:
         except Exception:  # noqa: BLE001 — advisory only
             pass
 
-    def seq_read(self, chunk: int = 1 << 24):
-        """Force every page resident: one sequential pass over the shard.
+    def touch(self, offset: int = 0, length: int | None = None):
+        """Synchronously read one byte per OS page in a mapped byte range.
 
-        macOS madvise only warms roughly half the file, so a full read is
-        the reliable way to remove per-expert page-fault cost from the
-        first request."""
+        ``offset`` is absolute within the shard (including the header).
+        No payload copy or persistent ndarray is created. Reading the first
+        byte, then each subsequent page boundary, also covers unaligned
+        ranges and a final partial page. Residency can still change under
+        OS memory pressure after this call returns.
+        """
+        offset = operator.index(offset)
+        total = len(self._mm)
+        if not 0 <= offset <= total:
+            raise ValueError("offset is outside the mapped shard")
+        length = total - offset if length is None else operator.index(length)
+        if length < 0 or length > total - offset:
+            raise ValueError("length is outside the mapped shard")
+        if length == 0:
+            return
+
+        end = offset + length
+        _ = self._mm[offset]
+        first_boundary = offset + mmap.PAGESIZE - offset % mmap.PAGESIZE
+        if first_boundary < end:
+            # A strided NumPy reduction performs the remaining reads in C.
+            # The view ends at `end`, so no byte outside the range is read.
+            raw = np.frombuffer(
+                self._mm, dtype=np.uint8,
+                count=end - first_boundary, offset=first_boundary)
+            _ = raw[::mmap.PAGESIZE].sum(dtype=np.uint64)
+
+    def seq_read(self, chunk: int = 1 << 24):
+        """Fault each mapped page without allocating chunk-sized byte copies.
+
+        ``chunk`` remains the traversal window size. Use the actual OS
+        page size for reads within each window, including partial windows.
+        """
+        chunk = operator.index(chunk)
+        if chunk <= 0:
+            raise ValueError("chunk must be positive")
         total = len(self._mm)
         for off in range(0, total, chunk):
-            _ = self._mm[off:off + chunk]
+            self.touch(off, min(chunk, total - off))
 
     def raw(self, name: str) -> np.ndarray:
         e = self.entries[name]
