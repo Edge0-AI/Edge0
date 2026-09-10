@@ -7,11 +7,34 @@ out of an mmap with no full-tensor materialization.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import mmap
+from operator import index as integer_index
 import struct
 
 import numpy as np
+
+
+@dataclass(frozen=True, slots=True)
+class _TensorRowReader:
+    """Pre-resolved typed rows; construction does not export an mmap view."""
+
+    buffer: mmap.mmap
+    offset: int
+    row_bytes: int
+    count: int
+    rows: int
+    dtype: np.dtype
+
+    def __call__(self, index: int) -> np.ndarray:
+        index = integer_index(index)
+        if not 0 <= index < self.rows:
+            raise IndexError(f"tensor row {index} outside [0, {self.rows})")
+        return np.frombuffer(
+            self.buffer, dtype=self.dtype, count=self.count,
+            offset=self.offset + index * self.row_bytes,
+        )
 
 
 class SafetensorsMmap:
@@ -63,6 +86,30 @@ class SafetensorsMmap:
         e = self.entries[name]
         return np.frombuffer(
             self._mm, dtype=np.uint8, count=e["size"], offset=e["offset"]
+        )
+
+    def row_reader(self, name: str, dtype) -> _TensorRowReader:
+        """Resolve an axis-0 row reader without reading tensor payloads.
+
+        Each call returns a flat, read-only typed view of one contiguous
+        row. The descriptor retains no exported buffer, so it does not
+        prevent closing the shard. Returned views, like ``raw`` views,
+        must be released before ``close``. The caller owns the shard's
+        lifetime and must stop readers before closing it.
+        """
+        entry = self.entries[name]
+        shape = entry["shape"]
+        if not shape or shape[0] <= 0:
+            raise ValueError(f"{name}: a nonempty leading dimension is required")
+        dtype = np.dtype(dtype)
+        if dtype.hasobject or dtype.itemsize == 0:
+            raise ValueError("row dtype must have a fixed, non-object size")
+        row_bytes, remainder = divmod(entry["size"], shape[0])
+        if remainder or row_bytes % dtype.itemsize:
+            raise ValueError(f"{name}: row bytes are not divisible by dtype size")
+        return _TensorRowReader(
+            self._mm, entry["offset"], row_bytes,
+            row_bytes // dtype.itemsize, shape[0], dtype,
         )
 
     def close(self):
