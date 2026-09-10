@@ -151,41 +151,138 @@ def load_tokenizer(model_path):
         model_path, local_files_only=True, trust_remote_code=True)
 
 
+_EXPERT_KEY_MARKERS = (".mlp.experts.", ".switch_mlp.")
+"""Tensor-name substrings for the quantized MoE expert weights (the ones
+streaming/layer.py streams from disk on demand — never meant to be
+resident). Confirmed against a real (meta-device, no download needed)
+``transformers.Qwen3_5MoeForCausalLM`` instantiation: raw checkpoint
+naming is ``model.layers.N.mlp.experts.{gate_up_proj,down_proj}`` --
+the SAME fused-gate_up-then-split transform edge0's own
+``_impl/qwen3_5_moe.py::sanitize()`` undoes to get to MLX's
+``switch_mlp.{gate,up}_proj`` split form. That the raw format already
+matches what ``transformers`` expects, without edge0's own renaming, is
+what makes depending on it viable rather than merely plausible.
+"""
+
+
+def _resolve_model_class(config: dict):
+    """``config.json`` -> ``(HF class, needs_trust_remote_code)``.
+
+    Dispatches on ``architectures``/``auto_map``, NOT ``model_type`` --
+    checked against the real ``Edge0/Edge0-8B-A1B-preview`` config.json
+    (downloaded directly, not assumed): it has no top-level
+    ``model_type`` field at all, only ``architectures:
+    ["BailingMoeV3ForCausalLM"]`` and an ``auto_map`` pointing at
+    ``modeling_bailing_moe_v3.py`` -- a first version of this function
+    keyed on ``model_type`` and would have silently mis-dispatched on
+    this exact checkpoint.
+
+    * edge0-35b (Qwen3.5-MoE): natively in ``transformers`` (checked:
+      5.17.0) as ``Qwen3_5MoeForCausalLM`` (config class
+      ``Qwen3_5MoeTextConfig`` -- the TEXT-only causal LM, not
+      ``Qwen3_5MoeForConditionalGeneration``'s vision+text wrapper;
+      edge0 strips vision entirely, same as this choice). Experts are
+      one stacked ``[num_experts, ...]`` tensor per projection
+      (``mlp.experts.gate_up_proj``, fused gate+up -- the exact tensor
+      edge0's own ``_impl/qwen3_5_moe.py::sanitize()`` splits back into
+      MLX's ``switch_mlp.{gate,up}_proj``).
+    * edge0-8b (``BailingMoeV3ForCausalLM``): ships its OWN
+      ``modeling_bailing_moe_v3.py``/``configuration_bailing_moe_v3.py``
+      co-located in the checkpoint repo (confirmed via the HF API file
+      listing) -- loaded through ``trust_remote_code``, not merged
+      into ``transformers``. Experts are ``nn.ModuleList`` of 128
+      SEPARATE per-expert MLP modules (``mlp.experts.{i}.gate_proj`` /
+      ``.up_proj`` / ``.down_proj``), not one stacked tensor --
+      structurally different from the 35b tier, so the eventual
+      streaming-gather hook needs a per-expert-module path here, not
+      the single-indexed-gather path the 35b tier's layout wants.
+      SECURITY NOTE, not a footnote: ``trust_remote_code=True`` runs
+      third-party Python shipped inside the checkpoint directory. That
+      is a real code-execution surface, not a formality -- worth a
+      deliberate decision (pin+review the exact modeling file once,
+      vendor it, or accept the risk per-checkpoint) before this path
+      is used unattended, e.g. in `edge0 serve`.
+    """
+    archs = config.get("architectures", [])
+    auto_map = config.get("auto_map", {})
+    if "Qwen3_5MoeForCausalLM" in archs or "qwen3_5_moe" in str(auto_map).lower():
+        from transformers import Qwen3_5MoeForCausalLM
+        return Qwen3_5MoeForCausalLM, False
+    if any("Bailing" in a for a in archs) or "bailing" in str(auto_map).lower():
+        from transformers import AutoModelForCausalLM
+        return AutoModelForCausalLM, True
+    raise NotImplementedError(
+        f"cuda backend: unrecognized architectures={archs!r} -- no known "
+        f"transformers class for it (see this function's docstring for "
+        f"the two paths currently resolved)")
+
+
 def load_model(model_path, lazy=True, strict=False, model_config=None,
                 get_model_classes=None):
-    """NOT IMPLEMENTED -- deliberately, not silently.
+    """Build the model skeleton on ``torch.device('meta')`` (PyTorch's
+    equivalent of MLX's ``lazy=True``: zero real memory for ANY
+    parameter, expert or not, until something actually materializes it)
+    and load every DENSE tensor for real. Expert tensors
+    (``_EXPERT_KEY_MARKERS``) are deliberately left on the meta device --
+    NOT loaded here, NOT a bug. Wiring them to
+    ``streaming/layer.py``'s per-forward gather (via ``quant.gather_qmm``)
+    is the next concrete unit of work, tracked separately because it
+    depends on that kernel's packing being verified first (see
+    ``backends/cuda/quant.py``) -- loading experts eagerly here instead
+    would silently defeat the entire point of this backend (the phone-
+    class-memory claim in the model card) by materializing gigabytes of
+    dequantized weights just to prove `load_model` "works".
 
-    This is the one function in the contract that is NOT a thin
-    reshape of existing logic. ``backends/mlx/io.py::load_model``
-    delegates to ``mlx_lm.utils.load_model`` plus a vendored model
-    class pair (``_impl/qwen3_5_moe.py``, ``_impl/bailing_hybrid.py``)
-    hand-written against ``mlx.nn``. Two different answers for the two
-    shipped tiers, found by checking what upstream already has:
-
-    * edge0-35b (Qwen3.5-MoE): ``transformers`` (checked: 5.17.0)
-      ships a complete, maintained PyTorch implementation
-      (``transformers.models.qwen3_5_moe``, ``Qwen3_5MoeForCausalLM``,
-      2288 lines) -- including the GatedDeltaNet hybrid-attention
-      layers. Depend on it rather than hand-porting
-      ``_impl/qwen3_5.py``/``qwen3_next.py``'s gated-delta recurrence;
-      re-deriving that kernel by hand, with no MLX available to check
-      against, is a correctness risk with no way to catch it here.
-    * edge0-8b (Ling 3.0 / Bailing hybrid): no ``transformers`` match
-      for "bailing"/"ling" as of 5.17.0. ``_impl/bailing_hybrid.py``
-      has its OWN gated-recurrence variant (``BailingKDA``,
-      ``_kda_update``) plus ``BailingMLA``, distinct from Qwen3-Next's.
-      The checkpoint may ship its own PyTorch modeling code via HF's
-      ``trust_remote_code``/``auto_map`` mechanism (``mlx-lm``'s
-      tokenizer loader has a comment noting the checkpoint carries an
-      ``auto_map`` -- see ``backends/mlx/io.py``); check that on the
-      actual `Edge0/Edge0-8B-A1B-preview` repo files before deciding
-      whether to depend on it or hand-port ``BailingKDA``/``BailingMLA``.
-
-    Wiring either path in is the next concrete unit of work, not this
-    one -- raising here instead of returning something that looks
-    loaded but silently isn't.
+    ``get_model_classes``/``model_config`` accepted for signature
+    parity with the MLX backend's ``load_model`` but unused here --
+    class selection is config.json-driven (``_resolve_model_class``),
+    not registry-driven; nothing currently calls this with either
+    argument non-default.
     """
-    raise NotImplementedError(
-        "cuda backend: load_model has no implementation yet -- see this "
-        "function's docstring for the two different paths the 35b and "
-        "8b tiers need (transformers dependency vs. hand-port)")
+    import json
+    import os
+
+    with open(os.path.join(os.fspath(model_path), "config.json")) as f:
+        raw_config = json.load(f)
+
+    model_cls, needs_trust_remote_code = _resolve_model_class(raw_config)
+
+    import torch
+    from transformers import AutoConfig
+
+    config = AutoConfig.from_pretrained(
+        model_path, trust_remote_code=needs_trust_remote_code)
+    with torch.device("meta"):
+        model = model_cls(config) if not needs_trust_remote_code else \
+            model_cls.from_config(config, trust_remote_code=True)
+
+    dense_state = {}
+    skipped_expert_keys = []
+    for shard in open_shards(model_path):
+        for name, meta in shard.entries.items():
+            if any(m in name for m in _EXPERT_KEY_MARKERS):
+                skipped_expert_keys.append(name)
+                continue
+            raw = shard.raw(name)
+            if meta["dtype"] == "BF16":
+                u16 = np.frombuffer(raw, dtype=np.uint16,
+                                     count=int(np.prod(meta["shape"])))
+                t = torch.from_numpy(u16.copy()).view(torch.bfloat16)
+            else:
+                arr = np.frombuffer(raw, dtype=_NP_DTYPES[meta["dtype"]],
+                                     count=int(np.prod(meta["shape"])))
+                t = torch.from_numpy(arr.copy())
+            dense_state[name] = t.reshape(meta["shape"]).to(DEVICE)
+        shard.close()
+
+    missing, unexpected = model.load_state_dict(
+        dense_state, strict=False, assign=True)
+    missing_non_expert = [
+        k for k in missing if not any(m in k for m in _EXPERT_KEY_MARKERS)]
+    if missing_non_expert and strict:
+        raise RuntimeError(
+            f"load_model: {len(missing_non_expert)} non-expert tensors "
+            f"missing from checkpoint (strict=True): {missing_non_expert[:5]}...")
+
+    model._edge0_skipped_expert_keys = skipped_expert_keys  # for the streaming hook
+    return model
