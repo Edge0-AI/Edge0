@@ -1,0 +1,269 @@
+{
+  "schema": 1,
+  "python": "3.12.13",
+  "numpy": "2.5.3",
+  "system": "Linux",
+  "machine": "x86_64",
+  "page_bytes": 4096,
+  "fixture_bytes": 536871799,
+  "fixture_sha256": "4a6e416502851daeaeee265ff65d219f7a006965c80ff500850cd8f3413a6e08",
+  "fixture_unchanged": true,
+  "fixture_kind": "synthetic safetensors with checkpoint-sized expert byte spans",
+  "source_sha256": "b533029b2bf33b034544c4b5d2f96a6337ed30aa7a7c8344607fe153fc058401",
+  "legacy_reference_revision": "fbab5f8c08e843e204c0fc6ae18b89a154c652cf",
+  "seed": 1092026,
+  "resident_pages_after_warmup": {
+    "baseline": 131073,
+    "candidate": 131073
+  },
+  "total_mapped_pages": 131073,
+  "allocation": {
+    "baseline_peak_traced_bytes": 33554602,
+    "candidate_peak_traced_bytes": 34352
+  },
+  "benchmarks": [
+    {
+      "name": "resident whole-shard warmup",
+      "pairs": 11,
+      "loops_per_sample": 3,
+      "baseline_median_ms": 75.361418,
+      "candidate_median_ms": 1.9708773333333331,
+      "median_paired_time_reduction": 0.9740464380965341,
+      "paired_reduction_bootstrap_95pct": [
+        0.9721992318739525,
+        0.9764705949465028
+      ],
+      "samples_ns": [
+        {
+          "baseline": 77105571.66666667,
+          "candidate": 2528878.6666666665
+        },
+        {
+          "candidate": 1856110.3333333333,
+          "baseline": 78884711.66666667
+        },
+        {
+          "candidate": 1951844.0,
+          "baseline": 74789757.0
+        },
+        {
+          "candidate": 2007413.0,
+          "baseline": 74987507.0
+        },
+        {
+          "candidate": 2081779.0,
+          "baseline": 74882067.66666667
+        },
+        {
+          "candidate": 1982017.6666666667,
+          "baseline": 77178195.66666667
+        },
+        {
+          "baseline": 76699992.66666667,
+          "candidate": 1970877.3333333333
+        },
+        {
+          "candidate": 1629052.0,
+          "baseline": 75234773.0
+        },
+        {
+          "baseline": 75000418.33333333,
+          "candidate": 1946528.0
+        },
+        {
+          "candidate": 1647829.0,
+          "baseline": 75361418.0
+        },
+        {
+          "candidate": 2316944.6666666665,
+          "baseline": 78111125.66666667
+        }
+      ]
+    },
+    {
+      "name": "resident four-expert warmup",
+      "pairs": 11,
+      "loops_per_sample": 3,
+      "baseline_median_ms": 4.13863,
+      "candidate_median_ms": 0.328769,
+      "median_paired_time_reduction": 0.9196082177538158,
+      "paired_reduction_bootstrap_95pct": [
+        0.9182195937161949,
+        0.9235211628878567
+      ],
+      "samples_ns": [
+        {
+          "baseline": 4138630.0,
+          "candidate": 332877.0
+        },
+        {
+          "baseline": 4190520.0,
+          "candidate": 372776.6666666667
+        },
+        {
+          "baseline": 4281031.333333333,
+          "candidate": 324370.3333333333
+        },
+        {
+          "candidate": 326677.6666666667,
+          "baseline": 4079010.0
+        },
+        {
+          "candidate": 326881.3333333333,
+          "baseline": 4274141.0
+        },
+        {
+          "candidate": 332644.6666666667,
+          "baseline": 4130450.0
+        },
+        {
+          "candidate": 323849.6666666667,
+          "baseline": 4242188.0
+        },
+        {
+          "candidate": 349521.3333333333,
+          "baseline": 4133975.3333333335
+        },
+        {
+          "candidate": 324446.3333333333,
+          "baseline": 4119905.6666666665
+        },
+        {
+          "candidate": 352695.6666666667,
+          "baseline": 4312716.0
+        },
+        {
+          "baseline": 4089584.6666666665,
+          "candidate": 328769.0
+        }
+      ]
+    },
+    {
+      "name": "cold file-page-cache whole-shard warmup",
+      "pairs": 11,
+      "loops_per_sample": 1,
+      "baseline_median_ms": 2404.584703,
+      "candidate_median_ms": 2427.666293,
+      "median_paired_time_reduction": -0.0019769688750579384,
+      "paired_reduction_bootstrap_95pct": [
+        -0.07048588235632103,
+        0.11441949479690117
+      ],
+      "samples_ns": [
+        {
+          "baseline": 2254586971.0,
+          "candidate": 2413503523.0
+        },
+        {
+          "candidate": 2392890697.0,
+          "baseline": 2404584703.0
+        },
+        {
+          "baseline": 2379239603.0,
+          "candidate": 2427666293.0
+        },
+        {
+          "candidate": 2401379779.0,
+          "baseline": 2711644808.0
+        },
+        {
+          "baseline": 2308685612.0,
+          "candidate": 2927765936.0
+        },
+        {
+          "baseline": 2280133986.0,
+          "candidate": 3387017893.0
+        },
+        {
+          "candidate": 3388127215.0,
+          "baseline": 3381442209.0
+        },
+        {
+          "baseline": 2965899814.0,
+          "candidate": 2590143562.0
+        },
+        {
+          "baseline": 2458972002.0,
+          "candidate": 2496009758.0
+        },
+        {
+          "baseline": 2587751246.0,
+          "candidate": 2278484480.0
+        },
+        {
+          "candidate": 2284971775.0,
+          "baseline": 2316126619.0
+        }
+      ],
+      "preconditions_in_execution_order": [
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        },
+        {
+          "resident_pages_before": 0
+        }
+      ]
+    }
+  ],
+  "scope": "Host warming latency and traced temporary allocation only. No token-rate, model-quality, disk-bandwidth, GPU, or iPhone claim. Cold means this temporary file's OS page cache; storage-controller caches are not flushed."
+}
