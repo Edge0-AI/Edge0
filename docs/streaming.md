@@ -50,7 +50,7 @@ Deduplicate the routing indices → `_get_bundles(unique)` builds per expert (re
 
 - `load_full_layer()`: loads the layer's 9 tensors directly (the checkpoint already stores each layer as a single stacked tensor; the mmap dtype conversion costs ≈9ms per layer, and the CPU load is hidden under the previous layer's GPU execution);
 - `_gather_sort` folds the batch into the token dimension → sorted gather → `_scatter_unsort` un-sorts and restores the batch dimension;
-- `prefill_full_layers` loads whole layers only for the leading layers (12 for Qwen); the remaining layers go through hot/exact;
+- `full_layer_prefill` turns whole-layer prefill on per tier, and `prefill_full_layers` limits it to the leading N layers (0 = every layer, the edge0-8b setting); layers outside that range go through hot/exact;
 - After use, `clear_full_layer()` frees the GPU copy, and the page cache carries the hot data.
 
 ## Sorting and Compilation
@@ -75,7 +75,7 @@ With `use_compile`, the staged/exact paths are wrapped in `mx.compile`:
 | `prefill_hot` | hot stack size during prefill | 0 |
 | `use_compile` / `top_k` | compile wrapping / routing top-k override | True / None |
 
-Presets: `staged_k4()` (edge0-35b: staged with 4 slots + 32 hot + whole-layer prefill over 12 layers), `staged_k8()` (edge0-8b: staged with 8 slots, no hot residency). Both tiers share `cache_slots=64`.
+Presets: `staged_k4()` (edge0-35b: staged decode with 4 slots, prefill hot stack 32, on-demand prefill), `prod_k8()` (edge0-8b: the reference deployment profile — staged decode off, E3b whole-layer prefill), and `staged_k8()` (the plain K=8 staged variant). Both tiers share `cache_slots=64`.
 
 ## Why Whole-Layer Loading Is Also Fast
 

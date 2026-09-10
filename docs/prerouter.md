@@ -54,7 +54,7 @@ per `start_layer`/`owners`. Family differences are expressed through three hooks
 
 - `LayerOptions.staged_replace=True`: the routed set == the staged set (prerouter mode,
   no drop);
-- Production profiles (`staged_k4`/`staged_k8`) use **explicit-index** routing: prerouter
+- Production profiles (`staged_k4`/`prod_k8`) use **explicit-index** routing: prerouter
   predictions directly serve as the staged fill source, `staged_replace=False` but the
   slot table maps exactly — likewise zero drop;
 - `pin_bonus`: experts predicted by the prerouter get an extra bonus during hot pin
@@ -65,12 +65,16 @@ per `start_layer`/`owners`. Family differences are expressed through three hooks
 | | edge0-35b | edge0-8b |
 |---|---|---|
 | Routing family | SOFTMAX_TOPK (precise softmax → top-k → normalization) | SIGMOID_GROUP (sigmoid + group-limited top-k, n_group 8 / topk_group 4, routed_scaling 2.5) |
-| start_layer | 7 (first consumer layer) | 1 |
-| heads (owners) | 33 (6..38) | 22 (1..22) |
+| start_layer | 7 (first consumer layer) | 7 |
+| heads (owners) | 33 (6..38) | 16 (7..22) |
 | hidden | 512 (fp16) | 512 (fp16) |
 | feature_topk | executed | executed |
 | patch_call | True (qwen3_next needs the patch) | False (built-in model hook) |
-| weight file | `artifacts/prerouter_edge0_35b_k4.safetensors` | `artifacts/prerouter_edge0_8b.safetensors` |
+| weight file | `prerouter_edge0_35b.safetensors` | `prerouter_edge0_8b.safetensors` |
+
+Both weight files are resolved from the model directory by default, with
+`artifacts/` (repo root, gitignored) as the fallback — see the README's
+"Models and adapters" section.
 
 ## Tests and regression
 

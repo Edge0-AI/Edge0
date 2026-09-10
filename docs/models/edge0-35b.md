@@ -24,7 +24,7 @@ The performance profile is based on benchmarks of the current release adapter ve
 | Streaming prefetch history | on (`prefetch_history=True`) |
 | Serving port | 8085 |
 | Measured throughput | 14.9–17.7 tok/s (M4 Pro) |
-| Measured peak activation memory | ≈ 3.3 GB |
+| Measured peak activation memory | ≈ 2.9 GiB |
 
 > Note: all values are taken from `Qwen35Config._defaults()` and `LayerOptions.staged_k4()`. The head count comes from the explicit `owners` list (6 through 38, 33 heads in total); `feature_topk="executed"` means the top-k features fed to the heads are exactly the set actually routed at decode time.
 

@@ -24,7 +24,7 @@ The performance profile is based on benchmarks of the current release adapter ve
 | Streaming prefetch history | on (`prefetch_history=True`) |
 | Serving port | 8083 |
 | Measured throughput | 23.9–25.3 tok/s (M4 Pro) |
-| Measured peak activation memory | ≈ 1.0 GB (short context) / 3.1 GB (3.3k-token context) |
+| Measured peak activation memory | ≈ 1.0 GiB (short context) / 3.3 GiB (3.3k-token context) |
 
 > Note: all values are taken from `Ling8BConfig._defaults()` and `LayerOptions.prod_k8()`. The head count comes from the explicit `owners=range(7, 23)` — 16 heads in total (the current release head distribution: prediction is consumed from L7 onward, and L1–6 use the original router); `feature_topk="executed"`.
 

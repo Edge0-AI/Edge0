@@ -1,7 +1,7 @@
 # Architecture Overview
 
 **edge0** is an open-source streaming MoE inference framework that abstracts the
-"SSD expert offload + parallel LoRA + prerouter routing prediction" scheme —
+"SSD expert offload + Recover-LoRA + prerouter routing prediction" scheme —
 validated in production deployments — into an extensible, general-purpose
 framework. Backends are isolated by design: the current release implements the
 MLX backend (Apple Silicon), core logic is decoupled from the backend, and other
@@ -22,7 +22,9 @@ box: `edge0-35b` (Qwen3.5-MoE, K=4) and `edge0-8b` (Ling 3.0 hybrid, K=8).
    `.safetensors` files carrying metadata; legacy npz training exports are
    converted by a one-off migration script and then deprecated;
 4. **Unified terminology**: the pre-routing head is always called the
-   **prerouter** — zero legacy-term residue in code and docs.
+   **prerouter** — zero legacy-term residue in code and docs. The legacy npz
+   exports are migrated by `scripts/convert_adapters_legacy.py`, which
+   normalizes their key namespace to `layers.<N>.<part>.weight`.
 
 ## Layered Structure
 
@@ -54,7 +56,7 @@ src/edge0/
 │   ├── base.py            #   shared loop (via backends.core)
 │   ├── qwen.py            #   Qwen35Engine (K=4 tier)
 │   └── ling.py            #   Ling8BEngine (K=8 tier)
-├── adapters/lora.py       # parallel LoRA installation (backends.nn)
+├── adapters/lora.py       # unmerged LoRA installation (parallel delta path)
 ├── models/                # model adapter layer (transformers-style)
 │   ├── base.py            #   ModelConfig base class + artifact path resolution
 │   ├── edge0_35b/         #   edge0-35b tier (registered name "edge0-35b")

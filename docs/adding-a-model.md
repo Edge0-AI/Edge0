@@ -12,7 +12,7 @@ The contract of `edge0.registry` is: **one adapter module exposes three things**
 - `build_model(model_dir, **overrides)` — the assembled model skeleton;
 - `build_engine(model_dir, **overrides)` — a generation-capable engine.
 
-`register_model(name, adapter)` performs the registration; `TYPE_ALIASES` maps a checkpoint's `model_type` to a registered name. See `_resolve_name` and `AutoConfig.from_pretrained` in `registry.py` (registry.py:73–101).
+`register_model(name, adapter)` performs the registration; `TYPE_ALIASES` maps a checkpoint's `model_type` to a registered name. See `_resolve_name` (registry.py:43) and `AutoConfig.from_pretrained` (registry.py:87).
 
 ## Step 1: Create the adapter module and directory
 
@@ -36,7 +36,7 @@ Create a package under `src/edge0/models/` named after your tier, e.g. `edge0_35
 | `port` | `int` | serving port |
 | `target_tok_s` / `peak_active_mem_mb` | `float` | acceptance metrics (measured on the benchmark environment) |
 
-The subclass only needs to implement the class method `_defaults(model_dir) -> Config`, which returns the family's default configuration. The edge0-35b implementation lives at `edge0_35b/__init__.py:31–69`: `_defaults` builds a `Qwen35Config` from a complete `MoESpec`, the `LayerOptions` preset `staged_k4()`, a `PrerouterSpec`, sampling defaults, and acceptance metrics.
+The subclass only needs to implement the class method `_defaults(model_dir) -> Config`, which returns the family's default configuration. The edge0-35b implementation lives at `edge0_35b/__init__.py:31–70`: `_defaults` builds a `Qwen35Config` from a complete `MoESpec`, the `LayerOptions` preset `staged_k4()`, a `PrerouterSpec`, sampling defaults, and acceptance metrics.
 
 `from_pretrained(model_dir=None, **overrides)` is a template method provided by `ModelConfig` (`models/base.py:60–73`): it calls `_defaults` to obtain the base configuration, then validates each override before applying it via `replace`; unknown fields raise a `TypeError` that lists the known fields. As a result, **every public attribute can be overridden by the user**.
 
@@ -49,7 +49,7 @@ Key points:
 
 Two module-level functions that reuse the engine's own construction path (DRY).
 
-`edge0_35b/__init__.py:72–79`:
+`edge0_35b/__init__.py:73–80`:
 
 ```python
 def build_model(model_dir=None, **overrides):
@@ -59,7 +59,7 @@ def build_model(model_dir=None, **overrides):
     return model
 ```
 
-`edge0_35b/__init__.py:82–87`:
+`edge0_35b/__init__.py:83–87`:
 
 ```python
 def build_engine(model_dir=None, **overrides):
@@ -116,8 +116,8 @@ Refer to `tests/test_moe_spec.py` and `tests/test_registry.py` (pure-logic unit 
 - **Registration and aliases** (test_registry.py:12–20): assert that `MODEL_REGISTRY` contains your registered name and that `TYPE_ALIASES` resolves correctly.
 - **Config defaults** (test_registry.py:23–33): the `moe_spec` / `options` / `prerouter` / `prerouter_top_k` fields of `AutoConfig.from_pretrained(name=...)` match expectations.
 - **Profile refinement** (test_registry.py:35–71): assert your tier's values field by field (expert count, top_k, quant, port, acceptance metrics, etc.).
-- **Overrides and rejection** (test_registry.py:74–81): `from_pretrained(..., prerouter=None, lora="")` takes effect; unknown fields raise `TypeError`.
-- **Adapter contract** (test_registry.py:89–92): assert that every `MODEL_REGISTRY` entry exposes `Config` / `build_model` / `build_engine`.
+- **Overrides and rejection** (test_registry.py:82–89): `from_pretrained(..., prerouter=None, lora="")` takes effect; unknown fields raise `TypeError`.
+- **Adapter contract** (test_registry.py:97): assert that every `MODEL_REGISTRY` entry exposes `Config` / `build_model` / `build_engine`.
 - **Path resolution** (test_moe_spec.py): the `keys` template, `block_of` numeric-field indexing, the `layer_of` default derived from `block_path`, and `bundle_projs` switching with the layout.
 - **Math parity**: routing math must match the vendored model bit-for-bit (pinned by parity tests in `moe/routing.py`); if your model introduces a new routing kind, add the corresponding comparison.
 

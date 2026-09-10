@@ -134,6 +134,17 @@ edge0 demo edge0-35b
 edge0 serve edge0-35b
 ```
 
+```bash
+curl http://127.0.0.1:8000/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"Hello!"}],"max_tokens":32}'
+
+# 5) 单轮对话（--max-new 限制生成长度；加 --show-thinking 会一并打印思考块）
+edge0 chat edge0-35b --prompt "用一句话解释流式推理。"
+```
+
+`python -m edge0 ...` 等价于 `edge0 ...`。
+
 ### Python API
 
 ```python
@@ -175,6 +186,15 @@ engine.close()   # 释放 mmap / 专家缓存
 在完全相同的设置与参数下对 edge0 模型（int4 + 训练适配器 + prerouter 路由）
 与原 fp16 基座模型测得。edge0 管线的损失很小：**edge0-35b 平均仅落后
 3.9 分、edge0-8b 落后 2.8 分**（MMLU-Pro 甚至反超基座）。满分 100：
+
+| 评测集 | edge0-35b（int4） | Qwen3.5-MoE 35B-A3B（fp16） | edge0-8b（int4） | Ling 3.0 tiny（fp16） |
+|---|---:|---:|---:|---:|
+| AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
+| HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
+| GPQA-Diamond | 79.8 | 81.8 | 70.7 | 71.2 |
+| MMLU-Pro | 81.0 | 84.6 | 70.1 | 65.8 |
+| IFBench | 57.9 | 61.7 | 53.9 | 60.6 |
+| **平均** | **79.2** | **83.2** | **69.9** | **72.7** |
 
 ## 性能实测
 
