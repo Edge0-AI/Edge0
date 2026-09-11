@@ -43,6 +43,10 @@ are co-located with each checkpoint and load automatically, so
   (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
   platforms are supported yet.
 - **Python**: 3.10+ (3.12 recommended).
+- **MLX**: `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see
+  `pyproject.toml`). Garbled, mixed-language output on Apple A18 / A18 Pro
+  means an older `mlx`: `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'`
+  ([#8](https://github.com/Edge0-AI/Edge0/issues/8)).
 - **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
   `edge0-8b` (short contexts; see [Benchmark](#benchmark)). Add
   headroom for the OS, tokenizer, and long-context KV growth.

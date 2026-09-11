@@ -37,6 +37,10 @@ Recover-LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后�
 - **系统 / 硬件**：MLX 后端目前仅支持 Apple Silicon 的 macOS
   （M1/M2/M3/M4）；CUDA 后端在路线图中，其余平台暂不支持。
 - **Python**：3.10+（推荐 3.12）。
+- **MLX**：`mlx==0.30.6` / `mlx-metal==0.30.6`（`mlx-lm==0.31.0`，见
+  `pyproject.toml`）。Apple A18 / A18 Pro 上输出乱码 = mlx 版本旧：
+  `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'`
+  （[#8](https://github.com/Edge0-AI/Edge0/issues/8)）。
 - **内存**：短上下文下 `edge0-35b` ≈2.9 GB、`edge0-8b` ≈1.0 GB
   峰值激活内存（见[性能实测](#性能实测)）；另为系统、tokenizer 与
   长上下文 KV 增长预留余量。
