@@ -55,14 +55,15 @@ changed by `0.32.x`, not with a fundamentally unsupported operation.
 GPU is usable — MLX is lazy and this call never touches the driver. It
 reported `gpu` in every run above, including the ones where the GPU was
 later confirmed dead. The real signal is whether `cuInit()` succeeds.
-On this hardware specifically we also hit a driver-level issue
-unrelated to `edge0` or MLX: a CUDA process that aborts can leave
-`cuInit()` failing (error 999) for every subsequent process, with no
-root-level recovery (`nvidia_uvm`'s refcount stays stuck; `rmmod` fails
-even as root) — only a reboot clears it. This did not happen after
-every abort in our runs, so it is state-dependent, not a strict rule;
-flagging it because `nvidia-smi` does not surface it (it goes through
-NVML, not the CUDA runtime).
+On our machine `cuInit()` started returning 999 a few minutes after
+each boot while `nvidia-smi` still looked healthy. We first read that
+as the driver dying after an aborted CUDA process. It was not: a
+host-level cgroup device policy on that machine (unrelated to `edge0`
+or MLX) denies `/dev/nvidia-uvm` and `/dev/nvidia-caps/*`, and the CUDA
+runtime needs both. `nvidia-smi` goes through NVML on `/dev/nvidiactl`,
+so it never notices. If `cuInit()` gives 999, first try opening
+`/dev/nvidia-uvm` from the same shell. `EPERM` there means a device
+policy, not a broken GPU.
 
 ## Bottom line
 
