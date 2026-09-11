@@ -146,7 +146,11 @@ def matmul(a, b):
     return torch.matmul(a, b)
 
 
-def softmax(x, axis=-1):
+def softmax(x, axis=-1, precise=False):
+    """``precise=True`` accumulates in float32, as MLX does, and returns
+    the input dtype."""
+    if precise:
+        return torch.softmax(x.float(), dim=axis).to(x.dtype)
     return torch.softmax(x, dim=axis)
 
 
@@ -175,23 +179,20 @@ def sort(x, axis=-1):
 
 
 def topk(x, k, axis=-1):
-    # mx.topk returns ascending-order smallest-of-topk-first like a
-    # partial sort; the streaming/prerouter code only relies on the
-    # *set* of top-k values/indices (see moe/routing.py), so torch's
-    # descending-by-default topk is remapped to match call sites rather
-    # than assumed equivalent -- verify against moe/routing.py usage
-    # before wiring this in for real.
-    return torch.topk(x, k, dim=axis)
+    """The ``k`` largest VALUES in ascending order, like ``mx.topk``
+    (``sampling.py`` reads the threshold from ``[..., :1]``). Unlike
+    ``torch.topk`` there are no indices."""
+    vals = torch.topk(x, k, dim=axis).values
+    return torch.sort(vals, dim=axis).values
 
 
 def argpartition(x, kth, axis=-1):
-    # No native torch equivalent; topk-based fallback (correct, not the
-    # O(n) guarantee argpartition gives -- fine at the expert-count
-    # scale (<=256) this is used at, worth revisiting if profiling says
-    # otherwise).
-    k = kth + 1
-    idx = torch.topk(x, k, dim=axis, largest=False).indices
-    return idx
+    """Full index permutation with every element at or before ``kth``
+    (negative counts from the end) no larger than the rest, like
+    ``mx.argpartition``. A stable sort satisfies that for any ``kth``;
+    call sites slice ``[..., :k]`` / ``[..., -k:]``. O(n log n) is fine
+    at expert counts (<= 256)."""
+    return torch.argsort(x, dim=axis, stable=True)
 
 
 def take(a, indices, axis=None):
@@ -209,15 +210,60 @@ def take(a, indices, axis=None):
     return out.reshape(tuple(indices.shape) + rest)
 
 
+def _along_axis_index(a, indices, axis):
+    """numpy/MLX ``*_along_axis`` broadcast ``indices`` against ``a`` on
+    every axis except ``axis``; torch.gather/scatter do not."""
+    shape = list(a.shape)
+    shape[axis] = indices.shape[axis]
+    return torch.broadcast_to(indices.to(torch.long), shape)
+
+
 def take_along_axis(a, indices, axis):
-    return torch.gather(a, axis, indices.to(torch.long))
+    return torch.gather(a, axis, _along_axis_index(a, indices, axis))
 
 
 def put_along_axis(a, indices, values, axis):
     """Functional (out-of-place) scatter, matching MLX's immutable-array
     semantics -- see the module docstring re: an in-place fast path.
+    Indices broadcast against ``a`` and ``values`` against the indices
+    (``moe/routing.py`` masks whole groups with ``[..., k, 1]`` indices and
+    a scalar -inf).
     """
-    return torch.scatter(a, axis, indices.to(torch.long), values)
+    idx = _along_axis_index(a, indices, axis)
+    src = torch.as_tensor(values, dtype=a.dtype, device=a.device)
+    return torch.scatter(a, axis, idx, torch.broadcast_to(src, idx.shape))
+
+
+def index_add(a, indices, values):
+    """``a.at[indices].add(values)`` in MLX: out-of-place, rows given by
+    ``indices`` along axis 0, duplicates accumulate."""
+    return a.index_add(0, indices.to(torch.long), values.to(a.dtype))
+
+
+def size(x) -> int:
+    """Number of elements (``x.size`` in MLX; a method in torch)."""
+    return x.numel()
+
+
+def max(x, axis=None, keepdims=False):
+    if axis is None:
+        return torch.amax(x)
+    return torch.amax(x, dim=axis, keepdim=keepdims)
+
+
+def maximum(a, b):
+    a = torch.as_tensor(a, device=DEVICE)
+    return torch.maximum(a, torch.as_tensor(b, dtype=a.dtype, device=a.device))
+
+
+def argmax(x, axis=None, keepdims=False):
+    return torch.argmax(x, dim=axis, keepdim=keepdims)
+
+
+def set_cache_limit(limit):
+    """MLX buffer-cache cap; torch's caching allocator has no equivalent
+    knob here, so this is a no-op that returns the previous limit (0)."""
+    return 0
 
 
 def astype(x, dtype):
@@ -244,14 +290,11 @@ def eval(*arrays):
 
 
 def compile(fn):
-    """Thin wrap around ``torch.compile``. Left as an explicit pass-through
-    (not a decorator with options) so a call site can disable it locally
-    by monkeypatching this name in tests without fighting torch's cache;
-    revisit once real shape-variability profiling (staged vs. exact
-    paths take different shapes every call) shows whether re-tracing
-    cost is worth paying.
-    """
-    return torch.compile(fn)
+    """Identity: runs eagerly. ``mx.compile`` is cheap to re-trace, but
+    ``torch.compile`` recompiles on every new shape, and the streaming
+    path changes shapes nearly every call (staged vs. exact, varying
+    expert counts). Revisit with profiling on real hardware."""
+    return fn
 
 
 class random:

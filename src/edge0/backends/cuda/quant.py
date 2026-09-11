@@ -58,6 +58,25 @@ def gather_qmm(x, w, scales, biases, rhs_indices, transpose=True,
     return out.to(x.dtype)
 
 
+def gather_sort(x, indices):
+    """Sort token rows by expert id for ``gather_qmm(sorted_indices=True)``:
+    returns ``(x_sorted, indices_sorted, inv_order)``, as mlx-lm's
+    ``_gather_sort`` does."""
+    m = indices.shape[-1]
+    flat = indices.reshape(-1).to(torch.long)
+    order = torch.argsort(flat, stable=True)
+    inv_order = torch.argsort(order)
+    return x.flatten(0, -3)[order // m], flat[order], inv_order
+
+
+def scatter_unsort(x, inv_order, shape=None):
+    """Undo ``gather_sort``; ``shape`` re-splits the leading axis."""
+    x = x[inv_order]
+    if shape is not None:
+        x = x.unflatten(0, tuple(shape))
+    return x
+
+
 def swiglu(up: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
     """SiLU gated activation: silu(gate) * up."""
     return torch.nn.functional.silu(gate) * up
