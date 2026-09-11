@@ -25,10 +25,8 @@ from __future__ import annotations
 
 import os
 
-from edge0.backends import core
+from edge0.backends import core, io
 from edge0.backends import nn
-
-from edge0.backends.mlx.io import load_safetensors
 
 
 class LoraLinear(nn.Module):
@@ -45,10 +43,10 @@ class LoraLinear(nn.Module):
     def __call__(self, x: core.array) -> core.array:
         y = self.base(x)
         ad = self.lora_A.dtype
-        xd = x if x.dtype == ad else x.astype(ad)
+        xd = x if x.dtype == ad else core.astype(x, ad)
         # delta = (B @ A) applied on x:  ((x @ A.T) @ B.T), shape [..., out]
         d = (xd @ self.lora_A.T) @ self.lora_B.T
-        return y + (self.lora_scale * d).astype(y.dtype)
+        return y + core.astype(self.lora_scale * d, y.dtype)
 
 
 def _resolve(model: nn.Module, key: str):
@@ -85,7 +83,7 @@ def install_lora(model: nn.Module, adapters_path: str,
             "adapters; download them for this tier (README -> 'Getting "
             "the models & adapters') and place them in the model "
             "directory, or disable LoRA with lora="" / --no-lora.")
-    lora = load_safetensors(adapters_path)
+    lora = io.load_safetensors(adapters_path)
     if not lora:
         raise ValueError("adapters has no lora tensors")
 
@@ -119,8 +117,8 @@ def install_lora(model: nn.Module, adapters_path: str,
                 raise TypeError(
                     f"lora target {key} is {type(mod).__name__}, not Linear")
             continue
-        a = d["A"].astype(dtype)
-        b = d["B"].astype(dtype)
+        a = core.astype(d["A"], dtype)
+        b = core.astype(d["B"], dtype)
         # re-bind the module attribute (e.g. attention.q_proj = LoraLinear)
         parts = key.split(".")
         owner = _resolve(model, ".".join(parts[:-1]))

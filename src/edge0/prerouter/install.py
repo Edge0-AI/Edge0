@@ -17,11 +17,9 @@ Two conventions exist (both supported here):
 
 from __future__ import annotations
 
-from edge0.backends import core
+from edge0.backends import core, io
 from edge0.backends import nn
 
-from edge0.backends.mlx._impl.qwen3_next import Qwen3NextSparseMoeBlock
-from edge0.backends.mlx.io import load_safetensors
 from edge0.moe.spec import MoESpec
 from edge0.prerouter.heads import PrerouterHead, topk_onehot
 from edge0.prerouter.spec import PrerouterSpec
@@ -47,7 +45,7 @@ def _parse_weights(weights: dict[str, core.array], dtype):
         if parts[-2] not in ("fc1", "fc2", "linear_init"):
             continue
         if arr.dtype != dtype:
-            arr = arr.astype(dtype)
+            arr = core.astype(arr, dtype)
         heads.setdefault(owner, {})[f"{parts[-2]}.weight"] = arr
     return heads
 
@@ -82,7 +80,7 @@ def install_prerouter(
                 "the models & adapters') and place them in the model "
                 "directory, or disable the prerouter with "
                 "prerouter=None / --no-prerouter.")
-        weights = load_safetensors(pspec.weights_file)
+        weights = io.load_safetensors(pspec.weights_file)
     dtype = core.float16 if pspec.dtype == "fp16" else core.float32
     head_weights = _parse_weights(weights, dtype)
     missing = [n for n in pspec.owner_layers(n_layers) if n not in head_weights]
@@ -139,8 +137,7 @@ def install_prerouter(
                     pg.linear_init.weight.shape, dtype=dtype)
             heads[owner] = pg
 
-    if pspec.patch_call and not getattr(
-            Qwen3NextSparseMoeBlock, _PATCHED_MARK, False):
+    if pspec.patch_call:
         _patch_qwen_consume()
     return state, heads
 
@@ -152,7 +149,13 @@ def _patch_qwen_consume():
     A class-level patch is required because implicit ``moe(x)`` calls look
     up the type, not the instance.  Guarded per instance: only blocks with
     ``prerouter_enabled`` and single-token inputs (decode) route through
-    the prerouter; everything else takes the original router path."""
+    the prerouter; everything else takes the original router path.
+
+    The patched class is the vendored MLX model's, so this import stays
+    local: the module must still import under other backends."""
+    from edge0.backends.mlx._impl.qwen3_next import Qwen3NextSparseMoeBlock
+    if getattr(Qwen3NextSparseMoeBlock, _PATCHED_MARK, False):
+        return
     orig_call = Qwen3NextSparseMoeBlock.__call__
 
     def prerouter_call(self, x):
