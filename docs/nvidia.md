@@ -87,6 +87,7 @@ runs each case under both backends in subprocesses).
 | `io.load_model` + `install_streaming_experts` on a small checkpoint in the exact published edge0-35b format | the source model on the same weights: 4e-7 relative, same argmax |
 | `backends/cuda/_impl/bailing_hybrid.py` (torch port of the edge0-8b backbone) on the real checkpoint, every layer, chunked prefill + decode | the vendored MLX model on the MLX CPU device, float32: <= 1.5e-6 per layer, <= 1.7e-6 on the logits |
 | the whole edge0-8b engine (`engine/ling.py` unchanged: LoRA, prerouter-staged decode, streaming, sampling) | the same engine on MLX: identical greedy tokens (`pytest -m slow`) |
+| the same engine on Linux aarch64 (DGX Spark, torch on the CPU), 32 greedy tokens of a chat prompt | MLX on Apple Silicon, same checkpoint (same file hashes): identical 32 tokens; 1.2 GB peak anonymous memory |
 | `backends/cuda/_impl/qwen3_5_moe.py` (torch port of the edge0-35b backbone), every layer, chunked prefill + decode, on a small model MLX wrote in the published format (bf16, 4-bit, 8-bit router and shared gate) | the vendored MLX model on the MLX CPU device, float32: <= 2.6e-7 per layer, <= 4.1e-7 on the logits |
 | the whole edge0-35b engine (`engine/qwen.py` unchanged: streaming, staged decode, the class-level prerouter patch) on that small checkpoint | the same engine on MLX: identical greedy tokens, per-step logits within bf16 noise and tracking MLX *with* the prerouter (the prerouter moves them 5-11%) |
 
@@ -107,9 +108,10 @@ stored as `w + 1`), which it undoes.
   port and the engine are checked on a small model MLX wrote in the
   published format, not on the real weights; the LoRA path is covered for
   edge0-8b only (there is no small edge0-35b adapter to compare against).
-* **Real NVIDIA hardware.** Everything above was checked on Apple Silicon
-  with torch on the CPU (the only machine that has both backends); on a
-  CUDA device the same code runs with `DEVICE = cuda`, untested there yet.
+* **A CUDA device.** Everything above ran torch on a CPU: on Apple
+  Silicon (the only machine that has both backends), and the edge0-8b
+  engine also on the DGX Spark's Grace CPU. On the GPU the same code runs
+  with `DEVICE = cuda`, untested there yet.
 * **Performance.** `gather_qmm` and the quantized linears dequantize on
   every call and `core.compile` is eager: this is a correctness reference,
   not a fast path.

@@ -434,6 +434,11 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
             f"unexpected non-expert tensors: missing={missing[:5]} "
             f"unexpected={unexpected[:5]}")
     model.eval()
+    # MLX arrays carry no autograd state. Torch parameters default to
+    # requires_grad=True, and then every forward keeps its whole graph --
+    # each dequantized expert included -- alive until the logits are
+    # dropped: on edge0-8b a 31-token prefill grew 1.2 GB/s past 120 GB.
+    model.requires_grad_(False)
     model._edge0_skipped_expert_keys = skipped_expert_keys  # for the streaming hook
     model._edge0_load_report = {"missing": missing, "unexpected": unexpected}
     return (model, config) if engine_path else model

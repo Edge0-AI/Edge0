@@ -21,7 +21,15 @@ Module = _tnn.Module
 class Linear(_tnn.Linear):
     """``torch.nn.Linear`` that, like ``mlx.nn.Linear``, accepts a plain
     tensor assigned to ``weight`` / ``bias`` (``prerouter/install.py`` does
-    ``head.fc1.weight = w``); torch itself insists on a Parameter."""
+    ``head.fc1.weight = w``); torch itself insists on a Parameter.
+
+    Parameters never require grad, as MLX arrays carry no autograd state:
+    modules built after ``load_model`` (the prerouter heads) would otherwise
+    make every forward that touches them record a graph."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.requires_grad_(False)
 
     def __setattr__(self, name, value):
         if (name in ("weight", "bias") and isinstance(value, torch.Tensor)
@@ -41,6 +49,7 @@ class RMSNorm(_tnn.RMSNorm):
 
     def __init__(self, dims: int, eps: float = 1e-5):
         super().__init__(dims, eps=eps)
+        self.requires_grad_(False)
 
 
 def _quant_params(weight, scales, in_features):

@@ -297,11 +297,14 @@ def case_qwen35_engine_generate(inp):
     engine = Qwen35Engine(ckpt, cfg)
     # greedy by hand (what generate does with top_k=1) to keep every
     # step's logits: token equality alone is too coarse on a small model
-    tokens, logits = [], []
+    tokens, logits, graph = [], [], 0
     try:
         engine.prefill([int(i) for i in inp["ids"]])
         lg = engine.next_logits()
         for _ in range(int(inp["n"])):
+            # torch only: logits that carry an autograd graph keep every
+            # dequantized expert of the forward alive (MLX has no such state)
+            graph += int(getattr(lg, "grad_fn", None) is not None)
             logits.append(_np(lg))
             tid = int(core.argmax(lg, axis=-1).item())
             tokens.append(tid)
@@ -309,7 +312,7 @@ def case_qwen35_engine_generate(inp):
     finally:
         engine.close()
     return {"tokens": np.array(tokens, dtype=np.int64),
-            "logits": np.stack(logits)}
+            "logits": np.stack(logits), "graph": np.array(graph)}
 
 
 def case_qwen35_make_ckpt(inp):

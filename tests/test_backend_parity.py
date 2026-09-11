@@ -170,6 +170,9 @@ def test_qwen35_engine_matches_mlx_with_the_prerouter(tmp_path):
     no_pr = _run("qwen35_engine_generate", dict(inp, prerouter=np.array(0)),
                  tmp_path / "no_prerouter", backends=("mlx",))
     np.testing.assert_array_equal(got["tokens"], ref["tokens"])
+    # no autograd graph behind any step (it held every dequantized expert
+    # of the forward: the edge0-8b prefill grew past 120 GB on Linux)
+    assert got["graph"] == 0, got["graph"]
 
     def rel(a, b):
         return np.abs(a - b).max(axis=-1) / np.abs(b).max(axis=-1)
