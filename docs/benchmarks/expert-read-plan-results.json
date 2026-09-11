@@ -1,0 +1,296 @@
+{
+  "date": "2026-09-10",
+  "baseline_commit": "fbab5f8c08e843e204c0fc6ae18b89a154c652cf",
+  "baseline_executable_ast_matches_pinned_method": true,
+  "test_results": {
+    "baseline_passed": 60,
+    "candidate_passed": 97,
+    "skipped": 1,
+    "slow_deselected": 2
+  },
+  "cpu_model": "Intel Core i5-3470",
+  "total_paired_blocks": 328,
+  "total_timed_expert_builds": 65600,
+  "public_weight_sample": {
+    "repo": "Edge0/Edge0-35B-A3B-preview",
+    "revision": "1ff9f4478890faec0368c5463b621d1036d5b518",
+    "layers": [
+      0,
+      20,
+      39
+    ],
+    "experts_per_layer": [
+      0,
+      127,
+      255
+    ],
+    "note": "Nine expert payloads repacked into one test shard solely for byte transport; this is not an executable language model."
+  },
+  "scope": "Warm-mmap cache-miss expert materialization, including MLX array creation and eval. Linux CPU only. No token/s, cold-SSD, GPU, iPhone, language-quality, or model-capacity gain claimed.",
+  "raw_trials": "expert-read-plan-trials.csv",
+  "runs": [
+    {
+      "baseline_commit": "fbab5f8c08e843e204c0fc6ae18b89a154c652cf",
+      "scope": "Warm-file cache-miss expert build, including MLX array creation and eval; no token throughput or physical I/O claim",
+      "fixture": {
+        "kind": "provided shard",
+        "experts": 9,
+        "hidden_size": 2048,
+        "intermediate_size": 512,
+        "file_bytes": 15926256,
+        "sha256": "7d7601c427f31901d3fa746574637d1f190ed853c40b307f9264cb6f888fa68f"
+      },
+      "environment": {
+        "python": "3.12.13",
+        "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+        "machine": "x86_64",
+        "mlx": "0.30.4",
+        "mlx_lm": "0.31.0",
+        "numpy": "2.5.3",
+        "device": "Device(cpu, 0)",
+        "MLX_DISABLE_COMPILE": "1",
+        "cpu_affinity": [
+          3
+        ]
+      },
+      "config": {
+        "seed": 1234567,
+        "repeats_per_pair": 100,
+        "warmup_calls": 64,
+        "workers": 1,
+        "batch_size": 4
+      },
+      "id": "final-public-a",
+      "results": [
+        {
+          "layout": "separate",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 431.83815999999996,
+            "median_candidate_us": 395.34901,
+            "median_paired_time_reduction": 0.0717866046116945,
+            "paired_median_bootstrap_95_ci": [
+              0.038566231514443494,
+              0.09364041933815503
+            ],
+            "candidate_faster_pairs": 34,
+            "pairs": 41
+          }
+        },
+        {
+          "layout": "fused_gate_up",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 526.90443,
+            "median_candidate_us": 488.97691,
+            "median_paired_time_reduction": 0.07134507789939848,
+            "paired_median_bootstrap_95_ci": [
+              0.04055502478847062,
+              0.0935672466390347
+            ],
+            "candidate_faster_pairs": 32,
+            "pairs": 41
+          }
+        }
+      ]
+    },
+    {
+      "baseline_commit": "fbab5f8c08e843e204c0fc6ae18b89a154c652cf",
+      "scope": "Warm-file cache-miss expert build, including MLX array creation and eval; no token throughput or physical I/O claim",
+      "fixture": {
+        "kind": "provided shard",
+        "experts": 9,
+        "hidden_size": 2048,
+        "intermediate_size": 512,
+        "file_bytes": 15926256,
+        "sha256": "7d7601c427f31901d3fa746574637d1f190ed853c40b307f9264cb6f888fa68f"
+      },
+      "environment": {
+        "python": "3.12.13",
+        "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+        "machine": "x86_64",
+        "mlx": "0.30.4",
+        "mlx_lm": "0.31.0",
+        "numpy": "2.5.3",
+        "device": "Device(cpu, 0)",
+        "MLX_DISABLE_COMPILE": "1",
+        "cpu_affinity": [
+          3
+        ]
+      },
+      "config": {
+        "seed": 7654321,
+        "repeats_per_pair": 100,
+        "warmup_calls": 64,
+        "workers": 1,
+        "batch_size": 4
+      },
+      "id": "final-public-b",
+      "results": [
+        {
+          "layout": "separate",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 469.34608000000003,
+            "median_candidate_us": 420.37159,
+            "median_paired_time_reduction": 0.11737885464194675,
+            "paired_median_bootstrap_95_ci": [
+              0.07498626836321931,
+              0.14340093612561222
+            ],
+            "candidate_faster_pairs": 35,
+            "pairs": 41
+          }
+        },
+        {
+          "layout": "fused_gate_up",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 514.70524,
+            "median_candidate_us": 486.8857,
+            "median_paired_time_reduction": 0.05747224987351496,
+            "paired_median_bootstrap_95_ci": [
+              0.03161918460359947,
+              0.07964451583978815
+            ],
+            "candidate_faster_pairs": 31,
+            "pairs": 41
+          }
+        }
+      ]
+    },
+    {
+      "baseline_commit": "fbab5f8c08e843e204c0fc6ae18b89a154c652cf",
+      "scope": "Warm-file cache-miss expert build, including MLX array creation and eval; no token throughput or physical I/O claim",
+      "fixture": {
+        "kind": "seeded synthetic packed weights",
+        "experts": 9,
+        "hidden_size": 2048,
+        "intermediate_size": 512,
+        "file_bytes": 15926256,
+        "sha256": "df9011205003c6a1f81e650795631ab3b86b85474c81dc124ea3668bc3585888"
+      },
+      "environment": {
+        "python": "3.12.13",
+        "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+        "machine": "x86_64",
+        "mlx": "0.30.4",
+        "mlx_lm": "0.31.0",
+        "numpy": "2.5.3",
+        "device": "Device(cpu, 0)",
+        "MLX_DISABLE_COMPILE": "1",
+        "cpu_affinity": [
+          3
+        ]
+      },
+      "config": {
+        "seed": 444444,
+        "repeats_per_pair": 100,
+        "warmup_calls": 64,
+        "workers": 1,
+        "batch_size": 4
+      },
+      "id": "final-synthetic",
+      "results": [
+        {
+          "layout": "separate",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 421.98981,
+            "median_candidate_us": 389.60956,
+            "median_paired_time_reduction": 0.07530607453911053,
+            "paired_median_bootstrap_95_ci": [
+              0.04635661699982763,
+              0.10002128336589056
+            ],
+            "candidate_faster_pairs": 38,
+            "pairs": 41
+          }
+        },
+        {
+          "layout": "fused_gate_up",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 529.39242,
+            "median_candidate_us": 495.62439,
+            "median_paired_time_reduction": 0.05202562536150157,
+            "paired_median_bootstrap_95_ci": [
+              0.03181915190569118,
+              0.0918117852645568
+            ],
+            "candidate_faster_pairs": 34,
+            "pairs": 41
+          }
+        }
+      ]
+    },
+    {
+      "baseline_commit": "fbab5f8c08e843e204c0fc6ae18b89a154c652cf",
+      "scope": "Warm-file cache-miss expert build, including MLX array creation and eval; no token throughput or physical I/O claim",
+      "fixture": {
+        "kind": "provided shard",
+        "experts": 9,
+        "hidden_size": 2048,
+        "intermediate_size": 512,
+        "file_bytes": 15926256,
+        "sha256": "7d7601c427f31901d3fa746574637d1f190ed853c40b307f9264cb6f888fa68f"
+      },
+      "environment": {
+        "python": "3.12.13",
+        "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+        "machine": "x86_64",
+        "mlx": "0.30.4",
+        "mlx_lm": "0.31.0",
+        "numpy": "2.5.3",
+        "device": "Device(cpu, 0)",
+        "MLX_DISABLE_COMPILE": "1",
+        "cpu_affinity": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "config": {
+        "seed": 812343,
+        "repeats_per_pair": 100,
+        "warmup_calls": 64,
+        "workers": 4,
+        "batch_size": 4
+      },
+      "id": "final-threaded",
+      "results": [
+        {
+          "layout": "separate",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 894.74658,
+            "median_candidate_us": 826.20055,
+            "median_paired_time_reduction": 0.05322504658354266,
+            "paired_median_bootstrap_95_ci": [
+              0.026326167513766596,
+              0.08284847176516008
+            ],
+            "candidate_faster_pairs": 31,
+            "pairs": 41
+          }
+        },
+        {
+          "layout": "fused_gate_up",
+          "bitwise_equal_experts": 9,
+          "summary": {
+            "median_baseline_us": 583.27517,
+            "median_candidate_us": 549.87558,
+            "median_paired_time_reduction": 0.052488523991323865,
+            "paired_median_bootstrap_95_ci": [
+              0.02270729144885053,
+              0.06707243124981432
+            ],
+            "candidate_faster_pairs": 29,
+            "pairs": 41
+          }
+        }
+      ]
+    }
+  ]
+}

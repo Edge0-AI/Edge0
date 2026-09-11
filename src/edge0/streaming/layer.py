@@ -114,6 +114,19 @@ class StreamingSwitchGLU:
                 name = f"{self._prefix}.{proj}.{part}"
                 self._shape[(proj, part)] = self._shards[
                     self._shard_idx[name]].entries[name]["shape"]
+        # Resolve names, shard locations, strides, and dtypes once. Each
+        # reader creates only the requested expert view; no payload or
+        # exported mmap buffer is retained by this read plan.
+        self._expert_readers = {}
+        for key, shape in self._shape.items():
+            if not shape or shape[0] != self.num_experts:
+                raise ValueError(f"{key}: expert count does not match the spec")
+            proj, part = key
+            name = f"{self._prefix}.{proj}.{part}"
+            dtype = "<u4" if part == "weight" else "<u2"
+            self._expert_readers[key] = self._shard_for(name).row_reader(
+                name, dtype)
+
         # Bundle-format shapes: what _build produces / caches store / math
         # consumes. Fused gate_up = gate rows on top of up rows along axis 1.
         if self._fuse_gu:
@@ -338,39 +351,30 @@ class StreamingSwitchGLU:
             return b
         per_w = {}
 
-        def _read_rows(proj, part):
-            name = f"{self._prefix}.{proj}.{part}"
-            raw = self._shard_for(name).raw(name)
-            shape = self._shape[(proj, part)]
-            per = raw.size // self.num_experts
-            return raw[expert * per:(expert + 1) * per]
-
         def _to_mx(sl, key):
             part = key[1]
             shape = self._bundle_shape[key]
             if part == "weight":
-                return core.array(u32_view(sl, shape[1:]))
-            return core.array(sl.view("<u2")).view(
-                core.bfloat16).reshape(shape[1:])
+                return core.array(sl.reshape(shape[1:]))
+            return core.array(sl).view(core.bfloat16).reshape(shape[1:])
 
         if self._fuse_gu:
             # gate rows on top of up rows (matches split(x_gu, 2) order);
-            # numpy-level concat of the raw byte slices before the single
+            # numpy-level concat of the typed expert slices before the single
             # core.array per part (pool thread, off the critical path).
             for part in ("weight", "scales", "biases"):
                 sl = np.concatenate([
-                    _read_rows("gate_proj", part),
-                    _read_rows("up_proj", part)])
+                    self._expert_readers[("gate_proj", part)](expert),
+                    self._expert_readers[("up_proj", part)](expert)])
                 per_w[("gate_up_proj", part)] = _to_mx(
                     sl, ("gate_up_proj", part))
             for part in ("weight", "scales", "biases"):
                 per_w[("down_proj", part)] = _to_mx(
-                    _read_rows("down_proj", part), ("down_proj", part))
+                    self._expert_readers[("down_proj", part)](expert),
+                    ("down_proj", part))
             return per_w
-        for proj in ("gate_proj", "up_proj", "down_proj"):
-            for part in ("weight", "scales", "biases"):
-                per_w[(proj, part)] = _to_mx(
-                    _read_rows(proj, part), (proj, part))
+        for key, read in self._expert_readers.items():
+            per_w[key] = _to_mx(read(expert), key)
         return per_w
 
     def warm_pages(self, experts):

@@ -299,3 +299,89 @@ def test_double_buffered_swap(layer):
         ref2 = lay(x, mx.array([second], dtype=mx.int32))
         assert mx.allclose(out1, ref1).item()
         assert mx.allclose(out2, ref2).item()
+
+
+# The read-plan optimization changes only file views and host metadata.
+# These checks therefore require bit equality, not a floating tolerance.
+def test_build_bit_patterns_match_raw_rows(layer):
+    lay, shard, fused = layer
+    for expert in range(N_EXPERTS):
+        reference = {}
+        for proj in ("gate_proj", "up_proj", "down_proj"):
+            for part in ("weight", "scales", "biases"):
+                name = f"{lay._prefix}.{proj}.{part}"
+                raw = shard.raw(name)
+                per = raw.size // N_EXPERTS
+                dtype = "<u4" if part == "weight" else "<u2"
+                reference[(proj, part)] = raw[
+                    expert * per:(expert + 1) * per].view(dtype).copy()
+        if fused:
+            for part in ("weight", "scales", "biases"):
+                reference[("gate_up_proj", part)] = np.concatenate([
+                    reference.pop(("gate_proj", part)),
+                    reference.pop(("up_proj", part)),
+                ])
+        actual = lay._build(expert)
+        assert actual.keys() == reference.keys()
+        for key, array in actual.items():
+            expected_shape = lay._bundle_shape[key][1:]
+            assert array.shape == expected_shape
+            dtype = mx.uint32 if key[1] == "weight" else mx.uint16
+            assert np.array_equal(
+                np.asarray(array.view(dtype)).reshape(-1), reference[key])
+
+
+def test_build_reuses_resolved_metadata(layer, monkeypatch):
+    lay, shard, _ = layer
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("build repeated a source-name or whole-tensor lookup")
+
+    monkeypatch.setattr(lay, "_shard_for", forbidden)
+    monkeypatch.setattr(shard, "raw", forbidden)
+    for expert in (0, N_EXPERTS - 1, 0):
+        bundle = lay._build(expert)
+        mx.eval(*bundle.values())
+
+
+def test_build_read_plan_across_multiple_shards(layer, tmp_path):
+    original, source, fused = layer
+    groups = [{}, {}, {}]
+    for i, (key, entry) in enumerate(source.entries.items()):
+        dtype = "<u4" if key.endswith(".weight") else "<u2"
+        groups[i % 3][key] = source.raw(key).view(dtype).reshape(
+            entry["shape"]).copy()
+    shards = []
+    split = None
+    try:
+        for i, group in enumerate(groups):
+            path = tmp_path / f"shard-{i}.safetensors"
+            save_file(group, str(path))
+            shards.append(SafetensorsMmap(str(path)))
+        split = StreamingSwitchGLU(
+            shards, 0, _spec(fused), _options(),
+            shared_cache=SharedExpertCache(64))
+        for expert in (N_EXPERTS - 1, 0, 3):
+            a, b = original._build(expert), split._build(expert)
+            for key in a:
+                dtype = mx.uint32 if key[1] == "weight" else mx.uint16
+                assert np.array_equal(
+                    np.asarray(a[key].view(dtype)),
+                    np.asarray(b[key].view(dtype)))
+        x = mx.random.normal((1, 2, DIM)).astype(mx.float16)
+        indices = _inds(tokens=2)
+        assert np.array_equal(np.asarray(original(x, indices)),
+                              np.asarray(split(x, indices)))
+    finally:
+        if split is not None:
+            split.close()
+        for shard in shards:
+            shard.close()
+
+
+def test_read_plan_rejects_wrong_expert_count(layer):
+    from dataclasses import replace
+    _, shard, fused = layer
+    wrong = replace(_spec(fused), num_experts=N_EXPERTS + 1)
+    with pytest.raises(ValueError, match="expert count"):
+        StreamingSwitchGLU([shard], 0, wrong, _options())
