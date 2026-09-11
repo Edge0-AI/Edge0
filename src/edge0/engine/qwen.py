@@ -14,6 +14,8 @@ Port of the deployment's ``engine_qwen.py`` trained-prerouter path:
 
 from __future__ import annotations
 
+import os
+
 from edge0.backends import core
 
 from edge0.backends.mlx._impl.qwen3_5_moe import Model as Qwen35Model
@@ -85,6 +87,16 @@ class Qwen35Engine(Edge0Engine):
     """Streaming Qwen3.5-MoE engine (staged decode + trained prerouter)."""
 
     name = "edge0-35b"
+
+    def __init__(self, model_dir: str, cfg, tokenizer=None):
+        # NAN_BANG_COLLAPSE_FIX parity (engine/ling.py): hidden clip default
+        # 1000 unless the deployer overrides QWEN_HIDDEN_CLIP explicitly.
+        # One fp16 overflow inside a layer otherwise poisons the whole net
+        # into all-NaN logits -> argmax fallback token 0 ('!') collapse,
+        # which does not recover until the process restarts.
+        if "QWEN_HIDDEN_CLIP" not in os.environ:
+            os.environ["QWEN_HIDDEN_CLIP"] = "1000"
+        super().__init__(model_dir, cfg, tokenizer=tokenizer)
 
     def _build(self):
         cfg = self.cfg
