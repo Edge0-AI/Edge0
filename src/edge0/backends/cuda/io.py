@@ -107,8 +107,7 @@ class SafeTensorsStore(TensorStore):
 def open_shards(model_dir: str) -> list:
     """Same contract as ``backends/mlx/io.py::open_shards`` -- reuses
     ``streaming.mmap.SafetensorsMmap`` as-is, since that module is
-    already backend-agnostic (pure ``mmap`` + ``numpy``, see the
-    mapping doc)."""
+    already backend-agnostic (pure ``mmap`` + ``numpy``)."""
     import glob
     import os
     from edge0.streaming.mmap import SafetensorsMmap
@@ -144,8 +143,7 @@ def load_tokenizer(model_path):
     so it is genuinely backend-agnostic; duplicated here rather than
     imported cross-backend so ``edge0.backends.cuda`` never imports
     ``edge0.backends.mlx`` (keeps the two backends independently
-    installable -- MLX has no Linux wheels, see the mapping doc's CI
-    finding)."""
+    installable)."""
     from transformers import AutoTokenizer
     return AutoTokenizer.from_pretrained(
         model_path, local_files_only=True, trust_remote_code=True)

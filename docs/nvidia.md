@@ -4,9 +4,10 @@ This is not a how-to. `edge0` does **not** run end-to-end on NVIDIA
 hardware today, on any tested MLX version. The project's own README
 already says so plainly: *"the MLX backend runs on macOS with Apple
 Silicon (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
-platforms are supported yet."* `backends/cuda/` is a branch in
-`backends/__init__.py` that raises `ImportError`, not a directory with
-code.
+platforms are supported yet."* `backends/cuda/` now holds a torch
+reference backend (`EDGE0_BACKEND=cuda`) whose ops are checked against
+real MLX in `tests/test_cuda_backend.py`, but it is not wired end-to-end
+yet — see "Bottom line".
 
 What follows is what we found trying anyway, kept here because it's
 exactly the investigation the next person attempting this would
@@ -66,9 +67,11 @@ NVML, not the CUDA runtime).
 ## Bottom line
 
 Running `edge0` today means Apple Silicon + `mlx-metal`, per the
-project's own stated support matrix. The reserved `backends/cuda/` slot
-is real work still to be done, not something MLX's own CUDA backend
-closes for free at any version currently available.
+project's own stated support matrix. MLX's own CUDA backend does not
+close the gap at any version currently available, so the path forward is
+the torch backend in `backends/cuda/`: its array/nn/quant ops and model
+loading exist and are tested, while the streaming layer and engines
+still reach into MLX directly and are the remaining work.
 
 ## A stale assumption this also corrects
 

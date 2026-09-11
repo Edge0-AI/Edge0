@@ -94,6 +94,26 @@ def test_gather_qmm_bf16_checkpoint_dtypes():
     np.testing.assert_allclose(got, ref, rtol=2e-2, atol=1e-1)
 
 
+def test_rmsnorm_matches_mlx():
+    from edge0.backends.cuda import nn as cnn
+    x = mx.random.normal((3, 64))
+    w = mx.random.normal((64,))
+    ref = np.array(mx.fast.rms_norm(x, w, 1e-6))
+    norm = cnn.RMSNorm(64, eps=1e-6)
+    assert list(norm.state_dict()) == ["weight"]
+    norm.load_state_dict({"weight": _t(w)})
+    got = norm(_t(x)).detach().numpy()
+    np.testing.assert_allclose(got, ref, rtol=1e-5, atol=1e-5)
+
+
+def test_gelu_matches_mlx():
+    import mlx.nn as mnn
+    from edge0.backends.cuda import nn as cnn
+    x = mx.random.normal((4, 32)) * 3
+    np.testing.assert_allclose(cnn.gelu(_t(x)).numpy(), np.array(mnn.gelu(x)),
+                               rtol=1e-5, atol=1e-5)
+
+
 def test_swiglu_matches_mlx():
     import mlx.nn as mnn
     up, gate = mx.random.normal((4, 32)), mx.random.normal((4, 32))

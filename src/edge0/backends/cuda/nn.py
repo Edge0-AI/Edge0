@@ -19,24 +19,17 @@ Module = _tnn.Module
 Linear = _tnn.Linear
 
 
-class RMSNorm(_tnn.Module):
-    """Matches ``mlx.nn.RMSNorm(dims, eps)`` call signature; wraps
-    ``torch.nn.RMSNorm`` (normalized_shape=dims) rather than
-    hand-rolling the reduction, since torch's built-in already matches
-    the standard eps-inside-sqrt convention the vendored models assume
-    (worth a numerical spot-check against ``mx.fast.rms_norm`` before
-    trusting this for anything beyond shape/wiring tests -- see the
-    mapping doc, gated-delta callers pass a raw eps positionally that
-    MLX's ``mx.fast.rms_norm`` treats identically, but this has not
-    been cross-checked digit-for-digit).
+class RMSNorm(_tnn.RMSNorm):
+    """``mlx.nn.RMSNorm(dims, eps)`` signature on top of ``torch.nn.RMSNorm``.
+
+    Subclassed rather than wrapped so the parameter keeps the name
+    ``weight``, as in MLX and the checkpoints. Numerics match
+    ``mx.fast.rms_norm`` (eps inside the sqrt); see
+    ``tests/test_cuda_backend.py``.
     """
 
     def __init__(self, dims: int, eps: float = 1e-5):
-        super().__init__()
-        self.norm = _tnn.RMSNorm(dims, eps=eps)
-
-    def forward(self, x):
-        return self.norm(x)
+        super().__init__(dims, eps=eps)
 
 
 def silu(x):

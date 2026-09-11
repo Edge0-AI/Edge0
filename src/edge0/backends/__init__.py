@@ -49,14 +49,9 @@ if _BACKEND == "mlx":
         quant,
     )
 elif _BACKEND == "cuda":
-    # Reference/fallback implementation (torch-backed). Try
-    # EDGE0_BACKEND=mlx with `pip install mlx[cuda12]` on real NVIDIA
-    # hardware FIRST -- MLX's own CUDA backend natively implements
-    # every op this facade calls (confirmed against ml-explore/mlx
-    # source: GatherQMM::eval_gpu exists in
-    # mlx/backend/cuda/quantized/quantized.cpp, and its allocator uses
-    # cudaMallocManaged to keep the unified-memory model on GPUs with
-    # concurrentManagedAccess) -- that path needs zero new code here.
+    # Torch reference implementation. EDGE0_BACKEND=mlx on top of
+    # mlx[cuda*] is not a shortcut: no MLX release runs the shipped
+    # tiers on NVIDIA hardware (see docs/nvidia.md).
     from edge0.backends.cuda.backend import (  # noqa: F401
         BackendImpl,
         core,
