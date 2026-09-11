@@ -154,48 +154,69 @@ def load_tokenizer(model_path):
 _EXPERT_KEY_MARKERS = (".mlp.experts.", ".switch_mlp.")
 """Tensor-name substrings for the quantized MoE expert weights (the ones
 streaming/layer.py streams from disk on demand — never meant to be
-resident). Confirmed against a real (meta-device, no download needed)
-``transformers.Qwen3_5MoeForCausalLM`` instantiation: raw checkpoint
-naming is ``model.layers.N.mlp.experts.{gate_up_proj,down_proj}`` --
-the SAME fused-gate_up-then-split transform edge0's own
-``_impl/qwen3_5_moe.py::sanitize()`` undoes to get to MLX's
-``switch_mlp.{gate,up}_proj`` split form. That the raw format already
-matches what ``transformers`` expects, without edge0's own renaming, is
-what makes depending on it viable rather than merely plausible.
+resident). Matches both tiers' REAL on-disk key naming, checked against
+the actual published checkpoints (safetensors index/header), not
+assumed: edge0-35b uses ``...mlp.switch_mlp.{gate,up,down}_proj``,
+edge0-8b uses ``...mlp.experts.{gate,up,down}_proj`` — both already
+pre-stacked ``[num_experts, ...]`` tensors (``WeightLayout.SEPARATE``),
+regardless of what either tier's REFERENCE implementation does with
+experts in memory (transformers' Bailing class uses a per-expert
+``nn.ModuleList`` internally, but that in-memory shape is irrelevant
+here since these keys are never loaded into it — see ``load_model``).
 """
 
+_KEY_PREFIX_STRIP = {
+    # architectures-string -> checkpoint key prefix to strip before
+    # matching transformers' own state_dict names. Confirmed against
+    # the REAL published checkpoints' safetensors index/header:
+    # edge0-35b's keys all carry "language_model." (MLX's own
+    # post-sanitize naming, from _impl/qwen3_5_moe.py wrapping
+    # TextModel under self.language_model) -- transformers'
+    # Qwen3_5MoeForCausalLM has no such wrapper, so every dense weight
+    # would silently fail to match without this. edge0-8b's keys
+    # already match transformers.BailingMoeV3's own naming with no
+    # prefix at all -- confirmed via the same check, not assumed
+    # identical by default (see _resolve_model_class's docstring).
+    "Qwen3_5MoeForConditionalGeneration": "language_model.",
+}
 
-def _resolve_model_class(config: dict):
-    """``config.json`` -> ``(HF class, needs_trust_remote_code)``.
+
+def _resolve_model_class(model_path, raw_config: dict):
+    """``config.json`` (+ directory, for trust_remote_code) -> a
+    ``(constructed transformers config, model_cls, needs_trust_remote_code,
+    key_prefix)`` tuple.
 
     Dispatches on ``architectures``/``auto_map``, NOT ``model_type`` --
     checked against the real ``Edge0/Edge0-8B-A1B-preview`` config.json
     (downloaded directly, not assumed): it has no top-level
-    ``model_type`` field at all, only ``architectures:
-    ["BailingMoeV3ForCausalLM"]`` and an ``auto_map`` pointing at
-    ``modeling_bailing_moe_v3.py`` -- a first version of this function
-    keyed on ``model_type`` and would have silently mis-dispatched on
-    this exact checkpoint.
+    ``model_type`` field at all. A first version of this function keyed
+    on ``model_type`` would have silently mis-dispatched on it.
 
-    * edge0-35b (Qwen3.5-MoE): natively in ``transformers`` (checked:
-      5.17.0) as ``Qwen3_5MoeForCausalLM`` (config class
-      ``Qwen3_5MoeTextConfig`` -- the TEXT-only causal LM, not
-      ``Qwen3_5MoeForConditionalGeneration``'s vision+text wrapper;
-      edge0 strips vision entirely, same as this choice). Experts are
-      one stacked ``[num_experts, ...]`` tensor per projection
-      (``mlp.experts.gate_up_proj``, fused gate+up -- the exact tensor
-      edge0's own ``_impl/qwen3_5_moe.py::sanitize()`` splits back into
-      MLX's ``switch_mlp.{gate,up}_proj``).
+    * edge0-35b: the REAL published config.json's ``architectures`` is
+      ``["Qwen3_5MoeForConditionalGeneration"]`` -- the vision+text
+      wrapper, not plain ``Qwen3_5MoeForCausalLM`` (a first version of
+      this function assumed the latter). Checked directly: it has both
+      ``text_config`` AND ``vision_config`` keys. edge0 strips vision
+      entirely (confirmed in ``_impl/qwen3_5_moe.py::sanitize()``), so
+      this still resolves to ``Qwen3_5MoeForCausalLM`` (config class
+      ``Qwen3_5MoeTextConfig``) built from JUST ``config["text_config"]``
+      -- the vision-wrapping class is never constructed. Every
+      checkpoint key carries a ``language_model.`` prefix (confirmed via
+      the real safetensors index) that the plain text-only class's own
+      attribute names don't have -- stripped via ``_KEY_PREFIX_STRIP``.
     * edge0-8b (``BailingMoeV3ForCausalLM``): ships its OWN
       ``modeling_bailing_moe_v3.py``/``configuration_bailing_moe_v3.py``
       co-located in the checkpoint repo (confirmed via the HF API file
-      listing) -- loaded through ``trust_remote_code``, not merged
-      into ``transformers``. Experts are ``nn.ModuleList`` of 128
-      SEPARATE per-expert MLP modules (``mlp.experts.{i}.gate_proj`` /
-      ``.up_proj`` / ``.down_proj``), not one stacked tensor --
-      structurally different from the 35b tier, so the eventual
-      streaming-gather hook needs a per-expert-module path here, not
-      the single-indexed-gather path the 35b tier's layout wants.
+      listing, then downloaded and actually imported -- needs einops,
+      fla, triton as extra deps, not currently in edge0's own
+      dependency list). Experts are ``nn.ModuleList`` of per-expert MLP
+      modules in the reference implementation's OWN in-memory layout,
+      but the actual PUBLISHED CHECKPOINT stores them pre-stacked
+      (confirmed via the real safetensors header) -- the
+      ``nn.ModuleList`` is never populated from checkpoint data, it
+      gets swapped out by the streaming installer instead. No key
+      prefix needed -- confirmed via the same check, not assumed
+      identical to the 35b tier by default.
       SECURITY NOTE, not a footnote: ``trust_remote_code=True`` runs
       third-party Python shipped inside the checkpoint directory. That
       is a real code-execution surface, not a formality -- worth a
@@ -203,14 +224,22 @@ def _resolve_model_class(config: dict):
       vendor it, or accept the risk per-checkpoint) before this path
       is used unattended, e.g. in `edge0 serve`.
     """
-    archs = config.get("architectures", [])
-    auto_map = config.get("auto_map", {})
-    if "Qwen3_5MoeForCausalLM" in archs or "qwen3_5_moe" in str(auto_map).lower():
-        from transformers import Qwen3_5MoeForCausalLM
-        return Qwen3_5MoeForCausalLM, False
+    archs = raw_config.get("architectures", [])
+    auto_map = raw_config.get("auto_map", {})
+
+    if any(a.startswith("Qwen3_5Moe") for a in archs):
+        from transformers import Qwen3_5MoeForCausalLM, Qwen3_5MoeTextConfig
+        text_cfg_dict = raw_config.get("text_config", raw_config)
+        config = Qwen3_5MoeTextConfig(**text_cfg_dict)
+        key_prefix = next(
+            (p for a, p in _KEY_PREFIX_STRIP.items() if a in archs), "")
+        return config, Qwen3_5MoeForCausalLM, False, key_prefix
+
     if any("Bailing" in a for a in archs) or "bailing" in str(auto_map).lower():
-        from transformers import AutoModelForCausalLM
-        return AutoModelForCausalLM, True
+        from transformers import AutoConfig, AutoModelForCausalLM
+        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        return config, AutoModelForCausalLM, True, ""
+
     raise NotImplementedError(
         f"cuda backend: unrecognized architectures={archs!r} -- no known "
         f"transformers class for it (see this function's docstring for "
@@ -245,16 +274,13 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
     with open(os.path.join(os.fspath(model_path), "config.json")) as f:
         raw_config = json.load(f)
 
-    model_cls, needs_trust_remote_code = _resolve_model_class(raw_config)
+    hf_config, model_cls, needs_trust_remote_code, key_prefix = \
+        _resolve_model_class(model_path, raw_config)
 
     import torch
-    from transformers import AutoConfig
-
-    config = AutoConfig.from_pretrained(
-        model_path, trust_remote_code=needs_trust_remote_code)
     with torch.device("meta"):
-        model = model_cls(config) if not needs_trust_remote_code else \
-            model_cls.from_config(config, trust_remote_code=True)
+        model = model_cls.from_config(hf_config, trust_remote_code=True) \
+            if needs_trust_remote_code else model_cls(hf_config)
 
     dense_state = {}
     skipped_expert_keys = []
@@ -263,6 +289,8 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
             if any(m in name for m in _EXPERT_KEY_MARKERS):
                 skipped_expert_keys.append(name)
                 continue
+            mapped_name = name[len(key_prefix):] if key_prefix and \
+                name.startswith(key_prefix) else name
             raw = shard.raw(name)
             if meta["dtype"] == "BF16":
                 u16 = np.frombuffer(raw, dtype=np.uint16,
@@ -272,7 +300,7 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
                 arr = np.frombuffer(raw, dtype=_NP_DTYPES[meta["dtype"]],
                                      count=int(np.prod(meta["shape"])))
                 t = torch.from_numpy(arr.copy())
-            dense_state[name] = t.reshape(meta["shape"]).to(DEVICE)
+            dense_state[mapped_name] = t.reshape(meta["shape"]).to(DEVICE)
         shard.close()
 
     missing, unexpected = model.load_state_dict(
