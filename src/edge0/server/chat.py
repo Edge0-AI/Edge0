@@ -88,21 +88,33 @@ class ChatSession:
             # renders the canonical no-think prompt — an EMPTY think
             # block closer, the model's direct-answer form.  Default OFF
             # (CLI demo parity).
+            #
+            # The successful render MUST be kept: substituting the
+            # hardcoded ChatML drops that think-block closer, the model
+            # then opens its own <think> and the turn derails (issue #11:
+            # <think> leaking into content, then empty/garbled replies).
+            # ``_chat_text()`` is a last resort, never the success path.
+            msgs = [m.__dict__ for m in self.req.messages]
             think = self.req.enable_thinking
             if think is None:
                 think = False
             try:
                 text = tok.apply_chat_template(
-                    [m.__dict__ for m in self.req.messages],
-                    tokenize=False, add_generation_prompt=True,
+                    msgs, tokenize=False, add_generation_prompt=True,
                     enable_thinking=bool(think))
             except TypeError:
                 # tokenizer template without the kwarg: plain render
-                text = tok.apply_chat_template(
-                    [m.__dict__ for m in self.req.messages],
-                    tokenize=False, add_generation_prompt=True)
-            else:
+                try:
+                    text = tok.apply_chat_template(
+                        msgs, tokenize=False, add_generation_prompt=True)
+                except Exception:  # noqa: BLE001
+                    text = self._chat_text()
+            except Exception:  # noqa: BLE001 — render failed: last resort
                 text = self._chat_text()
+        else:
+            # Tokenizer without a chat template: plain ChatML.  (This also
+            # used to leave ``text`` unbound -> NameError.)
+            text = self._chat_text()
         ids = tok.encode(text)
         if not ids:
             ids = [tok.bos_token_id or 0]
