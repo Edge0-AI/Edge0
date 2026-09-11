@@ -151,9 +151,14 @@ def _patch_qwen_consume():
     ``prerouter_enabled`` and single-token inputs (decode) route through
     the prerouter; everything else takes the original router path.
 
-    The patched class is the vendored MLX model's, so this import stays
-    local: the module must still import under other backends."""
-    from edge0.backends.mlx._impl.qwen3_next import Qwen3NextSparseMoeBlock
+    The patched class is the active backend's port of the vendored block,
+    imported here so the module itself imports under any backend."""
+    from edge0.backends import backend
+    if backend.name == "cuda":
+        from edge0.backends.cuda._impl.qwen3_5_moe import (
+            SparseMoeBlock as Qwen3NextSparseMoeBlock)
+    else:
+        from edge0.backends.mlx._impl.qwen3_next import Qwen3NextSparseMoeBlock
     if getattr(Qwen3NextSparseMoeBlock, _PATCHED_MARK, False):
         return
     orig_call = Qwen3NextSparseMoeBlock.__call__

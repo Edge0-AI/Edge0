@@ -201,9 +201,216 @@ def case_bailing_port_parity(inp):
     }
 
 
+def _qwen35_tiny_ckpt(ckpt, seed):
+    """MLX builds a small edge0-35b-shaped model (3 GatedDeltaNet layers + 1
+    gated full-attention layer, GQA, partial RoPE, 8 experts), casts it to
+    bf16, quantizes it with the model's own predicate (router and shared
+    gate at 8 bits) and saves it in its own format -- the published
+    checkpoint's format -- plus random prerouter heads in the prerouter
+    file's format. Returns the MLX model (on the MLX CPU device)."""
+    import json
+    import os
+
+    import mlx.core as mx
+    import mlx.nn as mnn
+    from mlx.utils import tree_flatten, tree_map
+
+    from edge0.backends.mlx._impl import qwen3_5_moe as mq
+
+    mx.set_default_device(mx.cpu)
+    mx.random.seed(seed)
+    text = dict(
+        model_type="qwen3_5_moe_text", hidden_size=128, intermediate_size=256,
+        num_hidden_layers=4, num_attention_heads=4, num_key_value_heads=2,
+        head_dim=64, rms_norm_eps=1e-6, vocab_size=128,
+        linear_num_value_heads=4, linear_num_key_heads=2,
+        linear_key_head_dim=32, linear_value_head_dim=32,
+        linear_conv_kernel_dim=4, full_attention_interval=4,
+        num_experts=8, num_experts_per_tok=2, moe_intermediate_size=64,
+        shared_expert_intermediate_size=64, norm_topk_prob=True,
+        rope_parameters={"rope_type": "default", "rope_theta": 1e7,
+                         "partial_rotary_factor": 0.25})
+    config = {"model_type": "qwen3_5_moe", "text_config": text}
+    mm = mq.Model(mq.ModelArgs.from_dict(json.loads(json.dumps(config))))
+    mm.update(tree_map(lambda p: p * 0.5, mm.parameters()))   # keep O(1)
+    mm.set_dtype(mx.bfloat16)
+    pred = mm.quant_predicate
+    mnn.quantize(mm, group_size=64, bits=4,
+                 class_predicate=lambda p, m: hasattr(m, "to_quantized")
+                 and pred(p, m))
+    os.makedirs(ckpt, exist_ok=True)
+    mx.save_safetensors(os.path.join(ckpt, "model.safetensors"),
+                        dict(tree_flatten(mm.parameters())))
+    # per-path overrides for the 8-bit layers, as in the published config
+    # (80 entries for edge0-35b: 40 layers x mlp.gate / shared_expert_gate);
+    # mlx-lm's loader reads the bits from here
+    quant = {"group_size": 64, "bits": 4}
+    for li in range(text["num_hidden_layers"]):
+        for leaf in ("mlp.gate", "mlp.shared_expert_gate"):
+            quant[f"language_model.model.layers.{li}.{leaf}"] = {
+                "group_size": 64, "bits": 8}
+    with open(os.path.join(ckpt, "config.json"), "w") as f:
+        json.dump(dict(config, quantization=quant), f)
+    f_in, hid = 128 + 2 * 8, 32
+    heads = {}
+    for owner in range(0, 3):          # start_layer=1 -> owners 0..n-2
+        for name, shape in (("fc1", (hid, f_in)), ("fc2", (8, hid)),
+                            ("linear_init", (8, f_in))):
+            heads[f"layers.{owner}.{name}.weight"] = (
+                mx.random.normal(shape) * 0.3).astype(mx.float16)
+    mx.save_safetensors(os.path.join(ckpt, "prerouter.safetensors"), heads)
+    return mm
+
+
+def case_qwen35_engine_generate(inp):
+    """Greedy-decode through the real Qwen35Engine (streaming, staged
+    decode, the class-level prerouter patch with trained-style heads) on
+    whichever backend EDGE0_BACKEND selects, on the small MLX-written
+    checkpoint. MLX runs on its CPU device."""
+    import dataclasses
+    import os
+
+    from edge0.config import GenerationConfig
+    from edge0.engine.qwen import Qwen35Engine
+    from edge0.models.edge0_35b import Qwen35Config
+    from edge0.streaming.options import LayerOptions
+
+    ckpt = str(inp["ckpt_dir"])
+    try:
+        import mlx.core as mx
+        mx.set_default_device(mx.cpu)
+    except ImportError:
+        pass
+    base = Qwen35Config._defaults(ckpt)
+    cfg = dataclasses.replace(
+        base,
+        moe_spec=dataclasses.replace(base.moe_spec, num_experts=8, top_k=2,
+                                     intermediate_size=64),
+        options=dataclasses.replace(LayerOptions.staged_k4(), staged_n=2,
+                                    staged_trigger=2, top_k=2, prefill_hot=4),
+        prerouter=dataclasses.replace(
+            base.prerouter, start_layer=1, hidden=32,
+            weights_file=(os.path.join(ckpt, "prerouter.safetensors")
+                          if int(inp.get("prerouter", 1)) else "")),
+        prerouter_top_k=2, lora="")
+    from edge0.backends import core
+    engine = Qwen35Engine(ckpt, cfg)
+    # greedy by hand (what generate does with top_k=1) to keep every
+    # step's logits: token equality alone is too coarse on a small model
+    tokens, logits = [], []
+    try:
+        engine.prefill([int(i) for i in inp["ids"]])
+        lg = engine.next_logits()
+        for _ in range(int(inp["n"])):
+            logits.append(_np(lg))
+            tid = int(core.argmax(lg, axis=-1).item())
+            tokens.append(tid)
+            lg = engine.step(tid)
+    finally:
+        engine.close()
+    return {"tokens": np.array(tokens, dtype=np.int64),
+            "logits": np.stack(logits)}
+
+
+def case_qwen35_make_ckpt(inp):
+    _qwen35_tiny_ckpt(str(inp["ckpt_dir"]), int(inp["seed"]))
+    return {"ok": np.array(1)}
+
+
+def case_qwen35_port_parity(inp):
+    """torch backend only: the torch port of qwen3_5_moe against the vendored
+    MLX model. MLX builds a small edge0-35b-shaped model (3 GatedDeltaNet
+    layers + 1 gated full-attention layer, GQA, partial RoPE, 8 experts),
+    casts it to bf16 and quantizes it with the model's own predicate
+    (router and shared-expert gate at 8 bits), then saves it in its own
+    format -- the published checkpoint's format. The torch port loads that
+    file through the engine path, streams the experts from it, and is
+    compared layer by layer (teacher-forced) and free-running against the
+    MLX model on the MLX CPU device, both float32, over a chunked prefill
+    and decode steps."""
+    import dataclasses
+    import os
+
+    import mlx.core as mx
+    import torch
+
+    from edge0.backends.cuda._impl import qwen3_5_moe as tq
+    from edge0.backends.cuda.io import load_model as t_load
+    from edge0.models.edge0_35b import Qwen35Config
+    from edge0.streaming.install import install_streaming_experts
+    from edge0.streaming.mmap import SafetensorsMmap
+    from mlx_lm.models.base import create_attention_mask as m_mask_fn
+
+    ckpt = str(inp["ckpt_dir"])
+    mm = _qwen35_tiny_ckpt(ckpt, int(inp["seed"]))
+    mm.set_dtype(mx.float32)
+
+    tm, _ = t_load(ckpt, strict=False, model_config={"model_type": "qwen3_5_moe"},
+                   get_model_classes=lambda config: (tq.Model, tq.ModelArgs),
+                   dtype=torch.float32)
+    rep = tm._edge0_load_report
+    spec = dataclasses.replace(Qwen35Config._defaults(ckpt).moe_spec,
+                               num_experts=8, top_k=2, intermediate_size=64)
+    twins = install_streaming_experts(
+        tm, [SafetensorsMmap(os.path.join(ckpt, "model.safetensors"))], spec,
+        num_layers=4)
+
+    def f32(a):
+        return np.array(a.astype(mx.float32)) if isinstance(a, mx.array) \
+            else a.detach().float().numpy()
+
+    def rel(a, b):
+        a, b = f32(a), f32(b)
+        return float(np.abs(a - b).max() / (np.abs(b).max() + 1e-30))
+
+    ids = [int(i) for i in inp["ids"]]
+    steps = [ids[:6], ids[6:]] + [None] * int(inp["n_decode"])
+    mlm, tlm = mm.language_model, tm.language_model
+    n = len(tlm.model.layers)
+    m_cache, t_cache, t_free = mlm.make_cache(), tlm.make_cache(), tlm.make_cache()
+    layer_err = np.zeros((len(steps), n))
+    logit_err, m_arg, t_arg = [], [], []
+    for s, chunk in enumerate(steps):
+        chunk = chunk if chunk is not None else [m_arg[-1]]
+        h = mlm.model.embed_tokens(mx.array(chunk)[None])
+        t_emb = tlm.model.embed_tokens(torch.tensor(chunk)[None])
+        m_fa = m_mask_fn(h, m_cache[mlm.model.fa_idx])
+        t_fa = tq.create_attention_mask(t_emb, t_cache[tlm.model.fa_idx])
+        with torch.no_grad():
+            for li in range(n):
+                ml, tl = mlm.model.layers[li], tlm.model.layers[li]
+                x_in = h
+                h = ml(x_in, mask=None if ml.is_linear else m_fa, cache=m_cache[li])
+                mx.eval(h)
+                t_out = tl(torch.from_numpy(f32(x_in)),
+                           mask=None if tl.is_linear else t_fa, cache=t_cache[li])
+                layer_err[s, li] = rel(t_out, h)
+            mo = mlm.lm_head(mlm.model.norm(h))[0, -1]
+            to = tlm.lm_head(tlm.model(torch.tensor(chunk)[None], cache=t_free))[0, -1]
+        logit_err.append(rel(to, mo))
+        m_arg.append(int(mx.argmax(mo).item()))
+        t_arg.append(int(torch.argmax(to).item()))
+    for t in twins:
+        if t is not None:
+            t.close()
+    from edge0.backends.cuda import nn as cnn
+    return {
+        "layer_err": layer_err, "logit_err": np.array(logit_err),
+        "m_argmax": np.array(m_arg), "t_argmax": np.array(t_arg),
+        "is_linear": np.array([l.is_linear for l in tlm.model.layers]),
+        "n_missing": np.array(len(rep["missing"])),
+        "n_unexpected": np.array(len(rep["unexpected"])),
+        "gate_bits": np.array(tlm.model.layers[0].mlp.gate.bits),
+        "n_quantized": np.array(sum(isinstance(m, (cnn.QuantizedLinear,
+                                                   cnn.QuantizedEmbedding))
+                                    for m in tm.modules())),
+    }
+
+
 def case_engine_guard(inp):
-    """Every entry point imports without pulling MLX in, and the engine
-    without a torch model port (edge0-35b) refuses the backend up front."""
+    """Every entry point imports without pulling MLX in, both engines
+    resolve to the torch ports, and a tier still refuses a backend it has
+    no port for."""
     import importlib
     for mod in ("edge0", "edge0.engine", "edge0.engine.qwen",
                 "edge0.engine.ling", "edge0.cli", "edge0.prerouter.install",
@@ -211,15 +418,18 @@ def case_engine_guard(inp):
         importlib.import_module(mod)
     loaded_mlx = sorted(m for m in sys.modules
                         if m == "mlx" or m.startswith(("mlx.", "mlx_lm")))
+    from edge0.engine.base import require_backend
     try:
-        importlib.import_module("edge0.engine.qwen").load_installed("unused", None)
+        require_backend("some-tier", ("mlx",))
         error = "no error"
     except NotImplementedError as e:
         error = str(e)
-    from edge0.engine.ling import _get_model_classes
+    from edge0.engine.ling import _get_model_classes as ling_classes
+    from edge0.engine.qwen import _get_model_classes as qwen_classes
     return {"loaded_mlx": np.array(loaded_mlx, dtype=str),
-            "qwen_error": np.array(error),
-            "ling_model_module": np.array(_get_model_classes({})[0].__module__)}
+            "refusal": np.array(error),
+            "ling_model_module": np.array(ling_classes(config={})[0].__module__),
+            "qwen_model_module": np.array(qwen_classes(config={})[0].__module__)}
 
 
 def case_engine_generate(inp):

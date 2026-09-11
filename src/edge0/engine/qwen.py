@@ -17,7 +17,7 @@ from __future__ import annotations
 from edge0.backends import core
 
 from edge0.backends import io
-from edge0.engine.base import Edge0Engine, require_mlx_backend
+from edge0.engine.base import Edge0Engine, require_backend
 from edge0.engine.hooks import (
     make_history_prefetch,
     make_intra_after_layer,
@@ -29,9 +29,14 @@ from edge0.streaming.install import install_streaming_experts
 
 
 def _get_model_classes(config):
-    """mlx-lm class hook: serve the vendored qwen3_5_moe backbone (imported
-    here so the module itself imports without MLX)."""
-    from edge0.backends.mlx._impl.qwen3_5_moe import Model, ModelArgs
+    """load_model class hook: serve the active backend's port of the
+    qwen3_5_moe backbone (imported here so the module itself imports
+    without MLX)."""
+    from edge0.backends import backend
+    if backend.name == "cuda":
+        from edge0.backends.cuda._impl.qwen3_5_moe import Model, ModelArgs
+    else:
+        from edge0.backends.mlx._impl.qwen3_5_moe import Model, ModelArgs
     return Model, ModelArgs
 
 
@@ -43,7 +48,7 @@ def load_installed(model_dir: str, cfg):
     ``installs`` carries the layer maps and prerouter state the engine
     drives at the step boundary.
     """
-    require_mlx_backend("edge0-35b")
+    require_backend("edge0-35b", ("mlx", "cuda"))
     model, model_config = io.load_model(
         model_dir, lazy=True, strict=False,
         model_config={"model_type": "qwen3_5_moe"},

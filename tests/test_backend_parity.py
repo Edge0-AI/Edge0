@@ -130,6 +130,57 @@ def test_bailing_port_matches_mlx_layer_by_layer(tmp_path):
     np.testing.assert_array_equal(res["t_argmax"], res["m_argmax"])
 
 
+def test_qwen35_port_matches_mlx_layer_by_layer(tmp_path):
+    """The torch port of qwen3_5_moe (edge0-35b) on a checkpoint MLX itself
+    wrote in the published format (bf16, 4-bit, 8-bit router and shared
+    gate, switch_mlp experts, MLX-layout conv1d and norms): every layer and
+    the free-running logits within float32 noise of the MLX model, across
+    a chunked prefill and decode steps. No 23 GB download needed."""
+    rng = np.random.default_rng(7)
+    res = _run("qwen35_port_parity", {
+        "ckpt_dir": np.array(str(tmp_path / "ckpt")), "seed": np.array(7),
+        "ids": rng.integers(0, 128, 10), "n_decode": np.array(3)},
+        tmp_path, backends=("cuda",))
+    assert int(res["n_missing"]) == 0 and int(res["n_unexpected"]) == 0
+    assert int(res["gate_bits"]) == 8
+    assert res["is_linear"].any() and (~res["is_linear"]).any()
+    assert res["layer_err"].max() < 1e-5, res["layer_err"]
+    assert res["logit_err"].max() < 1e-5, res["logit_err"]
+    np.testing.assert_array_equal(res["t_argmax"], res["m_argmax"])
+
+
+def test_qwen35_engine_matches_mlx_with_the_prerouter(tmp_path):
+    """The whole edge0-35b engine -- streaming experts, staged decode and the
+    class-level prerouter patch (patch_call=True) with heads in the real
+    file format -- on a small checkpoint MLX wrote in the published format
+    (LoRA off: no small adapter to match). Same greedy tokens as MLX, and
+    per-step logits that follow MLX *with* the prerouter: once predictions
+    exist (step 2 on) the prerouter moves the logits by 5-11% here, while
+    torch stays within ~1% of MLX -- so a torch path that silently fell back
+    to the plain router would sit much closer to MLX without it. Both
+    engines run in the checkpoint's bf16."""
+    ckpt = tmp_path / "ckpt"
+    _run("qwen35_make_ckpt", {"ckpt_dir": np.array(str(ckpt)),
+                              "seed": np.array(11)}, tmp_path, backends=("mlx",))
+    inp = {"ckpt_dir": np.array(str(ckpt)), "n": np.array(10),
+           "ids": np.random.default_rng(12).integers(0, 128, 9)}
+    ref, got = _run("qwen35_engine_generate", dict(inp, prerouter=np.array(1)),
+                    tmp_path)
+    (tmp_path / "no_prerouter").mkdir()
+    no_pr = _run("qwen35_engine_generate", dict(inp, prerouter=np.array(0)),
+                 tmp_path / "no_prerouter", backends=("mlx",))
+    np.testing.assert_array_equal(got["tokens"], ref["tokens"])
+
+    def rel(a, b):
+        return np.abs(a - b).max(axis=-1) / np.abs(b).max(axis=-1)
+    to_ref = rel(got["logits"], ref["logits"])
+    to_no_pr = rel(got["logits"], no_pr["logits"])
+    assert to_ref.max() < 3e-2, to_ref                 # bf16 noise
+    acting = rel(ref["logits"], no_pr["logits"]) > 3e-2  # prerouter steps
+    assert acting.sum() >= 5, rel(ref["logits"], no_pr["logits"])
+    assert (to_ref[acting] * 2 < to_no_pr[acting]).all(), (to_ref, to_no_pr)
+
+
 def test_install_streaming_experts_into_transformers_qwen35(tmp_path):
     """install_streaming_experts end to end on the torch backend: a real
     transformers Qwen3.5-MoE model, the edge0-35b MoESpec paths, experts
@@ -176,10 +227,12 @@ def test_engines_import_without_mlx_and_pick_the_backend_port(tmp_path):
     res = _run("engine_guard", {"_": np.zeros(1)}, tmp_path,
                backends=("cuda",))
     assert res["loaded_mlx"].size == 0, list(res["loaded_mlx"])
-    assert str(res["qwen_error"]).startswith(
-        "edge0-35b: the engine runs only on EDGE0_BACKEND=mlx"), res["qwen_error"]
+    assert str(res["refusal"]).startswith(
+        "some-tier: the engine runs only on EDGE0_BACKEND=mlx"), res["refusal"]
     assert str(res["ling_model_module"]) == \
         "edge0.backends.cuda._impl.bailing_hybrid"
+    assert str(res["qwen_model_module"]) == \
+        "edge0.backends.cuda._impl.qwen3_5_moe"
 
 
 @pytest.mark.slow

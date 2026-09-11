@@ -221,6 +221,110 @@ def test_bailing_sdpa_causal_with_offset_matches_float64():
     np.testing.assert_allclose(got.numpy(), ref, rtol=1e-5, atol=1e-5)
 
 
+# ---- qwen3_5_moe port, piece by piece (no checkpoint needed) ----------------
+
+def _qwen():
+    from edge0.backends.cuda._impl import qwen3_5_moe as tq
+    from edge0.backends.mlx._impl import qwen3_5 as mq5
+    from edge0.backends.mlx._impl import qwen3_next as mqn
+    return tq, mq5, mqn
+
+
+def test_qwen_gated_delta_update_matches_mlx():
+    """Scalar per-head decay from (a, A_log, dt_bias), beta = sigmoid(b),
+    k heads repeated to the value heads -- vs mlx-lm's ops path."""
+    from mlx_lm.models.gated_delta import gated_delta_update
+    tq, _, _ = _qwen()
+    B, T, Hk, Hv, Dk, Dv = 1, 6, 2, 4, 16, 16
+    q, k, v = _f32((B, T, Hk, Dk), 20), _f32((B, T, Hk, Dk), 21), _f32((B, T, Hv, Dv), 22)
+    a, b = _f32((B, T, Hv), 23), _f32((B, T, Hv), 24)
+    A_log, dt_bias = _f32((Hv,), 25), _f32((Hv,), 26)
+    s0 = _f32((B, Hv, Dv, Dk), 27) * 0.1
+    with mx.stream(mx.cpu):
+        y_ref, s_ref = gated_delta_update(
+            *(mx.array(t) for t in (q, k, v, a, b, A_log, dt_bias, s0)),
+            use_kernel=False)
+        mx.eval(y_ref, s_ref)
+    y, s = tq._gated_delta_update(*(torch.from_numpy(t) for t in
+                                    (q, k, v, a, b, A_log, dt_bias, s0)))
+    np.testing.assert_allclose(y.numpy(), np.array(y_ref), rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(s.numpy(), np.array(s_ref), rtol=1e-5, atol=1e-5)
+
+
+def test_qwen_partial_rope_matches_mlx_fast_rope():
+    tq, _, _ = _qwen()
+    x = _f32((1, 4, 5, 256), 28)
+    for offset in (0, 7):
+        with mx.stream(mx.cpu):
+            ref = mx.fast.rope(mx.array(x), 64, traditional=False, base=1e7,
+                               scale=1.0, offset=offset)
+            mx.eval(ref)
+        got = tq._rope(torch.from_numpy(x), 64, 1e7, offset)
+        np.testing.assert_allclose(got.numpy(), np.array(ref), rtol=1e-5,
+                                   atol=1e-5, err_msg=f"offset={offset}")
+
+
+def test_qwen_gated_norm_and_conv_match_mlx():
+    tq, _, mqn = _qwen()
+    w, x, z = _f32((16,), 29), _f32((1, 5, 4, 16), 30), _f32((1, 5, 4, 16), 31)
+    mn = mqn.Qwen3NextRMSNormGated(16)
+    mn.weight = mx.array(w)
+    tn = tq.RMSNormGated(16)
+    tn.weight.data = torch.from_numpy(w)
+    with mx.stream(mx.cpu):
+        ref = mn(mx.array(x), mx.array(z))
+        mx.eval(ref)
+    with torch.no_grad():
+        np.testing.assert_allclose(tn(torch.from_numpy(x), torch.from_numpy(z)).numpy(),
+                                   np.array(ref), rtol=1e-5, atol=1e-5)
+    import mlx.nn as mnn
+    C, K = 12, 4
+    cw, cx = _f32((C, K, 1), 32), _f32((1, 9, C), 33)          # MLX layout
+    mc = mnn.Conv1d(C, C, K, groups=C, bias=False, padding=0)
+    mc.weight = mx.array(cw)
+    tc = tq._DepthwiseConv(C, K)
+    tc.weight.data = torch.from_numpy(cw)
+    with mx.stream(mx.cpu):
+        cref = mc(mx.array(cx))
+        mx.eval(cref)
+    with torch.no_grad():
+        np.testing.assert_allclose(tc(torch.from_numpy(cx)).numpy(), np.array(cref),
+                                   rtol=1e-5, atol=1e-5)
+
+
+def test_qwen_attention_with_cache_matches_mlx():
+    """Gated GQA attention with partial RoPE, prefill then decode steps
+    through the KV cache (so RoPE offsets and the end-aligned causal mask
+    both matter)."""
+    from mlx.utils import tree_flatten
+    from mlx_lm.models.cache import KVCache as MKV
+    tq, mq5, _ = _qwen()
+    targs = dict(model_type="qwen3_5_moe_text", hidden_size=64, num_attention_heads=4,
+                 num_key_value_heads=2, head_dim=32, rms_norm_eps=1e-6,
+                 rope_parameters={"rope_type": "default", "rope_theta": 1e7,
+                                  "partial_rotary_factor": 0.25})
+    ma = mq5.Attention(mq5.TextModelArgs.from_dict(dict(targs,
+                       rope_parameters=dict(targs["rope_parameters"]))))
+    ta = tq.Attention(tq.TextModelArgs.from_dict(dict(targs,
+                      rope_parameters=dict(targs["rope_parameters"]))))
+    rng = np.random.default_rng(34)
+    params = {k: (rng.standard_normal(v.shape) * 0.2).astype(np.float32)
+              for k, v in tree_flatten(ma.parameters())}
+    ma.load_weights([(k, mx.array(v)) for k, v in params.items()])
+    ta.load_state_dict({k: torch.from_numpy(v) for k, v in params.items()})
+    mc, tc = MKV(), tq.KVCache()
+    for step, L in enumerate((5, 3, 1, 1)):
+        x = _f32((1, L, 64), 40 + step)
+        with mx.stream(mx.cpu):
+            mask = "causal" if L > 1 else None
+            ref = ma(mx.array(x), mask, mc)
+            mx.eval(ref)
+        with torch.no_grad():
+            got = ta(torch.from_numpy(x), "causal" if L > 1 else None, tc)
+        np.testing.assert_allclose(got.numpy(), np.array(ref), rtol=1e-4,
+                                   atol=1e-5, err_msg=f"step {step} (L={L})")
+
+
 def test_swiglu_matches_mlx():
     import mlx.nn as mnn
     up, gate = mx.random.normal((4, 32)), mx.random.normal((4, 32))
