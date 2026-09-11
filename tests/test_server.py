@@ -47,6 +47,7 @@ class FakeTok:
     def __init__(self, ids=(7, 8, 9)):
         self.ids = list(ids)
         self.bos_token_id = 0
+        self.encoded_text = None
 
     def apply_chat_template(self, messages, tokenize=False,
                             add_generation_prompt=True,
@@ -57,24 +58,31 @@ class FakeTok:
         return text
 
     def encode(self, text):
+        self.encoded_text = text
         return self.ids
 
     def decode(self, tokens):
         return "".join(f"T{t}" for t in tokens)
 
 
-class PlainTok(FakeTok):
+class PlainTok:
     """Tokenizer without apply_chat_template (stdlib fallback path).
 
-    Deleting the method (vs raising) keeps hasattr() False so the
-    server's plain-text fallback renders instead."""
+    A standalone class rather than a FakeTok subclass: deleting the
+    inherited method off the instance does not work, so ``hasattr`` would
+    stay True and the fallback would never be exercised."""
 
-    def __init__(self):
-        super().__init__()
-        try:
-            del self.apply_chat_template
-        except AttributeError:
-            pass
+    def __init__(self, ids=(7, 8, 9)):
+        self.ids = list(ids)
+        self.bos_token_id = 0
+        self.encoded_text = None
+
+    def encode(self, text):
+        self.encoded_text = text
+        return self.ids
+
+    def decode(self, tokens):
+        return "".join(f"T{t}" for t in tokens)
 
 
 class FakeEngine:
@@ -172,6 +180,12 @@ def test_chat_session_prompt_ids_uses_template():
     sess = ChatSession(eng, _req())
     ids = sess.prompt_ids()
     assert ids == [7, 8, 9]
+    # What actually gets encoded is the RENDERED template, not the
+    # hardcoded ChatML (issue #11: the latter loses the template's empty
+    # <think></think> closer and derails the turn).
+    assert eng._tok.encoded_text.startswith("<tpl>")
+    assert eng._tok.encoded_text.endswith("<|im_start|>assistant\n")
+    assert eng._tok.encoded_text != sess._chat_text()
     # The template was called with enable_thinking=False (serve.py parity).
     text = eng._tok.apply_chat_template([{"role": "user", "content": "hi"}])
     assert "<|im_start|>assistant" in text
@@ -182,6 +196,9 @@ def test_chat_session_prompt_ids_fallback_text():
     sess = ChatSession(eng, _req())
     ids = sess.prompt_ids()
     assert ids == [7, 8, 9]
+    # No template on the tokenizer -> hardcoded ChatML (this path used to
+    # raise NameError on the unbound ``text``).
+    assert eng._tok.encoded_text == sess._chat_text()
 
 
 def test_chat_session_fallback_text_format():
