@@ -106,6 +106,30 @@ def test_streaming_layer_real_experts(tmp_path):
                                        atol=1e-2 * np.abs(res[f"exact_t16_{tag}"]).max())
 
 
+def test_bailing_port_matches_mlx_layer_by_layer(tmp_path):
+    """The torch port of bailing_hybrid on the real edge0-8b checkpoint:
+    every layer (KDA, MLA, dense MLP, routed + shared experts) and the
+    free-running logits within float32 noise of the MLX model, across a
+    chunked prefill and decode steps. Measured: <= 1.5e-6 per layer and
+    <= 1.7e-6 on the logits; the thresholds leave room for BLAS variation.
+    """
+    from transformers import AutoTokenizer
+    path = _model_8b()
+    ids = AutoTokenizer.from_pretrained(path)(
+        "The capital of France is Paris. The capital of Italy is")["input_ids"]
+    res = _run("bailing_port_parity", {
+        "model_dir": np.array(path), "ids": np.array(ids),
+        "n_decode": np.array(2)}, tmp_path, backends=("cuda",))
+    assert int(res["n_missing"]) == 0
+    # the only checkpoint tensors without a home: the in-checkpoint copy
+    # of the prerouter, which edge0 loads from its own file
+    assert set(res["unexpected"]) <= {"mlp.pregate"}, res["unexpected"]
+    assert res["is_mla"].any() and (~res["is_mla"]).any()
+    assert res["layer_err"].max() < 1e-5, res["layer_err"].max(axis=0)
+    assert res["logit_err"].max() < 1e-5, res["logit_err"]
+    np.testing.assert_array_equal(res["t_argmax"], res["m_argmax"])
+
+
 def test_install_streaming_experts_into_transformers_qwen35(tmp_path):
     """install_streaming_experts end to end on the torch backend: a real
     transformers Qwen3.5-MoE model, the edge0-35b MoESpec paths, experts

@@ -384,12 +384,22 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
     with open(os.path.join(os.fspath(model_path), "config.json")) as f:
         raw_config = json.load(f)
 
-    hf_config, model_cls, needs_trust_remote_code, key_prefix = \
-        _resolve_model_class(model_path, raw_config)
-
-    with _params_on_meta():
-        model = model_cls.from_config(hf_config, trust_remote_code=True) \
-            if needs_trust_remote_code else model_cls(hf_config)
+    engine_path = get_model_classes is not None
+    if engine_path:
+        # The engines' path, same contract as mlx-lm's load_model: a
+        # vendored (Model, ModelArgs) pair built from config.json plus the
+        # model_config overrides; returns (model, config).
+        config = {**raw_config, **(model_config or {})}
+        model_cls, args_cls = get_model_classes(config=config)  # as mlx-lm calls it
+        with _params_on_meta():
+            model = model_cls(args_cls.from_dict(config))
+        key_prefix = ""
+    else:
+        hf_config, model_cls, needs_trust_remote_code, key_prefix = \
+            _resolve_model_class(model_path, raw_config)
+        with _params_on_meta():
+            model = model_cls.from_config(hf_config, trust_remote_code=True) \
+                if needs_trust_remote_code else model_cls(hf_config)
 
     state = {}
     skipped_expert_keys = []
@@ -405,6 +415,8 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
 
     if model_cls.__name__.startswith("Qwen3_5Moe"):
         _undo_mlx_qwen35_sanitize(state)
+    if engine_path and hasattr(model, "sanitize"):
+        state = model.sanitize(state)
     quantized = _install_quantized(model, state, dtype)
     for k, t in state.items():
         if dtype is not None and t.is_floating_point():
@@ -423,4 +435,5 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
             f"unexpected={unexpected[:5]}")
     model.eval()
     model._edge0_skipped_expert_keys = skipped_expert_keys  # for the streaming hook
-    return model
+    model._edge0_load_report = {"missing": missing, "unexpected": unexpected}
+    return (model, config) if engine_path else model

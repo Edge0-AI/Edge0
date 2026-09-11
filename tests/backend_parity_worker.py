@@ -120,6 +120,87 @@ def case_streaming(inp):
     return out
 
 
+def case_bailing_port_parity(inp):
+    """torch backend only: the torch port of bailing_hybrid against the
+    vendored MLX model (run on the MLX CPU device -- full-precision float32;
+    some Apple GPUs run float32 matmul at ~7e-4), both loaded from the real
+    edge0-8b checkpoint, float32. Every torch layer is fed MLX's input to
+    that layer (per-layer error in isolation), and separately the whole
+    torch model runs free on the token ids with its own caches. A chunked
+    prefill (second chunk over a non-empty cache) and decode steps follow.
+    """
+    import mlx.core as mx
+    import torch
+
+    from edge0.backends.cuda._impl import bailing_hybrid as tb
+    from edge0.backends.cuda.io import load_model as t_load
+    from edge0.backends.cuda.model_specs import BAILING_V3_MOE_SPEC
+    from edge0.backends.mlx._impl import bailing_hybrid as mb
+    from edge0.backends.mlx.io import load_model as m_load
+    from edge0.streaming.install import install_streaming_experts
+    from edge0.streaming.mmap import SafetensorsMmap
+
+    path = str(inp["model_dir"])
+    over = {"model_type": "bailing_hybrid"}
+    mx.set_default_device(mx.cpu)
+    mm, _ = m_load(path, lazy=False, strict=False, model_config=over,
+                   get_model_classes=lambda config: (mb.Model, mb.ModelArgs))
+    mm.set_dtype(mx.float32)
+    tm, _ = t_load(path, strict=False, model_config=over,
+                   get_model_classes=lambda config: (tb.Model, tb.ModelArgs),
+                   dtype=torch.float32)
+    rep = tm._edge0_load_report
+    twins = install_streaming_experts(
+        tm, [SafetensorsMmap(f"{path}/model.safetensors")],
+        BAILING_V3_MOE_SPEC, num_layers=len(tm.model.layers))
+
+    def f32(a):
+        return np.array(a.astype(mx.float32)) if isinstance(a, mx.array) \
+            else a.detach().float().numpy()
+
+    def rel(a, b):
+        a, b = f32(a), f32(b)
+        return float(np.abs(a - b).max() / (np.abs(b).max() + 1e-30))
+
+    ids = [int(i) for i in inp["ids"]]
+    steps = [ids[:7], ids[7:]] + [None] * int(inp["n_decode"])
+    n = len(tm.model.layers)
+    m_cache, t_cache, t_free = mm.make_cache(), tm.make_cache(), tm.make_cache()
+    layer_err = np.zeros((len(steps), n))
+    logit_err, m_arg, t_arg = [], [], []
+    for s, chunk in enumerate(steps):
+        chunk = chunk if chunk is not None else [m_arg[-1]]
+        h = mm.model.word_embeddings(mx.array(chunk)[None])
+        t_emb = tm.model.word_embeddings(torch.tensor(chunk)[None])
+        m_mask = mb.create_attention_mask(h, m_cache[mm.model.first_mla_idx])
+        t_mask = tb.create_attention_mask(t_emb, t_cache[tm.model.first_mla_idx])
+        with torch.no_grad():
+            for li in range(n):
+                ml, tl = mm.model.layers[li], tm.model.layers[li]
+                x_in = h
+                h = ml(x_in, m_mask if ml.is_mla else None, m_cache[li], None)
+                mx.eval(h)
+                t_out = tl(torch.from_numpy(f32(x_in)),
+                           t_mask if tl.is_mla else None, t_cache[li], None)
+                layer_err[s, li] = rel(t_out, h)
+            mo = mm.lm_head(mm.model.norm(h))[0, -1]
+            to = tm.lm_head(tm.model(torch.tensor(chunk)[None], cache=t_free))[0, -1]
+        logit_err.append(rel(to, mo))
+        m_arg.append(int(mx.argmax(mo).item()))
+        t_arg.append(int(torch.argmax(to).item()))
+    for t in twins:
+        if t is not None:
+            t.close()
+    return {
+        "layer_err": layer_err, "logit_err": np.array(logit_err),
+        "m_argmax": np.array(m_arg), "t_argmax": np.array(t_arg),
+        "is_mla": np.array([l.is_mla for l in tm.model.layers]),
+        "n_missing": np.array(len(rep["missing"])),
+        "unexpected": np.array(sorted({k.split(".")[3] + "." + k.split(".")[4]
+                                       for k in rep["unexpected"]}), dtype=str),
+    }
+
+
 def case_engine_guard(inp):
     """Every entry point imports without pulling MLX in, and the MLX-only
     engines refuse another backend up front."""

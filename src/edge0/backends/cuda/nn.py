@@ -16,7 +16,18 @@ import torch.nn as _tnn
 import torch.nn.functional as F
 
 Module = _tnn.Module
-Linear = _tnn.Linear
+
+
+class Linear(_tnn.Linear):
+    """``torch.nn.Linear`` that, like ``mlx.nn.Linear``, accepts a plain
+    tensor assigned to ``weight`` / ``bias`` (``prerouter/install.py`` does
+    ``head.fc1.weight = w``); torch itself insists on a Parameter."""
+
+    def __setattr__(self, name, value):
+        if (name in ("weight", "bias") and isinstance(value, torch.Tensor)
+                and not isinstance(value, _tnn.Parameter)):
+            value = _tnn.Parameter(value, requires_grad=False)
+        super().__setattr__(name, value)
 
 
 class RMSNorm(_tnn.RMSNorm):

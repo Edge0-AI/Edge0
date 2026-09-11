@@ -124,6 +124,103 @@ def test_gelu_matches_mlx():
                                rtol=1e-5, atol=1e-5)
 
 
+# ---- bailing_hybrid port, piece by piece (no checkpoint needed) -------------
+
+def _bailing():
+    from edge0.backends.cuda._impl import bailing_hybrid as tb
+    from edge0.backends.mlx._impl import bailing_hybrid as mb
+    return tb, mb
+
+
+def _f32(shape, seed):
+    return np.random.default_rng(seed).standard_normal(shape).astype(np.float32)
+
+
+def test_bailing_kda_recurrence_matches_mlx_gated_delta_ops():
+    from mlx_lm.models.gated_delta import gated_delta_ops
+    tb, _ = _bailing()
+    B, T, H, Dk, Dv = 1, 6, 4, 16, 16
+    q, k, v = _f32((B, T, H, Dk), 0), _f32((B, T, H, Dk), 1), _f32((B, T, H, Dv), 2)
+    g_log = -np.abs(_f32((B, T, H, Dk), 3))          # log-decay <= 0
+    beta = 1 / (1 + np.exp(-_f32((B, T, H), 4)))
+    s0 = _f32((B, H, Dv, Dk), 5)
+    y_ref, s_ref = gated_delta_ops(mx.array(q), mx.array(k), mx.array(v),
+                                   mx.exp(mx.array(g_log)), mx.array(beta),
+                                   mx.array(s0))
+    y, s = tb._kda_update(*(torch.from_numpy(a) for a in (q, k, v, g_log, beta, s0)))
+    np.testing.assert_allclose(y.numpy(), np.array(y_ref), rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(s.numpy(), np.array(s_ref), rtol=1e-5, atol=1e-5)
+
+
+def test_bailing_rope_interleave_matches_mlx():
+    tb, mb = _bailing()
+    x = _f32((1, 4, 5, 64), 6)
+    pos = np.arange(5) + 7                            # a cache offset of 7
+    ref = mb._rope_interleave_torch(mx.array(x), mx.array(pos), 6e6)
+    got = tb._rope_interleave_torch(torch.from_numpy(x), torch.from_numpy(pos), 6e6)
+    np.testing.assert_allclose(got.numpy(), np.array(ref), rtol=1e-5, atol=1e-5)
+
+
+def test_bailing_short_conv_with_state_matches_mlx():
+    tb, mb = _bailing()
+    C, K = 8, 4
+    w = _f32((C, 1, K), 7)                            # checkpoint layout
+    mc, tc = mb.ShortConv1d(C, K), tb.ShortConv1d(C, K)
+    mc.conv.weight = mx.array(np.swapaxes(w, 1, 2))   # what MLX's sanitize does
+    tc.weight.data = torch.from_numpy(w)
+    x1, x2 = _f32((1, 5, C), 8), _f32((1, 1, C), 9)   # prefill, then one step
+    m1, ms = mc(mx.array(x1))
+    m2, _ = mc(mx.array(x2), ms)
+    with torch.no_grad():
+        t1, ts = tc(torch.from_numpy(x1))
+        t2, _ = tc(torch.from_numpy(x2), ts)
+    for got, ref in ((t1, m1), (t2, m2)):
+        np.testing.assert_allclose(got.numpy(), np.array(ref), rtol=1e-5, atol=1e-5)
+
+
+def test_bailing_gate_matches_mlx():
+    tb, mb = _bailing()
+    ta = tb.ModelArgs(hidden_size=64, num_experts=128)
+    ma = mb.ModelArgs(hidden_size=64, num_experts=128)
+    w, bias, x = _f32((128, 64), 10), _f32((128,), 11) * 0.1, _f32((3, 5, 64), 12)
+    mg, tg = mb.BailingGate(ma), tb.BailingGate(ta)
+    mg.weight, mg.expert_bias = mx.array(w), mx.array(bias)
+    tg.weight.data, tg.expert_bias.data = torch.from_numpy(w), torch.from_numpy(bias)
+    # MLX on the CPU: float32 matmul on some Apple GPUs runs at reduced
+    # precision (~7e-4 from float64 on an M5 Max), the CPU path does not.
+    with mx.stream(mx.cpu):
+        mi, mw = mg(mx.array(x))
+        mx.eval(mi, mw)
+    with torch.no_grad():
+        ti, tw = tg(torch.from_numpy(x))
+    mi, mw = np.array(mi), np.array(mw)
+    ti, tw = ti.numpy(), tw.numpy()
+    om, ot = np.argsort(mi, -1), np.argsort(ti, -1)   # order within top-k is free
+    np.testing.assert_array_equal(np.take_along_axis(ti, ot, -1),
+                                  np.take_along_axis(mi, om, -1))
+    np.testing.assert_allclose(np.take_along_axis(tw, ot, -1),
+                               np.take_along_axis(mw, om, -1), rtol=1e-5)
+
+
+def test_bailing_sdpa_causal_with_offset_matches_float64():
+    """A second prefill chunk over a cache: query i of L must see keys up to
+    offset + i (end-aligned), which is what mx.fast's "causal" does and not
+    what torch's is_causal does."""
+    tb, _ = _bailing()
+    L, off, D = 5, 7, 32
+    q = np.random.default_rng(13).standard_normal((1, 2, L, D))
+    k = np.random.default_rng(14).standard_normal((1, 2, off + L, D))
+    v = np.random.default_rng(15).standard_normal((1, 2, off + L, D))
+    s = np.einsum("bhqd,bhkd->bhqk", q, k) * D ** -0.5
+    visible = np.arange(off + L)[None, :] <= (off + np.arange(L))[:, None]
+    s = np.where(visible, s, -np.inf)
+    p = np.exp(s - s.max(-1, keepdims=True))
+    ref = np.einsum("bhqk,bhkd->bhqd", p / p.sum(-1, keepdims=True), v)
+    got = tb._sdpa(*(torch.from_numpy(a.astype(np.float32)) for a in (q, k, v)),
+                   D ** -0.5, "causal")
+    np.testing.assert_allclose(got.numpy(), ref, rtol=1e-5, atol=1e-5)
+
+
 def test_swiglu_matches_mlx():
     import mlx.nn as mnn
     up, gate = mx.random.normal((4, 32)), mx.random.normal((4, 32))
