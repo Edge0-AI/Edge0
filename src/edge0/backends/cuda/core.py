@@ -28,9 +28,15 @@ Known semantic gaps vs. MLX, flagged rather than silently papered over:
 
 from __future__ import annotations
 
+import os
+
 import torch
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# EDGE0_TORCH_DEVICE overrides the choice: "cpu" on a GPU machine, or "mps"
+# on Apple Silicon, where a tensor left on the host fails loudly as it would
+# on CUDA -- the only accelerator next to the MLX reference.
+DEVICE = torch.device(os.environ.get("EDGE0_TORCH_DEVICE")
+                      or ("cuda" if torch.cuda.is_available() else "cpu"))
 
 # ---- dtypes (contract: float16/float32/bfloat16/int32/uint32/int64) ------
 

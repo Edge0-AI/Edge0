@@ -425,6 +425,14 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
 
     missing, unexpected = model.load_state_dict(state, strict=False,
                                                 assign=True)
+    # Buffers computed at init and absent from the checkpoint (the rotary
+    # inv_freq) were built on the host; the checkpoint tensors went to
+    # DEVICE above. Not model.to(DEVICE): the never-loaded (streamed)
+    # expert parameters are still on meta and cannot be copied.
+    for mod in model.modules():
+        for name, buf in mod._buffers.items():
+            if buf is not None and not buf.is_meta and buf.device != DEVICE:
+                mod._buffers[name] = buf.to(DEVICE)
     missing = [k for k in missing
                if not any(m in k for m in _EXPERT_KEY_MARKERS)
                and k.rpartition(".")[0] not in quantized]

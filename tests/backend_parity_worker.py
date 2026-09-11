@@ -133,6 +133,7 @@ def case_bailing_port_parity(inp):
     import torch
 
     from edge0.backends.cuda._impl import bailing_hybrid as tb
+    from edge0.backends.cuda.core import DEVICE
     from edge0.backends.cuda.io import load_model as t_load
     from edge0.backends.cuda.model_specs import BAILING_V3_MOE_SPEC
     from edge0.backends.mlx._impl import bailing_hybrid as mb
@@ -156,7 +157,7 @@ def case_bailing_port_parity(inp):
 
     def f32(a):
         return np.array(a.astype(mx.float32)) if isinstance(a, mx.array) \
-            else a.detach().float().numpy()
+            else a.detach().float().cpu().numpy()
 
     def rel(a, b):
         a, b = f32(a), f32(b)
@@ -171,7 +172,7 @@ def case_bailing_port_parity(inp):
     for s, chunk in enumerate(steps):
         chunk = chunk if chunk is not None else [m_arg[-1]]
         h = mm.model.word_embeddings(mx.array(chunk)[None])
-        t_emb = tm.model.word_embeddings(torch.tensor(chunk)[None])
+        t_emb = tm.model.word_embeddings(torch.tensor(chunk, device=DEVICE)[None])
         m_mask = mb.create_attention_mask(h, m_cache[mm.model.first_mla_idx])
         t_mask = tb.create_attention_mask(t_emb, t_cache[tm.model.first_mla_idx])
         with torch.no_grad():
@@ -180,11 +181,11 @@ def case_bailing_port_parity(inp):
                 x_in = h
                 h = ml(x_in, m_mask if ml.is_mla else None, m_cache[li], None)
                 mx.eval(h)
-                t_out = tl(torch.from_numpy(f32(x_in)),
+                t_out = tl(torch.from_numpy(f32(x_in)).to(DEVICE),
                            t_mask if tl.is_mla else None, t_cache[li], None)
                 layer_err[s, li] = rel(t_out, h)
             mo = mm.lm_head(mm.model.norm(h))[0, -1]
-            to = tm.lm_head(tm.model(torch.tensor(chunk)[None], cache=t_free))[0, -1]
+            to = tm.lm_head(tm.model(torch.tensor(chunk, device=DEVICE)[None], cache=t_free))[0, -1]
         logit_err.append(rel(to, mo))
         m_arg.append(int(mx.argmax(mo).item()))
         t_arg.append(int(torch.argmax(to).item()))
@@ -338,6 +339,7 @@ def case_qwen35_port_parity(inp):
     import torch
 
     from edge0.backends.cuda._impl import qwen3_5_moe as tq
+    from edge0.backends.cuda.core import DEVICE
     from edge0.backends.cuda.io import load_model as t_load
     from edge0.models.edge0_35b import Qwen35Config
     from edge0.streaming.install import install_streaming_experts
@@ -360,7 +362,7 @@ def case_qwen35_port_parity(inp):
 
     def f32(a):
         return np.array(a.astype(mx.float32)) if isinstance(a, mx.array) \
-            else a.detach().float().numpy()
+            else a.detach().float().cpu().numpy()
 
     def rel(a, b):
         a, b = f32(a), f32(b)
@@ -376,7 +378,7 @@ def case_qwen35_port_parity(inp):
     for s, chunk in enumerate(steps):
         chunk = chunk if chunk is not None else [m_arg[-1]]
         h = mlm.model.embed_tokens(mx.array(chunk)[None])
-        t_emb = tlm.model.embed_tokens(torch.tensor(chunk)[None])
+        t_emb = tlm.model.embed_tokens(torch.tensor(chunk, device=DEVICE)[None])
         m_fa = m_mask_fn(h, m_cache[mlm.model.fa_idx])
         t_fa = tq.create_attention_mask(t_emb, t_cache[tlm.model.fa_idx])
         with torch.no_grad():
@@ -385,11 +387,11 @@ def case_qwen35_port_parity(inp):
                 x_in = h
                 h = ml(x_in, mask=None if ml.is_linear else m_fa, cache=m_cache[li])
                 mx.eval(h)
-                t_out = tl(torch.from_numpy(f32(x_in)),
+                t_out = tl(torch.from_numpy(f32(x_in)).to(DEVICE),
                            mask=None if tl.is_linear else t_fa, cache=t_cache[li])
                 layer_err[s, li] = rel(t_out, h)
             mo = mlm.lm_head(mlm.model.norm(h))[0, -1]
-            to = tlm.lm_head(tlm.model(torch.tensor(chunk)[None], cache=t_free))[0, -1]
+            to = tlm.lm_head(tlm.model(torch.tensor(chunk, device=DEVICE)[None], cache=t_free))[0, -1]
         logit_err.append(rel(to, mo))
         m_arg.append(int(mx.argmax(mo).item()))
         t_arg.append(int(torch.argmax(to).item()))
@@ -475,7 +477,7 @@ def _mlx_quantize(w, bits=4):
     dequantize to."""
     import mlx.core as mx
     import torch
-    wq, s, b = mx.quantize(mx.array(w.detach().float().numpy()),
+    wq, s, b = mx.quantize(mx.array(w.detach().float().cpu().numpy()),
                            group_size=64, bits=bits)
     s, b = s.astype(mx.bfloat16), b.astype(mx.bfloat16)
     # bf16-valued scales, float32 arithmetic: with bf16 scales MLX would
@@ -506,6 +508,7 @@ def case_load_model_qwen35_tiny(inp):
     from safetensors.torch import save_file
 
     from edge0.backends.cuda import nn as cnn
+    from edge0.backends.cuda.core import DEVICE
     from edge0.backends.cuda.io import _QWEN35_SHIFTED_NORMS, load_model
     from edge0.backends.cuda.model_specs import QWEN35_MOE_SPEC
     from edge0.backends.cuda.moe_blocks import TransformersExpertsAdapter
@@ -586,7 +589,7 @@ def case_load_model_qwen35_tiny(inp):
         for key in ("ids6", "ids40"):
             x = torch.from_numpy(inp[key].astype(np.int64))
             out[f"ref_{key}"] = ref(x).logits.float().numpy()
-            out[f"got_{key}"] = got(x).logits.float().numpy()
+            out[f"got_{key}"] = got(x.to(DEVICE)).logits.float().cpu().numpy()
     for t in twins:
         t.close()
     return out
@@ -602,12 +605,14 @@ def case_install_qwen35_tiny(inp):
     import torch
     from safetensors.torch import save_file
 
+    from edge0.backends.cuda.core import DEVICE
     from edge0.backends.cuda.model_specs import QWEN35_MOE_SPEC
     from edge0.backends.cuda.moe_blocks import TransformersExpertsAdapter
     from edge0.streaming.install import install_streaming_experts
     from edge0.streaming.mmap import SafetensorsMmap
 
     cfg, model = _tiny_qwen35()
+    model.to(DEVICE)       # where a user puts it; the streamed experts follow
     E, K, I = cfg.num_experts, cfg.num_experts_per_tok, cfg.moe_intermediate_size
     quantize = _mlx_quantize
 
@@ -633,11 +638,11 @@ def case_install_qwen35_tiny(inp):
     spec = dataclasses.replace(QWEN35_MOE_SPEC, num_experts=E, top_k=K,
                                intermediate_size=I)
     out = {}
-    ids = {name: torch.from_numpy(inp[name].astype(np.int64))
+    ids = {name: torch.from_numpy(inp[name].astype(np.int64)).to(DEVICE)
            for name in ("ids6", "ids40")}   # 12 pairs: unsorted; 80: sorted
     with torch.no_grad():
         for name, x in ids.items():
-            out[f"ref_{name}"] = model(x).logits.float().numpy()
+            out[f"ref_{name}"] = model(x).logits.float().cpu().numpy()
         twins = install_streaming_experts(
             model, [SafetensorsMmap(shard_path)], spec,
             wrap=TransformersExpertsAdapter)
@@ -645,7 +650,7 @@ def case_install_qwen35_tiny(inp):
         out["experts_type"] = np.array(
             type(model.model.layers[0].mlp.experts).__name__)
         for name, x in ids.items():
-            out[f"got_{name}"] = model(x).logits.float().numpy()
+            out[f"got_{name}"] = model(x).logits.float().cpu().numpy()
     for t in twins:
         t.close()
     return out

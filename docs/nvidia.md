@@ -88,6 +88,7 @@ runs each case under both backends in subprocesses).
 | `backends/cuda/_impl/bailing_hybrid.py` (torch port of the edge0-8b backbone) on the real checkpoint, every layer, chunked prefill + decode | the vendored MLX model on the MLX CPU device, float32: <= 1.5e-6 per layer, <= 1.7e-6 on the logits |
 | the whole edge0-8b engine (`engine/ling.py` unchanged: LoRA, prerouter-staged decode, streaming, sampling) | the same engine on MLX: identical greedy tokens (`pytest -m slow`) |
 | the same engine on Linux aarch64 (DGX Spark, torch on the CPU), 32 greedy tokens of a chat prompt | MLX on Apple Silicon, same checkpoint (same file hashes): identical 32 tokens; 1.2 GB peak anonymous memory |
+| everything above with torch on an accelerator: `EDGE0_TORCH_DEVICE=mps` (Apple GPU), whole suite including the slow engine test, plus the 32-token run | the same references: all pass, identical 32 tokens. On a device a tensor left on the host fails loudly, as it would on CUDA; this is what found `load_model` leaving init-time buffers (the rotary `inv_freq`) on the host |
 | `backends/cuda/_impl/qwen3_5_moe.py` (torch port of the edge0-35b backbone), every layer, chunked prefill + decode, on a small model MLX wrote in the published format (bf16, 4-bit, 8-bit router and shared gate) | the vendored MLX model on the MLX CPU device, float32: <= 2.6e-7 per layer, <= 4.1e-7 on the logits |
 | the whole edge0-35b engine (`engine/qwen.py` unchanged: streaming, staged decode, the class-level prerouter patch) on that small checkpoint | the same engine on MLX: identical greedy tokens, per-step logits within bf16 noise and tracking MLX *with* the prerouter (the prerouter moves them 5-11%) |
 
@@ -108,10 +109,12 @@ stored as `w + 1`), which it undoes.
   port and the engine are checked on a small model MLX wrote in the
   published format, not on the real weights; the LoRA path is covered for
   edge0-8b only (there is no small edge0-35b adapter to compare against).
-* **A CUDA device.** Everything above ran torch on a CPU: on Apple
-  Silicon (the only machine that has both backends), and the edge0-8b
-  engine also on the DGX Spark's Grace CPU. On the GPU the same code runs
-  with `DEVICE = cuda`, untested there yet.
+* **A CUDA device.** Torch ran on CPUs (Apple Silicon, the DGX Spark's
+  Grace) and on the Apple GPU through MPS, never yet on a CUDA device.
+  `DEVICE` is `cuda` whenever torch sees one; `EDGE0_TORCH_DEVICE`
+  overrides it (`cpu`, `mps`, `cuda`). PyTorch's cu130 aarch64 wheels
+  carry kernels up to `sm_120`; the GB10 is `sm_121`, which those run on
+  by CUDA's same-major binary compatibility, still to be seen in practice.
 * **Performance.** `gather_qmm` and the quantized linears dequantize on
   every call and `core.compile` is eager: this is a correctness reference,
   not a fast path.
