@@ -84,6 +84,13 @@ runs each case under both backends in subprocesses).
 | `core` ops at their real call sites (routing, sampling), `nn.RMSNorm` / `gelu` | the same code on MLX: identical expert choices, identical sampler masks |
 | `StreamingSwitchGLU`, every path (exact, whole-layer, hot, staged), on layer 1 of the real edge0-8b checkpoint (`EDGE0_8B_MODEL`) | MLX on the same inputs: 1.2-1.5% of output scale, about two bf16 ulps |
 | `io.load_model` + `install_streaming_experts` on a small checkpoint in the exact published edge0-35b format | the source model on the same weights: 4e-7 relative, same argmax |
+| `backends/cuda/_impl/bailing_hybrid.py` (torch port of the edge0-8b backbone) on the real checkpoint, every layer, chunked prefill + decode | the vendored MLX model on the MLX CPU device, float32: <= 1.5e-6 per layer, <= 1.7e-6 on the logits |
+| the whole edge0-8b engine (`engine/ling.py` unchanged: LoRA, prerouter-staged decode, streaming, sampling) | the same engine on MLX: identical greedy tokens (`pytest -m slow`) |
+
+Why the MLX *CPU* device: on some Apple GPUs MLX runs float32 matmul and
+SDPA at reduced precision (an M5 Max measured 7.5e-4 from float64; MLX on
+the CPU and torch both 2e-7). Against MLX on the GPU the port looks up to
+1000x worse in the attention layers, all of it on the MLX side.
 
 `load_model` handles what the published checkpoints actually contain: MLX
 quantization of nearly every linear and embedding (kept 4-bit resident via
@@ -93,24 +100,18 @@ stored as `w + 1`), which it undoes.
 
 ## What is left
 
-* **Engines.** `engine/qwen.py` and `engine/ling.py` drive the vendored
-  MLX models (per-layer callbacks, mlx-lm caches, class-level prerouter
-  patch) and refuse other backends. A torch engine is a port. For
-  edge0-35b the pieces above already run the transformers
-  `Qwen3_5MoeForCausalLM` with streamed experts; the engine still needs
-  the per-layer prefill hooks (forward pre/post hooks), a cache, the
-  prerouter patch on `Qwen3_5MoeSparseMoeBlock` and LoRA on the quantized
-  linears.
-* **edge0-8b through transformers is a poor fit.** Its
-  `modeling_bailing_moe_v3.py` comes with the checkpoint
-  (`trust_remote_code`, i.e. running third-party code), imports `fla`
-  (Triton kernels, no macOS wheels, so it cannot be checked against MLX on
-  the machine that has MLX), and iterates its experts as a `ModuleList`, so
-  its MoE forward has to be replaced anyway. Porting the vendored
-  `_impl/bailing_hybrid.py` to torch avoids all three and can be checked
-  layer by layer against MLX.
+* **edge0-35b engine.** `engine/qwen.py` drives the vendored MLX model
+  (per-layer callbacks, mlx-lm caches, class-level prerouter patch) and
+  refuses other backends. The edge0-8b route applies: port the vendored
+  `_impl/qwen3_5_moe.py` / `qwen3_next.py` to torch with the same API and
+  check it layer by layer against MLX, so the engine runs unchanged. (The
+  transformers `Qwen3_5MoeForCausalLM` also loads and streams, see above,
+  but would need its own engine glue.)
 * **A real-weight run of edge0-35b** (23 GB) through the torch path; the
   format test above uses a small model written in the same format.
+* **Real NVIDIA hardware.** Everything above was checked on Apple Silicon
+  with torch on the CPU (the only machine that has both backends); on a
+  CUDA device the same code runs with `DEVICE = cuda`, untested there yet.
 * **Performance.** `gather_qmm` and the quantized linears dequantize on
   every call and `core.compile` is eager: this is a correctness reference,
   not a fast path.

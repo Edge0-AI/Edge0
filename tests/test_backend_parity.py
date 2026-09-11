@@ -172,13 +172,26 @@ def test_load_model_edge0_35b_format(tmp_path):
         assert (got.argmax(-1) == ref.argmax(-1)).all(), key
 
 
-def test_engines_import_without_mlx_and_refuse_other_backends(tmp_path):
+def test_engines_import_without_mlx_and_pick_the_backend_port(tmp_path):
     res = _run("engine_guard", {"_": np.zeros(1)}, tmp_path,
                backends=("cuda",))
     assert res["loaded_mlx"].size == 0, list(res["loaded_mlx"])
-    for msg, tier in zip(res["errors"], ("edge0-35b", "edge0-8b")):
-        assert msg.startswith(f"{tier}: the engine runs only on "
-                              "EDGE0_BACKEND=mlx"), msg
+    assert str(res["qwen_error"]).startswith(
+        "edge0-35b: the engine runs only on EDGE0_BACKEND=mlx"), res["qwen_error"]
+    assert str(res["ling_model_module"]) == \
+        "edge0.backends.cuda._impl.bailing_hybrid"
+
+
+@pytest.mark.slow
+def test_edge0_8b_engine_same_tokens_on_both_backends(tmp_path):
+    """The whole edge0-8b engine (LoRA, prerouter-staged decode, streaming
+    experts, sampling) greedy-decodes the same tokens on EDGE0_BACKEND=cuda
+    as on MLX. Slow: the torch path is a CPU reference here (~2 min)."""
+    ref, got = _run("engine_generate", {
+        "model_dir": np.array(_model_8b()), "n": np.array(8),
+        "prompt": np.array("Explain in two sentences why the sky is blue."),
+    }, tmp_path)
+    np.testing.assert_array_equal(got["tokens"], ref["tokens"])
 
 
 def test_mask_logits(tmp_path):

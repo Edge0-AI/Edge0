@@ -29,8 +29,11 @@ def _dequantize(w: torch.Tensor, scales: torch.Tensor, biases: torch.Tensor,
                 group_size: int, bits: int) -> torch.Tensor:
     """Packed ``[..., rows, in * bits / 32]`` uint32 -> float32 ``[..., rows, in]``."""
     per_word = 32 // bits
-    words = w.view(torch.int32).to(torch.int64) & 0xFFFFFFFF
-    shifts = torch.arange(per_word, device=w.device, dtype=torch.int64) * bits
+    # int32 is enough: >> sign-extends, but the mask keeps only the low
+    # ``bits`` bits, which the sign bits never reach (int64 doubled the
+    # transient memory -- 1.9 GB of codes for edge0-8b's lm_head).
+    words = w.view(torch.int32)
+    shifts = torch.arange(per_word, device=w.device, dtype=torch.int32) * bits
     codes = (words.unsqueeze(-1) >> shifts) & ((1 << bits) - 1)
     codes = codes.reshape(*w.shape[:-1], w.shape[-1] * per_word)
     grouped = codes.reshape(*codes.shape[:-1], -1, group_size).to(torch.float32)
@@ -47,17 +50,21 @@ def gather_qmm(x, w, scales, biases, rhs_indices, transpose=True,
         raise NotImplementedError(
             f"reference gather_qmm covers affine 2/4/8-bit only "
             f"(got mode={mode!r}, bits={bits!r})")
-    # An index past the last expert raises here; in MLX it silently reads
-    # out of bounds.
     idx = rhs_indices.to(torch.long)
-    flat = idx.reshape(-1)
-    deq = _dequantize(w.index_select(0, flat), scales.index_select(0, flat),
-                      biases.index_select(0, flat), group_size, bits)
-    deq = deq.reshape(*idx.shape, *deq.shape[-2:])
-    if transpose:
-        deq = deq.transpose(-1, -2)
-    out = torch.matmul(x.to(torch.float32), deq)
-    return out.to(x.dtype)
+    bshape = torch.broadcast_shapes(x.shape[:-2], idx.shape)
+    M = x.shape[-2]
+    xf = x.to(torch.float32).expand(*bshape, *x.shape[-2:]).reshape(-1, M, x.shape[-1])
+    flat = idx.expand(bshape).reshape(-1)
+    n_out = w.shape[-2] if transpose else w.shape[-1] * (32 // bits)
+    out = torch.empty(flat.numel(), M, n_out, dtype=torch.float32, device=x.device)
+    # One distinct expert at a time: dequantizing a copy per (token, expert)
+    # pair peaked at several GB per MoE layer during prefill. An index past
+    # the last expert raises here; in MLX it silently reads out of bounds.
+    for e in torch.unique(flat).tolist():
+        rows = (flat == e).nonzero().squeeze(-1)
+        deq = _dequantize(w[e], scales[e], biases[e], group_size, bits)
+        out[rows] = torch.matmul(xf[rows], deq.T if transpose else deq)
+    return out.reshape(*bshape, M, n_out).to(x.dtype)
 
 
 def gather_sort(x, indices):

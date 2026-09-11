@@ -22,7 +22,7 @@ from types import SimpleNamespace
 from edge0.backends import core
 
 from edge0.backends import io
-from edge0.engine.base import Edge0Engine, require_mlx_backend
+from edge0.engine.base import Edge0Engine, require_backend
 from edge0.engine.hooks import (
     make_history_prefetch,
     make_prefill_before_layer,
@@ -34,9 +34,13 @@ from edge0.streaming.mmap import SafetensorsMmap
 
 
 def _get_model_classes(config):
-    """mlx-lm class hook: serve the vendored bailing backbone (imported here
-    so the module itself imports without MLX)."""
-    from edge0.backends.mlx._impl.bailing_hybrid import Model, ModelArgs
+    """load_model class hook: serve the active backend's port of the bailing
+    backbone (imported here so the module itself imports without MLX)."""
+    from edge0.backends import backend
+    if backend.name == "cuda":
+        from edge0.backends.cuda._impl.bailing_hybrid import Model, ModelArgs
+    else:
+        from edge0.backends.mlx._impl.bailing_hybrid import Model, ModelArgs
     return Model, ModelArgs
 
 
@@ -46,7 +50,7 @@ def load_installed(model_dir: str, cfg):
 
     Returns ``(model, model_config, shards, installs)``.
     """
-    require_mlx_backend("edge0-8b")
+    require_backend("edge0-8b", ("mlx", "cuda"))
     model, model_config = io.load_model(
         model_dir, lazy=True, strict=False,
         model_config={"model_type": "bailing_hybrid",

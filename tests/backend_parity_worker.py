@@ -202,8 +202,8 @@ def case_bailing_port_parity(inp):
 
 
 def case_engine_guard(inp):
-    """Every entry point imports without pulling MLX in, and the MLX-only
-    engines refuse another backend up front."""
+    """Every entry point imports without pulling MLX in, and the engine
+    without a torch model port (edge0-35b) refuses the backend up front."""
     import importlib
     for mod in ("edge0", "edge0.engine", "edge0.engine.qwen",
                 "edge0.engine.ling", "edge0.cli", "edge0.prerouter.install",
@@ -211,15 +211,33 @@ def case_engine_guard(inp):
         importlib.import_module(mod)
     loaded_mlx = sorted(m for m in sys.modules
                         if m == "mlx" or m.startswith(("mlx.", "mlx_lm")))
-    errors = []
-    for mod in ("edge0.engine.qwen", "edge0.engine.ling"):
-        try:
-            importlib.import_module(mod).load_installed("unused", None)
-            errors.append("no error")
-        except NotImplementedError as e:
-            errors.append(str(e))
+    try:
+        importlib.import_module("edge0.engine.qwen").load_installed("unused", None)
+        error = "no error"
+    except NotImplementedError as e:
+        error = str(e)
+    from edge0.engine.ling import _get_model_classes
     return {"loaded_mlx": np.array(loaded_mlx, dtype=str),
-            "errors": np.array(errors, dtype=str)}
+            "qwen_error": np.array(error),
+            "ling_model_module": np.array(_get_model_classes({})[0].__module__)}
+
+
+def case_engine_generate(inp):
+    """Greedy-decode through the real edge0-8b engine (LoRA, prerouter,
+    streaming, sampling) on whichever backend EDGE0_BACKEND selects."""
+    from edge0 import AutoEngine
+    from edge0.config import GenerationConfig
+    n = int(inp["n"])
+    engine = AutoEngine.from_pretrained(str(inp["model_dir"]), name="edge0-8b")
+    try:
+        ids = list(engine.encode_chat(
+            [{"role": "user", "content": str(inp["prompt"])}], think=False))
+        out = engine.generate(ids, GenerationConfig(
+            temperature=0.0, top_k=1, top_p=1.0, max_new_tokens=n),
+            max_new_tokens=n)
+    finally:
+        engine.close()
+    return {"tokens": np.array(list(out), dtype=np.int64)}
 
 
 def _tiny_qwen35():

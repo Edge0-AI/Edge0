@@ -66,12 +66,22 @@ class QuantizedLinear(_tnn.Module):
         self.register_buffer("biases", biases)
         self.bias = None if bias is None else _tnn.Parameter(bias, False)
 
+    ROWS_PER_CHUNK = 4096
+
     def forward(self, x):
+        """Dequantize ``ROWS_PER_CHUNK`` output rows at a time: the full
+        float weight of a large projection is never materialized (edge0-8b's
+        lm_head alone would be ~1 GB per call). Same arithmetic per
+        element as dequantizing everything first."""
         from edge0.backends.cuda.quant import _dequantize
-        w = _dequantize(self.weight, self.scales, self.biases,
-                        self.group_size, self.bits).to(x.dtype)
-        return F.linear(x, w, None if self.bias is None
-                        else self.bias.to(x.dtype))
+        outs = []
+        for r in range(0, self.out_features, self.ROWS_PER_CHUNK):
+            sl = slice(r, r + self.ROWS_PER_CHUNK)
+            w = _dequantize(self.weight[sl], self.scales[sl], self.biases[sl],
+                            self.group_size, self.bits).to(x.dtype)
+            b = None if self.bias is None else self.bias[sl].to(x.dtype)
+            outs.append(F.linear(x, w, b))
+        return outs[0] if len(outs) == 1 else torch.cat(outs, dim=-1)
 
 
 class QuantizedEmbedding(_tnn.Module):
