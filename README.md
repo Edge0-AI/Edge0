@@ -43,6 +43,20 @@ are co-located with each checkpoint and load automatically, so
   (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
   platforms are supported yet.
 - **Python**: 3.10+ (3.12 recommended).
+- **MLX runtime**: this release is built and tested against
+  `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (pinned in
+  `pyproject.toml`). If a checkpoint loads cleanly and generation runs to
+  completion, but the text comes out as incoherent, mixed-language noise,
+  upgrade the runtime first: `mlx<=0.30.4` mis-gates MLX's NAX
+  (tensor-core) matmul kernels on phone-class GPUs (Apple A18 / A18 Pro)
+  and returns silently wrong numbers — no error, no NaN, no crash
+  ([edge0#8](https://github.com/Edge0-AI/Edge0/issues/8)). Run
+  `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'`; the fix is upstream
+  ([#3083](https://github.com/ml-explore/mlx/pull/3083),
+  [#3092](https://github.com/ml-explore/mlx/pull/3092), released in
+  0.30.5). Do not move to `mlx>=0.31.2` yet — it makes default streams
+  thread-local and the streaming expert loader then fails with
+  `There is no Stream(gpu, N) in current thread`.
 - **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
   `edge0-8b` (short contexts; see [Benchmark](#benchmark)). Add
   headroom for the OS, tokenizer, and long-context KV growth.

@@ -37,6 +37,17 @@ Recover-LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后�
 - **系统 / 硬件**：MLX 后端目前仅支持 Apple Silicon 的 macOS
   （M1/M2/M3/M4）；CUDA 后端在路线图中，其余平台暂不支持。
 - **Python**：3.10+（推荐 3.12）。
+- **MLX 运行时**：本版本基于 `mlx==0.30.6` / `mlx-metal==0.30.6` 与
+  `mlx-lm==0.31.0` 构建并测试（pin 见 `pyproject.toml`）。若 checkpoint
+  加载正常、生成也能跑完，但输出是跨语言混杂的乱码，请先升级运行时：
+  `mlx<=0.30.4` 会在手机级 GPU（Apple A18 / A18 Pro）上误判走 NAX
+  （张量核）matmul kernel，静默算出错误数值——不报错、不出 NaN、不崩
+  （[edge0#8](https://github.com/Edge0-AI/Edge0/issues/8)）。执行
+  `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'` 即可；修复来自上游
+  （[#3083](https://github.com/ml-explore/mlx/pull/3083)、
+  [#3092](https://github.com/ml-explore/mlx/pull/3092)，0.30.5 起发布）。
+  暂不要升到 `mlx>=0.31.2`：它把默认 stream 改成 thread-local，专家流式
+  加载会报 `There is no Stream(gpu, N) in current thread`。
 - **内存**：短上下文下 `edge0-35b` ≈2.9 GB、`edge0-8b` ≈1.0 GB
   峰值激活内存（见[性能实测](#性能实测)）；另为系统、tokenizer 与
   长上下文 KV 增长预留余量。

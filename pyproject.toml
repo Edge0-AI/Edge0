@@ -22,11 +22,27 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    # NOTE: mlx-lm is pinned to 0.31.0 on purpose.  Newer releases crash in
-    # decode with a `tolist()` on lazily-evaluated arrays.  Do not upgrade
-    # without re-running the full test suite.
-    "mlx==0.30.4",
-    "mlx-metal==0.30.4; platform_system == 'Darwin'",
+    # NOTE: mlx/mlx-metal are pinned to 0.30.6 on purpose — do not move them
+    # on their own without re-running the full test suite (`pytest` plus
+    # `pytest -m slow` with real checkpoints).
+    #
+    # * 0.30.4 and older mis-gate the NAX (tensor-core) matmul kernels on
+    #   phone-class GPUs: `can_use_nax &= get_architecture_gen() >= 17`
+    #   admitted Apple A18/A18 Pro, whose NAX path returns silently wrong
+    #   numbers — fluent-but-incoherent output with no error, no NaN and no
+    #   crash (github.com/Edge0-AI/Edge0/issues/8).  Fixed in 0.30.5 by
+    #   ml-explore/mlx#3083 ("Fix nax condition for iphone", now requires
+    #   gen >= 18 for 'p' architectures) and ml-explore/mlx#3092
+    #   ("Fix for NAX overflow").
+    # * Do not jump to mlx >= 0.31.2 yet: it makes default streams
+    #   thread-local (ml-explore/mlx#3281, ml-explore/mlx#3405) and the
+    #   streaming layer builds mx arrays on pool threads
+    #   (edge0/streaming/layer.py `_build`), which then fails with
+    #   "There is no Stream(gpu, N) in current thread".
+    # * mlx-lm is pinned to 0.31.0 on purpose.  Newer releases crash in
+    #   decode with a `tolist()` on lazily-evaluated arrays.
+    "mlx==0.30.6",
+    "mlx-metal==0.30.6; platform_system == 'Darwin'",
     "mlx-lm==0.31.0",
     "numpy>=1.24",
     "safetensors>=0.4",
