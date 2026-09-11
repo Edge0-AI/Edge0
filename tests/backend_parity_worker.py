@@ -120,6 +120,88 @@ def case_streaming(inp):
     return out
 
 
+def case_install_qwen35_tiny(inp):
+    """torch backend only: a small transformers Qwen3_5MoeForCausalLM whose
+    experts are MLX-quantized into a real safetensors shard (named like the
+    edge0-35b checkpoint), streamed in with install_streaming_experts and
+    compared against the same model running its own dense experts."""
+    import dataclasses
+
+    import mlx.core as mx
+    import torch
+    from safetensors.torch import save_file
+    from transformers import Qwen3_5MoeForCausalLM, Qwen3_5MoeTextConfig
+
+    from edge0.backends.cuda.model_specs import QWEN35_MOE_SPEC
+    from edge0.backends.cuda.moe_blocks import TransformersExpertsAdapter
+    from edge0.streaming.install import install_streaming_experts
+    from edge0.streaming.mmap import SafetensorsMmap
+
+    E, K, H, I = 8, 2, 128, 64
+    cfg = Qwen3_5MoeTextConfig(
+        vocab_size=128, hidden_size=H, num_hidden_layers=4,
+        num_attention_heads=4, num_key_value_heads=2, head_dim=32,
+        moe_intermediate_size=I, shared_expert_intermediate_size=I,
+        num_experts=E, num_experts_per_tok=K,
+        linear_num_key_heads=2, linear_num_value_heads=4,
+        linear_key_head_dim=16, linear_value_head_dim=16)
+    torch.manual_seed(0)
+    model = Qwen3_5MoeForCausalLM(cfg).eval()
+
+    def quantize(w):
+        """MLX 4-bit affine, scales/biases rounded to bf16 as on disk;
+        returns the on-disk tensors and the weight they dequantize to."""
+        wq, s, b = mx.quantize(mx.array(w.detach().numpy()), group_size=64,
+                               bits=4)
+        s, b = s.astype(mx.bfloat16), b.astype(mx.bfloat16)
+        deq = mx.dequantize(wq, s, b, group_size=64, bits=4).astype(
+            mx.float32)
+        bits16 = lambda a: torch.from_numpy(
+            np.array(a.view(mx.uint16))).view(torch.bfloat16)
+        return ({"weight": torch.from_numpy(np.array(wq)),
+                 "scales": bits16(s), "biases": bits16(b)},
+                torch.from_numpy(np.array(deq)))
+
+    tensors = {}
+    for li in range(cfg.num_hidden_layers):
+        ex = model.model.layers[li].mlp.experts
+        prefix = f"language_model.model.layers.{li}.mlp.switch_mlp"
+        deq = {}
+        for proj, w in (("gate_proj", ex.gate_up_proj[:, :I]),
+                        ("up_proj", ex.gate_up_proj[:, I:]),
+                        ("down_proj", ex.down_proj)):
+            disk, deq[proj] = quantize(w)
+            for part, t in disk.items():
+                tensors[f"{prefix}.{proj}.{part}"] = t.contiguous()
+        # the dense reference runs on exactly what the shard encodes
+        with torch.no_grad():
+            ex.gate_up_proj.copy_(torch.cat([deq["gate_proj"],
+                                             deq["up_proj"]], dim=1))
+            ex.down_proj.copy_(deq["down_proj"])
+    shard_path = str(inp["shard_path"])
+    save_file(tensors, shard_path)
+
+    spec = dataclasses.replace(QWEN35_MOE_SPEC, num_experts=E, top_k=K,
+                               intermediate_size=I)
+    out = {}
+    ids = {name: torch.from_numpy(inp[name].astype(np.int64))
+           for name in ("ids6", "ids40")}   # 12 pairs: unsorted; 80: sorted
+    with torch.no_grad():
+        for name, x in ids.items():
+            out[f"ref_{name}"] = model(x).logits.float().numpy()
+        twins = install_streaming_experts(
+            model, [SafetensorsMmap(shard_path)], spec,
+            wrap=TransformersExpertsAdapter)
+        out["n_twins"] = np.array(sum(t is not None for t in twins))
+        out["experts_type"] = np.array(
+            type(model.model.layers[0].mlp.experts).__name__)
+        for name, x in ids.items():
+            out[f"got_{name}"] = model(x).logits.float().numpy()
+    for t in twins:
+        t.close()
+    return out
+
+
 CASES = {name[len("case_"):]: fn for name, fn in globals().items()
          if name.startswith("case_")}
 

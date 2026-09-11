@@ -22,11 +22,11 @@ pytest.importorskip("torch")
 WORKER = pathlib.Path(__file__).with_name("backend_parity_worker.py")
 
 
-def _run(case, inputs, tmp_path):
+def _run(case, inputs, tmp_path, backends=("mlx", "cuda")):
     inp = tmp_path / f"{case}.in.npz"
     np.savez(inp, **inputs)
     results = {}
-    for backend in ("mlx", "cuda"):
+    for backend in backends:
         out = tmp_path / f"{case}.{backend}.npz"
         env = dict(os.environ, EDGE0_BACKEND=backend)
         proc = subprocess.run(
@@ -35,6 +35,8 @@ def _run(case, inputs, tmp_path):
         assert proc.returncode == 0, (
             f"{case} failed on {backend}:\n{proc.stderr[-4000:]}")
         results[backend] = dict(np.load(out))
+    if len(backends) == 1:
+        return results[backends[0]]
     return results["mlx"], results["cuda"]
 
 
@@ -102,6 +104,25 @@ def test_streaming_layer_real_experts(tmp_path):
             np.testing.assert_allclose(res[f"hot_t16_{tag}"],
                                        res[f"exact_t16_{tag}"], rtol=0,
                                        atol=1e-2 * np.abs(res[f"exact_t16_{tag}"]).max())
+
+
+def test_install_streaming_experts_into_transformers_qwen35(tmp_path):
+    """install_streaming_experts end to end on the torch backend: a real
+    transformers Qwen3.5-MoE model, the edge0-35b MoESpec paths, experts
+    streamed from a real safetensors shard. Same logits as the model's own
+    dense experts on the weights the shard encodes."""
+    rng = np.random.default_rng(4)
+    res = _run("install_qwen35_tiny", {
+        "shard_path": np.array(str(tmp_path / "experts.safetensors")),
+        "ids6": rng.integers(0, 128, (1, 6)),
+        "ids40": rng.integers(0, 128, (1, 40)),
+    }, tmp_path, backends=("cuda",))
+    assert int(res["n_twins"]) == 4
+    assert str(res["experts_type"]) == "TransformersExpertsAdapter"
+    for name in ("ids6", "ids40"):
+        ref, got = res[f"ref_{name}"], res[f"got_{name}"]
+        np.testing.assert_allclose(got, ref, rtol=0,
+                                   atol=1e-3 * np.abs(ref).max(), err_msg=name)
 
 
 def test_mask_logits(tmp_path):
