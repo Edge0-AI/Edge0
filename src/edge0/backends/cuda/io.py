@@ -31,6 +31,7 @@ _NP_DTYPES = {  # for the raw numpy view before the device transfer
     "F64": np.float64, "F32": np.float32, "F16": np.float16,
     "I64": np.int64, "I32": np.int32, "I16": np.int16, "I8": np.int8,
     "U8": np.uint8, "BOOL": np.bool_,
+    "U32": np.uint32,  # MLX-quantized payloads (packed codes)
 }
 
 
@@ -244,30 +245,141 @@ def _resolve_model_class(model_path, raw_config: dict):
         f"the two paths currently resolved)")
 
 
-def load_model(model_path, lazy=True, strict=False, model_config=None,
-                get_model_classes=None):
-    """Build the model skeleton on ``torch.device('meta')`` (PyTorch's
-    equivalent of MLX's ``lazy=True``: zero real memory for ANY
-    parameter, expert or not, until something actually materializes it)
-    and load every DENSE tensor for real. Expert tensors
-    (``_EXPERT_KEY_MARKERS``) are deliberately left on the meta device --
-    NOT loaded here, NOT a bug. Wiring them to
-    ``streaming/layer.py``'s per-forward gather (via ``quant.gather_qmm``)
-    is the next concrete unit of work, tracked separately because it
-    depends on that kernel's packing being verified first (see
-    ``backends/cuda/quant.py``) -- loading experts eagerly here instead
-    would silently defeat the entire point of this backend (the phone-
-    class-memory claim in the model card) by materializing gigabytes of
-    dequantized weights just to prove `load_model` "works".
+_QWEN35_SHIFTED_NORMS = (
+    ".input_layernorm.weight", ".post_attention_layernorm.weight",
+    "model.norm.weight", ".q_norm.weight", ".k_norm.weight")
+"""Norms that edge0's MLX ``qwen3_5.py::sanitize()`` stores as ``w + 1``:
+transformers' Qwen3.5 RMSNorm computes ``x * (1 + w)``, the MLX one
+``x * w``. Checked on the published edge0-35b bytes: input_layernorm mean
+1.03, q_norm 1.33, model.norm 2.63 -- versus ~0 for a transformers
+checkpoint. The gated ``linear_attn.norm`` is not shifted (mean 0.88)."""
 
-    ``get_model_classes``/``model_config`` accepted for signature
-    parity with the MLX backend's ``load_model`` but unused here --
-    class selection is config.json-driven (``_resolve_model_class``),
-    not registry-driven; nothing currently calls this with either
-    argument non-default.
+
+def _undo_mlx_qwen35_sanitize(state: dict) -> None:
+    """Invert edge0's MLX Qwen3.5 sanitize on a loaded state dict, in
+    place -- only if the checkpoint went through it, detected the way the
+    sanitize itself detects the opposite: conv1d weights in MLX layout
+    ``[C, k, 1]`` instead of torch's ``[C, 1, k]``."""
+    convs = [k for k in state if k.endswith("conv1d.weight")]
+    if not convs or not all(state[k].shape[-1] == 1 and state[k].shape[1] != 1
+                            for k in convs):
+        return
+    for k in convs:
+        state[k] = state[k].transpose(1, 2).contiguous()
+    for k in list(state):
+        if k.endswith(_QWEN35_SHIFTED_NORMS) and state[k].ndim == 1:
+            state[k] = state[k] - 1.0
+
+
+def _read_tensor(shard, meta, name):
+    import torch
+    raw = shard.raw(name)
+    count = int(np.prod(meta["shape"]))
+    if meta["dtype"] == "BF16":
+        u16 = np.frombuffer(raw, dtype=np.uint16, count=count)
+        t = torch.from_numpy(u16.copy()).view(torch.bfloat16)
+    else:
+        arr = np.frombuffer(raw, dtype=_NP_DTYPES[meta["dtype"]], count=count)
+        t = torch.from_numpy(arr.copy())
+    return t.reshape(meta["shape"])
+
+
+def _params_on_meta():
+    """Build a module with its PARAMETERS on the meta device (no memory)
+    but buffers real: non-persistent buffers such as rotary ``inv_freq``
+    are computed at init and never come from the checkpoint, so building
+    everything under ``torch.device('meta')`` would leave them unusable."""
+    import contextlib
+
+    import torch
+
+    @contextlib.contextmanager
+    def ctx():
+        orig = torch.nn.Module.register_parameter
+
+        def register_parameter(self, name, param):
+            if param is not None and param.device.type != "meta":
+                param = torch.nn.Parameter(param.to("meta"),
+                                           requires_grad=param.requires_grad)
+            orig(self, name, param)
+
+        torch.nn.Module.register_parameter = register_parameter
+        try:
+            yield
+        finally:
+            torch.nn.Module.register_parameter = orig
+    return ctx()
+
+
+def _install_quantized(model, state: dict, dtype) -> set:
+    """Replace every module whose weight is MLX-quantized in ``state``
+    (``<path>.scales`` present) with the torch equivalent, consuming the
+    three tensors. Linear / Embedding get quantized modules; anything else
+    (e.g. transformers' Qwen3.5 router, a custom module holding a plain
+    ``weight`` parameter) gets its weight dequantized in place. Returns the
+    module paths replaced (their tensors are already in place)."""
+    import torch
+
+    from edge0.backends.cuda import nn as cnn
+    from edge0.backends.cuda.quant import _dequantize
+
+    replaced = set()
+    for skey in [k for k in state if k.endswith(".scales")]:
+        path = skey[: -len(".scales")]
+        try:
+            mod = model.get_submodule(path)
+        except AttributeError:
+            continue                      # not part of this model: stays unexpected
+        w = state.pop(f"{path}.weight")
+        s = state.pop(skey)
+        b = state.pop(f"{path}.biases")
+        owner, _, attr = path.rpartition(".")
+        parent = model.get_submodule(owner) if owner else model
+        if isinstance(mod, torch.nn.Linear):
+            bias = state.pop(f"{path}.bias", None)
+            new = cnn.QuantizedLinear(w, s, b, mod.in_features, bias=bias)
+        elif isinstance(mod, torch.nn.Embedding):
+            new = cnn.QuantizedEmbedding(w, s, b, mod.embedding_dim,
+                                         dtype=dtype)
+        else:
+            in_features = mod.weight.shape[-1]
+            bits, group_size = cnn._quant_params(w, s, in_features)
+            dense = _dequantize(w, s, b, group_size, bits)
+            state[f"{path}.weight"] = dense.to(dtype or s.dtype)
+            continue
+        setattr(parent, attr, new.to(DEVICE))
+        replaced.add(path)
+    return replaced
+
+
+def load_model(model_path, lazy=True, strict=False, model_config=None,
+                get_model_classes=None, dtype=None):
+    """Load an edge0 checkpoint into its transformers model class.
+
+    The published checkpoints are MLX checkpoints: quantized throughout
+    (embeddings, lm_head, attention, shared experts, routers -- 392
+    non-expert tensors for edge0-35b, 236 for edge0-8b) and, for edge0-35b,
+    run through MLX's sanitize. So:
+
+    * modules whose weight has ``.scales`` become ``QuantizedLinear`` /
+      ``QuantizedEmbedding`` (4-bit payload stays resident); other
+      quantized params are dequantized in place;
+    * the MLX sanitize is undone where it was applied (Qwen3.5: conv1d
+      layout, ``w + 1`` norms -- see ``_undo_mlx_qwen35_sanitize``);
+    * routed-expert tensors (``_EXPERT_KEY_MARKERS``) are not loaded: the
+      streaming installer serves them from disk, and those parameters stay
+      on the meta device until it replaces them.
+
+    ``dtype`` casts the dense floating-point tensors (default: as stored,
+    bf16). ``strict`` raises on non-expert parameters the checkpoint does
+    not provide and on checkpoint tensors the model has no place for.
+    ``get_model_classes``/``model_config`` exist for signature parity with
+    the MLX backend and are unused: the class comes from config.json.
     """
     import json
     import os
+
+    import torch
 
     with open(os.path.join(os.fspath(model_path), "config.json")) as f:
         raw_config = json.load(f)
@@ -275,40 +387,40 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
     hf_config, model_cls, needs_trust_remote_code, key_prefix = \
         _resolve_model_class(model_path, raw_config)
 
-    import torch
-    with torch.device("meta"):
+    with _params_on_meta():
         model = model_cls.from_config(hf_config, trust_remote_code=True) \
             if needs_trust_remote_code else model_cls(hf_config)
 
-    dense_state = {}
+    state = {}
     skipped_expert_keys = []
     for shard in open_shards(model_path):
         for name, meta in shard.entries.items():
             if any(m in name for m in _EXPERT_KEY_MARKERS):
                 skipped_expert_keys.append(name)
                 continue
-            mapped_name = name[len(key_prefix):] if key_prefix and \
+            mapped = name[len(key_prefix):] if key_prefix and \
                 name.startswith(key_prefix) else name
-            raw = shard.raw(name)
-            if meta["dtype"] == "BF16":
-                u16 = np.frombuffer(raw, dtype=np.uint16,
-                                     count=int(np.prod(meta["shape"])))
-                t = torch.from_numpy(u16.copy()).view(torch.bfloat16)
-            else:
-                arr = np.frombuffer(raw, dtype=_NP_DTYPES[meta["dtype"]],
-                                     count=int(np.prod(meta["shape"])))
-                t = torch.from_numpy(arr.copy())
-            dense_state[mapped_name] = t.reshape(meta["shape"]).to(DEVICE)
+            state[mapped] = _read_tensor(shard, meta, name)
         shard.close()
 
-    missing, unexpected = model.load_state_dict(
-        dense_state, strict=False, assign=True)
-    missing_non_expert = [
-        k for k in missing if not any(m in k for m in _EXPERT_KEY_MARKERS)]
-    if missing_non_expert and strict:
-        raise RuntimeError(
-            f"load_model: {len(missing_non_expert)} non-expert tensors "
-            f"missing from checkpoint (strict=True): {missing_non_expert[:5]}...")
+    if model_cls.__name__.startswith("Qwen3_5Moe"):
+        _undo_mlx_qwen35_sanitize(state)
+    quantized = _install_quantized(model, state, dtype)
+    for k, t in state.items():
+        if dtype is not None and t.is_floating_point():
+            state[k] = t.to(dtype)
+        state[k] = state[k].to(DEVICE)
 
+    missing, unexpected = model.load_state_dict(state, strict=False,
+                                                assign=True)
+    missing = [k for k in missing
+               if not any(m in k for m in _EXPERT_KEY_MARKERS)
+               and k.rpartition(".")[0] not in quantized]
+    if strict and (missing or unexpected):
+        raise RuntimeError(
+            f"load_model: {len(missing)} missing, {len(unexpected)} "
+            f"unexpected non-expert tensors: missing={missing[:5]} "
+            f"unexpected={unexpected[:5]}")
+    model.eval()
     model._edge0_skipped_expert_keys = skipped_expert_keys  # for the streaming hook
     return model

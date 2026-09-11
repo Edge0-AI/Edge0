@@ -120,6 +120,145 @@ def case_streaming(inp):
     return out
 
 
+def _tiny_qwen35():
+    """A 4-layer transformers Qwen3.5-MoE (3 linear-attention layers, 1 full)
+    with every quantizable width a multiple of 64. Returns (config, model)."""
+    import torch
+    from transformers import Qwen3_5MoeForCausalLM, Qwen3_5MoeTextConfig
+    cfg = Qwen3_5MoeTextConfig(
+        vocab_size=128, hidden_size=128, num_hidden_layers=4,
+        num_attention_heads=4, num_key_value_heads=2, head_dim=32,
+        moe_intermediate_size=64, shared_expert_intermediate_size=64,
+        num_experts=8, num_experts_per_tok=2,
+        linear_num_key_heads=2, linear_num_value_heads=4,
+        linear_key_head_dim=16, linear_value_head_dim=16)
+    torch.manual_seed(0)
+    return cfg, Qwen3_5MoeForCausalLM(cfg).eval()
+
+
+def _mlx_quantize(w, bits=4):
+    """MLX affine quantization (group 64), scales/biases rounded to bf16 as
+    on disk. Returns the on-disk tensors and the float32 weight they
+    dequantize to."""
+    import mlx.core as mx
+    import torch
+    wq, s, b = mx.quantize(mx.array(w.detach().float().numpy()),
+                           group_size=64, bits=bits)
+    s, b = s.astype(mx.bfloat16), b.astype(mx.bfloat16)
+    # bf16-valued scales, float32 arithmetic: with bf16 scales MLX would
+    # also round the dequantized weight to bf16
+    deq = mx.dequantize(wq, s.astype(mx.float32), b.astype(mx.float32),
+                        group_size=64, bits=bits)
+
+    def bits16(a):
+        return torch.from_numpy(np.array(a.view(mx.uint16))).view(torch.bfloat16)
+    return ({"weight": torch.from_numpy(np.array(wq)),
+             "scales": bits16(s), "biases": bits16(b)},
+            torch.from_numpy(np.array(deq)))
+
+
+def case_load_model_qwen35_tiny(inp):
+    """torch backend only: write a small Qwen3.5-MoE checkpoint in the exact
+    on-disk format of the published edge0-35b -- ConditionalGeneration
+    config with text_config, language_model. prefix, every Linear and
+    Embedding 4-bit, the router 8-bit, experts as switch_mlp, norms stored
+    as w + 1, conv1d in MLX [C, k, 1] layout, the rest bf16 -- then
+    load_model + install_streaming_experts it and compare logits with the
+    source model running on the same effective weights."""
+    import dataclasses
+    import json
+    import os
+
+    import torch
+    from safetensors.torch import save_file
+
+    from edge0.backends.cuda import nn as cnn
+    from edge0.backends.cuda.io import _QWEN35_SHIFTED_NORMS, load_model
+    from edge0.backends.cuda.model_specs import QWEN35_MOE_SPEC
+    from edge0.backends.cuda.moe_blocks import TransformersExpertsAdapter
+    from edge0.streaming.install import install_streaming_experts
+    from edge0.streaming.mmap import SafetensorsMmap
+
+    cfg, ref = _tiny_qwen35()
+    I = cfg.moe_intermediate_size
+    ckpt = str(inp["ckpt_dir"])
+    os.makedirs(ckpt, exist_ok=True)
+    P = "language_model."
+    disk, dense = {}, {}          # on-disk tensors; reference weights
+
+    def put(name, t):
+        disk[P + name] = t.contiguous()
+
+    for name, t in ref.state_dict().items():
+        t = t.detach().float()
+        mod_path, _, leaf = name.rpartition(".")
+        mod = ref.get_submodule(mod_path)
+        if name.endswith("mlp.experts.gate_up_proj"):
+            base = mod_path.replace(".experts", ".switch_mlp")
+            g, dg = _mlx_quantize(t[:, :I])
+            u, du = _mlx_quantize(t[:, I:])
+            for proj, q in (("gate_proj", g), ("up_proj", u)):
+                for part, v in q.items():
+                    put(f"{base}.{proj}.{part}", v)
+            dense[name] = torch.cat([dg, du], dim=1)
+        elif name.endswith("mlp.experts.down_proj"):
+            base = mod_path.replace(".experts", ".switch_mlp")
+            q, dense[name] = _mlx_quantize(t)
+            for part, v in q.items():
+                put(f"{base}.down_proj.{part}", v)
+        elif leaf == "weight" and (
+                isinstance(mod, (torch.nn.Linear, torch.nn.Embedding))
+                or name.endswith("mlp.gate.weight")):
+            bits = 8 if name.endswith("mlp.gate.weight") else 4
+            q, dense[name] = _mlx_quantize(t, bits=bits)
+            for part, v in q.items():
+                put(f"{mod_path}.{part}", v)
+        else:
+            stored = t.to(torch.bfloat16)
+            dense[name] = stored.float()
+            if name.endswith(_QWEN35_SHIFTED_NORMS):
+                stored = (stored.float() + 1.0).to(torch.bfloat16)
+            if name.endswith("conv1d.weight"):
+                stored = stored.transpose(1, 2)          # MLX [C, k, 1]
+            put(name, stored)
+    save_file(disk, os.path.join(ckpt, "model.safetensors"))
+    with open(os.path.join(ckpt, "config.json"), "w") as f:
+        json.dump({"architectures": ["Qwen3_5MoeForConditionalGeneration"],
+                   "text_config": json.loads(cfg.to_json_string()),
+                   "quantization": {"group_size": 64, "bits": 4,
+                                    "mode": "affine"}}, f)
+    ref.load_state_dict(dense)
+
+    got = load_model(ckpt, strict=True, dtype=torch.float32)
+    spec = dataclasses.replace(QWEN35_MOE_SPEC, num_experts=cfg.num_experts,
+                               top_k=cfg.num_experts_per_tok,
+                               intermediate_size=I)
+    twins = install_streaming_experts(
+        got, [SafetensorsMmap(os.path.join(ckpt, "model.safetensors"))],
+        spec, wrap=TransformersExpertsAdapter)
+    out = {
+        "embed_type": np.array(type(got.model.embed_tokens).__name__),
+        "q_proj_type": np.array(
+            type(got.model.layers[3].self_attn.q_proj).__name__),
+        "lm_head_type": np.array(type(got.lm_head).__name__),
+        "router_dtype": np.array(str(got.model.layers[0].mlp.gate.weight.dtype)),
+        "router_bits": np.array(0),
+        "n_meta_params": np.array(sum(
+            p.is_meta for n, p in got.named_parameters())),
+        "n_quantized": np.array(sum(
+            isinstance(m, (cnn.QuantizedLinear, cnn.QuantizedEmbedding))
+            for m in got.modules())),
+    }
+    with torch.no_grad():
+        for key in ("ids6", "ids40"):
+            x = torch.from_numpy(inp[key].astype(np.int64))
+            out[f"ref_{key}"] = ref(x).logits.float().numpy()
+            out[f"got_{key}"] = got(x).logits.float().numpy()
+    for t in twins:
+        t.close()
+    return out
+
+
 def case_install_qwen35_tiny(inp):
     """torch backend only: a small transformers Qwen3_5MoeForCausalLM whose
     experts are MLX-quantized into a real safetensors shard (named like the
@@ -127,40 +266,17 @@ def case_install_qwen35_tiny(inp):
     compared against the same model running its own dense experts."""
     import dataclasses
 
-    import mlx.core as mx
     import torch
     from safetensors.torch import save_file
-    from transformers import Qwen3_5MoeForCausalLM, Qwen3_5MoeTextConfig
 
     from edge0.backends.cuda.model_specs import QWEN35_MOE_SPEC
     from edge0.backends.cuda.moe_blocks import TransformersExpertsAdapter
     from edge0.streaming.install import install_streaming_experts
     from edge0.streaming.mmap import SafetensorsMmap
 
-    E, K, H, I = 8, 2, 128, 64
-    cfg = Qwen3_5MoeTextConfig(
-        vocab_size=128, hidden_size=H, num_hidden_layers=4,
-        num_attention_heads=4, num_key_value_heads=2, head_dim=32,
-        moe_intermediate_size=I, shared_expert_intermediate_size=I,
-        num_experts=E, num_experts_per_tok=K,
-        linear_num_key_heads=2, linear_num_value_heads=4,
-        linear_key_head_dim=16, linear_value_head_dim=16)
-    torch.manual_seed(0)
-    model = Qwen3_5MoeForCausalLM(cfg).eval()
-
-    def quantize(w):
-        """MLX 4-bit affine, scales/biases rounded to bf16 as on disk;
-        returns the on-disk tensors and the weight they dequantize to."""
-        wq, s, b = mx.quantize(mx.array(w.detach().numpy()), group_size=64,
-                               bits=4)
-        s, b = s.astype(mx.bfloat16), b.astype(mx.bfloat16)
-        deq = mx.dequantize(wq, s, b, group_size=64, bits=4).astype(
-            mx.float32)
-        bits16 = lambda a: torch.from_numpy(
-            np.array(a.view(mx.uint16))).view(torch.bfloat16)
-        return ({"weight": torch.from_numpy(np.array(wq)),
-                 "scales": bits16(s), "biases": bits16(b)},
-                torch.from_numpy(np.array(deq)))
+    cfg, model = _tiny_qwen35()
+    E, K, I = cfg.num_experts, cfg.num_experts_per_tok, cfg.moe_intermediate_size
+    quantize = _mlx_quantize
 
     tensors = {}
     for li in range(cfg.num_hidden_layers):

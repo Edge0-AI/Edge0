@@ -122,7 +122,30 @@ def test_install_streaming_experts_into_transformers_qwen35(tmp_path):
     for name in ("ids6", "ids40"):
         ref, got = res[f"ref_{name}"], res[f"got_{name}"]
         np.testing.assert_allclose(got, ref, rtol=0,
-                                   atol=1e-3 * np.abs(ref).max(), err_msg=name)
+                                   atol=1e-5 * np.abs(ref).max(), err_msg=name)
+
+
+def test_load_model_edge0_35b_format(tmp_path):
+    """cuda load_model on a checkpoint in the published edge0-35b on-disk
+    format (MLX-quantized throughout, MLX-sanitized norms and conv1d,
+    language_model. prefix), then streaming experts on top: same logits as
+    the source model on the weights the checkpoint encodes."""
+    rng = np.random.default_rng(5)
+    res = _run("load_model_qwen35_tiny", {
+        "ckpt_dir": np.array(str(tmp_path / "ckpt")),
+        "ids6": rng.integers(0, 128, (1, 6)),
+        "ids40": rng.integers(0, 128, (1, 40)),
+    }, tmp_path, backends=("cuda",))
+    assert str(res["embed_type"]) == "QuantizedEmbedding"
+    assert str(res["q_proj_type"]) == "QuantizedLinear"
+    assert str(res["lm_head_type"]) == "QuantizedLinear"
+    assert str(res["router_dtype"]) == "torch.float32"   # 8-bit, dequantized
+    assert int(res["n_meta_params"]) == 0   # experts replaced by the twins
+    for key in ("ids6", "ids40"):
+        ref, got = res[f"ref_{key}"], res[f"got_{key}"]
+        np.testing.assert_allclose(got, ref, rtol=0,
+                                   atol=1e-5 * np.abs(ref).max(), err_msg=key)
+        assert (got.argmax(-1) == ref.argmax(-1)).all(), key
 
 
 def test_mask_logits(tmp_path):
