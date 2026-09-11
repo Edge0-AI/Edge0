@@ -299,3 +299,33 @@ def test_double_buffered_swap(layer):
         ref2 = lay(x, mx.array([second], dtype=mx.int32))
         assert mx.allclose(out1, ref1).item()
         assert mx.allclose(out2, ref2).item()
+
+
+def test_install_discovers_layer_count(tmp_path):
+    """install_streaming_experts(num_layers=None) probes block_path with
+    increasing layer indices until it stops resolving. Layers live in a
+    list, so running off the end raises IndexError, not AttributeError."""
+    from types import SimpleNamespace
+
+    from edge0.streaming.install import install_streaming_experts
+
+    path = tmp_path / "w.safetensors"
+    _write_shard(path, fuse_gu=False)
+    spec = MoESpec(
+        num_experts=N_EXPERTS, top_k=4, intermediate_size=INTER,
+        quant=QuantSpec(bits=4, group_size=64),
+        layout=WeightLayout.SEPARATE,
+        key_template="layers.{layer}.mlp.switch_mlp",
+        block_path="layers.{layer}.mlp",
+    )
+    moe = SimpleNamespace(switch_mlp=object())
+    model = SimpleNamespace(layers=[SimpleNamespace(mlp=moe),
+                                    SimpleNamespace(mlp=SimpleNamespace()),
+                                    SimpleNamespace(mlp=SimpleNamespace())])
+    twins = install_streaming_experts(
+        model, [SafetensorsMmap(str(path))], spec, options=_options())
+    assert len(twins) == 3
+    assert isinstance(twins[0], StreamingSwitchGLU)
+    assert twins[1] is None and twins[2] is None      # dense layers
+    assert moe.switch_mlp is twins[0]
+    twins[0].close()

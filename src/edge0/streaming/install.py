@@ -41,7 +41,7 @@ def install_streaming_experts(
         while True:
             try:
                 spec.block_of(model, n)
-            except AttributeError:
+            except (AttributeError, IndexError):  # past the last layer
                 break
             n += 1
         if n == 0:
