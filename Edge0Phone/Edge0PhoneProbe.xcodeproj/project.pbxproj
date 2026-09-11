@@ -1,0 +1,241 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 71;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000001 /* Edge0PhoneProbeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* Edge0PhoneProbeApp.swift */; };
+		A00000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* ContentView.swift */; };
+		A00000000000000000000004 /* Edge0Core in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000071 /* Edge0Core */; };
+		A00000000000000000000005 /* Edge0MLX in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000072 /* Edge0MLX */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A00000000000000000000003 /* Edge0Phone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Edge0Phone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000011 /* Edge0PhoneProbeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Edge0PhoneProbeApp.swift; sourceTree = "<group>"; };
+		A00000000000000000000012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A00000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A00000000000000000000021 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000004 /* Edge0Core in Frameworks */,
+				A00000000000000000000005 /* Edge0MLX in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A00000000000000000000022 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000031 /* Edge0PhoneProbe */,
+				A00000000000000000000032 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A00000000000000000000031 /* Edge0PhoneProbe */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000011 /* Edge0PhoneProbeApp.swift */,
+				A00000000000000000000012 /* ContentView.swift */,
+				A00000000000000000000013 /* Info.plist */,
+			);
+			path = Edge0PhoneProbe;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000032 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000003 /* Edge0Phone.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A00000000000000000000041 /* Edge0Phone */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000051 /* Build configuration list for PBXNativeTarget "Edge0Phone" */;
+			buildPhases = (
+				A00000000000000000000061 /* Sources */,
+				A00000000000000000000021 /* Frameworks */,
+				A00000000000000000000062 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Edge0Phone;
+			packageProductDependencies = (
+				A00000000000000000000071 /* Edge0Core */,
+				A00000000000000000000072 /* Edge0MLX */,
+			);
+			productName = Edge0Phone;
+			productReference = A00000000000000000000003 /* Edge0Phone.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A00000000000000000000042 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2610;
+				LastUpgradeCheck = 2610;
+				TargetAttributes = {
+					A00000000000000000000041 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+				};
+			};
+			buildConfigurationList = A00000000000000000000052 /* Build configuration list for PBXProject "Edge0PhoneProbe" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A00000000000000000000022;
+			packageReferences = (
+				A00000000000000000000081 /* XCLocalSwiftPackageReference "." */,
+			);
+			productRefGroup = A00000000000000000000032 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A00000000000000000000041 /* Edge0Phone */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A00000000000000000000062 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A00000000000000000000061 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* Edge0PhoneProbeApp.swift in Sources */,
+				A00000000000000000000002 /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A00000000000000000000091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JBJCBRMHN4;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Edge0PhoneProbe/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aventurine.Edge0PhoneProbe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A00000000000000000000092 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JBJCBRMHN4;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Edge0PhoneProbe/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aventurine.Edge0PhoneProbe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A00000000000000000000093 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+			};
+			name = Debug;
+		};
+		A00000000000000000000094 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A00000000000000000000051 /* Build configuration list for PBXNativeTarget "Edge0Phone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000091 /* Debug */,
+				A00000000000000000000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000052 /* Build configuration list for PBXProject "Edge0PhoneProbe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000093 /* Debug */,
+				A00000000000000000000094 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A00000000000000000000081 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A00000000000000000000071 /* Edge0Core */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000081 /* XCLocalSwiftPackageReference "." */;
+			productName = Edge0Core;
+		};
+		A00000000000000000000072 /* Edge0MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000081 /* XCLocalSwiftPackageReference "." */;
+			productName = Edge0MLX;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A00000000000000000000042 /* Project object */;
+}

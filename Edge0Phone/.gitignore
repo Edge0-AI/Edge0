@@ -1,0 +1,11 @@
+.build/
+.build-xcode/
+.swiftpm/
+.venv/
+reference-edge0/
+*.xcresult/
+xcuserdata/
+.DS_Store
+
+.build-ios/
+__pycache__/
