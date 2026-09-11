@@ -62,6 +62,48 @@ def test_group_select_from_logits(tmp_path):
                                atol=1e-6)
 
 
+def _model_8b():
+    path = os.environ.get("EDGE0_8B_MODEL")
+    if not path or not os.path.isfile(os.path.join(path, "model.safetensors")):
+        pytest.skip("set EDGE0_8B_MODEL to an edge0-8b checkpoint directory")
+    return path
+
+
+def test_streaming_layer_real_experts(tmp_path):
+    rng = np.random.default_rng(3)
+    i16 = np.stack([rng.choice(128, 8, replace=False) for _ in range(16)])
+    i1 = i16[:1]
+    inputs = {
+        "model_dir": np.array(_model_8b()),
+        "x1": rng.standard_normal((1, 1536)).astype(np.float32),
+        "x16": rng.standard_normal((16, 1536)).astype(np.float32),
+        "i1": i1.astype(np.int32), "i16": i16.astype(np.int32),
+        # half of token 0's experts plus unrelated ones: exercises drops
+        "staged_set": np.concatenate([i1[0, :4], [e for e in range(128)
+                                      if e not in i1[0]][:4]]).astype(np.int32),
+    }
+    ref, got = _run("streaming", inputs, tmp_path)
+    assert set(got) == set(ref)
+    for name in sorted(ref):
+        assert got[name].shape == ref[name].shape, name
+        # bf16 activations through three 4-bit matmuls: compare at bf16
+        # resolution, relative to the output scale.
+        scale = np.abs(ref[name]).max()
+        np.testing.assert_allclose(got[name], ref[name], rtol=0,
+                                   atol=2e-2 * scale, err_msg=name)
+    # the staged run must actually drop the experts outside the staged set
+    assert not np.allclose(ref["staged_t1_e"], ref["exact_t1_e"])
+    # Hot-stack prefill is documented as numerically exact, misses included
+    # (half the experts are misses here): same answer as the exact path,
+    # on each backend. Before the stack got its zero overflow row, misses
+    # gathered past the end of the stack.
+    for res in (ref, got):
+        for tag in ("c", "e"):
+            np.testing.assert_allclose(res[f"hot_t16_{tag}"],
+                                       res[f"exact_t16_{tag}"], rtol=0,
+                                       atol=1e-2 * np.abs(res[f"exact_t16_{tag}"]).max())
+
+
 def test_mask_logits(tmp_path):
     ref, got = _run("mask_logits", {"logits": _logits((1000,), seed=2)},
                     tmp_path)

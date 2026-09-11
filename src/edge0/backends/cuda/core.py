@@ -95,9 +95,12 @@ def full(shape, value, dtype=float32):
 # ---- shape ops ----------------------------------------------------------
 
 def expand_dims(x, axes):
+    """numpy/MLX semantics: axes (negative ones too) index the OUTPUT, so
+    ``expand_dims(x[m, H], (-2, -3))`` is ``[m, 1, 1, H]``."""
     if isinstance(axes, int):
         axes = (axes,)
-    for ax in sorted(axes):
+    out_ndim = x.ndim + len(axes)
+    for ax in sorted(a % out_ndim for a in axes):
         x = torch.unsqueeze(x, ax)
     return x
 

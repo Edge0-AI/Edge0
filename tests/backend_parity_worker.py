@@ -66,6 +66,60 @@ def case_mask_logits(inp):
     return out
 
 
+def _streaming_layer(model_dir, **opts):
+    """StreamingSwitchGLU over layer 1 of the real edge0-8b checkpoint."""
+    import os
+    from edge0.moe.spec import MoESpec, QuantSpec, RouterKind, WeightLayout
+    from edge0.streaming.layer import StreamingSwitchGLU
+    from edge0.streaming.mmap import SafetensorsMmap
+    from edge0.streaming.options import LayerOptions
+    spec = MoESpec(
+        num_experts=128, top_k=8, intermediate_size=512,
+        router=RouterKind.SIGMOID_GROUP, norm_topk_prob=True,
+        routed_scaling=2.5, n_group=8, topk_group=4, shared_experts=1,
+        quant=QuantSpec(bits=4, group_size=64, mode="affine"),
+        layout=WeightLayout.SEPARATE,
+        key_template="model.layers.{layer}.mlp.experts",
+        block_path="model.layers.{layer}.mlp",
+        layer_path="model.layers.{layer}")
+    shards = [SafetensorsMmap(os.path.join(model_dir, "model.safetensors"))]
+    return StreamingSwitchGLU(shards, 1, spec, options=LayerOptions(**opts))
+
+
+def case_streaming(inp):
+    """Every StreamingSwitchGLU.__call__ path on real expert weights."""
+    model_dir = str(inp["model_dir"])
+    x1 = core.astype(core.array(inp["x1"]), core.bfloat16)      # [1, H]
+    x16 = core.astype(core.array(inp["x16"]), core.bfloat16)    # [16, H]
+    i1 = core.array(inp["i1"], dtype=core.int32)                # [1, 8]
+    i16 = core.array(inp["i16"], dtype=core.int32)              # [16, 8]
+    out = {}
+    for compiled in (True, False):
+        tag = "c" if compiled else "e"
+        layer = _streaming_layer(model_dir, use_compile=compiled)
+        out[f"exact_t1_{tag}"] = _np(layer(x1, i1))             # unsorted
+        out[f"exact_t16_{tag}"] = _np(layer(x16, i16))          # sorted
+        layer.load_full_layer()
+        out[f"full_t16_{tag}"] = _np(layer(x16, i16))
+        layer.clear_full_layer()
+        # Hot stack holding every even expert: odd ones are misses and go
+        # through the exact scatter-add correction (core.index_add).
+        layer._hot_counts = {e: 1.0 for e in range(0, 128, 2)}
+        layer.load_hot_layer(n_hot=64)
+        layer.materialize_hot()
+        out[f"hot_t16_{tag}"] = _np(layer(x16, i16))
+        layer.clear_hot_layer()
+        layer.close()
+        # Staged decode over a partial set: experts outside it are dropped.
+        staged = _streaming_layer(model_dir, use_compile=compiled,
+                                  staged=True, staged_n=8, staged_trigger=8)
+        staged.stage_experts([int(e) for e in inp["staged_set"]])
+        staged.wait_staged()
+        out[f"staged_t1_{tag}"] = _np(staged(x1, i1))
+        staged.close()
+    return out
+
+
 CASES = {name[len("case_"):]: fn for name, fn in globals().items()
          if name.startswith("case_")}
 

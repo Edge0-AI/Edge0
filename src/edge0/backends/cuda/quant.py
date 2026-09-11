@@ -47,6 +47,8 @@ def gather_qmm(x, w, scales, biases, rhs_indices, transpose=True,
         raise NotImplementedError(
             f"reference gather_qmm covers affine 2/4/8-bit only "
             f"(got mode={mode!r}, bits={bits!r})")
+    # An index past the last expert raises here; in MLX it silently reads
+    # out of bounds.
     idx = rhs_indices.to(torch.long)
     flat = idx.reshape(-1)
     deq = _dequantize(w.index_select(0, flat), scales.index_select(0, flat),

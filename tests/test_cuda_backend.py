@@ -94,6 +94,16 @@ def test_gather_qmm_bf16_checkpoint_dtypes():
     np.testing.assert_allclose(got, ref, rtol=2e-2, atol=1e-1)
 
 
+@pytest.mark.parametrize("shape,axes", [
+    ((5, 7), (-2, -3)), ((5, 7), (0, 1)), ((5, 7), -1), ((2, 3, 4), (1, -1)),
+])
+def test_expand_dims_matches_mlx(shape, axes):
+    from edge0.backends.cuda import core as cc
+    x = np.zeros(shape, dtype=np.float32)
+    assert tuple(cc.expand_dims(torch.from_numpy(x), axes).shape) == \
+        tuple(mx.expand_dims(mx.array(x), axes).shape)
+
+
 def test_rmsnorm_matches_mlx():
     from edge0.backends.cuda import nn as cnn
     x = mx.random.normal((3, 64))

@@ -46,8 +46,6 @@ from edge0.backends import core, quant
 from edge0.backends import nn
 import numpy as np
 
-from mlx_lm.models.switch_layers import _gather_sort, _scatter_unsort
-
 from edge0.moe.spec import MoESpec
 from edge0.streaming.cache import PrefetchBuffer, SharedExpertCache
 from edge0.streaming.mmap import SafetensorsMmap, u32_view
@@ -190,7 +188,7 @@ class StreamingSwitchGLU:
                     _swiglu(x_up, x_gate), w_d, s_d, b_d,
                     rhs_indices=local, transpose=True, group_size=gs,
                     bits=bt, mode=md, sorted_indices=True)
-                return _scatter_unsort(z, inv_order, out_shape).squeeze(-2)
+                return quant.scatter_unsort(z, inv_order, out_shape).squeeze(-2)
             return fn
 
         def _make_moe_math_fused():
@@ -226,7 +224,7 @@ class StreamingSwitchGLU:
                     _swiglu(x_up, x_gate), w_d, s_d, b_d,
                     rhs_indices=local, transpose=True, group_size=gs,
                     bits=bt, mode=md, sorted_indices=True)
-                return _scatter_unsort(z, inv_order, out_shape).squeeze(-2)
+                return quant.scatter_unsort(z, inv_order, out_shape).squeeze(-2)
             return fn
 
         self._moe_math = _make_moe_math()
@@ -327,7 +325,7 @@ class StreamingSwitchGLU:
             b = {}
             for (proj, part), buf in self._hot_backing.items():
                 sh = shape[(proj, part)]
-                per = buf.size // len(self._hot_key)
+                per = buf.size // (len(self._hot_key) + 1)  # + zero row
                 sl = buf[idx * per:(idx + 1) * per]
                 if part == "weight":
                     b[(proj, part)] = core.array(
@@ -984,7 +982,12 @@ class StreamingSwitchGLU:
                     raw = self._shard_for(name).raw(name)
                     per = raw.size // self.num_experts
                     rows = [raw[e * per:(e + 1) * per] for e in hot]
-                # concatenated numpy backing (page cache, not GPU)
+                # concatenated numpy backing (page cache, not GPU), plus
+                # one all-zero row: the prefill path sends misses to row
+                # n_hot ("overflow row") and needs it to contribute zero.
+                # Without it that gather reads past the end of the stack,
+                # which only happened to be zero-filled memory.
+                rows.append(np.zeros_like(rows[0]))
                 backing[(proj, part)] = np.concatenate(rows)
         self._hot_backing = backing
         self._hot_key = key
@@ -1000,7 +1003,7 @@ class StreamingSwitchGLU:
             return
         w = {}
         shape0 = self._bundle_shape
-        n_e = len(self._hot_key)
+        n_e = len(self._hot_key) + 1                 # + zero overflow row
         for (proj, part), buf in self._hot_backing.items():
             shape = shape0[(proj, part)]
             if part == "weight":
@@ -1064,7 +1067,7 @@ class StreamingSwitchGLU:
         # to the resident top-N stack; misses (~3%) contribute zero from the
         # fast gather (overflow row) and are computed separately below via
         # the exact per-expert path, then scatter-added. Numerically exact.
-        if (self._hot_weights is not None and indices.size > 8
+        if (self._hot_weights is not None and core.size(indices) > 8
                 and self._full_weights is None):
             with self._lock:
                 flat = indices.reshape(-1).tolist()
@@ -1097,7 +1100,7 @@ class StreamingSwitchGLU:
             remapped = core.array(g_list, dtype=core.int32).reshape(
                 ind_flat.shape)
             x3 = core.expand_dims(x_flat, (-2, -3))
-            xs, local, inv_order = _gather_sort(x3, remapped)
+            xs, local, inv_order = quant.gather_sort(x3, remapped)
             x_up, x_gate = self._gather_gate_up(xs, w, local, True)
             z = quant.gather_qmm(
                 _swiglu(x_up, x_gate),
@@ -1105,7 +1108,7 @@ class StreamingSwitchGLU:
                 w[("down_proj", "biases")], rhs_indices=local, transpose=True,
                 group_size=self.group_size, bits=self.bits, mode=self.mode,
                 sorted_indices=True)
-            out = _scatter_unsort(z, inv_order)
+            out = quant.scatter_unsort(z, inv_order)
             # Miss contribution: switch_mlp's caller applies scores after
             # us, so only RAW per-expert outputs [T, k, H] at miss slots are
             # needed. Reuse _moe_math (same kernel as the staged path) with
@@ -1162,7 +1165,7 @@ class StreamingSwitchGLU:
                     ze = ze.squeeze(-2).squeeze(-2)          # [m, H]
                     flat_pos = core.array(
                         [t * k_n + kk for t, kk in tk], dtype=core.int32)
-                    out = out.at[flat_pos].add(ze[:, None, :])
+                    out = core.index_add(out, flat_pos, ze[:, None, :])
             out = out.reshape(*ind_flat.shape, *out.shape[-2:])
             out = out.squeeze(-2)                    # [T, k, H]
             if x.ndim == 3:                          # restore batch dim
@@ -1174,7 +1177,7 @@ class StreamingSwitchGLU:
         # before_layer_cb load_full_layer / clear_full_layer), so the router
         # indices go straight into the sorted gather — same ops as the exact
         # path (bit-identical), no tolist / no bundles / no remap.
-        if self._full_weights is not None and indices.size > 8:
+        if self._full_weights is not None and core.size(indices) > 8:
             # Record usage so hot pins survive prefill (the whole-layer path
             # never touches _get_bundles, so without this _hot_counts stays
             # empty and PREFILL_PIN has nothing to select from). Also keep
@@ -1190,7 +1193,7 @@ class StreamingSwitchGLU:
                     self._last_prefill_topk = flat[-k:]
             w = self._full_weights
             x = core.expand_dims(x, (-2, -3))
-            x, local, inv_order = _gather_sort(x, indices)
+            x, local, inv_order = quant.gather_sort(x, indices)
             x_up, x_gate = self._gather_gate_up(x, w, local, True)
             z = quant.gather_qmm(
                 _swiglu(x_up, x_gate),
@@ -1200,10 +1203,10 @@ class StreamingSwitchGLU:
                 sorted_indices=True)
             # Matches the resident SwitchGLU contract: 4D [B, T, k, H] (the
             # caller's SparseMoeBlock sums over axis -2).  NO batch restore
-            # here — _gather_sort/_scatter_unsort already keep [B, T, k, H]
+            # here — gather_sort/scatter_unsort already keep [B, T, k, H]
             # (verified against the deployment's whole-layer path, which
             # returns the same 4D shape).
-            return _scatter_unsort(z, inv_order, indices.shape).squeeze(-2)
+            return quant.scatter_unsort(z, inv_order, indices.shape).squeeze(-2)
 
         # Staged decode path (prerouter-style, single-token): consume the
         # fixed staged slots; router indices never leave the GPU (expert->slot
@@ -1263,7 +1266,7 @@ class StreamingSwitchGLU:
                 self._stats["staged_used"] += k
             return self._moe_math(x, *wargs, local2d)
 
-        if self._staged_mode and indices is not None and indices.size == self._staged_trigger:
+        if self._staged_mode and indices is not None and core.size(indices) == self._staged_trigger:
             self.wait_staged()
             st = self._staged_state
             if st is None:
@@ -1283,7 +1286,7 @@ class StreamingSwitchGLU:
                     for part in ("weight", "scales", "biases"))
                 local2d = core.take(self._incr_slot_table, indices)
                 with self._lock:
-                    self._stats["staged_used"] += indices.size
+                    self._stats["staged_used"] += core.size(indices)
                 return self._moe_math(x, *wargs, local2d)
             else:
                 bundles, slot_of_list, staged_exp = st
@@ -1301,7 +1304,7 @@ class StreamingSwitchGLU:
                     slot_of, wargs = asm
                 local2d = core.take(slot_of, indices)
                 with self._lock:
-                    self._stats["staged_used"] += indices.size
+                    self._stats["staged_used"] += core.size(indices)
                 return self._moe_math(x, *wargs, local2d)
 
         # Exact decode path: resolve bundles for unique experts.
@@ -1327,14 +1330,14 @@ class StreamingSwitchGLU:
 
         orig_x = x
         x = core.expand_dims(x, (-2, -3))
-        do_sort = local2d.size >= 64
+        do_sort = core.size(local2d) >= 64
         inv_order = None
         if do_sort:
             if self._use_compile:
-                x_s, local, inv_order = _gather_sort(x, local2d)
+                x_s, local, inv_order = quant.gather_sort(x, local2d)
                 return self._moe_math_sorted(
                     x_s, *wargs, local, inv_order, indices.shape)
-            x, local, inv_order = _gather_sort(x, local2d)
+            x, local, inv_order = quant.gather_sort(x, local2d)
         elif self._use_compile:
             return self._moe_math(orig_x, *wargs, local2d)
         else:
@@ -1367,7 +1370,7 @@ class StreamingSwitchGLU:
             transpose=True, group_size=self.group_size, bits=self.bits,
             mode=self.mode, sorted_indices=do_sort)
         if do_sort:
-            z = _scatter_unsort(z, inv_order, indices.shape)
+            z = quant.scatter_unsort(z, inv_order, indices.shape)
         return z.squeeze(-2)
 
     # ---- lifecycle --------------------------------------------------------
