@@ -27,6 +27,20 @@ from edge0.config import GenerationConfig
 from edge0.sampling import sample
 
 
+def require_mlx_backend(tier: str) -> None:
+    """The shipped engines drive the vendored MLX models directly (their
+    per-layer callbacks, mlx-lm caches, class-level prerouter patch). Fail
+    early and plainly on another backend instead of pushing MLX arrays
+    through its ops."""
+    from edge0.backends import backend
+    if backend.name != "mlx":
+        raise NotImplementedError(
+            f"{tier}: the engine runs only on EDGE0_BACKEND=mlx today. The "
+            f"{backend.name} backend has the array/quant ops, the streaming "
+            f"layer and load_model, but no engine for this tier yet -- see "
+            f"docs/nvidia.md.")
+
+
 class Edge0Engine:
     """Base streaming engine.  Subclasses fill in the family hooks."""
 

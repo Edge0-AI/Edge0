@@ -120,6 +120,27 @@ def case_streaming(inp):
     return out
 
 
+def case_engine_guard(inp):
+    """Every entry point imports without pulling MLX in, and the MLX-only
+    engines refuse another backend up front."""
+    import importlib
+    for mod in ("edge0", "edge0.engine", "edge0.engine.qwen",
+                "edge0.engine.ling", "edge0.cli", "edge0.prerouter.install",
+                "edge0.adapters.lora", "edge0.streaming.install"):
+        importlib.import_module(mod)
+    loaded_mlx = sorted(m for m in sys.modules
+                        if m == "mlx" or m.startswith(("mlx.", "mlx_lm")))
+    errors = []
+    for mod in ("edge0.engine.qwen", "edge0.engine.ling"):
+        try:
+            importlib.import_module(mod).load_installed("unused", None)
+            errors.append("no error")
+        except NotImplementedError as e:
+            errors.append(str(e))
+    return {"loaded_mlx": np.array(loaded_mlx, dtype=str),
+            "errors": np.array(errors, dtype=str)}
+
+
 def _tiny_qwen35():
     """A 4-layer transformers Qwen3.5-MoE (3 linear-attention layers, 1 full)
     with every quantizable width a multiple of 64. Returns (config, model)."""

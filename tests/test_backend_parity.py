@@ -148,6 +148,15 @@ def test_load_model_edge0_35b_format(tmp_path):
         assert (got.argmax(-1) == ref.argmax(-1)).all(), key
 
 
+def test_engines_import_without_mlx_and_refuse_other_backends(tmp_path):
+    res = _run("engine_guard", {"_": np.zeros(1)}, tmp_path,
+               backends=("cuda",))
+    assert res["loaded_mlx"].size == 0, list(res["loaded_mlx"])
+    for msg, tier in zip(res["errors"], ("edge0-35b", "edge0-8b")):
+        assert msg.startswith(f"{tier}: the engine runs only on "
+                              "EDGE0_BACKEND=mlx"), msg
+
+
 def test_mask_logits(tmp_path):
     ref, got = _run("mask_logits", {"logits": _logits((1000,), seed=2)},
                     tmp_path)
