@@ -203,5 +203,13 @@ class Qwen35Engine(Edge0Engine):
         if self._pg_state is not None:
             self._pg_state.reset()
 
+    def _checkpoint_family_state(self):
+        from edge0.engine.checkpoint import capture
+        return capture(self, 'qwen')
+
+    def _restore_checkpoint_family(self, state):
+        from edge0.engine.checkpoint import restore
+        restore(self, state, 'qwen')
+
     def _lm_logits(self, h: core.array) -> core.array:
         return self._lm.lm_head(h[0, -1])

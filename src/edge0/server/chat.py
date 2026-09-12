@@ -151,16 +151,35 @@ class ChatSession:
         # bad pre-routing cross-token state and KV behind, which makes every
         # later request collapse from its first token.
         self.engine.reset()
-        ids = self.prompt_ids()
+        tokenize_started = time.perf_counter()
+        cache = getattr(self.engine, 'conversation_cache', None)
+        if cache:
+            ids = cache.tokenize(dict(messages=[m.__dict__ for m in self.req.messages],
+                                      thinking=self.req.enable_thinking,
+                                      default_thinking=getattr(self.engine, 'think', False)),
+                                 self.prompt_ids)
+            tokenization_s = cache.metrics.get('tokenization_s', 0)
+        else:
+            ids = self.prompt_ids()
+        self.engine.last_tokenization_s = time.perf_counter() - tokenize_started
         gen = self.gen_config()
-        tokens = self.engine.generate(
-            ids, gen_config=gen, on_token=on_token)
+        try:
+            tokens = self.engine.generate(ids, gen_config=gen, on_token=on_token)
+        finally:
+            if cache:
+                # Completed/cancelled HTTP requests have no active context.
+                self.engine.reset()
         usage = {
             "prompt_tokens": len(ids),
             "completion_tokens": len(tokens),
             "total_tokens": len(ids) + len(tokens),
         }
+        if cache:
+            usage['prompt_tokens_details'] = {'cached_tokens': cache.metrics.get('reused_tokens', 0)}
+            cache.metrics['tokenization_s'] = tokenization_s
         meta = {"wall_s": round(time.perf_counter() - t0, 3)}
+        if cache:
+            meta["cache"] = dict(cache.metrics)
         return tokens, {"usage": usage, **meta}
 
 

@@ -69,6 +69,7 @@ def _chat_once(server: QueueServer, payload: dict):
             "finish_reason": "stop",
         }],
         "usage": meta["usage"],
+        **({"edge0_cache": meta["cache"]} if "cache" in meta else {}),
     }
 
 
@@ -98,6 +99,7 @@ def _chat_stream(server: QueueServer, payload: dict):
                 "choices": [{"index": 0, "delta": {},
                              "finish_reason": "stop"}],
                 "usage": meta["usage"],
+                **({"edge0_cache": meta["cache"]} if "cache" in meta else {}),
             }).encode("utf-8"))
             events.put(b"data: [DONE]\n\n")
         except Exception as exc:  # pragma: no cover - transport-dependent
