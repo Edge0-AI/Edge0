@@ -21,11 +21,8 @@ from types import SimpleNamespace
 
 from edge0.backends import core
 
-from edge0.backends.mlx._impl.bailing_hybrid import Model as BailingModel
-from edge0.backends.mlx._impl.bailing_hybrid import ModelArgs as BailingArgs
 from edge0.backends import io
-from edge0.backends.mlx.io import load_model, load_tokenizer
-from edge0.engine.base import Edge0Engine
+from edge0.engine.base import Edge0Engine, require_backend
 from edge0.engine.hooks import (
     make_history_prefetch,
     make_prefill_before_layer,
@@ -37,8 +34,14 @@ from edge0.streaming.mmap import SafetensorsMmap
 
 
 def _get_model_classes(config):
-    """mlx-lm class hook: serve the vendored bailing backbone."""
-    return BailingModel, BailingArgs
+    """load_model class hook: serve the active backend's port of the bailing
+    backbone (imported here so the module itself imports without MLX)."""
+    from edge0.backends import backend
+    if backend.name == "cuda":
+        from edge0.backends.cuda._impl.bailing_hybrid import Model, ModelArgs
+    else:
+        from edge0.backends.mlx._impl.bailing_hybrid import Model, ModelArgs
+    return Model, ModelArgs
 
 
 def load_installed(model_dir: str, cfg):
@@ -47,7 +50,8 @@ def load_installed(model_dir: str, cfg):
 
     Returns ``(model, model_config, shards, installs)``.
     """
-    model, model_config = load_model(
+    require_backend("edge0-8b", ("mlx", "cuda"))
+    model, model_config = io.load_model(
         model_dir, lazy=True, strict=False,
         model_config={"model_type": "bailing_hybrid",
                       "prerouter_enabled": cfg.prerouter is not None,
@@ -117,7 +121,7 @@ class Ling8BEngine(Edge0Engine):
         opts = cfg.options
         if self._tok is None:
             try:
-                self._tok = load_tokenizer(cfg.model_dir)
+                self._tok = io.load_tokenizer(cfg.model_dir)
             except Exception:  # noqa: BLE001 — tokenizer optional for CLI
                 pass
 

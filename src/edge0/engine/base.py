@@ -27,6 +27,24 @@ from edge0.config import GenerationConfig
 from edge0.sampling import sample
 
 
+def require_backend(tier: str, supported=("mlx",)) -> None:
+    """The engines drive a vendored model directly (per-layer callbacks,
+    caches, prerouter wiring), so a tier runs only on backends that ship
+    that model. Fail early and plainly elsewhere instead of pushing one
+    backend's arrays through another's ops."""
+    from edge0.backends import backend
+    if backend.name not in supported:
+        raise NotImplementedError(
+            f"{tier}: the engine runs only on EDGE0_BACKEND="
+            f"{' or '.join(supported)} today. The {backend.name} backend "
+            f"has the array/quant ops, the streaming layer and load_model, "
+            f"but no model port for this tier yet -- see docs/nvidia.md.")
+
+
+def require_mlx_backend(tier: str) -> None:
+    require_backend(tier, ("mlx",))
+
+
 class Edge0Engine:
     """Base streaming engine.  Subclasses fill in the family hooks."""
 

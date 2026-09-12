@@ -67,7 +67,7 @@ class PrerouterHead(nn.Module):
                  prev_oh: core.array) -> core.array:
         feats = core.concatenate([h, executed_oh, prev_oh], axis=-1)
         if feats.dtype != self._dtype:
-            feats = feats.astype(self._dtype)
+            feats = core.astype(feats, self._dtype)
         # linear_init consumes the full concat features, same as training.
         return self.linear_init(feats) + self.fc2(
             gelu_erf(self.fc1(feats)))

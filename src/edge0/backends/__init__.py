@@ -49,12 +49,19 @@ if _BACKEND == "mlx":
         quant,
     )
 elif _BACKEND == "cuda":
-    raise ImportError(
-        "the CUDA backend is not implemented yet; set EDGE0_BACKEND=mlx "
-        "(or unset it)")
+    # Torch reference implementation. EDGE0_BACKEND=mlx on top of
+    # mlx[cuda*] is not a shortcut: no MLX release runs the shipped
+    # tiers on NVIDIA hardware (see docs/nvidia.md).
+    from edge0.backends.cuda.backend import (  # noqa: F401
+        BackendImpl,
+        core,
+        io,
+        nn,
+        quant,
+    )
 else:
     raise ImportError(
-        f"unknown backend {_BACKEND!r}; available: mlx")
+        f"unknown backend {_BACKEND!r}; available: mlx, cuda")
 
 backend = BackendImpl()
 
