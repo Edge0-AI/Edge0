@@ -3,8 +3,9 @@
 `edge0` does **not** run on NVIDIA through MLX, at any version tested:
 the first forward pass fails, differently at each version (the table
 below). It does run on NVIDIA through the torch backend in
-`backends/cuda/` (`EDGE0_BACKEND=cuda`): edge0-8b generates text on a
-GB10, layer for layer within 5.3e-7 of MLX. The rest of this file is
+`backends/cuda/` (`EDGE0_BACKEND=cuda`): both edge0-8b and edge0-35b
+generate text on a GB10, layer for layer within 5.3e-7 (8b) and 3.7e-6
+(35b, real weights) of MLX. The rest of this file is
 that investigation, kept because it is what the next person attempting
 this would otherwise repeat from scratch.
 
@@ -63,9 +64,10 @@ policy, not a broken GPU.
 ## Bottom line
 
 MLX's own CUDA backend does not close the gap at any version currently
-available. The torch backend does: `EDGE0_BACKEND=cuda` runs the
-edge0-8b engine on a GB10 and on CPUs, checked against MLX throughout
-(next section). edge0-35b runs on CPU only so far.
+available. The torch backend does: `EDGE0_BACKEND=cuda` runs both shipped
+tiers on a GB10 and on CPUs, checked against MLX throughout (next
+section). On the real weights, edge0-35b on the GB10 generates the same
+32 greedy tokens as MLX run on its CPU device.
 
 ## Torch backend: what exists and how it is checked
 
@@ -88,6 +90,9 @@ runs each case under both backends in subprocesses).
 | the whole edge0-8b engine on that GPU, 32 greedy tokens | MLX on Apple Silicon: 31 of 32 tokens identical, diverging at step 31. Not a GPU artifact: torch on the CPU differs from MLX by the same 4.5% median per-step logit distance (the staged prerouter path), and that step's top-2 margin is smaller than that noise |
 | `backends/cuda/_impl/qwen3_5_moe.py` (torch port of the edge0-35b backbone), every layer, chunked prefill + decode, on a small model MLX wrote in the published format (bf16, 4-bit, 8-bit router and shared gate) | the vendored MLX model on the MLX CPU device, float32: <= 2.6e-7 per layer, <= 4.1e-7 on the logits |
 | the whole edge0-35b engine (`engine/qwen.py` unchanged: streaming, staged decode, the class-level prerouter patch) on that small checkpoint | the same engine on MLX: identical greedy tokens, per-step logits within bf16 noise and tracking MLX *with* the prerouter (the prerouter moves them 5-11%) |
+| **the edge0-35b backbone on the real 23 GB checkpoint**, every layer, chunked prefill + decode (`test_qwen35_port_matches_mlx_on_real_weights`, needs `EDGE0_35B_MODEL`) | the vendored MLX model on the MLX CPU device, float32: <= 2.4e-6 per GatedDeltaNet layer, <= 3.7e-6 per gated full-attention layer, <= 2.4e-6 on the logits, same argmax; 40 layers, no missing or unexpected tensor |
+| the whole edge0-35b engine on the real weights (LoRA 310 targets, prerouter 33 heads, streamed experts), 32 greedy tokens | MLX on the MLX CPU device: **identical 32 tokens**. Against MLX on Metal, 29 of 32 -- and MLX-Metal disagrees with MLX-CPU at exactly those three positions, so the flip is its GPU precision |
+| **the edge0-35b engine on a real GPU** — the same GB10, torch 2.14+cu130, as a Slurm job | **identical 32 tokens** to both MLX-CPU and torch on the Mac's CPU (18.4 s) |
 
 Why the MLX *CPU* device: on some Apple GPUs MLX runs float32 matmul and
 SDPA at reduced precision (an M5 Max measured 7.5e-4 from float64; MLX on
@@ -102,15 +107,6 @@ stored as `w + 1`), which it undoes.
 
 ## What is left
 
-* **A real-weight run of edge0-35b** (23 GB) through the torch path. The
-  port and the engine are checked on a small model MLX wrote in the
-  published format, not on the real weights; the LoRA path is covered for
-  edge0-8b only (there is no small edge0-35b adapter to compare against).
-* **edge0-35b on the GPU.** Only edge0-8b has run on a CUDA device so
-  far. `DEVICE` is `cuda` whenever torch sees one; `EDGE0_TORCH_DEVICE`
-  overrides it (`cpu`, `mps`, `cuda`). PyTorch's cu130 aarch64 wheels
-  carry kernels up to `sm_120` and they do run on the GB10's `sm_121`,
-  as CUDA's same-major binary compatibility promises.
 * **Performance.** `gather_qmm` and the quantized linears dequantize on
   every call and `core.compile` is eager: this is a correctness reference,
   not a fast path.
