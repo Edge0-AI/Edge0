@@ -293,8 +293,9 @@ def test_chat_once_response_shape():
     assert out["usage"]["completion_tokens"] == 3
 
 
-def test_chat_stream_events_sequence():
-    srv = QueueServer(FakeEngine())
+@pytest.mark.parametrize("stats", [False, True])
+def test_chat_stream_events_sequence(stats):
+    srv = QueueServer(FakeEngine(), stats=stats)
     events = _chat_stream(srv, {
         "messages": [{"role": "user", "content": "hi"}], "stream": True,
     })
@@ -453,3 +454,71 @@ def test_flask_http_streams_before_generation_finishes():
         eng.resume.set()
         response.close()
     assert b"data: [DONE]\n\n" in body
+
+
+@pytest.mark.parametrize("verbose", [False, True])
+def test_server_diagnostics_per_request(verbose, capsys):
+    class DiagnosticTok(FakeTok):
+        def convert_ids_to_tokens(self, token):
+            return f"T{token}"
+
+        def decode(self, tokens, **kwargs):
+            return super().decode(tokens)
+
+    class DiagnosticEngine(FakeEngine):
+        def stats(self):
+            return {"cache_hits": len(self.generated) * 3}
+
+    engine = DiagnosticEngine(tok=DiagnosticTok())
+    server = QueueServer(engine, stats=not verbose, verbose_tokens=verbose)
+    for _ in range(2):
+        received = []
+        tokens, meta = server.chat(_req(), on_token=received.append)
+        assert received == tokens == [11, 12, 13]
+        output = capsys.readouterr()
+        assert output.out == ""
+        records = [json.loads(line.removeprefix("[edge0 stats] "))
+                   for line in output.err.splitlines() if line.startswith("[edge0 stats] ")]
+        assert [r["phase"] for r in records] == ["start", "progress", "complete"]
+        assert records[0]["cache_hits"] == 0
+        assert records[-1]["cache_hits"] == 3
+        assert records[-1]["generated_tokens"] == 3
+        assert records[-1]["usage"] == meta["usage"]
+        assert ("[edge0 token]" in output.err) == verbose
+        if verbose:
+            assert '"phase": "prompt"' in output.err
+            assert '"phase": "generated"' in output.err
+
+
+def test_server_diagnostics_disabled(capsys):
+    QueueServer(FakeEngine()).chat(_req())
+    assert capsys.readouterr().err == ""
+
+
+def test_server_diagnostics_exception(capsys):
+    server = QueueServer(FakeEngine(), stats=True)
+
+    def fail(token):
+        raise RuntimeError("callback failed")
+
+    with pytest.raises(RuntimeError, match="callback failed"):
+        server.chat(_req(), on_token=fail)
+    assert '"phase": "interrupted"' in capsys.readouterr().err
+    server.chat(_req())
+    assert '"phase": "complete"' in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("flag", ["--stats", "--verbose-tokens"])
+def test_serve_cli_diagnostics(flag, monkeypatch):
+    import edge0
+    import edge0.server
+    from edge0.cli import main
+
+    engine = FakeEngine()
+    engine.close = lambda: None
+    monkeypatch.setattr(edge0.AutoEngine, "from_pretrained", lambda *a, **kw: engine)
+    servers = []
+    monkeypatch.setattr(edge0.server, "run_server", lambda server, **kw: servers.append(server))
+    assert main(["serve", "--model-path", "fake.gguf", flag]) == 0
+    assert servers[0].stats is True
+    assert servers[0].verbose_tokens == (flag == "--verbose-tokens")

@@ -172,9 +172,12 @@ class ChatSession:
 class QueueServer:
     """Single-slot serving loop: serialize generations, stream via callback."""
 
-    def __init__(self, engine: Edge0Engine, model_name: str | None = None):
+    def __init__(self, engine: Edge0Engine, model_name: str | None = None,
+                 *, stats: bool = False, verbose_tokens: bool = False):
         self.engine = engine
         self.model_name = model_name or engine.name
+        self.stats = stats or verbose_tokens
+        self.verbose_tokens = verbose_tokens
         self._lock = threading.Lock()
 
     def health(self) -> dict:
@@ -185,7 +188,26 @@ class QueueServer:
     def chat(self, req: ChatRequest, on_token=None) -> dict:
         with self._lock:
             sess = ChatSession(self.engine, req)
-            return sess.run(on_token=on_token)
+            if not self.stats:
+                return sess.run(on_token=on_token)
+
+            from edge0.chat_stats import ChatStats
+            diagnostics = ChatStats(self.engine, verbose_tokens=self.verbose_tokens)
+            diagnostics.emit("start")
+
+            def report_token(token):
+                diagnostics.on_token(token)
+                if on_token is not None:
+                    on_token(token)
+
+            try:
+                tokens, meta = sess.run(on_token=report_token,
+                                        on_prompt=diagnostics.on_prompt)
+            except BaseException:
+                diagnostics.emit("interrupted")
+                raise
+            diagnostics.emit("complete", meta)
+            return tokens, meta
 
 
 def sse_format(data: dict) -> str:

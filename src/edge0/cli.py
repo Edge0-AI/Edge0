@@ -228,7 +228,8 @@ def cmd_serve(args) -> int:
     engine = AutoEngine.from_pretrained(model_dir, name=name,
                                         **_engine_kwargs(args))
     try:
-        server = QueueServer(engine, model_name=name or engine.name)
+        server = QueueServer(engine, model_name=name or engine.name,
+                             stats=args.stats, verbose_tokens=args.verbose_tokens)
         print(f"[edge0] serving {server.model_name} on http://{args.host}:{args.port} "
               f"(stream={'flask' if args.flask else 'stdlib'})",
               file=sys.stderr)
@@ -306,6 +307,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--flask", action="store_true",
                    help="use the Flask transport (needs flask installed)")
+    p.add_argument("--cache-mib", type=int, default=None,
+                   help="GGUF packed-weight cache budget in MiB (minimum 8; default: model configuration)")
+    p.add_argument("--stats", action="store_true",
+                   help="log per-request timing, cache, checkpoint reads and memory statistics to stderr")
+    p.add_argument("--verbose-tokens", action="store_true",
+                   help="log each prompt/generated token ID, piece and timing; includes --stats")
     p.add_argument("--no-prerouter", action="store_true")
     p.add_argument("--no-lora", action="store_true")
     p.set_defaults(fn=cmd_serve)

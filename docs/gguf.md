@@ -24,6 +24,16 @@ and physical-memory peaks are lifetime measurements. A prefetch hit means a
 pending packed read was reused, not necessarily that it finished before demand.
 Checkpoint bytes are requested mapped bytes, not measured physical SSD traffic.
 RSS, process thread count, and macOS physical footprint are also reported.
+`edge0 serve` accepts the same `--stats` and `--verbose-tokens` flags for
+each streaming or non-streaming request. Diagnostics go to server stderr;
+request timing starts after acquiring the generation lock and excludes queue wait.
+
+```bash
+PYTHONPATH=src MLX_ENABLE_TF32=0 ../Edge0/.venv/bin/python -m edge0.cli serve \
+  --model-path ~/Documents/Qwen-3.8/Qwen3.8-Flash-Next-UD-IQ1_S-00001-of-00003.gguf \
+  --host 127.0.0.1 --port 8000 --stats --cache-mib 3072
+```
+
 Time to first token includes tokenization and prefill. Total footprint exceeds
 the packed-weight cache budget. High eviction/read counts help identify cache churn;
 compare speed and physical footprint across equivalent prompts before enlarging
@@ -37,7 +47,7 @@ escaped. A byte token's decoded text may be a replacement character; its vocabul
 piece and ID remain available. Token logs contain prompt and response content.
 Logging overhead is included in timing measurements.
 
-Set the chat packed-weight cache budget with `--cache-mib 3072` for 3 GiB, or
+Set the chat or server packed-weight cache budget with `--cache-mib 3072` for 3 GiB, or
 `--cache-mib 1024` for 1 GiB. This option requires a GGUF `--model-path` and
 an integer budget of at least 8 MiB. Omitting it preserves the model default.
 It controls packed weights and their staging buffers.
