@@ -412,6 +412,91 @@ def case_qwen35_port_parity(inp):
     }
 
 
+def case_qwen35_real_parity(inp):
+    """torch backend only: the torch port of qwen3_5_moe against the vendored
+    MLX model, both loaded from the REAL edge0-35b checkpoint (four shards),
+    on the MLX CPU device in float32. Same shape as case_bailing_port_parity:
+    every torch layer is fed MLX's input to that layer, and separately the
+    whole torch model runs free with its own caches, over a chunked prefill
+    and decode steps."""
+    import mlx.core as mx
+    import torch
+
+    from edge0.backends.cuda._impl import qwen3_5_moe as tq
+    from edge0.backends.cuda.core import DEVICE
+    from edge0.backends.cuda.io import load_model as t_load
+    from edge0.backends.cuda.io import open_shards
+    from edge0.backends.mlx._impl import qwen3_5_moe as mq
+    from edge0.backends.mlx.io import load_model as m_load
+    from edge0.models.edge0_35b import Qwen35Config
+    from edge0.streaming.install import install_streaming_experts
+    from mlx_lm.models.base import create_attention_mask as m_mask_fn
+
+    path = str(inp["model_dir"])
+    over = {"model_type": "qwen3_5_moe"}
+    mx.set_default_device(mx.cpu)
+    mm, _ = m_load(path, lazy=False, strict=False, model_config=over,
+                   get_model_classes=lambda config: (mq.Model, mq.ModelArgs))
+    mm.set_dtype(mx.float32)
+    tm, _ = t_load(path, strict=False, model_config=over,
+                   get_model_classes=lambda config: (tq.Model, tq.ModelArgs),
+                   dtype=torch.float32)
+    rep = tm._edge0_load_report
+    mlm, tlm = mm.language_model, tm.language_model
+    n = len(tlm.model.layers)
+    twins = install_streaming_experts(
+        tm, open_shards(path), Qwen35Config._defaults(path).moe_spec,
+        num_layers=n)
+
+    def f32(a):
+        return np.array(a.astype(mx.float32)) if isinstance(a, mx.array) \
+            else a.detach().float().cpu().numpy()
+
+    def rel(a, b):
+        a, b = f32(a), f32(b)
+        return float(np.abs(a - b).max() / (np.abs(b).max() + 1e-30))
+
+    ids = [int(i) for i in inp["ids"]]
+    steps = [ids[:7], ids[7:]] + [None] * int(inp["n_decode"])
+    m_cache, t_cache, t_free = mlm.make_cache(), tlm.make_cache(), tlm.make_cache()
+    layer_err = np.zeros((len(steps), n))
+    logit_err, m_arg, t_arg = [], [], []
+    for s, chunk in enumerate(steps):
+        chunk = chunk if chunk is not None else [m_arg[-1]]
+        h = mlm.model.embed_tokens(mx.array(chunk)[None])
+        t_ids = torch.tensor(chunk, device=DEVICE)[None]
+        m_fa = m_mask_fn(h, m_cache[mlm.model.fa_idx])
+        t_fa = tq.create_attention_mask(tlm.model.embed_tokens(t_ids),
+                                        t_cache[tlm.model.fa_idx])
+        with torch.no_grad():
+            for li in range(n):
+                ml, tl = mlm.model.layers[li], tlm.model.layers[li]
+                x_in = h
+                h = ml(x_in, mask=None if ml.is_linear else m_fa,
+                       cache=m_cache[li])
+                mx.eval(h)
+                t_out = tl(torch.from_numpy(f32(x_in)).to(DEVICE),
+                           mask=None if tl.is_linear else t_fa,
+                           cache=t_cache[li])
+                layer_err[s, li] = rel(t_out, h)
+            mo = mlm.lm_head(mlm.model.norm(h))[0, -1]
+            to = tlm.lm_head(tlm.model(t_ids, cache=t_free))[0, -1]
+        logit_err.append(rel(to, mo))
+        m_arg.append(int(mx.argmax(mo).item()))
+        t_arg.append(int(torch.argmax(to).item()))
+    for t in twins:
+        if t is not None:
+            t.close()
+    return {
+        "layer_err": layer_err, "logit_err": np.array(logit_err),
+        "m_argmax": np.array(m_arg), "t_argmax": np.array(t_arg),
+        "is_linear": np.array([bool(l.is_linear) for l in tlm.model.layers]),
+        "n_missing": np.array(len(rep["missing"])),
+        "n_unexpected": np.array(len(rep["unexpected"])),
+        "n_twins": np.array(sum(t is not None for t in twins)),
+    }
+
+
 def case_engine_guard(inp):
     """Every entry point imports without pulling MLX in, both engines
     resolve to the torch ports, and a tier still refuses a backend it has

@@ -106,6 +106,38 @@ def test_streaming_layer_real_experts(tmp_path):
                                        atol=1e-2 * np.abs(res[f"exact_t16_{tag}"]).max())
 
 
+def _model_35b():
+    path = os.environ.get("EDGE0_35B_MODEL")
+    if not path or not os.path.isfile(
+            os.path.join(path, "model.safetensors.index.json")):
+        pytest.skip("set EDGE0_35B_MODEL to an edge0-35b checkpoint directory")
+    return path
+
+
+def test_qwen35_port_matches_mlx_on_real_weights(tmp_path):
+    """The torch port of qwen3_5_moe on the real edge0-35b checkpoint: every
+    layer (GatedDeltaNet, gated full attention, routed + shared experts) and
+    the free-running logits within float32 noise of the MLX model, across a
+    chunked prefill and decode steps. Measured: <= 3.7e-6 per layer and
+    <= 2.4e-6 on the logits.
+
+    Needs both models resident (about 22 GB); skipped without the checkpoint.
+    """
+    from transformers import AutoTokenizer
+    path = _model_35b()
+    ids = AutoTokenizer.from_pretrained(path)(
+        "The capital of France is Paris. The capital of Italy is")["input_ids"]
+    res = _run("qwen35_real_parity", {
+        "model_dir": np.array(path), "ids": np.array(ids),
+        "n_decode": np.array(2)}, tmp_path, backends=("cuda",))
+    assert int(res["n_missing"]) == 0 and int(res["n_unexpected"]) == 0
+    assert int(res["n_twins"]) == len(res["is_linear"])
+    assert res["is_linear"].any() and (~res["is_linear"]).any()
+    assert res["layer_err"].max() < 1e-5, res["layer_err"].max(axis=0)
+    assert res["logit_err"].max() < 1e-5, res["logit_err"]
+    np.testing.assert_array_equal(res["t_argmax"], res["m_argmax"])
+
+
 def test_bailing_port_matches_mlx_layer_by_layer(tmp_path):
     """The torch port of bailing_hybrid on the real edge0-8b checkpoint:
     every layer (KDA, MLA, dense MLP, routed + shared experts) and the
