@@ -111,7 +111,11 @@ class QuantizedEmbedding(_tnn.Module):
 
     def forward(self, ids):
         from edge0.backends.cuda.quant import _dequantize
-        rows = _dequantize(self.weight[ids], self.scales[ids],
+        # Gather on the int32 view of the packed rows: CUDA has no index
+        # kernel for uint32 ("index_cuda not implemented for UInt32"), and
+        # _dequantize reads the words as int32 anyway.
+        rows = _dequantize(self.weight.view(torch.int32)[ids],
+                           self.scales[ids],
                            self.biases[ids], self.group_size, self.bits)
         return rows.to(self.out_dtype)
 

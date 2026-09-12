@@ -1,17 +1,12 @@
-# NVIDIA / CUDA support — investigation status (does not work yet)
+# NVIDIA / CUDA support — status
 
-This is not a how-to. `edge0` does **not** run end-to-end on NVIDIA
-hardware today, on any tested MLX version. The project's own README
-already says so plainly: *"the MLX backend runs on macOS with Apple
-Silicon (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
-platforms are supported yet."* `backends/cuda/` now holds a torch
-reference backend (`EDGE0_BACKEND=cuda`) whose ops are checked against
-real MLX in `tests/test_cuda_backend.py`, but it is not wired end-to-end
-yet — see "Bottom line".
-
-What follows is what we found trying anyway, kept here because it's
-exactly the investigation the next person attempting this would
-otherwise have to repeat from scratch.
+`edge0` does **not** run on NVIDIA through MLX, at any version tested:
+the first forward pass fails, differently at each version (the table
+below). It does run on NVIDIA through the torch backend in
+`backends/cuda/` (`EDGE0_BACKEND=cuda`): edge0-8b generates text on a
+GB10, layer for layer within 5.3e-7 of MLX. The rest of this file is
+that investigation, kept because it is what the next person attempting
+this would otherwise repeat from scratch.
 
 ## Environment
 
@@ -67,10 +62,10 @@ policy, not a broken GPU.
 
 ## Bottom line
 
-Running `edge0` today means Apple Silicon + `mlx-metal`, per the
-project's own stated support matrix. MLX's own CUDA backend does not
-close the gap at any version currently available, so the path forward is
-the torch backend in `backends/cuda/` (`EDGE0_BACKEND=cuda`).
+MLX's own CUDA backend does not close the gap at any version currently
+available. The torch backend does: `EDGE0_BACKEND=cuda` runs the
+edge0-8b engine on a GB10 and on CPUs, checked against MLX throughout
+(next section). edge0-35b runs on CPU only so far.
 
 ## Torch backend: what exists and how it is checked
 
@@ -89,6 +84,8 @@ runs each case under both backends in subprocesses).
 | the whole edge0-8b engine (`engine/ling.py` unchanged: LoRA, prerouter-staged decode, streaming, sampling) | the same engine on MLX: identical greedy tokens (`pytest -m slow`) |
 | the same engine on Linux aarch64 (DGX Spark, torch on the CPU), 32 greedy tokens of a chat prompt | MLX on Apple Silicon, same checkpoint (same file hashes): identical 32 tokens; 1.2 GB peak anonymous memory |
 | everything above with torch on an accelerator: `EDGE0_TORCH_DEVICE=mps` (Apple GPU), whole suite including the slow engine test, plus the 32-token run | the same references: all pass, identical 32 tokens. On a device a tensor left on the host fails loudly, as it would on CUDA; this is what found `load_model` leaving init-time buffers (the rotary `inv_freq`) on the host |
+| **the edge0-8b backbone on a real GPU** — a GB10 (`sm_121`, DGX Spark), torch 2.14+cu130, float32, every layer fed MLX's input for that layer | MLX on the Apple CPU device: **5.3e-7 max per layer** (median 2.6e-7), 4.3e-7 on the logits, same argmax. TF32 off, `float32_matmul_precision=highest` |
+| the whole edge0-8b engine on that GPU, 32 greedy tokens | MLX on Apple Silicon: 31 of 32 tokens identical, diverging at step 31. Not a GPU artifact: torch on the CPU differs from MLX by the same 4.5% median per-step logit distance (the staged prerouter path), and that step's top-2 margin is smaller than that noise |
 | `backends/cuda/_impl/qwen3_5_moe.py` (torch port of the edge0-35b backbone), every layer, chunked prefill + decode, on a small model MLX wrote in the published format (bf16, 4-bit, 8-bit router and shared gate) | the vendored MLX model on the MLX CPU device, float32: <= 2.6e-7 per layer, <= 4.1e-7 on the logits |
 | the whole edge0-35b engine (`engine/qwen.py` unchanged: streaming, staged decode, the class-level prerouter patch) on that small checkpoint | the same engine on MLX: identical greedy tokens, per-step logits within bf16 noise and tracking MLX *with* the prerouter (the prerouter moves them 5-11%) |
 
@@ -109,12 +106,11 @@ stored as `w + 1`), which it undoes.
   port and the engine are checked on a small model MLX wrote in the
   published format, not on the real weights; the LoRA path is covered for
   edge0-8b only (there is no small edge0-35b adapter to compare against).
-* **A CUDA device.** Torch ran on CPUs (Apple Silicon, the DGX Spark's
-  Grace) and on the Apple GPU through MPS, never yet on a CUDA device.
-  `DEVICE` is `cuda` whenever torch sees one; `EDGE0_TORCH_DEVICE`
+* **edge0-35b on the GPU.** Only edge0-8b has run on a CUDA device so
+  far. `DEVICE` is `cuda` whenever torch sees one; `EDGE0_TORCH_DEVICE`
   overrides it (`cpu`, `mps`, `cuda`). PyTorch's cu130 aarch64 wheels
-  carry kernels up to `sm_120`; the GB10 is `sm_121`, which those run on
-  by CUDA's same-major binary compatibility, still to be seen in practice.
+  carry kernels up to `sm_120` and they do run on the GB10's `sm_121`,
+  as CUDA's same-major binary compatibility promises.
 * **Performance.** `gather_qmm` and the quantized linears dequantize on
   every call and `core.compile` is eager: this is a correctness reference,
   not a fast path.
