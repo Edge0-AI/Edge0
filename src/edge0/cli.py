@@ -66,6 +66,10 @@ def _engine_kwargs(args) -> dict:
         kw["prerouter"] = None
     if getattr(args, "no_lora", False):
         kw["lora"] = ""
+    if getattr(args, 'cache_dir', None):
+        from edge0.conversation import CacheConfig
+        kw['conversation_cache'] = CacheConfig(args.cache_dir,
+            int(args.cache_budget_gib * 1024**3), args.cache_interval)
     return kw
 
 
@@ -211,6 +215,16 @@ def cmd_convert(args) -> int:
     return 0
 
 
+def cmd_cache(args):
+    import json
+    from edge0.conversation import CacheConfig, CheckpointStore
+    store = CheckpointStore(CacheConfig(args.cache_dir), '', maintenance=False)
+    if args.action == 'clear':
+        store.clear()
+    print(json.dumps(store.inspect(), indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="edge0", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -269,6 +283,15 @@ def main(argv: list[str] | None = None) -> int:
                        help="one-shot legacy npz -> safetensors migration")
     p.set_defaults(fn=cmd_convert)
 
+    for command in ('demo', 'chat', 'serve'):
+        parser = sub.choices[command]
+        parser.add_argument('--cache-dir', default=None, help='enable persistent conversation caching')
+        parser.add_argument('--cache-budget-gib', type=float, default=20)
+        parser.add_argument('--cache-interval', type=int, default=2048)
+    parser = sub.add_parser('cache', help='inspect or clear a conversation cache')
+    parser.add_argument('action', choices=('inspect', 'clear'))
+    parser.add_argument('--cache-dir', required=True)
+    parser.set_defaults(fn=cmd_cache)
     args = ap.parse_args(argv)
     return args.fn(args)
 

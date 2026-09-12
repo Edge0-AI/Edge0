@@ -233,6 +233,19 @@ class Ling8BEngine(Edge0Engine):
         if self._pg_stager is not None:
             self._pg_stager.reset()
             self._pg_state.reset()
+            for owner in self._pg_state.owners:
+                block = self.cfg.moe_spec.block_of(self.model, owner)
+                block.prev_topk_oh = None
+                block.last_topk = None
+                self.cfg.moe_spec.layer_of(self.model, owner).m_in_cache = None
+
+    def _checkpoint_family_state(self):
+        from edge0.engine.checkpoint import capture
+        return capture(self, 'ling')
+
+    def _restore_checkpoint_family(self, state):
+        from edge0.engine.checkpoint import restore
+        restore(self, state, 'ling')
 
     def _lm_logits(self, h: core.array) -> core.array:
         return self.model.lm_head(h[0, -1])
