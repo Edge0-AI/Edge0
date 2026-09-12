@@ -144,14 +144,19 @@ class ChatSession:
                 kw[k] = v
         return GenerationConfig(**{**base.__dict__, **kw})
 
-    def run(self, on_token=None) -> tuple[list[int], dict]:
+    def run(self, on_token=None, on_prompt=None) -> tuple[list[int], dict]:
         t0 = time.perf_counter()
         # Per-request clean
         # per-request state.  A previous degenerate/truncated turn leaves
         # bad pre-routing cross-token state and KV behind, which makes every
         # later request collapse from its first token.
         self.engine.reset()
+        tokenize_started = time.perf_counter()
         ids = self.prompt_ids()
+        self.engine.last_tokenization_s = time.perf_counter() - tokenize_started
+        if on_prompt is not None:
+            on_prompt(ids)
+
         gen = self.gen_config()
         tokens = self.engine.generate(
             ids, gen_config=gen, on_token=on_token)

@@ -66,8 +66,10 @@ class SafetensorsMmap:
         )
 
     def close(self):
-        self._mm.close()
-        self._file.close()
+        if not self._mm.closed:
+            self._mm.close()
+        if not self._file.closed:
+            self._file.close()
 
 
 def bf16_bits_to_f32(data: np.ndarray) -> np.ndarray:

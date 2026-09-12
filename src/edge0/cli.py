@@ -62,6 +62,18 @@ def _engine_kwargs(args) -> dict:
     """Map CLI flags to from_pretrained overrides (absent key = keep the
     tier default; explicit None/' ' disables)."""
     kw: dict = {}
+    cache_mib = getattr(args, "cache_mib", None)
+    if cache_mib is not None:
+        from pathlib import Path
+        path = getattr(args, "model_path", None)
+        if not path or not Path(path).expanduser().is_file():
+            raise ValueError("--cache-mib requires --model-path pointing to a GGUF checkpoint file")
+        if cache_mib < 8:
+            raise ValueError("--cache-mib must be at least 8 MiB (one packed chunk)")
+        kw["weight_cache_bytes"] = cache_mib * 1024**2
+    if getattr(args, "model_path", None):
+        kw["model_path"] = args.model_path
+        kw["tokenizer_path"] = args.tokenizer_path
     if getattr(args, "no_prerouter", False):
         kw["prerouter"] = None
     if getattr(args, "no_lora", False):
@@ -81,6 +93,14 @@ def _resolve_model(args) -> tuple[str | None, str | None]:
     ``--model-dir`` / ``--name`` behaviour.
     """
     model = getattr(args, "model", None)
+    if getattr(args, "model_path", None):
+        if model or args.model_dir or args.name:
+            raise ValueError("--model-path cannot be combined with a positional model, --model-dir, or --name")
+        return None, None
+    if getattr(args, "tokenizer_path", None):
+        raise ValueError("--tokenizer-path requires --model-path")
+    if model and (args.model_dir or args.name):
+        raise ValueError("positional model cannot be combined with --model-dir or --name")
     if not model:
         return args.model_dir, args.name
     if model in MODEL_REGISTRY:
@@ -125,59 +145,75 @@ def cmd_demo(args) -> int:
     from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
 
     model_dir, name = _resolve_model(args)
-    if not model_dir or not os.path.isdir(model_dir):
+    if not getattr(args, "model_path", None) and (not model_dir or not os.path.isdir(model_dir)):
         print(_missing_model_help(name), file=sys.stderr)
         return 2
     engine = AutoEngine.from_pretrained(model_dir, name=name,
                                         **_engine_kwargs(args))
-    tok = engine._tok
-    if tok is None:
+    try:
+        tok = engine._tok
+        if tok is None:
+            raise SystemExit("model has no tokenizer; cannot demo")
+        prompt = args.prompt or DEMO_PROMPTS.get(engine.name, "Hello!")
+        req = ChatRequest(model=engine.name, messages=[
+            ChatMessage(role="user", content=prompt)],
+            max_tokens=args.max_new)
+        sess = ChatSession(engine, req)
+        tokens, meta = sess.run()
+        print(f"user : {prompt}")
+        print(f"edge0: {_display_text(tok.decode(tokens), args.show_thinking)}")
+        print(f"# {len(tokens)} tokens in {meta['wall_s']}s",
+              file=sys.stderr)
+        return 0
+    finally:
         engine.close()
-        raise SystemExit("model has no tokenizer; cannot demo")
-    prompt = args.prompt or DEMO_PROMPTS.get(engine.name, "Hello!")
-    req = ChatRequest(model=engine.name, messages=[
-        ChatMessage(role="user", content=prompt)],
-        max_tokens=args.max_new)
-    sess = ChatSession(engine, req)
-    tokens, meta = sess.run()
-    print(f"user : {prompt}")
-    print(f"edge0: {_display_text(tok.decode(tokens), args.show_thinking)}")
-    print(f"# {len(tokens)} tokens in {meta['wall_s']}s",
-          file=sys.stderr)
-    engine.close()
-    return 0
 
 
 def cmd_chat(args) -> int:
     from edge0 import AutoEngine
 
     model_dir, name = _resolve_model(args)
-    if not model_dir or not os.path.isdir(model_dir):
+    if not getattr(args, "model_path", None) and (not model_dir or not os.path.isdir(model_dir)):
         raise SystemExit(
             "chat requires a checkpoint; pass it as the model argument "
             "(edge0 chat /path/to/model) or --model-dir")
     engine = AutoEngine.from_pretrained(model_dir, name=name,
                                         **_engine_kwargs(args))
-    tok = engine._tok
-    if tok is None:
-        raise SystemExit("model has no tokenizer; cannot chat")
-    if args.prompt:
-        prompts = [args.prompt]
-    elif not sys.stdin.isatty():
-        prompts = [line.rstrip("\n") for line in sys.stdin if line.strip()]
-    else:
-        raise SystemExit("pass --prompt or pipe input on stdin")
-    for p in prompts:
-        from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
-        req = ChatRequest(model=name, messages=[
-            ChatMessage(role="user", content=p)],
-            max_tokens=args.max_new)
-        sess = ChatSession(engine, req)
-        tokens, meta = sess.run()
-        print(_display_text(tok.decode(tokens), args.show_thinking))
-        print(f"# {len(tokens)} tokens in {meta['wall_s']}s", file=sys.stderr)
-    engine.close()
-    return 0
+    try:
+        tok = engine._tok
+        if tok is None:
+            raise SystemExit("model has no tokenizer; cannot chat")
+        if args.prompt:
+            prompts = [args.prompt]
+        elif not sys.stdin.isatty():
+            prompts = [line.rstrip("\n") for line in sys.stdin if line.strip()]
+        else:
+            raise SystemExit("pass --prompt or pipe input on stdin")
+        for p in prompts:
+            from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
+            req = ChatRequest(model=name, messages=[
+                ChatMessage(role="user", content=p)],
+                max_tokens=args.max_new)
+            sess = ChatSession(engine, req)
+            diagnostics = None
+            if getattr(args, "stats", False) or getattr(args, "verbose_tokens", False):
+                from edge0.chat_stats import ChatStats
+                diagnostics = ChatStats(engine, verbose_tokens=getattr(args, "verbose_tokens", False))
+                diagnostics.emit("start")
+            try:
+                tokens, meta = sess.run(on_token=diagnostics.on_token if diagnostics else None,
+                                        on_prompt=diagnostics.on_prompt if diagnostics else None)
+            except BaseException:
+                if diagnostics:
+                    diagnostics.emit("interrupted")
+                raise
+            if diagnostics:
+                diagnostics.emit("complete", meta)
+            print(_display_text(tok.decode(tokens), args.show_thinking))
+            print(f"# {len(tokens)} tokens in {meta['wall_s']}s", file=sys.stderr)
+        return 0
+    finally:
+        engine.close()
 
 
 def cmd_serve(args) -> int:
@@ -185,18 +221,21 @@ def cmd_serve(args) -> int:
     from edge0.server import QueueServer, run_server
 
     model_dir, name = _resolve_model(args)
-    if not model_dir or not os.path.isdir(model_dir):
+    if not getattr(args, "model_path", None) and (not model_dir or not os.path.isdir(model_dir)):
         raise SystemExit(
             "serve requires a checkpoint; pass it as the model argument "
             "(edge0 serve /path/to/model) or --model-dir")
     engine = AutoEngine.from_pretrained(model_dir, name=name,
                                         **_engine_kwargs(args))
-    server = QueueServer(engine, model_name=name or engine.name)
-    print(f"[edge0] serving {server.model_name} on http://{args.host}:{args.port} "
-          f"(stream={'flask' if args.flask else 'stdlib'})",
-          file=sys.stderr)
-    run_server(server, host=args.host, port=args.port, use_flask=args.flask)
-    return 0
+    try:
+        server = QueueServer(engine, model_name=name or engine.name)
+        print(f"[edge0] serving {server.model_name} on http://{args.host}:{args.port} "
+              f"(stream={'flask' if args.flask else 'stdlib'})",
+              file=sys.stderr)
+        run_server(server, host=args.host, port=args.port, use_flask=args.flask)
+        return 0
+    finally:
+        engine.close()
 
 
 def cmd_convert(args) -> int:
@@ -249,6 +288,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-prerouter", action="store_true")
     p.add_argument("--no-lora", action="store_true")
     p.set_defaults(fn=cmd_chat)
+    p.add_argument("--cache-mib", type=int, default=None,
+                   help="GGUF packed-weight cache budget in MiB (minimum 8; default: model configuration)")
+    p.add_argument("--stats", action="store_true",
+                   help="log timing, cache, checkpoint reads and memory statistics to stderr")
+    p.add_argument("--verbose-tokens", action="store_true",
+                   help="log each prompt/generated token ID, piece and timing; includes --stats")
 
     p = sub.add_parser(
         "serve",
@@ -269,8 +314,16 @@ def main(argv: list[str] | None = None) -> int:
                        help="one-shot legacy npz -> safetensors migration")
     p.set_defaults(fn=cmd_convert)
 
+    for command in ('demo', 'chat', 'serve'):
+        parser = sub.choices[command]
+        parser.add_argument('--model-path', help='local GGUF shard or custom safetensors directory')
+        parser.add_argument('--tokenizer-path', help='local tokenizer directory for --model-path')
+
     args = ap.parse_args(argv)
-    return args.fn(args)
+    try:
+        return args.fn(args)
+    except (ValueError, FileNotFoundError) as exc:
+        ap.error(str(exc))
 
 
 if __name__ == "__main__":

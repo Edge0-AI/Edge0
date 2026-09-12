@@ -94,7 +94,7 @@ class Qwen35Engine(Edge0Engine):
         # One fp16 overflow inside a layer otherwise poisons the whole net
         # into all-NaN logits -> argmax fallback token 0 ('!') collapse,
         # which does not recover until the process restarts.
-        if "QWEN_HIDDEN_CLIP" not in os.environ:
+        if "QWEN_HIDDEN_CLIP" not in os.environ and not getattr(cfg, "architecture", None):
             os.environ["QWEN_HIDDEN_CLIP"] = "1000"
         super().__init__(model_dir, cfg, tokenizer=tokenizer)
 
@@ -145,6 +145,7 @@ class Qwen35Engine(Edge0Engine):
         h = self._lm.model(
             inputs, cache=self.cache, before_layer_cb=before_cb,
             after_layer_cb=after_cb,
+            hidden_clip=0 if getattr(self.cfg, "architecture", None) else None,
             async_eval_per_layer=bool(prefill_multi and full_layer))
         logits = self._lm.lm_head(h[0, -1])
         core.eval(logits)

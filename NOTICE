@@ -17,5 +17,16 @@ bailing_hybrid (Apache License 2.0)
     prerouter hook identifiers renamed for consistency with the framework.
   Copyright (c) the bailing / Ling MLX contributors.
 
+llama.cpp / ggml (MIT License)
+  - GGUF quantization decoders and lookup tables in
+    src/edge0/checkpoints/quant.py are adapted from gguf-py/gguf/quants.py
+    at commit 6c84c7d5d8833c6e0df69628f75a0f599797934e.
+  - The qwen4exp implementation uses that revision's model graph as its
+    mathematical reference. Quantization and tiny-model fixtures were
+    generated using its C reference implementation.
+  - https://github.com/ggml-org/llama.cpp
+  - The upstream MIT notice is included in
+    src/edge0/checkpoints/LICENSE.ggml.
+
 All other files are Copyright (c) 2025 edge0 contributors, licensed under
 the Apache License, Version 2.0 (see LICENSE).
