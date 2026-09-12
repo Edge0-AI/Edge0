@@ -93,6 +93,7 @@ runs each case under both backends in subprocesses).
 | **the edge0-35b backbone on the real 23 GB checkpoint**, every layer, chunked prefill + decode (`test_qwen35_port_matches_mlx_on_real_weights`, needs `EDGE0_35B_MODEL`) | the vendored MLX model on the MLX CPU device, float32: <= 2.4e-6 per GatedDeltaNet layer, <= 3.7e-6 per gated full-attention layer, <= 2.4e-6 on the logits, same argmax; 40 layers, no missing or unexpected tensor |
 | the whole edge0-35b engine on the real weights (LoRA 310 targets, prerouter 33 heads, streamed experts), 32 greedy tokens | MLX on the MLX CPU device: **identical 32 tokens**. Against MLX on Metal, 29 of 32 -- and MLX-Metal disagrees with MLX-CPU at exactly those three positions, so the flip is its GPU precision |
 | **the edge0-35b engine on a real GPU** — the same GB10, torch 2.14+cu130, as a Slurm job | **identical 32 tokens** to both MLX-CPU and torch on the Mac's CPU (18.4 s) |
+| **the edge0-35b backbone on that GPU**, real weights, float32, every layer fed MLX's own input for that layer | MLX on the Apple CPU device: **1.6e-6 max per layer** (median 2.7e-8) — 5.4e-7 across the 30 GatedDeltaNet layers, 1.6e-6 across the 10 gated full-attention ones — 5.1e-7 on the logits, same argmax; 0 missing / 0 unexpected tensors, 40 streamed expert layers |
 
 Why the MLX *CPU* device: on some Apple GPUs MLX runs float32 matmul and
 SDPA at reduced precision (an M5 Max measured 7.5e-4 from float64; MLX on
