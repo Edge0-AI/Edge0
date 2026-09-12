@@ -1,0 +1,139 @@
+{
+  "hardware": {
+    "resource_limit": 499000,
+    "max_buffer_length": 14302248960,
+    "architecture": "applegpu_g17g",
+    "memory_size": 25769803776,
+    "max_recommended_working_set_size": 19069665280,
+    "device_name": "Apple M5"
+  },
+  "checkpoint": "Qwen3.8-Flash-Next-UD-IQ1_S-00001-of-00003.gguf",
+  "note": "Local observations, not a controlled speedup comparison. Checkpoint bytes are requested mapped bytes, not physical SSD traffic. Long acceptance and user CLI measurements predate the standalone branch separation; packed kernels are unchanged.",
+  "acceptance": {
+    "prompt_tokens": 512,
+    "peak_physical_footprint_bytes": 4991330832,
+    "runs": [
+      {
+        "prefill_s": 215.41656804200102,
+        "decode_s": 147.42063079199943,
+        "decode_tokens_per_s": 0.8682638197403956,
+        "stats": {
+          "packed_cache_bytes": 3214679296,
+          "pending_packed_bytes": 640000,
+          "inflight_packed_bytes": 0,
+          "staging_bytes": 0,
+          "peak_cached_pending_staging_bytes": 3221225344,
+          "staging_peak_bytes": 14745600,
+          "inflight_peak_bytes": 14745600,
+          "cache_hits": 8003,
+          "cache_misses": 550242,
+          "prefetch_hits": 4491,
+          "cache_evictions": 548242,
+          "weight_cache_budget_bytes": 3221225472,
+          "weight_chunk_bytes": 8388608,
+          "effective_weight_chunk_bytes": 8388608,
+          "kernel_dispatches": 227369,
+          "batch_retirements": 227369,
+          "checkpoint_bytes_read": 703912618384,
+          "largest_checkpoint_read_bytes": 8388480,
+          "ngram_embedding_rows_read": 10240
+        },
+        "physical_footprint_bytes": 4229551456,
+        "mlx_peak_bytes": 4745057548,
+        "generated_tokens": 128
+      },
+      {
+        "prefill_s": 270.4363051670007,
+        "decode_s": 121.37341200000083,
+        "decode_tokens_per_s": 1.0545967019531355,
+        "stats": {
+          "packed_cache_bytes": 3214679296,
+          "pending_packed_bytes": 640000,
+          "inflight_packed_bytes": 0,
+          "staging_bytes": 0,
+          "peak_cached_pending_staging_bytes": 3221225344,
+          "staging_peak_bytes": 14745600,
+          "inflight_peak_bytes": 14745600,
+          "cache_hits": 16006,
+          "cache_misses": 1100484,
+          "prefetch_hits": 8976,
+          "cache_evictions": 1098484,
+          "weight_cache_budget_bytes": 3221225472,
+          "weight_chunk_bytes": 8388608,
+          "effective_weight_chunk_bytes": 8388608,
+          "kernel_dispatches": 454738,
+          "batch_retirements": 454738,
+          "checkpoint_bytes_read": 1407824596768,
+          "largest_checkpoint_read_bytes": 8388480,
+          "ngram_embedding_rows_read": 20480
+        },
+        "physical_footprint_bytes": 4233762168,
+        "mlx_peak_bytes": 4745057548,
+        "generated_tokens": 128
+      }
+    ]
+  },
+  "user_cli_run": {
+    "prompt_tokens": 21,
+    "generated_tokens": 32,
+    "model_build_s": 1.3,
+    "time_to_first_token_s": 36.86986341700322,
+    "total_request_s": 136.42182954200325,
+    "decode_tokens_per_s_after_first": 0.31139783464924503,
+    "weight_cache_budget_bytes": 3221225472,
+    "weight_chunk_bytes": 8388608,
+    "physical_footprint_bytes": 4099144912,
+    "lifetime_peak_physical_footprint_bytes": 4140835088,
+    "rss_bytes": 7854440448,
+    "kernel_dispatches": 48859,
+    "batch_retirements": 48859,
+    "cache_hits": 4,
+    "cache_misses": 100455,
+    "cache_evictions": 98455,
+    "prefetch_hits": 672,
+    "checkpoint_bytes_read": 147332739008,
+    "diagnostic_logging_enabled": true
+  },
+  "historical_combined_branch_tests": {
+    "passed": 162,
+    "skipped": 1,
+    "slow_deselected": 4
+  },
+  "tests": {
+    "passed": 138,
+    "skipped": 1,
+    "slow_deselected": 2
+  },
+  "tests_branch": "feature/gguf-native-standalone",
+  "benchmark_branch": "feature/gguf-support",
+  "standalone_smoke": {
+    "prompt_tokens": 13,
+    "generated_tokens": 2,
+    "generated_text": "Hello!",
+    "prefill_s": 15.182834874998662,
+    "decode_s": 2.54762141700121,
+    "peak_physical_footprint_bytes": 1392889760,
+    "maximum_prefill_logit_difference_vs_combined_smoke": 0.0,
+    "stats": {
+      "packed_cache_bytes": 503542016,
+      "pending_packed_bytes": 320000,
+      "inflight_packed_bytes": 0,
+      "staging_bytes": 0,
+      "peak_cached_pending_staging_bytes": 536862848,
+      "staging_peak_bytes": 14745600,
+      "inflight_peak_bytes": 14745600,
+      "cache_hits": 4,
+      "cache_misses": 13667,
+      "prefetch_hits": 676,
+      "cache_evictions": 13516,
+      "weight_cache_budget_bytes": 536870912,
+      "weight_chunk_bytes": 8388608,
+      "effective_weight_chunk_bytes": 8388608,
+      "kernel_dispatches": 4884,
+      "batch_retirements": 4884,
+      "checkpoint_bytes_read": 15750874688,
+      "largest_checkpoint_read_bytes": 8388480,
+      "ngram_embedding_rows_read": 240
+    }
+  }
+}

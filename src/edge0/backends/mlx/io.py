@@ -51,17 +51,19 @@ def open_shards(model_dir: str) -> list:
     """Open every ``model*.safetensors`` shard as a byte-range mmap
     (qwen-style multi-shard checkpoints; a single-file checkpoint yields
     a one-element list)."""
-    import glob
-    import os
-    from edge0.streaming.mmap import SafetensorsMmap
-    shards = []
-    for path in sorted(glob.glob(os.path.join(
-            os.fspath(model_dir), "model*.safetensors"))):
-        shards.append(SafetensorsMmap(path))
-    if not shards:
-        raise FileNotFoundError(
-            f"no model*.safetensors shards under {model_dir}")
-    return shards
+    from edge0.checkpoints.source import SafetensorsSource
+    return _SourceShards(SafetensorsSource(model_dir))
+
+
+class _SourceShards(list):
+    """Legacy streaming view over a checkpoint source, with explicit ownership."""
+    def __init__(self, source):
+        super().__init__(source.shards)
+        self.source = source
+
+    def close(self):
+        self.source.close()
+        self.clear()
 
 
 def load_safetensors(path: str, dtype=None) -> dict[str, "mx.array"]:
