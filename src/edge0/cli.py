@@ -66,6 +66,8 @@ def _engine_kwargs(args) -> dict:
         kw["prerouter"] = None
     if getattr(args, "no_lora", False):
         kw["lora"] = ""
+    if getattr(args, "history_slots", False):
+        kw["history_slots"] = True
     return kw
 
 
@@ -122,14 +124,19 @@ def _display_text(text: str, show_thinking: bool) -> str:
 
 def cmd_demo(args) -> int:
     from edge0 import AutoEngine
+    from edge0.registry import demo_kwargs
     from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
 
     model_dir, name = _resolve_model(args)
     if not model_dir or not os.path.isdir(model_dir):
         print(_missing_model_help(name), file=sys.stderr)
         return 2
-    engine = AutoEngine.from_pretrained(model_dir, name=name,
-                                        **_engine_kwargs(args))
+    kw = _engine_kwargs(args)
+    if "prerouter" not in kw:
+        # No explicit --no-prerouter: the tier's demo default applies
+        # (edge0-8b demos run the gate-routed exact path).
+        kw = demo_kwargs(model_dir, name, **kw)
+    engine = AutoEngine.from_pretrained(model_dir, name=name, **kw)
     tok = engine._tok
     if tok is None:
         engine.close()
@@ -232,6 +239,10 @@ def main(argv: list[str] | None = None) -> int:
                    help="print the model's reasoning block too")
     p.add_argument("--no-prerouter", action="store_true")
     p.add_argument("--no-lora", action="store_true")
+    p.add_argument("--history-slots", action="store_true",
+                   help="legacy staging: also fill staged slots from history "
+                        "for layers whose route is not a prerouter prediction "
+                        "(zeroes routed experts outside the slot set)")
     p.set_defaults(fn=cmd_demo)
 
     p = sub.add_parser(
@@ -248,6 +259,10 @@ def main(argv: list[str] | None = None) -> int:
                    help="print the model's reasoning block too")
     p.add_argument("--no-prerouter", action="store_true")
     p.add_argument("--no-lora", action="store_true")
+    p.add_argument("--history-slots", action="store_true",
+                   help="legacy staging: also fill staged slots from history "
+                        "for layers whose route is not a prerouter prediction "
+                        "(zeroes routed experts outside the slot set)")
     p.set_defaults(fn=cmd_chat)
 
     p = sub.add_parser(
@@ -263,6 +278,10 @@ def main(argv: list[str] | None = None) -> int:
                    help="use the Flask transport (needs flask installed)")
     p.add_argument("--no-prerouter", action="store_true")
     p.add_argument("--no-lora", action="store_true")
+    p.add_argument("--history-slots", action="store_true",
+                   help="legacy staging: also fill staged slots from history "
+                        "for layers whose route is not a prerouter prediction "
+                        "(zeroes routed experts outside the slot set)")
     p.set_defaults(fn=cmd_serve)
 
     p = sub.add_parser("convert-adapters",

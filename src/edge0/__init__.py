@@ -23,13 +23,14 @@ __all__ = [
     "AutoConfig",
     "AutoModel",
     "AutoEngine",
+    "demo_kwargs",
 ]
 
 
 def __getattr__(name: str):
     # Deferred imports so `import edge0` stays light and backend selection
     # (EDGE0_BACKEND) happens on first use.
-    if name in ("AutoConfig", "AutoModel", "AutoEngine"):
+    if name in ("AutoConfig", "AutoModel", "AutoEngine", "demo_kwargs"):
         from edge0 import registry as _reg
         return getattr(_reg, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

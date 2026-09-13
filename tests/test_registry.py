@@ -26,11 +26,13 @@ def test_auto_config_defaults(name):
     assert cfg.name == name
     assert cfg.moe_spec.num_experts > 0
     assert cfg.moe_spec.top_k in (4, 8)
-    # qwen tier defaults to staged decode; the ling tier mirrors the
-    # deployment production profile (STAGED_DECODE=0 — staged decode on
-    # ling degrades output, see start_server.sh) with the prerouter
-    # still staging each next token's expert set.
-    assert cfg.options.staged is (name == "edge0-35b")
+    # Both tiers default to staged decode.  Staging is zero-drop only for
+    # the layers whose ROUTE is a prerouter prediction (the scoped
+    # consumers, li >= start_layer + 1); every layer below start_layer
+    # runs the exact path, and the legacy history-filled staging for them
+    # is opt-in via history_slots / --history-slots (see docs/prerouter.md).
+    assert cfg.options.staged is True
+    assert cfg.history_slots is False
     assert cfg.prerouter is not None
     assert cfg.prerouter.weights_file.endswith(".safetensors")
     assert cfg.prerouter_top_k == cfg.moe_spec.top_k
@@ -57,6 +59,10 @@ def test_qwen35_profile():
     assert cfg.prerouter.hidden == 512
     assert cfg.prerouter.dtype == "fp16"
     assert cfg.prerouter.feature_topk == "executed"
+    # only layers whose route is a prerouter prediction keep staged slots
+    assert cfg.history_slots is False
+    assert AutoConfig.from_pretrained(
+        name="edge0-35b", history_slots=True).history_slots is True
     assert cfg.gen.temperature == 0.7
     assert 248046 in cfg.gen.eos_ids
     assert cfg.port == 8085
@@ -87,6 +93,21 @@ def test_override_and_reject():
     assert cfg.prerouter_top_k == 0
     with pytest.raises(TypeError, match="unknown"):
         AutoConfig.from_pretrained(name="edge0-8b", bogus_field=1)
+
+
+def test_demo_defaults():
+    """The demo entry points run each tier's showcase configuration."""
+    from edge0.registry import demo_kwargs
+
+    # edge0-8b demos default to the gate-routed exact path (prerouter off).
+    assert demo_kwargs(name="edge0-8b")["prerouter"] is None
+    assert demo_kwargs("edge0-8b")["prerouter"] is None  # model_dir form
+    # edge0-35b demos keep the tier config untouched.
+    assert "prerouter" not in demo_kwargs(name="edge0-35b")
+    # an explicit decision always wins.
+    sentinel = object()
+    assert demo_kwargs(name="edge0-8b",
+                       prerouter=sentinel)["prerouter"] is sentinel
 
 
 def test_unknown_name_lists_registry():

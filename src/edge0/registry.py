@@ -109,3 +109,20 @@ class AutoEngine:
         from edge0 import models  # noqa: F401
         key = _resolve_name(model_dir, name)
         return MODEL_REGISTRY[key].build_engine(model_dir, **kwargs)
+
+
+def demo_kwargs(model_dir=None, name=None, **kwargs) -> dict:
+    """``from_pretrained`` overrides for the demo entry points.
+
+    A tier pins its showcase configuration with the class attribute
+    ``demo_no_prerouter``: ``edge0-8b`` runs the gate-routed exact path in
+    ``edge0 demo`` / ``examples/demo.py``, because its prerouter is opt-in
+    there.  Explicit keyword arguments (e.g. ``--no-prerouter``) always win.
+    """
+    from edge0 import models  # noqa: F401
+    out = dict(kwargs)
+    if "prerouter" not in out:
+        adapter = MODEL_REGISTRY[_resolve_name(model_dir, name)]
+        if getattr(adapter.Config, "demo_no_prerouter", False):
+            out["prerouter"] = None
+    return out

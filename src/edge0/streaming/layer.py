@@ -841,6 +841,24 @@ class StreamingSwitchGLU:
             self.last_used = unique
             self.stage_experts(unique)
 
+    def prefetch_from_prefill(self):
+        """After prefill: prefetch (do NOT stage) the last prefill token's
+        actual top-k.
+
+        Counterpart of ``stage_from_prefill`` for the case where the first
+        decode step does not consume a prerouter prediction: that step routes
+        with the router (pos-0 fallback, as in training), so filling the slots
+        from the prefill token's top-k silently zeroes every routed expert
+        outside that set.  Warm the cache instead and let the step run the
+        exact path with the bundles already resident."""
+        topk = getattr(self, "_last_prefill_topk", None)
+        if not topk:
+            return
+        unique = sorted(set(int(v) for v in topk))
+        if unique:
+            self.last_used = unique
+            self.prefetch(unique)
+
     def _refresh_hot_pins(self):
         if self.hot_per_layer <= 0:
             return
