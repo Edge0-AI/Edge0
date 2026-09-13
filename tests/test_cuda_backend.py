@@ -331,3 +331,38 @@ def test_swiglu_matches_mlx():
     ref = np.array(mnn.silu(gate) * up)
     got = cq.swiglu(_t(up), _t(gate)).numpy()
     np.testing.assert_allclose(got, ref, rtol=1e-5, atol=1e-5)
+
+
+def test_quantized_linear_weight_cache_is_exact():
+    """EDGE0_TORCH_WEIGHT_CACHE keeps the dequantized weight instead of
+    redoing it per call (2.5x on a GB10 decode step, with the expert cache).
+    It must be bit-for-bit the on-the-fly path, chunking included, so force
+    a projection wider than one chunk."""
+    import mlx.nn as mnn
+
+    from edge0.backends.cuda import nn as cnn
+    rows, cols = 5000, 256                      # > ROWS_PER_CHUNK (4096)
+    w = mx.random.normal((rows, cols))
+    ql = mnn.QuantizedLinear(cols, rows, bias=False, group_size=64, bits=4)
+    ql.weight, ql.scales, ql.biases = mx.quantize(w, group_size=64, bits=4)
+    x = mx.random.normal((3, cols))
+    with mx.stream(mx.cpu):          # MLX on this GPU runs f32 matmul low
+        ref = np.array(ql(x).astype(mx.float32))
+        mx.eval(ref)
+
+    def torch_out(cached):
+        layer = cnn.QuantizedLinear(_t(ql.weight), _t(ql.scales),
+                                    _t(ql.biases), cols)
+        old, cnn.CACHE_DEQUANTIZED = cnn.CACHE_DEQUANTIZED, cached
+        try:
+            with torch.no_grad():
+                first = layer(_t(x)).float().numpy()
+                second = layer(_t(x)).float().numpy()   # the cached call
+        finally:
+            cnn.CACHE_DEQUANTIZED = old
+        np.testing.assert_array_equal(first, second)
+        return first
+
+    plain, cached = torch_out(False), torch_out(True)
+    np.testing.assert_array_equal(cached, plain)        # exactness, not noise
+    np.testing.assert_allclose(plain, ref, rtol=1e-5, atol=1e-5)

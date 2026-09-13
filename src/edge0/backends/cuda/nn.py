@@ -11,6 +11,8 @@ framework code only ever imports ``edge0.backends.{core,nn,io,quant}``).
 
 from __future__ import annotations
 
+import os
+
 import torch
 import torch.nn as _tnn
 import torch.nn.functional as F
@@ -60,10 +62,18 @@ def _quant_params(weight, scales, in_features):
             in_features // scales.shape[-1])
 
 
+#: Dequantized weights kept per module instead of redone every call.
+#: Off by default: the whole point of the quantized layers is that the
+#: 4-bit payload is what stays resident. Worth turning on where memory is
+#: plentiful: on a GB10 it takes the edge0-8b decode step from 206 ms to
+#: 124 ms a token, for 4.1 GB more resident (EDGE0_TORCH_WEIGHT_CACHE=1).
+CACHE_DEQUANTIZED = os.environ.get("EDGE0_TORCH_WEIGHT_CACHE", "") == "1"
+
+
 class QuantizedLinear(_tnn.Module):
     """``mlx.nn.QuantizedLinear`` layout (``weight`` packed uint32,
     ``scales``, ``biases``) dequantized on the fly -- the 4-bit payload
-    stays resident, not a bf16 copy."""
+    stays resident, not a bf16 copy (unless ``CACHE_DEQUANTIZED``)."""
 
     def __init__(self, weight, scales, biases, in_features, bias=None):
         super().__init__()
@@ -74,6 +84,7 @@ class QuantizedLinear(_tnn.Module):
         self.register_buffer("scales", scales)
         self.register_buffer("biases", biases)
         self.bias = None if bias is None else _tnn.Parameter(bias, False)
+        self._dequantized = None          # (dtype, weight), see forward
 
     ROWS_PER_CHUNK = 4096
 
@@ -83,6 +94,15 @@ class QuantizedLinear(_tnn.Module):
         lm_head alone would be ~1 GB per call). Same arithmetic per
         element as dequantizing everything first."""
         from edge0.backends.cuda.quant import _dequantize
+        if CACHE_DEQUANTIZED:
+            # Same weight every call: dequantize once. The chunking below
+            # exists to bound the transient, which a kept weight makes moot.
+            if self._dequantized is None or self._dequantized[0] != x.dtype:
+                w = _dequantize(self.weight, self.scales, self.biases,
+                                self.group_size, self.bits).to(x.dtype)
+                self._dequantized = (x.dtype, w)
+            b = None if self.bias is None else self.bias.to(x.dtype)
+            return F.linear(x, self._dequantized[1], b)
         outs = []
         for r in range(0, self.out_features, self.ROWS_PER_CHUNK):
             sl = slice(r, r + self.ROWS_PER_CHUNK)

@@ -106,6 +106,38 @@ quantization of nearly every linear and embedding (kept 4-bit resident via
 edge0-35b, MLX's sanitize (conv1d stored `[C, k, 1]`, five RMSNorm kinds
 stored as `w + 1`), which it undoes.
 
+## Speed, and where it goes (GB10, edge0-8b decode)
+
+The backend was written as a correctness reference, and it shows: the
+default profile decodes at **316 ms a token (3.2 tok/s)** on a GB10. A
+profile of three decode steps says the GPU is barely working -- 63 ms of
+CUDA against 643 ms of CPU -- so this is launch and copy overhead, not
+arithmetic:
+
+* **1681 host-to-device copies per token.** The streaming layer rebuilds
+  expert bundles from the mmap every step, which is the whole point on a
+  Mac with 36 GB and pointless on a 128 GB box. The shared LRU already
+  fixes it: `cache_slots=3072` (from the tier's 64) keeps every expert
+  resident after warm-up -> **206 ms a token (4.9 tok/s)**, 1.9 GB. A
+  config change, no code.
+* **235 quantized-linear calls per token**, dequantizing the same
+  attention and lm_head weights every time (103 ms a token).
+  `EDGE0_TORCH_WEIGHT_CACHE=1` keeps the dequantized weight instead ->
+  **124 ms a token (8.1 tok/s)**, 6.0 GB resident.
+
+Together that is **2.5x** over the default profile, with the same greedy
+tokens. The two paths are bit-for-bit identical on the CPU
+(`test_quantized_linear_weight_cache_is_exact`); on CUDA, keeping the
+whole weight changes cuBLAS's split against the chunked path, so they
+differ within the engine's own noise -- teacher-forced they pick the same
+token at all 32 steps and sit the same distance from MLX (4.8% vs 5.3%
+median per-step), while free-running they can diverge a step earlier.
+
+What is still on the table: a fused dequantize+matmul kernel (the
+elementwise shift/mask/mul/add chain is most of the remaining CUDA time),
+captured graphs or `torch.compile` for the per-step launch storm, and
+bundles built directly on the device rather than copied per step.
+
 ## What is left
 
 * **Performance.** `gather_qmm` and the quantized linears dequantize on
