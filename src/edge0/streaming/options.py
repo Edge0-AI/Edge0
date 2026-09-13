@@ -40,7 +40,14 @@ class LayerOptions:
         hot_decay: decay factor for hot-expert usage counts.
         pin_bonus: extra score for prerouter-predicted experts when
             selecting hot pins.
-        cache_slots: shared LRU capacity across all layers.
+        cache_slots: shared LRU capacity across all layers, keyed by
+            ``(layer_idx, expert)`` with a single global budget (see
+            ``SharedExpertCache``).  Size it for the WHOLE model, not per
+            layer: a decode step touches ``top_k`` experts on every MoE layer
+            (23 x 8 = 184 distinct keys on edge0-8b), so a budget smaller than
+            that cannot hold even one token's working set and the hit rate
+            collapses to ~0 (the released 64 slots = 2.8 slots/layer measured
+            exactly 0 hits, rebuilding 184 bundles/step).
         prefetch_cap: prefetch buffer capacity.
         load_threads: threads for on-demand expert builds.
         prefetch_threads: threads for eager prefetch builds.
@@ -110,20 +117,43 @@ class LayerOptions:
 
     @classmethod
     def prod_k8(cls, **overrides) -> "LayerOptions":
-        """edge0-8b tier: deployment production profile.
+        """edge0-8b tier: staged decode ON for the prerouter consumers.
 
-        Mirrors the reference deployment profile: STAGED_DECODE=0
-        (staged decode is OFF — the deployment verified staged decode on
-        ling degrades output, see the comment in start_server.sh),
-        STAGED_SYNC=0, STAGED_SLOTS=8, EXPERT_CACHE_SLOTS=64,
-        MLX_COMPILE_MOE=1, PREFILL_FULL_LAYER=1.  The hybrid prerouter
-        still stages each next token's expert set into the shared LRU
-        (engine.py: stage_all at the step boundary AND right after
-        prefill), and the vendored MoE blocks re-select from the cached
-        prerouter logits."""
+        Only the layers whose ROUTE is a prerouter prediction keep staged
+        slots (consumer ``li >= start_layer + 1``, i.e. 8-23): the stager
+        submits exactly the set the consuming block re-selects from the same
+        cached logits, so ``slots == routing`` and nothing is dropped
+        (measured ``staged_dropped = 0``; output bit-identical to the exact
+        path).  The layers below ``start_layer`` route with their own gate and
+        run the exact path (``ling.load_installed`` sets
+        ``_staged_mode = False``; legacy history staging there dropped 17-26%
+        of their experts and degraded output -- opt back in with
+        ``history_slots=True`` / ``--history-slots``).
+
+        Measured on M4 Pro (same-process paired A/B): slots cut expert loads
+        from 184 to 56 per step (8-23 served entirely by the prediction), and
+        the prerouter routes ~5% faster than gate routing with the same
+        loading path.
+
+        ``cache_slots`` stays at the low-memory default 64 (~81 MiB): this
+        tier's contract is a small resident footprint and every cached bundle
+        is 1.27 MiB of RAM.  The 64 is NOT enough to reuse anything across
+        tokens (2.8 slots/layer for a 184-key/step working set, measured 0
+        hits): every predicted expert whose set changed since the previous
+        token (44% of the 128 staged uses/step -- the other 56% come from the
+        previous token's slots) plus all 56 gate-routed uses on L1-7 are
+        re-sliced and re-packed every step.  That is the price of the small
+        footprint, and the staged slots are how this tier avoids paying it for
+        the consumer layers.  Enlarging the LRU buys speed with RAM (1024 =
+        +1.3 GiB, peak 1.4 -> 2.6 GiB -> 40.02 -> 31.44 ms/step, paired 3/3
+        rounds, output identical) -- do it only when the memory budget allows;
+        at cache_slots=64 the scoped staged path is the fastest arm measured
+        (37.99 vs 39.52 ms/step for gate routing + exact loads, 6/8 rounds) and
+        under a load-bound regime (build latency throttled to 200 us) it wins
+        32-40% (4/4 rounds)."""
         return cls(
-            staged=False, staged_replace=False, staged_n=8,
-            staged_trigger=8, staged_sync=False, history_prefetch=False,
+            staged=True, staged_replace=False, staged_n=8,
+            staged_trigger=8, staged_sync=True, history_prefetch=False,
             hot_per_layer=0,
             cache_slots=64, prefetch_cap=48,
             load_threads=8, prefetch_threads=4, use_compile=True, top_k=8,

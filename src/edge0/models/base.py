@@ -50,6 +50,16 @@ class ModelConfig:
     options: LayerOptions
     prerouter: PrerouterSpec | None = None
     prerouter_top_k: int = 0          # 0 -> options.top_k
+    history_slots: bool = False       # False (default): only the layers whose
+                                      # ROUTE is a prerouter prediction keep
+                                      # staged slots; every other layer
+                                      # prefetches its history top-k and runs
+                                      # the exact path.  True = deployment
+                                      # legacy: staged slots are also filled
+                                      # from history (previous token's
+                                      # actuals / last prefill token), which
+                                      # zeroes every routed expert outside
+                                      # the slot set.
     lora: str = ""                    # safetensors path; "" disables
     lora_r: int = 16
     lora_alpha: float = 32.0

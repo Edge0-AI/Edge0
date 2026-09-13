@@ -10,6 +10,11 @@ Run (checkpoint path or registered tier name):
 Three lines do everything: build the engine (prerouter + LoRA + SSD
 offload installed automatically from the tier config), template the
 prompt, generate.
+
+The demo runs each tier's showcase configuration: ``edge0-8b`` defaults
+to the gate-routed exact path (``prerouter=None``).  Use ``edge0 chat``
+(or ``AutoEngine.from_pretrained(..., prerouter=...)``) for the
+prediction path.
 """
 
 from __future__ import annotations
@@ -17,7 +22,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from edge0 import AutoEngine
+from edge0 import AutoEngine, demo_kwargs
 from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
 
 
@@ -30,9 +35,14 @@ def main() -> int:
     ap.add_argument("--prompt",
                     default="Hello! Write one short sentence about the seaside.")
     ap.add_argument("--max-new", type=int, default=24)
+    ap.add_argument("--no-prerouter", action="store_true",
+                    help="route with the layers' own gates (edge0-8b demos "
+                         "already run that path)")
     args = ap.parse_args()
 
-    engine = AutoEngine.from_pretrained(args.model_dir, name=args.model)
+    kw = ({"prerouter": None} if args.no_prerouter
+          else demo_kwargs(args.model_dir, args.model))
+    engine = AutoEngine.from_pretrained(args.model_dir, name=args.model, **kw)
     req = ChatRequest(
         model=engine.name,
         messages=[ChatMessage(role="user", content=args.prompt)],
