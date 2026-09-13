@@ -266,3 +266,10 @@ examples/demo.py       # minimal API walkthrough
 ## License
 
 Apache-2.0, including vendored third-party code (see [NOTICE](NOTICE)).
+
+### Persistent conversation caching (opt-in)
+
+Reuse processed prompt prefixes across requests and process restarts with
+`edge0 serve /path/to/model --cache-dir /path/to/conversation-cache`.
+Defaults: 20 GiB of checkpoint payloads and checkpoints every 2,048 tokens.
+See [configuration, guarantees, and benchmarks](docs/conversation-cache.md).

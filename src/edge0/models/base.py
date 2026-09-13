@@ -15,6 +15,7 @@ from dataclasses import dataclass, field, fields, replace
 from pathlib import Path
 
 from edge0.config import GenerationConfig
+from edge0.conversation import CacheConfig
 from edge0.moe.spec import MoESpec
 from edge0.prerouter.spec import PrerouterSpec
 from edge0.streaming.options import LayerOptions
@@ -54,6 +55,7 @@ class ModelConfig:
     lora_r: int = 16
     lora_alpha: float = 32.0
     gen: GenerationConfig = field(default_factory=GenerationConfig)
+    conversation_cache: CacheConfig = field(default_factory=CacheConfig)
     prefill_chunk: int = 2048
     hot_window: int = 4
     intra_staging: bool = False
