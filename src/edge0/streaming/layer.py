@@ -327,7 +327,7 @@ class StreamingSwitchGLU:
             b = {}
             for (proj, part), buf in self._hot_backing.items():
                 sh = shape[(proj, part)]
-                per = buf.size // len(self._hot_key)
+                per = buf.size // (len(self._hot_key) + 1)  # + zero row
                 sl = buf[idx * per:(idx + 1) * per]
                 if part == "weight":
                     b[(proj, part)] = core.array(
@@ -984,7 +984,11 @@ class StreamingSwitchGLU:
                     raw = self._shard_for(name).raw(name)
                     per = raw.size // self.num_experts
                     rows = [raw[e * per:(e + 1) * per] for e in hot]
-                # concatenated numpy backing (page cache, not GPU)
+                # concatenated numpy backing (page cache, not GPU), plus
+                # one all-zero row: the prefill path sends misses to row
+                # n_hot ("overflow row") and needs it to contribute zero.
+                # Without it that gather reads past the end of the stack.
+                rows.append(np.zeros_like(rows[0]))
                 backing[(proj, part)] = np.concatenate(rows)
         self._hot_backing = backing
         self._hot_key = key
@@ -1000,7 +1004,7 @@ class StreamingSwitchGLU:
             return
         w = {}
         shape0 = self._bundle_shape
-        n_e = len(self._hot_key)
+        n_e = len(self._hot_key) + 1                 # + zero overflow row
         for (proj, part), buf in self._hot_backing.items():
             shape = shape0[(proj, part)]
             if part == "weight":
