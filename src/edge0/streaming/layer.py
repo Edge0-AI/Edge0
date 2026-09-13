@@ -1394,6 +1394,6 @@ class StreamingSwitchGLU:
         """Release thread pools (idempotent)."""
         for pool in (self._pool, self._prefetch_pool):
             try:
-                pool.shutdown(wait=False, cancel_futures=True)
+                pool.shutdown(wait=True, cancel_futures=True)
             except Exception:
                 pass

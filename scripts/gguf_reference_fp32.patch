@@ -1,0 +1,64 @@
+--- a/ggml/src/ggml-cpu/ggml-cpu.c
++++ b/ggml/src/ggml-cpu/ggml-cpu.c
+@@ -1251,9 +1251,52 @@
+     }
+ }
+ 
++
++// Validation-only full-float dot products. Leaves upstream behavior unchanged
++// unless EDGE0_GGML_FP32_REFERENCE=1. No full-tensor dequantization.
++static bool edge0_float_reference(const struct ggml_compute_params * params,
++                                  struct ggml_tensor * dst, bool indexed) {
++    if (!getenv("EDGE0_GGML_FP32_REFERENCE")) return false;
++    const struct ggml_tensor * w = dst->src[0];
++    const struct ggml_tensor * x = dst->src[1];
++    if (w->type == GGML_TYPE_F32 || x->type != GGML_TYPE_F32) return false;
++    ggml_to_float_t decode = ggml_get_type_traits(w->type)->to_float;
++    if (!decode) return false;
++    GGML_ASSERT(x->nb[0] == sizeof(float));
++    float * row = malloc(w->ne[0] * sizeof(float));
++    GGML_ASSERT(row);
++    const struct ggml_tensor * ids = indexed ? dst->src[2] : NULL;
++    for (int64_t i3 = 0; i3 < dst->ne[3]; ++i3) {
++        for (int64_t i2 = 0; i2 < dst->ne[2]; ++i2) {
++            for (int64_t m = params->ith; m < dst->ne[0]; m += params->nth) {
++                if (!indexed) {
++                    const int64_t w2 = i2 / (x->ne[2] / w->ne[2]);
++                    const int64_t w3 = i3 / (x->ne[3] / w->ne[3]);
++                    decode((const char *) w->data + m*w->nb[1] + w2*w->nb[2] + w3*w->nb[3], row, w->ne[0]);
++                }
++                for (int64_t i1 = 0; i1 < dst->ne[1]; ++i1) {
++                    if (indexed) {
++                        const int32_t expert = *(const int32_t *) ((const char *) ids->data + i1*ids->nb[0] + i2*ids->nb[1]);
++                        GGML_ASSERT(expert >= 0 && expert < w->ne[2]);
++                        decode((const char *) w->data + m*w->nb[1] + expert*w->nb[2], row, w->ne[0]);
++                    }
++                    const char * xv = (const char *) x->data + (indexed ? i1 % x->ne[1] : i1)*x->nb[1] + i2*x->nb[2] + i3*x->nb[3];
++                    float result;
++                    type_traits_cpu[GGML_TYPE_F32].vec_dot(w->ne[0], &result, 0, row, 0, xv, 0, 1);
++                    *(float *) ((char *) dst->data + m*dst->nb[0] + i1*dst->nb[1] + i2*dst->nb[2] + i3*dst->nb[3]) = result;
++                }
++            }
++        }
++    }
++    free(row);
++    return true;
++}
++
+ void ggml_compute_forward_mul_mat(
+         const struct ggml_compute_params * params,
+               struct ggml_tensor * dst) {
++    if (edge0_float_reference(params, dst, false)) return;
++
+ 
+     const struct ggml_tensor * src0 = dst->src[0];
+     const struct ggml_tensor * src1 = dst->src[1];
+@@ -1534,6 +1577,8 @@
+ static void ggml_compute_forward_mul_mat_id(
+         const struct ggml_compute_params * params,
+               struct ggml_tensor * dst) {
++    if (edge0_float_reference(params, dst, true)) return;
++
+ 
+     const struct ggml_tensor * src0 = dst->src[0];
+     const struct ggml_tensor * src1 = dst->src[1];

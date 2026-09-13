@@ -39,6 +39,11 @@ are co-located with each checkpoint and load automatically, so
 
 ## Requirements
 
+Custom local checkpoints are also available through `--model-path` on `demo`,
+`chat`, and `serve`. GGUF support is experimental; full-checkpoint acceptance
+is incomplete. See [custom checkpoint usage and validation](docs/gguf.md) before
+using the Qwen3.8 Flash Next or Qwen3.5 MoE adapters.
+
 - **OS / hardware**: the MLX backend runs on macOS with Apple Silicon
   (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
   platforms are supported yet.

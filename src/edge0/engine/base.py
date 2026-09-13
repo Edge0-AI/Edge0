@@ -164,6 +164,23 @@ class Edge0Engine:
                 exp.close()
             except Exception:  # noqa: BLE001 — best-effort shutdown
                 pass
+        self.model = None
+        self._lm = None
+        self.cache = []
+        self._last_logits = None
+        self._all_stream_layers = {}
+        self._stream_layers = {}
+        self._pg_stager = self._pg_state = None
+        self._prefill_before_layer = None
+        self._intra_after_layer = None
+        self._history_prefetch = None
+        shards = getattr(self, "shards", [])
+        if hasattr(shards, "close"):
+            shards.close()
+        else:
+            for shard in shards:
+                shard.close()
+        self.shards = []
 
     # ---- misc -------------------------------------------------------------
 

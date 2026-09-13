@@ -84,7 +84,13 @@ class AutoConfig:
     """Resolve a model's config class from the registry."""
 
     @classmethod
-    def from_pretrained(cls, model_dir=None, name=None, **kwargs):
+    def from_pretrained(cls, model_dir=None, name=None, *, model_path=None, tokenizer_path=None, **kwargs):
+        if model_path is not None:
+            _check_selectors(model_dir, name)
+            from edge0.models.custom import build
+            return build(model_path, "config", tokenizer_path=tokenizer_path, **kwargs)
+        if tokenizer_path is not None:
+            raise ValueError("tokenizer_path requires model_path")
         from edge0 import models  # noqa: F401  (populates MODEL_REGISTRY)
         key = _resolve_name(model_dir, name)
         return MODEL_REGISTRY[key].Config.from_pretrained(
@@ -95,7 +101,13 @@ class AutoModel:
     """Load a base model + install streaming experts / prerouter / LoRA."""
 
     @classmethod
-    def from_pretrained(cls, model_dir=None, name=None, **kwargs):
+    def from_pretrained(cls, model_dir=None, name=None, *, model_path=None, tokenizer_path=None, **kwargs):
+        if model_path is not None:
+            _check_selectors(model_dir, name)
+            from edge0.models.custom import build
+            return build(model_path, "model", tokenizer_path=tokenizer_path, **kwargs)
+        if tokenizer_path is not None:
+            raise ValueError("tokenizer_path requires model_path")
         from edge0 import models  # noqa: F401
         key = _resolve_name(model_dir, name)
         return MODEL_REGISTRY[key].build_model(model_dir, **kwargs)
@@ -105,7 +117,18 @@ class AutoEngine:
     """Build a ready-to-generate engine for a model tier."""
 
     @classmethod
-    def from_pretrained(cls, model_dir=None, name=None, **kwargs):
+    def from_pretrained(cls, model_dir=None, name=None, *, model_path=None, tokenizer_path=None, **kwargs):
+        if model_path is not None:
+            _check_selectors(model_dir, name)
+            from edge0.models.custom import build
+            return build(model_path, "engine", tokenizer_path=tokenizer_path, **kwargs)
+        if tokenizer_path is not None:
+            raise ValueError("tokenizer_path requires model_path")
         from edge0 import models  # noqa: F401
         key = _resolve_name(model_dir, name)
         return MODEL_REGISTRY[key].build_engine(model_dir, **kwargs)
+
+
+def _check_selectors(model_dir, name):
+    if model_dir is not None or name is not None:
+        raise ValueError("model_path cannot be combined with model_dir or name; choose a custom checkpoint or a named tier")

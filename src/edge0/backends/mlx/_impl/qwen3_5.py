@@ -262,6 +262,7 @@ class Qwen3_5TextModel(nn.Module):
         before_layer_cb=None,
         after_layer_cb=None,
         async_eval_per_layer: bool = False,
+        hidden_clip: float | None = None,
     ) -> mx.array:
         if input_embeddings is not None:
             hidden_states = input_embeddings
@@ -281,7 +282,7 @@ class Qwen3_5TextModel(nn.Module):
         # all-NaN logits -> argmax falls back to token 0 ('!') collapse).
         # Off by default, enabled by the engine (parity with the ling
         # LING_HIDDEN_CLIP fix).
-        _clip_v = float(os.environ.get("QWEN_HIDDEN_CLIP", "0"))
+        _clip_v = float(os.environ.get("QWEN_HIDDEN_CLIP", "0")) if hidden_clip is None else hidden_clip
         for li, (layer, c) in enumerate(zip(self.layers, cache)):
             if before_layer_cb is not None:
                 before_layer_cb(li)

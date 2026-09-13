@@ -144,14 +144,19 @@ class ChatSession:
                 kw[k] = v
         return GenerationConfig(**{**base.__dict__, **kw})
 
-    def run(self, on_token=None) -> tuple[list[int], dict]:
+    def run(self, on_token=None, on_prompt=None) -> tuple[list[int], dict]:
         t0 = time.perf_counter()
         # Per-request clean
         # per-request state.  A previous degenerate/truncated turn leaves
         # bad pre-routing cross-token state and KV behind, which makes every
         # later request collapse from its first token.
         self.engine.reset()
+        tokenize_started = time.perf_counter()
         ids = self.prompt_ids()
+        self.engine.last_tokenization_s = time.perf_counter() - tokenize_started
+        if on_prompt is not None:
+            on_prompt(ids)
+
         gen = self.gen_config()
         tokens = self.engine.generate(
             ids, gen_config=gen, on_token=on_token)
@@ -167,9 +172,12 @@ class ChatSession:
 class QueueServer:
     """Single-slot serving loop: serialize generations, stream via callback."""
 
-    def __init__(self, engine: Edge0Engine, model_name: str | None = None):
+    def __init__(self, engine: Edge0Engine, model_name: str | None = None,
+                 *, stats: bool = False, verbose_tokens: bool = False):
         self.engine = engine
         self.model_name = model_name or engine.name
+        self.stats = stats or verbose_tokens
+        self.verbose_tokens = verbose_tokens
         self._lock = threading.Lock()
 
     def health(self) -> dict:
@@ -180,7 +188,26 @@ class QueueServer:
     def chat(self, req: ChatRequest, on_token=None) -> dict:
         with self._lock:
             sess = ChatSession(self.engine, req)
-            return sess.run(on_token=on_token)
+            if not self.stats:
+                return sess.run(on_token=on_token)
+
+            from edge0.chat_stats import ChatStats
+            diagnostics = ChatStats(self.engine, verbose_tokens=self.verbose_tokens)
+            diagnostics.emit("start")
+
+            def report_token(token):
+                diagnostics.on_token(token)
+                if on_token is not None:
+                    on_token(token)
+
+            try:
+                tokens, meta = sess.run(on_token=report_token,
+                                        on_prompt=diagnostics.on_prompt)
+            except BaseException:
+                diagnostics.emit("interrupted")
+                raise
+            diagnostics.emit("complete", meta)
+            return tokens, meta
 
 
 def sse_format(data: dict) -> str:
