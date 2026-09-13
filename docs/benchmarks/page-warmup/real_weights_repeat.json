@@ -1,0 +1,195 @@
+{
+  "repo": "Edge0/Edge0-35B-A3B-preview",
+  "weight_revision": "1ff9f4478890faec0368c5463b621d1036d5b518",
+  "sample_experts": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      127
+    ],
+    [
+      0,
+      255
+    ],
+    [
+      20,
+      0
+    ],
+    [
+      20,
+      127
+    ],
+    [
+      20,
+      255
+    ],
+    [
+      39,
+      0
+    ],
+    [
+      39,
+      127
+    ],
+    [
+      39,
+      255
+    ]
+  ],
+  "python": "3.12.13",
+  "numpy": "2.5.3",
+  "mlx": "0.30.4",
+  "device": "Device(cpu, 0)",
+  "cpu_eager": true,
+  "weight_bytes": 15925248,
+  "materialized_tensors_exact": 81,
+  "exact_swiglu_output_checks": 12,
+  "warm_and_materialize": {
+    "pairs": 31,
+    "loops": 3,
+    "selected_experts": [
+      0,
+      3,
+      5,
+      8
+    ],
+    "baseline_median_ms": 6.795596666666667,
+    "candidate_median_ms": 1.7819023333333333,
+    "median_paired_time_reduction": 0.7388905029403481,
+    "bootstrap_95pct": [
+      0.7378835121629647,
+      0.7405069723265426
+    ],
+    "samples_ns": [
+      {
+        "baseline": 6911028.666666667,
+        "candidate": 1815396.3333333333
+      },
+      {
+        "baseline": 6923505.333333333,
+        "candidate": 1784438.3333333333
+      },
+      {
+        "baseline": 6824186.0,
+        "candidate": 1788731.6666666667
+      },
+      {
+        "candidate": 1783372.6666666667,
+        "baseline": 7402939.333333333
+      },
+      {
+        "baseline": 6975392.333333333,
+        "candidate": 1826133.0
+      },
+      {
+        "candidate": 1809012.6666666667,
+        "baseline": 6930524.666666667
+      },
+      {
+        "candidate": 1754588.3333333333,
+        "baseline": 6776902.0
+      },
+      {
+        "baseline": 6777050.0,
+        "candidate": 1784855.0
+      },
+      {
+        "candidate": 1783308.3333333333,
+        "baseline": 6810423.333333333
+      },
+      {
+        "candidate": 1781902.3333333333,
+        "baseline": 6790238.0
+      },
+      {
+        "candidate": 1752687.6666666667,
+        "baseline": 6791732.0
+      },
+      {
+        "baseline": 6774991.666666667,
+        "candidate": 1769014.6666666667
+      },
+      {
+        "baseline": 6782941.666666667,
+        "candidate": 1780311.0
+      },
+      {
+        "candidate": 1736513.3333333333,
+        "baseline": 6997973.666666667
+      },
+      {
+        "baseline": 6944548.333333333,
+        "candidate": 1793232.3333333333
+      },
+      {
+        "baseline": 6791099.333333333,
+        "candidate": 1791946.6666666667
+      },
+      {
+        "candidate": 1772040.0,
+        "baseline": 6828854.0
+      },
+      {
+        "baseline": 6779208.333333333,
+        "candidate": 1843826.3333333333
+      },
+      {
+        "baseline": 6818428.0,
+        "candidate": 1773244.6666666667
+      },
+      {
+        "baseline": 6768295.666666667,
+        "candidate": 1790447.6666666667
+      },
+      {
+        "baseline": 6795457.0,
+        "candidate": 1727289.6666666667
+      },
+      {
+        "candidate": 1775174.3333333333,
+        "baseline": 6795596.666666667
+      },
+      {
+        "baseline": 6779529.0,
+        "candidate": 1831442.3333333333
+      },
+      {
+        "candidate": 1802888.0,
+        "baseline": 6792329.666666667
+      },
+      {
+        "candidate": 1733217.6666666667,
+        "baseline": 6811425.333333333
+      },
+      {
+        "candidate": 1785109.3333333333,
+        "baseline": 6780617.666666667
+      },
+      {
+        "baseline": 6796815.0,
+        "candidate": 1768386.6666666667
+      },
+      {
+        "baseline": 6789114.333333333,
+        "candidate": 1733732.3333333333
+      },
+      {
+        "candidate": 1779244.6666666667,
+        "baseline": 6813241.666666667
+      },
+      {
+        "candidate": 1769304.0,
+        "baseline": 6778268.666666667
+      },
+      {
+        "baseline": 6867191.0,
+        "candidate": 1775879.3333333333
+      }
+    ]
+  },
+  "file_unchanged": true,
+  "scope": "Actual materialization of nine published experts and 12 exact SwiGLU output comparisons with synthetic inputs. Paired latency covers explicit page warming followed by four expert builds and MLX eval. It is not full-model inference, token throughput, or an end-to-end quality benchmark."
+}

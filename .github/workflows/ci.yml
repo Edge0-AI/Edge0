@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install pytest
-        run: pip install pytest
-      - name: Hygiene checks
-        run: pytest tests/test_repo_hygiene.py
+      - name: Install pytest and NumPy
+        run: pip install pytest numpy
+      - name: Hygiene and mmap checks
+        run: pytest tests/test_repo_hygiene.py tests/test_streaming_mmap.py

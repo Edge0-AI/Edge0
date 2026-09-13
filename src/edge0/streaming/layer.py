@@ -380,10 +380,10 @@ class StreamingSwitchGLU:
             for proj in ("gate_proj", "up_proj", "down_proj"):
                 for part in ("weight", "scales", "biases"):
                     name = f"{self._prefix}.{proj}.{part}"
-                    raw = self._shard_for(name).raw(name)
-                    per = raw.size // self.num_experts
-                    sl = raw[e * per:(e + 1) * per]
-                    _ = sl.sum()
+                    shard = self._shard_for(name)
+                    entry = shard.entries[name]
+                    per = entry["size"] // self.num_experts
+                    shard.touch(entry["offset"] + e * per, per)
 
     def _get_bundles(self, experts):
         """Resolve bundles: pinned/LRU hits synchronously, misses via pool."""
