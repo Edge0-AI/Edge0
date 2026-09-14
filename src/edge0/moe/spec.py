@@ -17,7 +17,7 @@ class RouterKind(Enum):
     """Router math families supported by edge0."""
 
     SOFTMAX_TOPK = "softmax_topk"
-    """precise softmax -> top-k -> renormalize (Qwen3.5-MoE style,
+    """precise softmax -> top-k -> renormalize (Qwen3.6-35B-A3B style,
     norm_topk_prob=True)."""
 
     SIGMOID_GROUP = "sigmoid_group"

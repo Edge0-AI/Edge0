@@ -1,4 +1,4 @@
-"""edge0-35b engine: Qwen3.5-MoE (K=4 tier).
+"""edge0-35b engine: Qwen3.6-35B-A3B (K=4 tier).
 
 Port of the deployment's ``engine_qwen.py`` trained-prerouter path:
 
@@ -109,7 +109,7 @@ def load_installed(model_dir: str, cfg):
 
 
 class Qwen35Engine(Edge0Engine):
-    """Streaming Qwen3.5-MoE engine (staged decode + trained prerouter)."""
+    """Streaming Qwen3.6-35B-A3B engine (staged decode + trained prerouter)."""
 
     name = "edge0-35b"
 

@@ -31,8 +31,8 @@ trained prerouter heads work together as one unit.
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 |
 
-Both checkpoints are built on open sparse-MoE base models (Qwen3.5-MoE
-35B-A3B and the Ling 3.0 bailing hybrid respectively) and ship with the
+Both checkpoints are built on open sparse-MoE base models (Qwen3.6-35B-A3B
+and the Ling 3.0 bailing hybrid respectively) and ship with the
 LoRA and prerouter training done for this framework — the adapter files
 are co-located with each checkpoint and load automatically, so
 `edge0 serve <tier>` runs the trained pipeline out of the box.
@@ -209,7 +209,7 @@ trained adapters + prerouter routing) and the original fp16 base models.
 The loss of the edge0 pipeline is small: **3.9 points on average for
 edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). Max 100:
 
-| Benchmark | edge0-35b (int4) | Qwen3.5-MoE 35B-A3B (fp16) | edge0-8b (int4) | Ling 3.0 tiny (fp16) |
+| Benchmark | edge0-35b (int4) | Qwen3.6-35B-A3B (fp16) | edge0-8b (int4) | Ling 3.0 tiny (fp16) |
 |---|---:|---:|---:|---:|
 | AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
 | HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |

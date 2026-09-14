@@ -15,7 +15,7 @@ subsystem consumes that spec (layout + key templates), so **one generic
 
 | Member | Value | Semantics |
 | --- | --- | --- |
-| `SOFTMAX_TOPK` | `"softmax_topk"` | exact softmax → top-k → re-normalization (Qwen3.5-MoE style, `norm_topk_prob=True`) |
+| `SOFTMAX_TOPK` | `"softmax_topk"` | exact softmax → top-k → re-normalization (Qwen3.6-35B-A3B style, `norm_topk_prob=True`) |
 | `SIGMOID_GROUP` | `"sigmoid_group"` | sigmoid scores + group-limited top-k + routed scaling (DeepSeek-V3 / Bailing style) |
 
 The two families correspond to the two models: edge0-35b uses `SOFTMAX_TOPK`, edge0-8b
@@ -163,7 +163,7 @@ stay identical to them — pinned by parity tests.
 
 ### `select_from_logits(logits, top_k, norm=True)`
 
-Softmax-topk routing (Qwen3.5-MoE / `norm_topk_prob=True` semantics):
+Softmax-topk routing (Qwen3.6-35B-A3B / `norm_topk_prob=True` semantics):
 
 ```python
 gates = core.softmax(logits, axis=-1, precise=True)
