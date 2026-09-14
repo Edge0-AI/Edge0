@@ -233,8 +233,7 @@ SSD); warm = subsequent requests (page cache resident). Prefill numbers
 are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`).*
 
 **Peak active memory at short contexts (MLX allocator peak; expert weights
-stream from SSD via mmap and are not resident). Long contexts add KV
-cache: ~3.3 GiB on `edge0-8b` at 3.3k tokens.*
+stream from SSD via mmap and are not resident).*
 
 Reproduce:
 
