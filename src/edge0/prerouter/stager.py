@@ -23,11 +23,13 @@ implemented here:
 
 from __future__ import annotations
 
+import os
+
 from edge0.backends import core
 
 from edge0.moe.routing import group_select_from_logits, select_from_logits
 from edge0.moe.spec import MoESpec, RouterKind
-from edge0.prerouter.heads import topk_onehot
+from edge0.prerouter.heads import gelu_erf, topk_onehot
 from edge0.prerouter.spec import PrerouterSpec
 from edge0.prerouter.state import PrerouterState
 from edge0.streaming.layer import StreamingSwitchGLU
@@ -54,7 +56,20 @@ def _topk_onehot_pos(idx, num_experts: int, pos: int = -1):
 
 class PrerouterStager:
     """Base: one-batch collect -> stack -> select -> eval -> tolist ->
-    per-consumer stage_experts."""
+    per-consumer stage_experts.
+
+    Two cost fixes on top of the naive loop (measured on the 8b tier,
+    docs/experiments/prerouter-decode-speed-2026-09-14.md §6):
+
+    * ``head_batch`` (default on): the owner heads share one shape, so their
+      weights are stacked once and each step runs 3 ``einsum`` ops instead of
+      3 small ops per head.  Mathematically identical up to fp16 rounding;
+      ``head_batch=False`` (or ``EDGE0_HEAD_BATCH=0``) keeps the per-head loop
+      for A/B.
+    * when nothing consumes host-side expert IDs (``stream_layers`` empty,
+      i.e. ``staged=False``) the ``core.eval`` + ``tolist`` are skipped: the
+      routing cache holds lazy arrays, so the sync produces nothing usable.
+    """
 
     def __init__(
         self,
@@ -75,6 +90,9 @@ class PrerouterStager:
         self.num_experts = spec.num_experts
         self.records: list | None = None
         self.cur_step = 0
+        self.head_batch = os.environ.get("EDGE0_HEAD_BATCH", "1") != "0"
+        self._stacked_key: tuple | None = None
+        self._stacked: tuple | None = None
 
     # ---- feature hooks (overridden per family) ----------------------------
 
@@ -87,12 +105,66 @@ class PrerouterStager:
         raise NotImplementedError
 
     def _store(self, consumer: int, logits_i, inds_i, scores_i,
-               experts: list[int]) -> None:
-        """Record this consumer's prediction + submit its staged fill."""
+               experts: list[int] | None) -> None:
+        """Record this consumer's prediction + submit its staged fill
+        (``experts=None`` when no consumer needs host-side IDs)."""
         raise NotImplementedError
 
     def _note(self, owner: int, cur_oh) -> None:
         """Per-owner side effects (e.g. roll the prev-token feature)."""
+
+    # ---- batched head execution (fix 1) -----------------------------------
+
+    def _stacked_weights(self, metas: list[int]):
+        """Stack the owner heads' weights once (all heads share one shape).
+
+        Returns None (and stays on the per-head loop) if anything about the
+        shapes/dtypes is not uniform."""
+        key = tuple(metas)
+        if not self.head_batch:
+            return None
+        if self._stacked_key == key:
+            return self._stacked
+        self._stacked_key = key
+        self._stacked = None
+        try:
+            heads = [self._head_of(o) for o in metas]
+            t = lambda w: core.transpose(  # noqa: E731
+                core.stack([h.weight for h in w]), (0, 2, 1))
+            w1 = t([h.fc1 for h in heads])
+            w2 = t([h.fc2 for h in heads])
+            wl = t([h.linear_init for h in heads])
+            core.eval(w1, w2, wl)
+            self._stacked = (w1, w2, wl)
+        except Exception:  # noqa: BLE001 — any shape mismatch: per-head loop
+            self._stacked = None
+        return self._stacked
+
+    def _logits(self, metas: list[int], inputs: list[core.array],
+                cur_ohs: list[core.array], prev_ohs: list[core.array]):
+        """Stacked head logits [n,1,1,E] (batched, else per-head loop)."""
+        w = self._stacked_weights(metas)
+        if w is None:
+            return core.stack(
+                [self._head_of(o)(m, co, po)
+                 for o, m, co, po in zip(metas, inputs, cur_ohs, prev_ohs)],
+                axis=0)
+        w1, w2, wl = w
+        # The fc1 precision is the cast the per-head implementations use
+        # (``PrerouterHead._dtype`` / ``BailingPrerouter`` reading
+        # ``fc1.weight.dtype``); take it from the stacked weight so this
+        # stays family-agnostic.
+        dtype = w1.dtype
+        feats = core.concatenate([core.stack(inputs, 0), core.stack(cur_ohs, 0),
+                                  core.stack(prev_ohs, 0)], axis=-1)
+        if feats.dtype != dtype:
+            feats = core.astype(feats, dtype)
+        f2 = feats.reshape(len(metas), -1)
+        h1 = core.einsum("ni,nij->nj", f2, w1)
+        act = gelu_erf(h1)
+        out = (core.einsum("ni,nij->nj", f2, wl)
+               + core.einsum("ni,nij->nj", act, w2))
+        return out.reshape(len(metas), 1, 1, self.num_experts)
 
     # ---- the step-boundary batch ------------------------------------------
 
@@ -112,26 +184,27 @@ class PrerouterStager:
             prev_ohs.append(prev_oh)
         if not metas:
             return {}
-        per_logits = []
-        for owner, m_in, co, po in zip(metas, inputs, cur_ohs, prev_ohs):
-            head = self._head_of(owner)
-            per_logits.append(head(m_in, co, po))
-        logits = core.stack(per_logits, axis=0)   # [n,1,1,E]
+        logits = self._logits(metas, inputs, cur_ohs, prev_ohs)  # [n,1,1,E]
         inds_all, scores_all = self._select(logits)
-        core.eval(inds_all, scores_all)
-        flat = inds_all.reshape(len(metas), -1).tolist()   # ONE tolist
+        flat = None
+        if self.stream_layers:
+            # Only the consumers' staged fills need host-side expert IDs.
+            # Without them this sync + tolist is pure waste (fix 2).
+            core.eval(inds_all, scores_all)
+            flat = inds_all.reshape(len(metas), -1).tolist()   # ONE tolist
         expert_sets: dict[int, list[int]] = {}
         for i, owner in enumerate(metas):
             consumer = owner + 1
-            experts = sorted(set(int(v) for v in flat[i]))
-            expert_sets[consumer] = experts
+            experts = (sorted({int(v) for v in flat[i]})
+                       if flat is not None else None)
+            expert_sets[consumer] = experts or []
             self._store(consumer, logits[i], inds_all[i],
                         scores_all[i], experts)
             self._note(owner, cur_ohs[i])
-        if self.records is not None:
-            for owner, consumer in zip(metas, metas):
+        if self.records is not None and flat is not None:
+            for owner in metas:
                 self.records.append(
-                    (self.cur_step, consumer, expert_sets[consumer]))
+                    (self.cur_step, owner + 1, expert_sets[owner + 1]))
         self.cur_step += 1
         return expert_sets
 
@@ -169,13 +242,13 @@ class CrossTokenStager(PrerouterStager):
         return select_from_logits(logits, self.top_k)
 
     def _store(self, consumer: int, logits_i, inds_i, scores_i,
-               experts: list[int]):
+               experts: list[int] | None):
         st = self.state
         st.pred_inds[consumer] = inds_i
         st.pred_scores[consumer] = scores_i
         st.logits[consumer - 1] = logits_i
         exp = self.stream_layers.get(consumer)
-        if exp is not None:
+        if exp is not None and experts:
             exp.stage_experts(experts)
 
     def _note(self, owner: int, cur_oh) -> None:
@@ -227,10 +300,10 @@ class LingPrerouterStager(PrerouterStager):
             routed_scaling=self.spec.routed_scaling or 1.0)
 
     def _store(self, consumer: int, logits_i, inds_i, scores_i,
-               experts: list[int]):
+               experts: list[int] | None):
         self.pg_cache[consumer] = logits_i
         exp = self.stream_layers.get(consumer)
-        if exp is not None:
+        if exp is not None and experts:
             exp.stage_experts(experts)
 
     def _note(self, owner: int, cur_oh) -> None:

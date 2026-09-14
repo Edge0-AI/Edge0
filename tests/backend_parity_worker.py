@@ -53,6 +53,18 @@ def case_group_select_from_logits(inp):
     return {"inds": i, "scores": s}
 
 
+def case_stacked_head_einsum(inp):
+    # The prerouter stager evaluates every head in ONE batch: feats from
+    # concatenate+stack, an astype to the head dtype, then einsum.
+    from edge0.prerouter.heads import gelu_erf
+    feats = core.concatenate([core.array(inp["a"]), core.array(inp["b"])],
+                             axis=-1)
+    w1 = core.array(inp["w1"])
+    feats = core.astype(feats, w1.dtype)
+    h1 = core.einsum("ni,nij->nj", feats, w1)
+    return {"h1": _np(h1), "act": _np(gelu_erf(h1))}
+
+
 def case_mask_logits(inp):
     from edge0.sampling import _mask_logits
     out = {}
@@ -410,6 +422,62 @@ def case_qwen35_port_parity(inp):
                                                    cnn.QuantizedEmbedding))
                                     for m in tm.modules())),
     }
+
+
+def case_qwen35_hidden_clip(inp):
+    """torch backend only: QWEN_HIDDEN_CLIP (the per-layer clamp + NaN
+    scrub the engine turns on) in the torch port against the vendored MLX
+    model, through the full layer loop on the tiny MLX-written checkpoint.
+    Also reports how much the clip moved the output, so the test can
+    prove the clamp actually engaged."""
+    import dataclasses
+    import os
+
+    import mlx.core as mx
+    import torch
+
+    from edge0.backends.cuda._impl import qwen3_5_moe as tq
+    from edge0.backends.cuda.core import DEVICE
+    from edge0.backends.cuda.io import load_model as t_load
+    from edge0.models.edge0_35b import Qwen35Config
+    from edge0.streaming.install import install_streaming_experts
+    from edge0.streaming.mmap import SafetensorsMmap
+
+    ckpt = str(inp["ckpt_dir"])
+    mm = _qwen35_tiny_ckpt(ckpt, int(inp["seed"]))
+    mm.set_dtype(mx.float32)
+    tm, _ = t_load(ckpt, strict=False, model_config={"model_type": "qwen3_5_moe"},
+                   get_model_classes=lambda config: (tq.Model, tq.ModelArgs),
+                   dtype=torch.float32)
+    spec = dataclasses.replace(Qwen35Config._defaults(ckpt).moe_spec,
+                               num_experts=8, top_k=2, intermediate_size=64)
+    twins = install_streaming_experts(
+        tm, [SafetensorsMmap(os.path.join(ckpt, "model.safetensors"))], spec,
+        num_layers=4)
+    ids = [int(i) for i in inp["ids"]]
+    out = {}
+    # The tiny model keeps its residual stream small: clip at a fraction of
+    # the largest per-layer output so the clamp is guaranteed to engage.
+    peak = []
+    os.environ["QWEN_HIDDEN_CLIP"] = "0"
+    mx.eval(mm.language_model.model(
+        mx.array(ids)[None],
+        after_layer_cb=lambda li, h: peak.append(float(mx.abs(h).max()))))
+    clip_v = float(inp["clip_frac"]) * max(peak)
+    out["clip_v"] = np.array(clip_v)
+    for tag, v in (("off", "0"), ("on", repr(clip_v))):
+        os.environ["QWEN_HIDDEN_CLIP"] = v
+        m_h = mm.language_model.model(mx.array(ids)[None])
+        mx.eval(m_h)
+        with torch.no_grad():
+            t_h = tm.language_model.model(torch.tensor(ids, device=DEVICE)[None])
+        out["m_" + tag] = np.array(m_h.astype(mx.float32))
+        out["t_" + tag] = t_h.float().cpu().numpy()
+    os.environ.pop("QWEN_HIDDEN_CLIP")
+    for t in twins:
+        if t is not None:
+            t.close()
+    return out
 
 
 def case_qwen35_real_parity(inp):

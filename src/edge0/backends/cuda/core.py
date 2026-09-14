@@ -155,6 +155,10 @@ def matmul(a, b):
     return torch.matmul(a, b)
 
 
+def einsum(subscripts, *operands):
+    return torch.einsum(subscripts, *operands)
+
+
 def softmax(x, axis=-1, precise=False):
     """``precise=True`` accumulates in float32, as MLX does, and returns
     the input dtype."""

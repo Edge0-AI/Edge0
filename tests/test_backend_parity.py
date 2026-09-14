@@ -181,6 +181,24 @@ def test_qwen35_port_matches_mlx_layer_by_layer(tmp_path):
     np.testing.assert_array_equal(res["t_argmax"], res["m_argmax"])
 
 
+def test_qwen35_port_hidden_clip_matches_mlx(tmp_path):
+    """QWEN_HIDDEN_CLIP, which the edge0-35b engine sets to 1000 by
+    default, clamps and NaN-scrubs every layer output the same way in the
+    torch port as in the vendored MLX model."""
+    rng = np.random.default_rng(11)
+    res = _run("qwen35_hidden_clip", {
+        "ckpt_dir": np.array(str(tmp_path / "ckpt")), "seed": np.array(11),
+        "ids": rng.integers(0, 128, 9), "clip_frac": np.array(0.5)},
+        tmp_path, backends=("cuda",))
+
+    def rel(a, b):
+        return float(np.abs(a - b).max() / (np.abs(b).max() + 1e-30))
+
+    assert rel(res["m_on"], res["m_off"]) > 1e-2      # the clip engaged
+    assert rel(res["t_off"], res["m_off"]) < 1e-5
+    assert rel(res["t_on"], res["m_on"]) < 1e-5
+
+
 def test_qwen35_engine_matches_mlx_with_the_prerouter(tmp_path):
     """The whole edge0-35b engine -- streaming experts, staged decode and the
     class-level prerouter patch (patch_call=True) with heads in the real
@@ -280,6 +298,18 @@ def test_edge0_8b_engine_same_tokens_on_both_backends(tmp_path):
         "prompt": np.array("Explain in two sentences why the sky is blue."),
     }, tmp_path)
     np.testing.assert_array_equal(got["tokens"], ref["tokens"])
+
+
+def test_stacked_head_einsum(tmp_path):
+    rng = np.random.default_rng(3)
+    ref, got = _run("stacked_head_einsum", {
+        "a": rng.standard_normal((33, 24)).astype(np.float16),
+        "b": rng.standard_normal((33, 8)).astype(np.float16),
+        "w1": rng.standard_normal((33, 32, 16)).astype(np.float32),
+    }, tmp_path)
+    for name in ref:
+        np.testing.assert_allclose(got[name], ref[name], rtol=1e-5,
+                                   atol=1e-5, err_msg=name)
 
 
 def test_mask_logits(tmp_path):

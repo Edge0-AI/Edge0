@@ -31,8 +31,8 @@ trained prerouter heads work together as one unit.
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 |
 
-Both checkpoints are built on open sparse-MoE base models (Qwen3.5-MoE
-35B-A3B and the Ling 3.0 bailing hybrid respectively) and ship with the
+Both checkpoints are built on open sparse-MoE base models (Qwen3.6-35B-A3B
+and the Ling 3.0 bailing hybrid respectively) and ship with the
 LoRA and prerouter training done for this framework — the adapter files
 are co-located with each checkpoint and load automatically, so
 `edge0 serve <tier>` runs the trained pipeline out of the box.
@@ -43,6 +43,10 @@ are co-located with each checkpoint and load automatically, so
   (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
   platforms are supported yet.
 - **Python**: 3.10+ (3.12 recommended).
+- **MLX**: `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see
+  `pyproject.toml`). Garbled, mixed-language output on Apple A18 / A18 Pro
+  means an older `mlx`: `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'`
+  ([#8](https://github.com/Edge0-AI/Edge0/issues/8)).
 - **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
   `edge0-8b` (short contexts; see [Benchmark](#benchmark)). Add
   headroom for the OS, tokenizer, and long-context KV growth.
@@ -205,7 +209,7 @@ trained adapters + prerouter routing) and the original fp16 base models.
 The loss of the edge0 pipeline is small: **3.9 points on average for
 edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). Max 100:
 
-| Benchmark | edge0-35b (int4) | Qwen3.5-MoE 35B-A3B (fp16) | edge0-8b (int4) | Ling 3.0 tiny (fp16) |
+| Benchmark | edge0-35b (int4) | Qwen3.6-35B-A3B (fp16) | edge0-8b (int4) | Ling 3.0 tiny (fp16) |
 |---|---:|---:|---:|---:|
 | AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
 | HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
@@ -219,7 +223,7 @@ edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). Max 100:
 Measured with `examples/bench.py` (3.3k-token prompt prefill → 10 sampled
 warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 
-| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory** | Test machine |
+| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory | Test machine |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
 | `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
@@ -227,10 +231,6 @@ warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 *Cold = first request after process start (expert weights fault in from
 SSD); warm = subsequent requests (page cache resident). Prefill numbers
 are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`).*
-
-**Peak active memory at short contexts (MLX allocator peak; expert weights
-stream from SSD via mmap and are not resident). Long contexts add KV
-cache: ~3.3 GiB on `edge0-8b` at 3.3k tokens.*
 
 Reproduce:
 

@@ -1,4 +1,4 @@
-"""edge0-35b engine: Qwen3.5-MoE (K=4 tier).
+"""edge0-35b engine: Qwen3.6-35B-A3B (K=4 tier).
 
 Port of the deployment's ``engine_qwen.py`` trained-prerouter path:
 
@@ -13,6 +13,8 @@ Port of the deployment's ``engine_qwen.py`` trained-prerouter path:
 """
 
 from __future__ import annotations
+
+import os
 
 from edge0.backends import core
 
@@ -63,6 +65,31 @@ def load_installed(model_dir: str, cfg):
     installed = install_streaming_experts(
         model, shards, spec, options=opts, num_layers=n_layers)
     all_stream = {li: t for li, t in enumerate(installed) if t is not None}
+    # Zero-drop layer scoping (quality invariant).  Staged slots are only
+    # coherent for a layer whose ROUTE is a prerouter prediction (consumer
+    # ``start_layer+1 .. n_layers-2``): the head's submission is exactly the
+    # set that consumer itself re-selects from the same cached state, so
+    # slots == routing and ``staged_dropped == 0``.  Every other layer routes
+    # with its own gate, and slots filled from history (the previous token's
+    # actuals) silently zero every routed expert outside that set -- measured
+    # 3.0-3.75 of 4 per step for L0-6/L39, and the same class of misalignment
+    # in the 8b tier.  Those layers run the exact path (``_step_pre`` /
+    # ``_step_post``) instead.
+    #
+    # Switch-off is the same rule taken to its limit: with
+    # ``--no-prerouter`` there is no prediction anywhere, so no layer keeps
+    # slots and the off path is the exact path (gate routing, on-demand
+    # loads), not history staging.  ``history_slots=True`` opts back into the
+    # legacy behaviour on purpose (``--history-slots``).
+    if not getattr(cfg, "history_slots", False):
+        if cfg.prerouter is None:
+            for t in all_stream.values():
+                t._staged_mode = False
+        else:
+            lo, hi = cfg.prerouter.start_layer, n_layers - 2
+            for li, t in all_stream.items():
+                if not lo <= li <= hi:
+                    t._staged_mode = False
     stream_layers = {li: t for li, t in all_stream.items() if t._staged_mode}
 
     if cfg.lora:
@@ -87,9 +114,19 @@ def load_installed(model_dir: str, cfg):
 
 
 class Qwen35Engine(Edge0Engine):
-    """Streaming Qwen3.5-MoE engine (staged decode + trained prerouter)."""
+    """Streaming Qwen3.6-35B-A3B engine (staged decode + trained prerouter)."""
 
     name = "edge0-35b"
+
+    def __init__(self, model_dir: str, cfg, tokenizer=None):
+        # NAN_BANG_COLLAPSE_FIX parity (engine/ling.py): hidden clip default
+        # 1000 unless the deployer overrides QWEN_HIDDEN_CLIP explicitly.
+        # One fp16 overflow inside a layer otherwise poisons the whole net
+        # into all-NaN logits -> argmax fallback token 0 ('!') collapse,
+        # which does not recover until the process restarts.
+        if "QWEN_HIDDEN_CLIP" not in os.environ:
+            os.environ["QWEN_HIDDEN_CLIP"] = "1000"
+        super().__init__(model_dir, cfg, tokenizer=tokenizer)
 
     def _build(self):
         cfg = self.cfg
@@ -144,11 +181,11 @@ class Qwen35Engine(Edge0Engine):
         # Step boundary: ONE stacked head batch -> ONE tolist -> fills.
         # Demo parity (engine_qwen._forward: the deployment's pre-routing /
         # trained-state condition and not full_layer): stage_all+swap run
-        # after EVERY forward, including prefill chunks — so the last
-        # prefill token's predictions fill pred_inds and oh_prev, and the
-        # FIRST decode step consumes a real prediction at L7 instead of
-        # falling back to the router (a different, cleaner-but-divergent
-        # trajectory).
+        # after EVERY forward, including prefill chunks.  During prefill the
+        # per-layer features (block.prerouter_m_in/oh) are not captured (the
+        # patch only fills them on single-token forwards), so stage_all
+        # submits nothing and the first decode step consumes no prediction --
+        # it routes with the router, the pos-0 fallback used in training.
         if (self._pg_stager is not None and not full_layer):
             self._pg_stager.stage_all()
             self._pg_state.swap()
@@ -158,11 +195,18 @@ class Qwen35Engine(Edge0Engine):
 
     def _step_pre(self, token_id: int) -> None:
         if self._pg_stager is not None:
-            # Router layers (no owner): fill from their previous actuals.
+            # Layers without an incoming prediction (L0-6, L39, and every
+            # layer switched off by the history_slots scoping): they route
+            # with their own gate this step, so a staged slot set filled from
+            # history would silently zero every routed expert outside it.
+            # They run the exact path -- staging them is the legacy
+            # history_slots=True behaviour.  No prefetch either: the previous
+            # token's set overlaps the next route by only ~6%, so the reads
+            # are wasted (measured 11.7 -> 16.7 tok/s when removed).
             st = self._pg_state
             for li, exp in self._all_stream_layers.items():
                 if li < st.start or li >= st.n - 1:
-                    if exp.last_used:
+                    if exp._staged_mode and exp.last_used:
                         exp.stage_experts(list(exp.last_used))
         elif self._history_prefetch is not None:
             self._history_prefetch()
@@ -172,7 +216,13 @@ class Qwen35Engine(Edge0Engine):
             st = self._pg_state
             for li, exp in self._all_stream_layers.items():
                 if li < st.start or li >= st.n - 1:
-                    exp.sync_actuals()
+                    # Non-staged layers stage nothing from their actuals, so
+                    # the bookkeeping (and its per-layer host sync) is dead
+                    # weight -- unless the layer keeps hot pins, whose counts
+                    # it feeds.
+                    if (exp._staged_mode
+                            or getattr(exp, "hot_per_layer", 0) > 0):
+                        exp.sync_actuals()
             return
         if self._stream_layers:
             for exp in self._all_stream_layers.values():
@@ -188,13 +238,41 @@ class Qwen35Engine(Edge0Engine):
         for exp in self._all_stream_layers.values():
             exp.refresh_hot_pins()
         if self._stream_layers:
-            for exp in self._stream_layers.values():
-                exp.stage_from_prefill()
+            if self._pg_stager is None or getattr(self.cfg, "history_slots",
+                                                  False):
+                for exp in self._stream_layers.values():
+                    exp.stage_from_prefill()
+            else:
+                # With a prerouter the first decode step routes with the
+                # router (pos-0 fallback, as in training): staging the last
+                # prefill token's actual top-k there zeroes every routed
+                # expert outside that set (measured 4/4 for L7).  Prefetch
+                # them instead; the step then runs the exact path.
+                for exp in self._stream_layers.values():
+                    exp.prefetch_from_prefill()
 
     def _reset_state(self) -> None:
         self.cache = self._lm.make_cache()
         if self._pg_state is not None:
             self._pg_state.reset()
+            # Drop the per-block feature captures too.  The MoE patch writes
+            # ``prerouter_m_in`` / ``prerouter_oh`` only on single-token
+            # forwards and nothing else touches them, so without this the
+            # NEXT request's prefill would re-run every head on the previous
+            # request's last hidden state: its stage_all would submit stale
+            # predictions that the first decode step then routes with (the
+            # fresh-process behaviour is the gate fallback at pos 0).
+            for owner in self._pg_state.owners:
+                block = self.cfg.moe_spec.block_of(self.model, owner)
+                block.prerouter_m_in = None
+                block.prerouter_oh = None
+        # Per-request reset of the streaming layers' staged state
+        # (``StreamingSwitchGLU.reset``): a leftover ``_staged_state`` from
+        # the previous request defeats the staged path's "fill not ready ->
+        # exact path" fallback (``st`` would never be None) and would serve
+        # the previous request's expert bundles.
+        for exp in getattr(self, "_all_stream_layers", {}).values():
+            exp.reset()
 
     def _lm_logits(self, h: core.array) -> core.array:
         return self._lm.lm_head(h[0, -1])

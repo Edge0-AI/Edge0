@@ -1,6 +1,6 @@
 # edge0-35b
 
-The flagship first tier of the edge0 platform: a 35B-class sparse mixture-of-experts model built on Qwen3.5-MoE (K=4 tier). Through streaming expert loading, a trained prerouter, and LoRA adaptation, the full quantized weight set resides on disk and is loaded on demand, so the model can be served on a single device.
+The flagship first tier of the edge0 platform: a 35B-class sparse mixture-of-experts model built on Qwen3.6-35B-A3B (K=4 tier). Through streaming expert loading, a trained prerouter, and LoRA adaptation, the full quantized weight set resides on disk and is loaded on demand, so the model can be served on a single device.
 
 The performance profile is based on benchmarks of the current release adapter version and is pinned by default in `Qwen35Config` (`src/edge0/models/edge0_35b/__init__.py`).
 

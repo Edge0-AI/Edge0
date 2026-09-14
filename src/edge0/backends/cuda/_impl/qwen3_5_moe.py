@@ -15,6 +15,7 @@ load. Checked against the MLX module in ``tests/test_backend_parity.py``.
 from __future__ import annotations
 
 import inspect
+import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
@@ -388,11 +389,18 @@ class Qwen3_5TextModel(nn.Module):
             cache = [None] * len(self.layers)
         fa_mask = create_attention_mask(hidden_states, cache[self.fa_idx])
         ssm_mask = create_ssm_mask(hidden_states, cache[self.ssm_idx])
+        # QWEN_HIDDEN_CLIP mirrors the vendored MLX qwen3_5: clamp each
+        # layer output to [-v, v] and zero NaN entries (0 = off).
+        clip_v = float(os.environ.get("QWEN_HIDDEN_CLIP", "0"))
         for li, (layer, c) in enumerate(zip(self.layers, cache)):
             if before_layer_cb is not None:
                 before_layer_cb(li)
             mask = ssm_mask if layer.is_linear else fa_mask
             hidden_states = layer(hidden_states, mask=mask, cache=c)
+            if clip_v > 0:
+                hidden_states = torch.where(
+                    torch.isnan(hidden_states), torch.zeros_like(hidden_states),
+                    hidden_states.clamp(-clip_v, clip_v))
             if after_layer_cb is not None:
                 after_layer_cb(li, hidden_states)
             # async_eval_per_layer: an MLX lazy-graph hint; torch is eager.

@@ -68,6 +68,32 @@ def load_installed(model_dir: str, cfg):
     installed = install_streaming_experts(
         model, shards, spec, options=opts, num_layers=n_layers)
     all_stream = {li: t for li, t in enumerate(installed) if t is not None}
+    # Zero-drop layer scoping (quality invariant): staged slots are only
+    # coherent for layers whose ROUTE comes from the prerouter (consumer
+    # li >= start_layer + 1: owner li-1 predicts li, and the consuming
+    # block re-selects from the SAME cached logits the stager staged
+    # from — set == routing, drops == 0, output bit-parity with the
+    # exact path).  Layers at/below start_layer route with their own
+    # gate every token; their slots cannot be predicted, so they run
+    # the exact path.  History-staging them instead (qwen-style
+    # actuals-as-prediction) misaligns one step behind the gate and
+    # measurably degrades output (17% drop rate, garbled text).
+    first_pg_consumer = (
+        getattr(cfg.prerouter, "start_layer", 7) + 1
+        if cfg.prerouter else 0)
+    if not getattr(cfg, "history_slots", False):
+        # Scoped default: only the consumers keep staged slots.  Switch-off
+        # takes the same rule to its limit -- with ``--no-prerouter`` there is
+        # no prediction anywhere, so NO layer keeps slots and the off path is
+        # the exact path (gate routing, on-demand loads), not history staging
+        # (measured ``staged_dropped = 3593`` over a whole run when the slots
+        # stayed on with the prerouter off).  Legacy ``history_slots=True``
+        # deliberately leaves every layer staged (slots filled from the
+        # previous token's actuals), which is the behaviour that silently
+        # zeroes the routed experts outside the slot set.
+        for li, t in all_stream.items():
+            if cfg.prerouter is None or li < first_pg_consumer:
+                t._staged_mode = False
     stream_layers = {li: t for li, t in all_stream.items() if t._staged_mode}
 
     if cfg.lora:
@@ -87,6 +113,7 @@ def load_installed(model_dir: str, cfg):
               f"K={cfg.prerouter_top_k}", flush=True)
     installs = dict(all_stream_layers=all_stream,
                     stream_layers=stream_layers,
+                    first_pg_consumer=first_pg_consumer,
                     pg_state=pg_state, pg_stager=pg_stager)
     return model, model_config, shards, installs
 
@@ -116,6 +143,7 @@ class Ling8BEngine(Edge0Engine):
          inst) = load_installed(cfg.model_dir, cfg)
         self._all_stream_layers = inst["all_stream_layers"]
         self._stream_layers = inst["stream_layers"]
+        self._first_pg_consumer = inst["first_pg_consumer"]
         self._pg_state = inst["pg_state"]
         self._pg_stager = inst["pg_stager"]
         opts = cfg.options
@@ -192,7 +220,10 @@ class Ling8BEngine(Edge0Engine):
                              if self._pg_stager is not None else None))
         logits = self.model.lm_head(h[0, -1])
         core.eval(logits)
-        # Step boundary: ONE stacked head batch -> ONE tolist -> fills.
+        # Step boundary: ONE head batch (stacked einsum) -> fills.  The
+        # host-side tolist only happens when a consumer actually needs the
+        # expert IDs (``stream_layers`` non-empty); with staged loading off
+        # the routing cache is filled lazily and the sync is skipped.
         if (self._pg_stager is not None and not self._prefill_active
                 and len(ids) == 1):
             self._pg_stager.stage_all()
@@ -201,19 +232,46 @@ class Ling8BEngine(Edge0Engine):
     # ---- step hooks -------------------------------------------------------
 
     def _step_pre(self, token_id: int) -> None:
-        if self._pg_stager is None and self._history_prefetch is not None:
+        if self._pg_stager is not None:
+            # Legacy ``history_slots=True``: the layers without an incoming
+            # prediction (li < start+1) are still staged, so fill them from
+            # their previous actuals.  In the scoped default they are
+            # ``_staged_mode=False`` and run the exact path here -- no
+            # staging and no prefetch (the previous token's set covers only a
+            # small fraction of the next route, so the reads are wasted).
+            for li, exp in self._all_stream_layers.items():
+                if li < self._first_pg_consumer:
+                    if exp._staged_mode and exp.last_used:
+                        exp.stage_experts(list(exp.last_used))
+        elif self._history_prefetch is not None:
             self._history_prefetch()
 
     def _step_post(self, token_id: int) -> None:
+        if self._pg_stager is not None:
+            # Consumers: the prerouter's ``stage_all`` already submitted
+            # their next set; only record actuals (drop accounting + hot
+            # pins).  Non-consumers run the exact path in the scoped default
+            # (``_staged_mode=False``), where this bookkeeping is dead
+            # weight; legacy ``history_slots`` stages them from their
+            # actuals like the no-prerouter path.
+            for li, exp in self._all_stream_layers.items():
+                if li < self._first_pg_consumer:
+                    if not exp._staged_mode:
+                        continue
+                    exp.sync_actuals()
+                    if exp.last_used:
+                        exp.stage_experts(list(exp.last_used))
+                        exp.swap_staged()
+                elif exp._staged_mode:
+                    exp.sync_actuals()
+            return
+        # No prerouter: history staging -- each layer's next set is its
+        # previous actuals (adjacent-token expert locality).
         for exp in self._stream_layers.values():
             exp.sync_actuals()
-        if self._pg_stager is None:
-            # History staging: each layer's next set is its previous
-            # actuals (adjacent-token expert locality).
-            for exp in self._stream_layers.values():
-                if exp.last_used:
-                    exp.stage_experts(list(exp.last_used))
-                    exp.swap_staged()
+            if exp.last_used:
+                exp.stage_experts(list(exp.last_used))
+                exp.swap_staged()
 
     # ---- prefill / reset --------------------------------------------------
 
@@ -222,21 +280,48 @@ class Ling8BEngine(Edge0Engine):
             exp.clear_full_layer()
         if self._pg_stager is not None:
             # Deployment parity: prefill's tail stages the FIRST decode
-            # token's expert sets (engine.py:919 calls stage_all right
-            # after prefill).  Without this the first decode step has no
-            # prerouter logits, falls back to the true gate for one step,
-            # and the whole prediction chain shifts by one token
-            # (observed: [23982, 2862, ...] vs correct [23982, 4264, ...]).
+            # token's expert sets for the prerouter consumers (engine.py:919
+            # calls stage_all right after prefill).  Without this the first
+            # decode step has no prerouter logits, falls back to the true
+            # gate for one step, and the whole prediction chain shifts by one
+            # token (observed: [23982, 2862, ...] vs correct [23982, 4264, ...]).
             self._pg_stager.stage_all()
-        if self._stream_layers:
+            if getattr(self.cfg, "history_slots", False):
+                # Legacy: the non-consumer layers are staged too and get the
+                # last prefill token's actual top-k.  MUST NOT touch the
+                # consumers -- ``stage_from_prefill`` would overwrite the
+                # prerouter's submissions and misalign the first step.
+                for li, exp in self._stream_layers.items():
+                    if li < self._first_pg_consumer:
+                        exp.stage_from_prefill()
+        elif self._stream_layers:
+            # No prerouter: history staging is the only predictor (legacy).
             for exp in self._stream_layers.values():
                 exp.stage_from_prefill()
 
     def _reset_state(self) -> None:
         self.cache = self.model.make_cache()
-        if self._pg_stager is not None:
+        if self._pg_state is not None:
             self._pg_stager.reset()
             self._pg_state.reset()
+            # Drop the per-block/per-layer feature captures as well, or the
+            # NEXT request's first ``stage_all`` runs the heads on this
+            # request's last token: ``prev_topk_oh`` is only ever written by
+            # ``_note`` at the step boundary, so it would feed the previous
+            # request's last top-k as the "prev token" feature and stage
+            # stale predictions that the first decode step then routes with.
+            for owner in self._pg_state.owners:
+                block = self.cfg.moe_spec.block_of(self.model, owner)
+                layer = self.cfg.moe_spec.layer_of(self.model, owner)
+                block.last_topk = None
+                block.prev_topk_oh = None
+                layer.m_in_cache = None
+        # Per-request reset of the streaming layers' staged state: a leftover
+        # ``_staged_state`` from the previous request defeats the staged
+        # path's "fill not ready -> exact path" fallback (``st`` would never
+        # be None) and would serve the previous request's expert bundles.
+        for exp in getattr(self, "_all_stream_layers", {}).values():
+            exp.reset()
 
     def _lm_logits(self, h: core.array) -> core.array:
         return self.model.lm_head(h[0, -1])

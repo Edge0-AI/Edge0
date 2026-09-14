@@ -29,6 +29,12 @@ from edge0.streaming.options import LayerOptions
 class Ling8BConfig(ModelConfig):
     """edge0-8b family config (Ling 3.0 hybrid, K=8)."""
 
+    #: ``edge0 demo`` / ``examples/demo.py`` default to the gate-routed exact
+    #: path for this tier (``prerouter=None``); ``edge0 chat`` / ``serve``
+    #: keep the tier default (prediction path).  Consumed by
+    #: ``edge0.registry.demo_kwargs``.
+    demo_no_prerouter = True
+
     @classmethod
     def _defaults(cls, model_dir: str) -> "Ling8BConfig":
         return cls(

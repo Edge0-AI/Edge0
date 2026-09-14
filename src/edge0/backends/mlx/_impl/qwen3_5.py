@@ -6,8 +6,10 @@
 # mlx_lm package, sibling model files point at this vendored package so
 # the prerouter block patch lands on OUR ``Qwen3NextSparseMoeBlock``;
 # (2) ``Qwen3_5TextModel.__call__`` gained the edge0 engine callback
-# hooks (before/after_layer_cb + async_eval_per_layer).
+# hooks (before/after_layer_cb + async_eval_per_layer) plus the
+# hidden-state clip / NaN scrub (``QWEN_HIDDEN_CLIP``).
 
+import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
@@ -272,11 +274,23 @@ class Qwen3_5TextModel(nn.Module):
         fa_mask = create_attention_mask(hidden_states, cache[self.fa_idx])
         ssm_mask = create_ssm_mask(hidden_states, cache[self.ssm_idx])
 
+        # Hidden-state clip (QWEN_HIDDEN_CLIP, e.g. 1000): clamps each
+        # layer's output to [-v, +v] and zeroes NaN entries so a single
+        # fp16 overflow inside one layer cannot poison the whole network
+        # (edge0-35b: prefill overflow at layer 10 -> layers 11+ all-NaN ->
+        # all-NaN logits -> argmax falls back to token 0 ('!') collapse).
+        # Off by default, enabled by the engine (parity with the ling
+        # LING_HIDDEN_CLIP fix).
+        _clip_v = float(os.environ.get("QWEN_HIDDEN_CLIP", "0"))
         for li, (layer, c) in enumerate(zip(self.layers, cache)):
             if before_layer_cb is not None:
                 before_layer_cb(li)
             mask = ssm_mask if layer.is_linear else fa_mask
             hidden_states = layer(hidden_states, mask=mask, cache=c)
+            if _clip_v > 0:
+                hidden_states = mx.where(
+                    mx.isnan(hidden_states), mx.zeros_like(hidden_states),
+                    mx.clip(hidden_states, -_clip_v, _clip_v))
             if after_layer_cb is not None:
                 after_layer_cb(li, hidden_states)
             if async_eval_per_layer:

@@ -27,7 +27,7 @@ Recover-LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后�
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) | 4bit，40 层，256 专家，prerouter K=4 |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) | 4bit，24 层，128 专家，prerouter K=8 |
 
-两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
+两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.6-35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重——
 适配器文件与 checkpoint 同目录、自动加载，`edge0 serve <tier>` 开箱即跑
 训练好的完整管线。
@@ -37,6 +37,10 @@ Recover-LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后�
 - **系统 / 硬件**：MLX 后端目前仅支持 Apple Silicon 的 macOS
   （M1/M2/M3/M4）；CUDA 后端在路线图中，其余平台暂不支持。
 - **Python**：3.10+（推荐 3.12）。
+- **MLX**：`mlx==0.30.6` / `mlx-metal==0.30.6`（`mlx-lm==0.31.0`，见
+  `pyproject.toml`）。Apple A18 / A18 Pro 上输出乱码 = mlx 版本旧：
+  `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'`
+  （[#8](https://github.com/Edge0-AI/Edge0/issues/8)）。
 - **内存**：短上下文下 `edge0-35b` ≈2.9 GB、`edge0-8b` ≈1.0 GB
   峰值激活内存（见[性能实测](#性能实测)）；另为系统、tokenizer 与
   长上下文 KV 增长预留余量。
@@ -187,7 +191,7 @@ engine.close()   # 释放 mmap / 专家缓存
 与原 fp16 基座模型测得。edge0 管线的损失很小：**edge0-35b 平均仅落后
 3.9 分、edge0-8b 落后 2.8 分**（MMLU-Pro 甚至反超基座）。满分 100：
 
-| 评测集 | edge0-35b（int4） | Qwen3.5-MoE 35B-A3B（fp16） | edge0-8b（int4） | Ling 3.0 tiny（fp16） |
+| 评测集 | edge0-35b（int4） | Qwen3.6-35B-A3B（fp16） | edge0-8b（int4） | Ling 3.0 tiny（fp16） |
 |---|---:|---:|---:|---:|
 | AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
 | HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
@@ -201,14 +205,12 @@ engine.close()   # 释放 mmap / 专家缓存
 `examples/bench.py` 实测（3.3k token prompt prefill → 10 步采样 warmup →
 200 token 计时段，每档 2 轮）：
 
-| 档位 | 解码速度 | Prefill 吞吐（冷/热）* | 峰值 active 内存** | 测试机器 |
+| 档位 | 解码速度 | Prefill 吞吐（冷/热）* | 峰值 active 内存 | 测试机器 |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
 | `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
 *冷 = 进程启动后首请求（专家权重从 SSD 逐页换入）；热 = 后续请求（页缓存常驻）。Prefill 为 ≈3.3k token 长 prompt 的吞吐（`BENCH_LONG=1`）。
-
-**短上下文下的峰值 active 内存（MLX allocator 峰值；专家权重经 mmap 流式读取、不常驻内存）。长上下文增加 KV cache：3.3k token 下 `edge0-8b` ≈3.3 GiB。**
 
 复现：
 

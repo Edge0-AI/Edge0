@@ -274,6 +274,51 @@ def test_hot_stack_matches_exact(layer):
         assert mx.allclose(out, exact).item(), "hot path != exact"
 
 
+def _hot_layer(fuse_gu, td, hot):
+    import os
+    path = os.path.join(td, "w.safetensors")
+    _write_shard(path, fuse_gu)
+    s = StreamingSwitchGLU([SafetensorsMmap(path)], 0, _spec(fuse_gu),
+                           _options(staged=True, hot_per_layer=0),
+                           shared_cache=SharedExpertCache(64))
+    s._hot_counts = {e: 1.0 for e in hot}
+    s.load_hot_layer(n_hot=len(hot))
+    s.materialize_hot()
+    return s
+
+
+def test_hot_stack_has_zero_overflow_row(layer):
+    """Prefill misses are routed to row len(hot_key) of the hot stack and
+    must contribute zero, so that row has to exist and be all zeros --
+    otherwise gather_qmm reads past the end of the stack."""
+    lay, _, _ = layer
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        s = _hot_layer(lay._fuse_gu, td, hot=[0, 2, 5, 7])
+        n = len(s._hot_key)
+        for (proj, part), arr in s._hot_weights.items():
+            assert arr.shape[0] == n + 1, (proj, part, arr.shape)
+            assert not mx.any(arr[n]).item(), (proj, part)
+
+
+def test_hot_stack_with_misses_matches_exact(layer):
+    """Half the routed experts are outside the hot stack: the misses go
+    through the exact scatter-add correction and the result must still
+    equal the exact path."""
+    lay, _, _ = layer
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        s = _hot_layer(lay._fuse_gu, td, hot=[0, 2, 5, 7])
+        x = mx.random.normal((1, 4, DIM)).astype(mx.float16)
+        inds = _inds(tokens=4)
+        assert set(inds.reshape(-1).tolist()) - set(s._hot_key), \
+            "test needs at least one miss"
+        out = s(x, inds)
+        exact = lay(x, inds)
+        assert out.shape == exact.shape
+        assert mx.allclose(out, exact).item(), "hot path with misses != exact"
+
+
 def test_double_buffered_swap(layer):
     """stage_experts fills next; swap promotes; consume uses the new set."""
     lay, _, _ = layer

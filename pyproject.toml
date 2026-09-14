@@ -22,11 +22,15 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    # NOTE: mlx-lm is pinned to 0.31.0 on purpose.  Newer releases crash in
-    # decode with a `tolist()` on lazily-evaluated arrays.  Do not upgrade
-    # without re-running the full test suite.
-    "mlx==0.30.4",
-    "mlx-metal==0.30.4; platform_system == 'Darwin'",
+    # NOTE: mlx/mlx-metal pinned to 0.30.6 on purpose.  0.30.4 and older
+    # mis-gate the NAX matmul kernels on Apple A18/A18 Pro (silently wrong
+    # numbers -> garbled output, issue #8); fixed upstream in 0.30.5
+    # (ml-explore/mlx#3083, #3092).  Do not go to mlx>=0.31.2 yet: default
+    # streams become thread-local and the pool-thread builds in
+    # edge0/streaming/layer.py fail with "no Stream(gpu, N) in current
+    # thread".  mlx-lm stays 0.31.0 (newer releases crash in decode).
+    "mlx==0.30.6",
+    "mlx-metal==0.30.6; platform_system == 'Darwin'",
     "mlx-lm==0.31.0",
     "numpy>=1.24",
     "safetensors>=0.4",

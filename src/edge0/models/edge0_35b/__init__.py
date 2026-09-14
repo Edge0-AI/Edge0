@@ -1,4 +1,4 @@
-"""edge0-35b adapter: Qwen3.5-MoE (K=4 tier, 35B-class).
+"""edge0-35b adapter: Qwen3.6-35B-A3B (K=4 tier, 35B-class).
 
 Family facts (production profile, verified against the current
 checkpoint):
@@ -26,7 +26,7 @@ from edge0.streaming.options import LayerOptions
 
 
 class Qwen35Config(ModelConfig):
-    """edge0-35b family config (Qwen3.5-MoE, K=4)."""
+    """edge0-35b family config (Qwen3.6-35B-A3B, K=4)."""
 
     @classmethod
     def _defaults(cls, model_dir: str) -> "Qwen35Config":
