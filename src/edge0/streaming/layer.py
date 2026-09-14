@@ -294,6 +294,10 @@ class StreamingSwitchGLU:
         # machinery; it enters the LRU only when evicted from the stack.
         self._incr_writeback = (
             self._incr_mode and o.incr_writeback)
+        # Async readahead hint before a prefetch/staged build (see
+        # warm_experts_willneed): turns per-page demand faults into bulk
+        # kernel readahead.
+        self._warm_willneed = bool(getattr(o, "warm_willneed", False))
         self._incr_tensors = None      # {(proj,part): core.array [n+1, ...]}
         self._incr_slot_table = None   # core.array [num_experts] int32
         self._incr_occupancy = None    # list[slot] -> expert id | None
@@ -385,6 +389,30 @@ class StreamingSwitchGLU:
                     sl = raw[e * per:(e + 1) * per]
                     _ = sl.sum()
 
+    def warm_experts_willneed(self, experts):
+        """Async readahead hint over the byte ranges of ``experts``.
+
+        One ``madvise(MADV_WILLNEED)`` per (expert, tensor) range: the
+        kernel issues bulk readahead and returns immediately, so the
+        subsequent build (or exact-path load) finds the pages resident and
+        only takes MINOR faults.  Unlike :meth:`warm_pages` this does not
+        touch the pages itself, so the work does not serialize on the VM
+        map lock and no MLX arrays are retained.
+        """
+        for e in experts:
+            for proj in ("gate_proj", "up_proj", "down_proj"):
+                for part in ("weight", "scales", "biases"):
+                    name = f"{self._prefix}.{proj}.{part}"
+                    try:
+                        sh = self._shard_for(name)
+                    except Exception:  # noqa: BLE001 — advisory only
+                        continue
+                    ent = getattr(sh, "entries", {}).get(name)
+                    if ent is None:
+                        continue
+                    per = ent["size"] // self.num_experts
+                    sh.advise_willneed_range(ent["offset"] + e * per, per)
+
     def _get_bundles(self, experts):
         """Resolve bundles: pinned/LRU hits synchronously, misses via pool."""
         bundles = {}
@@ -471,6 +499,8 @@ class StreamingSwitchGLU:
                 ):
                     continue
                 missing.append(e)
+            if missing and self._warm_willneed:
+                self.warm_experts_willneed(missing)
             for e in missing:
                 fut = self._prefetch_pool.submit(self._build, e)
                 self._inflight[e] = fut
@@ -690,6 +720,8 @@ class StreamingSwitchGLU:
         unique = sorted({int(e) for e in experts})
         if not unique:
             return
+        if self._warm_willneed:
+            self.warm_experts_willneed(unique)
         self._drain_rearm()
         with self._staging_lock:
             if self._staging_future is not None:
