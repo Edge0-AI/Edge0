@@ -223,7 +223,7 @@ edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). Max 100:
 Measured with `examples/bench.py` (3.3k-token prompt prefill → 10 sampled
 warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 
-| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory** | Test machine |
+| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory | Test machine |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
 | `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
@@ -231,9 +231,6 @@ warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 *Cold = first request after process start (expert weights fault in from
 SSD); warm = subsequent requests (page cache resident). Prefill numbers
 are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`).*
-
-**Peak active memory at short contexts (MLX allocator peak; expert weights
-stream from SSD via mmap and are not resident).*
 
 Reproduce:
 

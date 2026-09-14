@@ -205,14 +205,12 @@ engine.close()   # 释放 mmap / 专家缓存
 `examples/bench.py` 实测（3.3k token prompt prefill → 10 步采样 warmup →
 200 token 计时段，每档 2 轮）：
 
-| 档位 | 解码速度 | Prefill 吞吐（冷/热）* | 峰值 active 内存** | 测试机器 |
+| 档位 | 解码速度 | Prefill 吞吐（冷/热）* | 峰值 active 内存 | 测试机器 |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
 | `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
 *冷 = 进程启动后首请求（专家权重从 SSD 逐页换入）；热 = 后续请求（页缓存常驻）。Prefill 为 ≈3.3k token 长 prompt 的吞吐（`BENCH_LONG=1`）。
-
-**短上下文下的峰值 active 内存（MLX allocator 峰值；专家权重经 mmap 流式读取、不常驻内存）。**
 
 复现：
 
