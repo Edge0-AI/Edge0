@@ -2,7 +2,7 @@
 
 ## The Problem
 
-Qwen3.5-MoE has 40 layers × 256 experts, with each layer's MoE weights around 310MB after 4-bit quantization — keeping them all resident far exceeds the Apple Silicon unified-memory budget. edge0's approach: **keep the weights on SSD, mmap them into the GPU on demand, and use LRU + prefetch + fixed slots to turn "tens of MB moved per step" into "almost nothing moved per step"**.
+Qwen3.6-35B-A3B has 40 layers × 256 experts, with each layer's MoE weights around 310MB after 4-bit quantization — keeping them all resident far exceeds the Apple Silicon unified-memory budget. edge0's approach: **keep the weights on SSD, mmap them into the GPU on demand, and use LRU + prefetch + fixed slots to turn "tens of MB moved per step" into "almost nothing moved per step"**.
 
 Core components (`edge0/streaming/`):
 

@@ -27,7 +27,7 @@ Recover-LoRA + prerouter 路由预判」抽象成可扩展的通用框架。后�
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) | 4bit，40 层，256 专家，prerouter K=4 |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) | 4bit，24 层，128 专家，prerouter K=8 |
 
-两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.5-MoE 35B-A3B
+两个 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.6-35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重——
 适配器文件与 checkpoint 同目录、自动加载，`edge0 serve <tier>` 开箱即跑
 训练好的完整管线。
@@ -191,7 +191,7 @@ engine.close()   # 释放 mmap / 专家缓存
 与原 fp16 基座模型测得。edge0 管线的损失很小：**edge0-35b 平均仅落后
 3.9 分、edge0-8b 落后 2.8 分**（MMLU-Pro 甚至反超基座）。满分 100：
 
-| 评测集 | edge0-35b（int4） | Qwen3.5-MoE 35B-A3B（fp16） | edge0-8b（int4） | Ling 3.0 tiny（fp16） |
+| 评测集 | edge0-35b（int4） | Qwen3.6-35B-A3B（fp16） | edge0-8b（int4） | Ling 3.0 tiny（fp16） |
 |---|---:|---:|---:|---:|
 | AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
 | HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |

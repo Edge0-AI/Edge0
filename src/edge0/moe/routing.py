@@ -13,7 +13,7 @@ from edge0.backends import core
 def select_from_logits(logits, top_k: int, norm: bool = True):
     """Softmax-topk router: precise softmax -> top-k -> renormalize.
 
-    Mirrors the Qwen3.5-MoE HF router semantics (norm_topk_prob=True).
+    Mirrors the Qwen3.6-35B-A3B HF router semantics (norm_topk_prob=True).
     Returns ``(inds [..., k], scores [..., k])``.
     """
     gates = core.softmax(logits, axis=-1, precise=True)

@@ -6,7 +6,7 @@ validated in production deployments — into an extensible, general-purpose
 framework. Backends are isolated by design: the current release implements the
 MLX backend (Apple Silicon), core logic is decoupled from the backend, and other
 platforms plug in through the same facade. Two models are supported out of the
-box: `edge0-35b` (Qwen3.5-MoE, K=4) and `edge0-8b` (Ling 3.0 hybrid, K=8).
+box: `edge0-35b` (Qwen3.6-35B-A3B, K=4) and `edge0-8b` (Ling 3.0 hybrid, K=8).
 
 ## Core Design Goals
 
@@ -153,6 +153,6 @@ across backends.
 
 ## License
 
-Apache-2.0, including vendored third-party model code (Qwen3.5-MoE from mlx-lm
+Apache-2.0, including vendored third-party model code (Qwen3.6-35B-A3B from mlx-lm
 and the Ling backbone from the reference deployment); see the root
 [NOTICE](../NOTICE) for details.
