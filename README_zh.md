@@ -212,7 +212,7 @@ engine.close()   # 释放 mmap / 专家缓存
 
 *冷 = 进程启动后首请求（专家权重从 SSD 逐页换入）；热 = 后续请求（页缓存常驻）。Prefill 为 ≈3.3k token 长 prompt 的吞吐（`BENCH_LONG=1`）。
 
-**短上下文下的峰值 active 内存（MLX allocator 峰值；专家权重经 mmap 流式读取、不常驻内存）。长上下文增加 KV cache：3.3k token 下 `edge0-8b` ≈3.3 GiB。**
+**短上下文下的峰值 active 内存（MLX allocator 峰值；专家权重经 mmap 流式读取、不常驻内存）。**
 
 复现：
 
