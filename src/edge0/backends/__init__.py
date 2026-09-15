@@ -26,7 +26,7 @@ Contract (documented, enforced by tests/grep in CI):
     only through the namespaces re-exported here.
   * ``core`` must provide (for the MLX backend these are mlx.core names):
       array, zeros, eye, arange, full, expand_dims, squeeze, reshape,
-      transpose, concatenate, stack, split, matmul, softmax, silu (via nn),
+      transpose, concatenate, stack, split, matmul, einsum, softmax, silu (via nn),
       sigmoid, erf, where, sum, cumsum, sort, topk, argpartition, take,
       take_along_axis, put_along_axis, astype, item, tolist, eval, compile,
       random.seed, random.categorical, and the dtypes float16 / float32 /
@@ -49,12 +49,19 @@ if _BACKEND == "mlx":
         quant,
     )
 elif _BACKEND == "cuda":
-    raise ImportError(
-        "the CUDA backend is not implemented yet; set EDGE0_BACKEND=mlx "
-        "(or unset it)")
+    # Torch reference implementation. EDGE0_BACKEND=mlx on top of
+    # mlx[cuda*] is not a shortcut: no MLX release runs the shipped
+    # tiers on NVIDIA hardware (see docs/nvidia.md).
+    from edge0.backends.cuda.backend import (  # noqa: F401
+        BackendImpl,
+        core,
+        io,
+        nn,
+        quant,
+    )
 else:
     raise ImportError(
-        f"unknown backend {_BACKEND!r}; available: mlx")
+        f"unknown backend {_BACKEND!r}; available: mlx, cuda")
 
 backend = BackendImpl()
 

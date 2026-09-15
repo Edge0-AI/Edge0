@@ -257,6 +257,7 @@ examples/demo.py       # minimal API walkthrough
 - [Architecture](docs/architecture.md)
 - [Attention](docs/attention.md) / [MoE](docs/moe.md) / [SSD streaming](docs/streaming.md) / [prerouter](docs/prerouter.md)
 - [Adding a model](docs/adding-a-model.md)
+- [NVIDIA / CUDA support: investigation status](docs/nvidia.md)
 - [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
 
 ## License
