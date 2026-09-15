@@ -49,6 +49,33 @@ class SafetensorsMmap:
         except Exception:  # noqa: BLE001 — advisory only
             pass
 
+    def advise_willneed_range(self, offset: int, length: int) -> None:
+        """Async readahead hint over ONE byte range of the shard.
+
+        ``madvise(MADV_WILLNEED)`` returns immediately and lets the kernel
+        issue bulk readahead, instead of the caller demand-faulting page by
+        page.  Demand faults serialize on the VM map lock, so on a
+        memory-starved host a step can degrade into "number of cold pages x
+        per-fault latency"; a range hint moves that work to the kernel's
+        readahead path in one syscall.
+
+        The range is page-aligned outward because madvise requires it.
+        """
+        if length <= 0:
+            return
+        try:
+            mmap_madv = getattr(mmap, "MADV_WILLNEED", None)
+            if mmap_madv is None:
+                return
+            page = mmap.PAGESIZE
+            start = (offset // page) * page
+            end = (offset + length + page - 1) // page * page
+            end = min(end, len(self._mm))
+            if end > start:
+                self._mm.madvise(mmap_madv, start, end - start)
+        except Exception:  # noqa: BLE001 — advisory only
+            pass
+
     def seq_read(self, chunk: int = 1 << 24):
         """Force every page resident: one sequential pass over the shard.
 
