@@ -34,9 +34,25 @@ def _quantized(bits=4, group_size=64, dtype=mx.float32, shape=(E, O, D)):
 
 
 def _both(x, idx, wq, s, b, **kw):
+    """MLX reference against the torch port -- through BOTH of its paths.
+
+    ``gather_qmm`` batches the gathered experts for decode-sized calls and
+    loops over the distinct ones above that, and every shape here is
+    decode-sized, so the loop would otherwise go untested. Forcing the cap
+    to 0 runs the same case through it; the two must agree."""
     ref = mx.gather_qmm(x, wq, s, b, rhs_indices=idx, **kw)
     mx.eval(ref)
-    got = cq.gather_qmm(_t(x), _t(wq), _t(s), _t(b), _t(idx), **kw)
+    args = (_t(x), _t(wq), _t(s), _t(b), _t(idx))
+    got = cq.gather_qmm(*args, **kw)
+    cap, cq.BATCH_ROWS = cq.BATCH_ROWS, 0
+    try:
+        looped = cq.gather_qmm(*args, **kw)
+    finally:
+        cq.BATCH_ROWS = cap
+    # Same values, different summation order (bmm vs matmul): float32
+    # tolerance, as in the MLX comparisons below.
+    np.testing.assert_allclose(looped.float().numpy(), got.float().numpy(),
+                               rtol=1e-4, atol=1e-4)
     return np.array(ref.astype(mx.float32)), got.float().numpy()
 
 

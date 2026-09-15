@@ -133,6 +133,39 @@ differ within the engine's own noise -- teacher-forced they pick the same
 token at all 32 steps and sit the same distance from MLX (4.8% vs 5.3%
 median per-step), while free-running they can diverge a step earlier.
 
+### The syncs cost more than the arithmetic (Metal, edge0-8b decode)
+
+The same CPU-bound shape shows up on this Mac's GPU (`EDGE0_TORCH_DEVICE=mps`),
+which makes the overhead measurable without a GB10. There the default
+profile decoded at **688 ms a token**, and a profile blamed three torch
+calls inside `gather_qmm`: `nonzero` (2.4 s), `tolist` (1.9 s) and
+`unique` (1.4 s) of an 8.2 s run -- against **0.07 s** for the matmuls
+they were arranging. None of them is arithmetic: each is a device->host
+sync, and the loop paid one per expert to ask *which* experts a call
+needs and *where* each one's rows are.
+
+Decode never needs to ask. One token routes to K experts, so the whole
+call is a handful of rows: gather those rows' experts as one batch and
+run a single `bmm`. No sync, and a repeated expert only costs a duplicate
+dequantize. The per-expert loop still runs above that size (prefill),
+where a dequantized copy per row is what blew memory up in the first
+place -- now behind one host transfer of the index list instead of a
+`nonzero` per expert. The cap is both a row count and a byte budget
+(`EDGE0_TORCH_GATHER_BATCH`, `EDGE0_TORCH_GATHER_BYTES`), because one row
+of a 35b expert is far bigger than an 8b one.
+
+| edge0-8b decode, Metal (M5 Max), greedy | ms/token |
+| --- | --- |
+| tier default (`cache_slots=64`) | 688 |
+| + batched decode gather (this change) | 401 |
+| + `cache_slots=3072` | 384 |
+| + `EDGE0_TORCH_WEIGHT_CACHE=1` | 291 |
+
+**2.4x**, with the same 12 greedy tokens at every step. The GB10 numbers
+above predate this and still need re-measuring: the Spark's GPU has been
+fenced off since the 13-Sep reboot (`/dev/nvidia-uvm` EPERM, inside the
+Slurm job as well as on the host).
+
 What is still on the table: a fused dequantize+matmul kernel (the
 elementwise shift/mask/mul/add chain is most of the remaining CUDA time),
 captured graphs or `torch.compile` for the per-step launch storm, and
@@ -140,9 +173,10 @@ bundles built directly on the device rather than copied per step.
 
 ## What is left
 
-* **Performance.** `gather_qmm` and the quantized linears dequantize on
-  every call and `core.compile` is eager: this is a correctness reference,
-  not a fast path.
+* **Performance.** Decode no longer pays a host sync per expert (see
+  above), but `gather_qmm` and the quantized linears still dequantize on
+  every call and `core.compile` is eager: this is a correctness
+  reference, not a fast path.
 
 ## A stale assumption this also corrects
 

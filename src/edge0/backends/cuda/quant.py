@@ -16,13 +16,26 @@ Semantics match ``mx.gather_qmm`` as checked against real MLX 0.30.4
 * ``sorted_indices`` is a kernel hint in MLX; it never changes the values.
   Ignored here.
 
-Not fast: every call dequantizes the gathered experts in full. The point
-is a correct, testable reference for the streaming path.
+Every call still dequantizes the experts it touches; what this does avoid
+is paying a device->host sync per expert to find out which those are (see
+``gather_qmm``).
 """
 
 from __future__ import annotations
 
+import os
+
 import torch
+
+# Calls with at most this many (token, expert) rows dequantize the gathered
+# experts as ONE batch, with no host sync at all -- decode (1 token, K
+# experts per layer) lands here. Above it the per-expert loop is worth its
+# syncs, because a dequantized copy per row is what blows up memory during
+# prefill. Overridable for measurement.
+BATCH_ROWS = int(os.environ.get("EDGE0_TORCH_GATHER_BATCH", "64"))
+# ...and never more than this many bytes of dequantized float32 weight in
+# flight, because one row of a 35b expert is far bigger than an 8b one.
+BATCH_BYTES = int(os.environ.get("EDGE0_TORCH_GATHER_BYTES", str(256 << 20)))
 
 
 def _dequantize(w: torch.Tensor, scales: torch.Tensor, biases: torch.Tensor,
@@ -56,12 +69,32 @@ def gather_qmm(x, w, scales, biases, rhs_indices, transpose=True,
     xf = x.to(torch.float32).expand(*bshape, *x.shape[-2:]).reshape(-1, M, x.shape[-1])
     flat = idx.expand(bshape).reshape(-1)
     n_out = w.shape[-2] if transpose else w.shape[-1] * (32 // bits)
+
+    rows_n = flat.numel()
+    deq_bytes = w[0].numel() * (32 // bits) * 4
+    if rows_n <= BATCH_ROWS and rows_n * deq_bytes <= BATCH_BYTES:
+        # Decode-sized call. Asking WHICH experts are needed
+        # (unique/tolist) and WHERE each one's rows are (nonzero) costs a
+        # device->host sync each, and at this size those syncs dwarf the
+        # matmul -- measured 4.4 s of an 8.2 s edge0-8b decode on Metal,
+        # against 0.07 s for the matmuls themselves. Gather the rows'
+        # experts as one batch instead and run a single bmm: no sync, and
+        # a repeated expert only costs a duplicate dequantize.
+        deq = _dequantize(w[flat], scales[flat], biases[flat], group_size, bits)
+        out = torch.bmm(xf, deq.transpose(-1, -2) if transpose else deq)
+        return out.reshape(*bshape, M, n_out).to(x.dtype)
+
     out = torch.empty(flat.numel(), M, n_out, dtype=torch.float32, device=x.device)
     # One distinct expert at a time: dequantizing a copy per (token, expert)
     # pair peaked at several GB per MoE layer during prefill. An index past
     # the last expert raises here; in MLX it silently reads out of bounds.
-    for e in torch.unique(flat).tolist():
-        rows = (flat == e).nonzero().squeeze(-1)
+    # ONE host transfer of the whole index list, then the row groups are
+    # built on the host -- a nonzero() per expert is a sync per expert.
+    groups: dict[int, list[int]] = {}
+    for row, e in enumerate(flat.tolist()):
+        groups.setdefault(e, []).append(row)
+    for e, rows_list in groups.items():
+        rows = torch.as_tensor(rows_list, dtype=torch.long, device=x.device)
         deq = _dequantize(w[e], scales[e], biases[e], group_size, bits)
         out[rows] = torch.matmul(xf[rows], deq.T if transpose else deq)
     return out.reshape(*bshape, M, n_out).to(x.dtype)
