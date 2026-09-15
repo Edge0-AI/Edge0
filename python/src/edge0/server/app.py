@@ -72,6 +72,30 @@ def _chat_once(server: QueueServer, payload: dict):
     }
 
 
+def _incremental_suffix(prev: str, text: str) -> str:
+    """Suffix of a cumulative decode not yet emitted, holding back a
+    trailing incomplete character.
+
+    A byte-level BPE token is a *byte fragment*: decoding one id in
+    isolation turns any multi-byte UTF-8 character it belongs to into
+    U+FFFD.  Decoding the cumulative id list instead is correct, and the
+    next id completes a character that was still incomplete, so a
+    trailing replacement char is held back until it resolves (never emit
+    a partial multi-byte character)."""
+    safe = text.rstrip("\ufffd")
+    if safe.startswith(prev):
+        return safe[len(prev):]
+    # Defensive resync: a prefix-stable byte-level decoder never lands
+    # here, but if a decoder rewrote text below the emitted prefix, emit
+    # only past the longest shared prefix instead of re-emitting it.
+    i = 0
+    for a, b in zip(safe, prev):
+        if a != b:
+            break
+        i += 1
+    return safe[i:]
+
+
 def _chat_stream(server: QueueServer, payload: dict):
     req = parse_chat_request(payload)
     events = queue.Queue()
@@ -79,8 +103,12 @@ def _chat_stream(server: QueueServer, payload: dict):
     request_id = f"chatcmpl-{int(time.time() * 1000)}"
     created = int(time.time())
 
-    def on_token(tid: int):
-        text = decode_tokens(server.engine, [tid])
+    # Keep every id seen so far, decode the cumulative list, emit only the
+    # newly completed suffix (see _incremental_suffix).
+    seen_ids: list[int] = []
+    emitted = ""
+
+    def _emit(text: str):
         events.put(sse_format({
             "id": request_id, "object": "chat.completion.chunk",
             "created": created, "model": server.model_name,
@@ -89,9 +117,26 @@ def _chat_stream(server: QueueServer, payload: dict):
                          "finish_reason": None}],
         }).encode("utf-8"))
 
+    def on_token(tid: int):
+        nonlocal emitted
+        seen_ids.append(tid)
+        text = decode_tokens(server.engine, seen_ids)
+        delta = _incremental_suffix(emitted, text)
+        emitted = text.rstrip("\ufffd")
+        if delta:
+            _emit(delta)
+
     def produce():
         try:
             _, meta = server.chat(req, on_token=on_token)
+            # Flush whatever the incremental decode held back (an
+            # incomplete multi-byte sequence at the very end of the
+            # generation) so the concatenated deltas equal the
+            # non-streaming text exactly.
+            tail = _incremental_suffix(
+                emitted, decode_tokens(server.engine, seen_ids))
+            if tail:
+                _emit(tail)
             events.put(sse_format({
                 "id": request_id, "object": "chat.completion.chunk",
                 "created": created, "model": server.model_name,
