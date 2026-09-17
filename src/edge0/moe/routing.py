@@ -38,7 +38,7 @@ def group_select_from_logits(logits, top_k: int, n_group: int,
 
     Returns ``(inds [..., k], scores [..., k])``.
     """
-    scores = core.sigmoid(logits.astype(core.float32))
+    scores = core.sigmoid(core.astype(logits, core.float32))
     select = scores
     if expert_bias is not None:
         select = scores + expert_bias
