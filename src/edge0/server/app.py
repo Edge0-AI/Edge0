@@ -47,6 +47,21 @@ def _split_think(text: str, think: bool):
     return "", text
 
 
+def _extract_tool_calls(server: QueueServer, req, content: str):
+    """(content, tool_calls) after stripping any ``<tool_call>`` block the
+    engine's chat template asked the model to emit. ``tool_calls`` is None
+    when the engine has no parser (unsupported family) or the request
+    didn't ask for tools, or when no call was found in ``content``."""
+    if req.tool_choice == "none" or (not req.tools
+                                     and req.tool_choice != "required"):
+        return content, None
+    parse = getattr(server.engine, "parse_tool_calls", None)
+    if not callable(parse):
+        return content, None
+    content, calls = parse(content)
+    return content, (calls or None)
+
+
 def _chat_once(server: QueueServer, payload: dict):
     req = parse_chat_request(payload)
     tokens, meta = server.chat(req)
@@ -54,6 +69,14 @@ def _chat_once(server: QueueServer, payload: dict):
     think = bool(req.enable_thinking if req.enable_thinking is not None
                  else getattr(server.engine, "think", False))
     reasoning, content = _split_think(text, think)
+    content, tool_calls = _extract_tool_calls(server, req, content)
+    message = {
+        "role": "assistant",
+        "content": content,
+        "reasoning_content": reasoning,
+    }
+    if tool_calls:
+        message["tool_calls"] = tool_calls
     return {
         "id": f"chatcmpl-{int(time.time() * 1000)}",
         "object": "chat.completion",
@@ -61,12 +84,8 @@ def _chat_once(server: QueueServer, payload: dict):
         "model": server.model_name,
         "choices": [{
             "index": 0,
-            "message": {
-                "role": "assistant",
-                "content": content,
-                "reasoning_content": reasoning,
-            },
-            "finish_reason": "stop",
+            "message": message,
+            "finish_reason": "tool_calls" if tool_calls else "stop",
         }],
         "usage": meta["usage"],
     }
@@ -78,8 +97,20 @@ def _chat_stream(server: QueueServer, payload: dict):
     finished = object()
     request_id = f"chatcmpl-{int(time.time() * 1000)}"
     created = int(time.time())
+    # Tool-call XML (<tool_call>...</tool_call>) must not leak into content
+    # deltas verbatim -- the whole point of #115 is that a client asking
+    # for tools gets a parsed message.tool_calls, not raw template markup.
+    # Detecting a block incrementally, token by token, needs a lookback
+    # buffer for a tag that can straddle token boundaries; simpler and
+    # just as correct: buffer the full response and parse once, same as
+    # the non-streaming path. Requests with no tools (the common case)
+    # keep the existing immediate per-token streaming, unchanged.
+    buffering = bool(req.tools) and req.tool_choice != "none" and callable(
+        getattr(server.engine, "parse_tool_calls", None))
 
     def on_token(tid: int):
+        if buffering:
+            return
         text = decode_tokens(server.engine, [tid])
         events.put(sse_format({
             "id": request_id, "object": "chat.completion.chunk",
@@ -91,12 +122,27 @@ def _chat_stream(server: QueueServer, payload: dict):
 
     def produce():
         try:
-            _, meta = server.chat(req, on_token=on_token)
+            tokens, meta = server.chat(req, on_token=on_token)
+            finish_reason = "stop"
+            delta = {}
+            if buffering:
+                text = decode_tokens(server.engine, tokens)
+                think = bool(
+                    req.enable_thinking if req.enable_thinking is not None
+                    else getattr(server.engine, "think", False))
+                _, content = _split_think(text, think)
+                content, tool_calls = _extract_tool_calls(
+                    server, req, content)
+                if tool_calls:
+                    delta = {"content": content, "tool_calls": tool_calls}
+                    finish_reason = "tool_calls"
+                else:
+                    delta = {"content": content}
             events.put(sse_format({
                 "id": request_id, "object": "chat.completion.chunk",
                 "created": created, "model": server.model_name,
-                "choices": [{"index": 0, "delta": {},
-                             "finish_reason": "stop"}],
+                "choices": [{"index": 0, "delta": delta,
+                             "finish_reason": finish_reason}],
                 "usage": meta["usage"],
             }).encode("utf-8"))
             events.put(b"data: [DONE]\n\n")
