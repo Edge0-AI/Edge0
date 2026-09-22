@@ -110,6 +110,35 @@ class MoESpec:
                 obj = getattr(obj, part)
         return obj
 
+    def layer_exists(self, model, layer: int) -> bool:
+        """True if ``layer`` resolves at block_path's layer-index segment.
+
+        Used by layer-count discovery (``install_streaming_experts`` with
+        ``num_layers=None``) to find where the layer list ends. Only an
+        ``AttributeError``/``IndexError`` raised while resolving the
+        segment templated by ``{layer}`` itself means "past the last
+        layer"; the same errors raised by a *different* segment further
+        down ``block_path`` (e.g. a fixed expert-slot index) indicate a
+        bug in the spec or model and are re-raised rather than read as
+        end-of-list.
+        """
+        template_parts = self.block_path.split(".")
+        layer_pos = next(
+            i for i, p in enumerate(template_parts) if "{layer}" in p)
+        obj = model
+        for i, raw_part in enumerate(template_parts):
+            part = raw_part.format(layer=layer)
+            try:
+                if part.isdigit():
+                    obj = obj[int(part)]
+                else:
+                    obj = getattr(obj, part)
+            except (AttributeError, IndexError):
+                if i == layer_pos:
+                    return False
+                raise
+        return True
+
     def layer_of(self, model, layer: int):
         """Resolve the decoder layer object (the block's owner).
 
