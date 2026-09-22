@@ -38,11 +38,7 @@ def install_streaming_experts(
     """
     if num_layers is None:
         n = 0
-        while True:
-            try:
-                spec.block_of(model, n)
-            except AttributeError:
-                break
+        while spec.layer_exists(model, n):
             n += 1
         if n == 0:
             raise ValueError(
