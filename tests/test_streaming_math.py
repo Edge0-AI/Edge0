@@ -329,3 +329,41 @@ def test_install_discovers_layer_count(tmp_path):
     assert twins[1] is None and twins[2] is None      # dense layers
     assert moe.switch_mlp is twins[0]
     twins[0].close()
+
+
+def test_layer_exists_stops_on_attribute_error():
+    """The AttributeError half of ``layer_exists``'s except clause is
+    reachable independently of IndexError: a family whose layer container
+    is attribute-based (no list, no ``__getitem__``) runs off the end via
+    a plain missing attribute, not an out-of-range index."""
+    from types import SimpleNamespace
+
+    spec = MoESpec(
+        num_experts=N_EXPERTS, top_k=4, intermediate_size=INTER,
+        key_template="layer_{layer}.mlp.switch_mlp",
+        block_path="layer_{layer}",
+    )
+    model = SimpleNamespace(layer_0=object(), layer_1=object())
+    assert spec.layer_exists(model, 0) is True
+    assert spec.layer_exists(model, 1) is True
+    assert spec.layer_exists(model, 2) is False  # no `layer_2` attribute
+
+
+def test_layer_exists_reraises_unrelated_index_error():
+    """An IndexError from a segment *other* than the ``{layer}`` slot is a
+    real bug (a malformed block_path or a broken model), not end-of-list,
+    and must propagate instead of being read as "past the last layer" --
+    otherwise install_streaming_experts(num_layers=None) would silently
+    under-count layers instead of surfacing the break."""
+    from types import SimpleNamespace
+
+    spec = MoESpec(
+        num_experts=N_EXPERTS, top_k=4, intermediate_size=INTER,
+        key_template="layers.{layer}.experts.9.switch_mlp",
+        block_path="layers.{layer}.experts.9",
+    )
+    # `layer=0` is in range for `layers`, but the fixed trailing index `9`
+    # is out of range for `experts` -- unrelated to layer-count discovery.
+    model = SimpleNamespace(layers=[SimpleNamespace(experts=[object()])])
+    with pytest.raises(IndexError):
+        spec.layer_exists(model, 0)
