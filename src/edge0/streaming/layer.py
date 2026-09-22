@@ -992,8 +992,11 @@ class StreamingSwitchGLU:
         """Load/refresh the layer's hot-expert weights.
 
         Backing store = one NUMPY array per (proj, part) holding the
-        stacked rows of the top-n_hot experts (page cache, survives across
-        requests, counts ZERO toward MLX active). The mx window
+        stacked rows of the top-n_hot experts. ``np.concatenate`` copies,
+        so this is resident anonymous process memory, not page cache --
+        it survives across requests (the layer keeps the reference) and
+        counts ZERO toward MLX active, but it is not reclaimable by the
+        OS the way mmap'd file-backed pages are. The mx window
         (materialize_hot) exposes a few layers at a time so peak MLX
         memory stays at window_size * n_hot * ~1.2MB instead of
         40 * n_hot * 1.2MB.
@@ -1034,7 +1037,8 @@ class StreamingSwitchGLU:
                     raw = self._shard_for(name).raw(name)
                     per = raw.size // self.num_experts
                     rows = [raw[e * per:(e + 1) * per] for e in hot]
-                # concatenated numpy backing (page cache, not GPU), plus
+                # concatenated numpy backing (anonymous process memory,
+                # not GPU -- see load_hot_layer's docstring), plus
                 # one all-zero row: the prefill path sends misses to row
                 # n_hot ("overflow row") and needs it to contribute zero.
                 # Without it that gather reads past the end of the stack.
