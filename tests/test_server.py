@@ -51,8 +51,10 @@ class FakeTok:
 
     def apply_chat_template(self, messages, tokenize=False,
                             add_generation_prompt=True,
-                            enable_thinking=False):
+                            enable_thinking=False, tools=None):
         text = "<tpl>" + json.dumps(messages)
+        if tools:
+            text += "<tools>" + json.dumps(tools)
         if add_generation_prompt:
             text += "<|im_start|>assistant\n"
         return text
@@ -113,6 +115,42 @@ class FakeEngine:
         self.pos = 0
 
 
+class ToolCallTok(FakeTok):
+    """Decodes generated tokens to a Ling-style ``<tool_call>`` block, the
+    same shape the real edge0-8b template asks the model to emit."""
+
+    def decode(self, tokens):
+        return ("<tool_call>calculator\n"
+                "<arg_key>expression</arg_key>\n"
+                "<arg_value>2 + 2</arg_value>\n"
+                "</tool_call>")
+
+
+class ToolCallEngine(FakeEngine):
+    """FakeEngine + the real Ling tool-call parser, so tests exercise the
+    actual edge0.server.tool_calls integration, not a re-implementation
+    of it."""
+
+    def __init__(self, tok=None):
+        super().__init__(tok=tok or ToolCallTok())
+
+    def parse_tool_calls(self, text: str):
+        from edge0.server.tool_calls import parse_ling_tool_calls
+        return parse_ling_tool_calls(text)
+
+
+_TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "calculator",
+        "description": "Calculate an arithmetic expression.",
+        "parameters": {"type": "object",
+                       "properties": {"expression": {"type": "string"}},
+                       "required": ["expression"]},
+    },
+}]
+
+
 def _req(**kw) -> ChatRequest:
     payload = {
         "model": "fake",
@@ -153,6 +191,26 @@ def test_parse_stream_flag_and_sampling():
     assert req.top_k == 32
     assert req.max_tokens == 16
     assert req.stream is True
+
+
+def test_parse_preserves_tools_and_tool_choice():
+    req = _req(tools=_TOOLS, tool_choice="auto")
+    assert req.tools == _TOOLS
+    assert req.tool_choice == "auto"
+
+
+def test_parse_message_tool_calls_and_tool_role_roundtrip():
+    req = parse_chat_request({"messages": [
+        {"role": "user", "content": "compute 2+2"},
+        {"role": "assistant", "content": None, "tool_calls": [
+            {"id": "call_1", "type": "function",
+             "function": {"name": "calculator",
+                          "arguments": '{"expression": "2 + 2"}'}}]},
+        {"role": "tool", "tool_call_id": "call_1", "content": "4"},
+    ]})
+    assert req.messages[1].tool_calls[0]["function"]["name"] == "calculator"
+    assert req.messages[1].content == ""  # null, not the string "None"
+    assert req.messages[2].tool_call_id == "call_1"
 
 
 # ---- sse / decode ---------------------------------------------------------
@@ -291,6 +349,105 @@ def test_chat_once_response_shape():
     assert ch["message"]["content"] == "T11T12T13"
     assert ch["finish_reason"] == "stop"
     assert out["usage"]["completion_tokens"] == 3
+
+
+# ---- tool calls (#115) -----------------------------------------------------
+
+
+def test_chat_once_ignores_tool_call_text_without_tools_field():
+    """No ``tools`` in the request -> the raw <tool_call> XML the fake
+    generation returns is left as plain content, exactly today's
+    (buggy) behavior -- this only changes when the client opts in."""
+    srv = QueueServer(ToolCallEngine())
+    out = _chat_once(srv, {"messages": [{"role": "user", "content": "hi"}]})
+    ch = out["choices"][0]
+    assert "tool_calls" not in ch["message"]
+    assert "<tool_call>" in ch["message"]["content"]
+    assert ch["finish_reason"] == "stop"
+
+
+def test_chat_once_parses_tool_calls_when_requested():
+    srv = QueueServer(ToolCallEngine())
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "compute 2 + 2"}],
+        "tools": _TOOLS, "tool_choice": "auto",
+    })
+    ch = out["choices"][0]
+    assert ch["message"]["content"] is None
+    assert ch["finish_reason"] == "tool_calls"
+    calls = ch["message"]["tool_calls"]
+    assert len(calls) == 1
+    fn = calls[0]["function"]
+    assert fn["name"] == "calculator"
+    assert json.loads(fn["arguments"]) == {"expression": "2 + 2"}
+    assert calls[0]["type"] == "function"
+    assert calls[0]["id"].startswith("call_")
+
+
+def test_chat_once_tool_choice_none_suppresses_parsing():
+    srv = QueueServer(ToolCallEngine())
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "compute 2 + 2"}],
+        "tools": _TOOLS, "tool_choice": "none",
+    })
+    ch = out["choices"][0]
+    assert "tool_calls" not in ch["message"]
+    assert "<tool_call>" in ch["message"]["content"]
+
+
+def test_chat_once_tools_requested_but_engine_cannot_parse():
+    """An engine with no parse_tool_calls (unsupported family) must not
+    crash a tools-enabled request; it just can't extract structured
+    calls, same as today."""
+    srv = QueueServer(FakeEngine())
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "hi"}], "tools": _TOOLS,
+    })
+    ch = out["choices"][0]
+    assert "tool_calls" not in ch["message"]
+    assert ch["finish_reason"] == "stop"
+
+
+def test_chat_stream_tools_requested_buffers_and_emits_final_tool_calls():
+    srv = QueueServer(ToolCallEngine())
+    events = _chat_stream(srv, {
+        "messages": [{"role": "user", "content": "compute 2 + 2"}],
+        "stream": True, "tools": _TOOLS, "tool_choice": "auto",
+    })
+    body = b"".join(events)
+    frames = [e for e in body.decode("utf-8").split("\n\n") if e]
+    assert frames[-1] == "data: [DONE]"
+    chunks = [json.loads(e[6:]) for e in frames[:-1]]
+    # No raw <tool_call> XML in any per-token delta -- buffered, not
+    # streamed token-by-token, unlike the no-tools path.
+    for c in chunks[:-1]:
+        assert "<tool_call>" not in json.dumps(c)
+    final = chunks[-1]["choices"][0]
+    assert final["finish_reason"] == "tool_calls"
+    assert final["delta"]["content"] is None
+    calls = final["delta"]["tool_calls"]
+    assert calls[0]["function"]["name"] == "calculator"
+    assert json.loads(calls[0]["function"]["arguments"]) == {
+        "expression": "2 + 2"}
+
+
+def test_chat_stream_without_tools_keeps_immediate_per_token_deltas():
+    """Regression guard: requests with no tools must keep the existing
+    immediate per-token streaming -- buffering is scoped to tool-enabled
+    requests only."""
+    srv = QueueServer(ToolCallEngine())
+    events = _chat_stream(srv, {
+        "messages": [{"role": "user", "content": "hi"}], "stream": True,
+    })
+    body = b"".join(events)
+    frames = [e for e in body.decode("utf-8").split("\n\n") if e]
+    chunks = [json.loads(e[6:]) for e in frames[:-1]]
+    deltas = [c["choices"][0]["delta"].get("content")
+              for c in chunks if c["choices"][0]["delta"]]
+    # unchanged from the no-tools path: whatever decode_tokens([tid])
+    # returns per call, not the whole buffered response
+    assert len(deltas) == 3
+    assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
 
 
 def test_chat_stream_events_sequence():
