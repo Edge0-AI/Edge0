@@ -90,6 +90,11 @@ class LayerOptions:
     #: a step otherwise degrades into "cold pages x per-fault latency", with
     #: those faults serializing on the VM map lock.  Retains no MLX arrays,
     #: so it does not displace the page cache.
+    #: Only consulted by ``prefetch()`` and ``stage_experts()`` — INERT when
+    #: both ``staged`` and ``history_prefetch`` are False, since neither call
+    #: site then ever runs. ``prod_k8()`` (edge0-8b's production profile) is
+    #: exactly that combination, so toggling this flag on that tier has no
+    #: effect (see issue #110).
     warm_willneed: bool = False
 
     # ---- presets ----------------------------------------------------------

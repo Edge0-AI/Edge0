@@ -73,7 +73,7 @@ With `use_compile`, the staged/exact paths are wrapped in `mx.compile`:
 | `load_threads` / `prefetch_threads` | Build / prefetch thread counts | 8 / 4 |
 | `full_layer_prefill` / `prefill_full_layers` | Whole-layer prefill loading / number of leading layers | False / 0 |
 | `prefill_hot` | hot stack size during prefill | 0 |
-| `warm_willneed` | Kernel bulk readahead (`madvise WILLNEED`) over the expert ranges a prefetch/stage is about to touch | False |
+| `warm_willneed` | Kernel bulk readahead (`madvise WILLNEED`) over the expert ranges a prefetch/stage is about to touch. Only read by `prefetch()` and `stage_experts()` -- **inert whenever `staged=False` and `history_prefetch=False`**, which is `prod_k8()`'s (edge0-8b) default, so toggling it has no effect on that tier without also enabling one of those paths. | False |
 | `use_compile` / `top_k` | compile wrapping / routing top-k override | True / None |
 
 Presets: `staged_k4()` (edge0-35b: staged decode with 4 slots, prefill hot stack 32, on-demand prefill), `prod_k8()` (edge0-8b: the reference deployment profile — staged decode off, E3b whole-layer prefill), and `staged_k8()` (the plain K=8 staged variant). Both tiers share `cache_slots=64`.
