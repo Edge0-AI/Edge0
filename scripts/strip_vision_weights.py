@@ -41,6 +41,7 @@ def main() -> int:
         return 0
 
     shards = sorted({wm[k] for k in vs})
+    total_saved = 0
     for shard_name in shards:
         path = d / shard_name
         hdr, data_start = read_shard(path)
@@ -77,11 +78,17 @@ def main() -> int:
             f.write(out)
         saved = sum(hdr[k]["data_offsets"][1] - hdr[k]["data_offsets"][0]
                     for k in drop)
+        total_saved += saved
         print(f"{shard_name}: dropped {len(drop)} tensors, "
               f"{saved/1e9:.2f} GB, new size {path.stat().st_size/1e9:.2f} GB")
 
     # index: remove vision keys
     idx["weight_map"] = {k: v for k, v in wm.items() if k not in vs}
+    md = idx.get("metadata") or {}
+    if "total_size" in md:
+        # metadata.total_size describes the pre-strip shards — shrink it by
+        # the tensor bytes actually dropped so it stays consistent
+        md["total_size"] -= total_saved
     if not args.no_backup:
         shutil.copy2(idx_path, idx_path.with_suffix(".json.bak_vision"))
     json.dump(idx, open(idx_path, "w"), indent=2)
