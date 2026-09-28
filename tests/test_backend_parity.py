@@ -83,6 +83,11 @@ def test_streaming_layer_real_experts(tmp_path):
         # half of token 0's experts plus unrelated ones: exercises drops
         "staged_set": np.concatenate([i1[0, :4], [e for e in range(128)
                                       if e not in i1[0]][:4]]).astype(np.int32),
+        # the other half of token 0's experts, two survivors of the first
+        # set and unrelated ones: incremental-stack churn
+        "staged_set2": np.concatenate([i1[0, 4:], i1[0, :2],
+                                       [e for e in range(128)
+                                        if e not in i1[0]][10:12]]).astype(np.int32),
     }
     ref, got = _run("streaming", inputs, tmp_path)
     assert set(got) == set(ref)
@@ -95,6 +100,16 @@ def test_streaming_layer_real_experts(tmp_path):
                                    atol=2e-2 * scale, err_msg=name)
     # the staged run must actually drop the experts outside the staged set
     assert not np.allclose(ref["staged_t1_e"], ref["exact_t1_e"])
+    # The incremental stack is the same math as the rebuilt staged stack,
+    # before and after slot churn, on each backend.
+    for res in (ref, got):
+        for tag in ("c", "e"):
+            for a, b in (("incr", "staged"), ("incr2", "staged2")):
+                np.testing.assert_allclose(
+                    res[f"{a}_t1_{tag}"], res[f"{b}_t1_{tag}"], rtol=0,
+                    atol=1e-2 * np.abs(res[f"{b}_t1_{tag}"]).max(),
+                    err_msg=f"{a} vs {b} ({tag})")
+    assert not np.allclose(ref["incr2_t1_e"], ref["incr_t1_e"])
     # Hot-stack prefill is documented as numerically exact, misses included
     # (half the experts are misses here): same answer as the exact path,
     # on each backend. Before the stack got its zero overflow row, misses

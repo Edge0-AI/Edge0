@@ -129,6 +129,29 @@ def case_streaming(inp):
         staged.wait_staged()
         out[f"staged_t1_{tag}"] = _np(staged(x1, i1))
         staged.close()
+        # Incremental stack (the staged_k4 preset since upstream #102):
+        # persistent [n+1, ...] tensors rewritten in place per changed slot.
+        # Two stagings with partial overlap exercise sticky slots, eviction
+        # back to the zero row and the write-back LRU.
+        incr = _streaming_layer(model_dir, use_compile=compiled,
+                                staged=True, staged_n=8, staged_trigger=8,
+                                staged_sync=True, incr_stack=True,
+                                incr_writeback=True, warm_willneed=True)
+        assert incr._incr_mode
+        incr.stage_experts([int(e) for e in inp["staged_set"]])
+        incr.wait_staged()
+        out[f"incr_t1_{tag}"] = _np(incr(x1, i1))
+        incr.stage_experts([int(e) for e in inp["staged_set2"]])
+        incr.wait_staged()
+        out[f"incr2_t1_{tag}"] = _np(incr(x1, i1))
+        assert incr._stats["incr_writes"] > 8
+        incr.close()
+        staged = _streaming_layer(model_dir, use_compile=compiled,
+                                  staged=True, staged_n=8, staged_trigger=8)
+        staged.stage_experts([int(e) for e in inp["staged_set2"]])
+        staged.wait_staged()
+        out[f"staged2_t1_{tag}"] = _np(staged(x1, i1))
+        staged.close()
     return out
 
 
