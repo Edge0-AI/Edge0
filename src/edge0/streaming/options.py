@@ -83,6 +83,14 @@ class LayerOptions:
     full_layer_prefill: bool = False
     prefill_full_layers: int = 0
     prefill_hot: int = 0
+    #: Issue madvise(MADV_WILLNEED) over the byte ranges of the experts a
+    #: prefetch/stage is about to touch, before building bundles.  Lets the
+    #: kernel do bulk ASYNC readahead (one syscall per tensor range) instead
+    #: of the loader DEMAND-faulting page by page — on a memory-starved host
+    #: a step otherwise degrades into "cold pages x per-fault latency", with
+    #: those faults serializing on the VM map lock.  Retains no MLX arrays,
+    #: so it does not displace the page cache.
+    warm_willneed: bool = False
 
     # ---- presets ----------------------------------------------------------
 
@@ -94,10 +102,31 @@ class LayerOptions:
         ``staged_replace`` stays False: the trained prerouter head supplies
         the routing (the MoE block routes via the prerouter logits), so the
         staged set == the routing set exactly — the slot table maps without
-        drops."""
+        drops.
+
+        Memory-starved hosts (measured on a 16 GiB M2, 19.7 GB checkpoint,
+        60-step replay, 5 rounds, same-run pairing):
+
+        * ``staged_sync=True`` + ``incr_stack=True`` +
+          ``incr_writeback=True`` — the incremental stack replaces the
+          per-step ``core.stack`` with persistent in-place tensors and keeps
+          the staged bundles out of the shared LRU.  Peak MLX 2.92 -> 2.60
+          GiB, file-backed page cache 4.25 -> 4.72 GiB, minor faults/step
+          5162 -> 1925, CPU 143 -> 109 ms/step.  (Requires sync staged.)
+        * ``warm_willneed=True`` — issue ``madvise(MADV_WILLNEED)`` over the
+          predicted experts' byte ranges before building.  Staging wall
+          162 -> 27 ms/step, because the kernel does bulk async readahead
+          instead of the loader demand-faulting page by page (faults
+          serialize on the VM map lock).
+
+        Together: step 244.25 -> 187.58 ms, 4.09 -> 5.33 tok/s (+31.0%,
+        paired 4/5), and the prerouter's own gain over ``prerouter=None``
+        rises from +8.0% to +37.8% (paired 5/5) with bit-identical output.
+        """
         return cls(
             staged=True, staged_replace=False, staged_n=4,
             staged_trigger=4, staged_sync=True, history_prefetch=True,
+            incr_stack=True, incr_writeback=True, warm_willneed=True,
             hot_per_layer=0, hot_update_interval=4, hot_decay=0.75,
             cache_slots=64, prefetch_cap=48, load_threads=8,
             prefetch_threads=4, use_compile=True, top_k=4,

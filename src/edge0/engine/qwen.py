@@ -146,6 +146,7 @@ class Qwen35Engine(Edge0Engine):
 
         self._prefill_before_layer = make_prefill_before_layer(
             self._all_stream_layers,
+            full_layer=bool(getattr(opts, "full_layer_prefill", False)),
             full_n=getattr(opts, "prefill_full_layers", 0),
             hot_n=opts.prefill_hot, hot_window=cfg.hot_window)
         self._intra_after_layer = make_intra_after_layer(
@@ -164,7 +165,9 @@ class Qwen35Engine(Edge0Engine):
         full_layer = bool(
             prefill_multi and self._all_stream_layers
             and opts.full_layer_prefill)
-        before_cb = self._prefill_before_layer if prefill_multi else None
+        before_cb = (self._prefill_before_layer
+                     if (prefill_multi and (full_layer or opts.prefill_hot))
+                     else None)
         if full_layer:
             after_cb = None
         else:

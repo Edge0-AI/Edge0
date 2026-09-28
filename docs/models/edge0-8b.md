@@ -34,7 +34,7 @@ This tier uses the `LayerOptions.prod_k8()` preset (aligned with the reference d
 
 - Staged decode is off (`staged=False`, `staged_sync=False`, `staged_n=8`) — deployment verification showed that staged decode degrades output on this tier, so the prerouter directly drives expert prefetch for the next token (one `stage_all` at the step boundary and one at the prefill tail).
 - Expert cache `cache_slots=64`, hot-expert pinning off (`hot_per_layer=0`).
-- Full-layer E3b prefill (`full_layer_prefill=True`, `prefill_chunk=2048`).
+- Full-layer E3b prefill (`full_layer_prefill=True`, `prefill_chunk=2048`). Setting `full_layer_prefill=False` switches this tier to on-demand prefill: for a 27-token prompt that reads ≈0.42 GiB of routed experts instead of the whole ≈4.1 GiB checkpoint (measured on an M4 Pro), which is the difference between ~0.6 s and ~5 s of cold-cache prefill — the lever for machines whose page cache cannot hold the checkpoint (issue #110).
 
 ## Usage
 
@@ -48,6 +48,7 @@ Optional arguments:
 
 - `--no-prerouter`: disable the prerouter (`prerouter=None`).
 - `--no-lora`: disable LoRA (`lora=""`).
+- `--prefill-ondemand`: prefill through per-expert on-demand loads instead of the E3b whole-layer path. A 27-token prompt then reads ≈0.4–0.8 GiB of routed experts instead of the whole ≈4.1 GiB checkpoint (measured cold-cache prefill: 0.6–1.1 s vs 5.3 s on an M4 Pro). This is the setting for a machine whose page cache cannot hold the checkpoint — 16 GB class, see issue #110.
 - `--flask`: switch to the Flask transport (requires flask to be installed; supports SSE streaming).
 
 For single-turn chat in the terminal, use `chat` instead:
@@ -159,4 +160,4 @@ engine = AutoEngine.from_pretrained(
 )
 ```
 
-The corresponding CLI overrides are `--no-prerouter` / `--no-lora` (see `_engine_kwargs` in `src/edge0/cli.py`). To override engine parameters, call `Ling8BConfig.from_pretrained(model_dir, **overrides)` directly.
+The corresponding CLI override is `--prefill-ondemand` (config switch `prefill_ondemand`, applied to whatever preset the tier ships), alongside `--no-prerouter` / `--no-lora` (see `_engine_kwargs` in `src/edge0/cli.py`). To override engine parameters directly, call `Ling8BConfig.from_pretrained(model_dir, **overrides)`.

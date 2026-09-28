@@ -9,7 +9,8 @@ same machinery serves both model families.
 from __future__ import annotations
 
 
-def make_prefill_before_layer(all_stream_layers, *, full_n: int = 0,
+def make_prefill_before_layer(all_stream_layers, *, full_layer: bool = True,
+                              full_n: int = 0,
                               hot_n: int = 0, hot_window: int = 4):
     """Before-layer prefill hook: whole-layer load-drop (E3b) + the
     sliding hot-expert window.
@@ -17,9 +18,15 @@ def make_prefill_before_layer(all_stream_layers, *, full_n: int = 0,
     Before layer ``li`` runs: drop layer ``li-1``'s whole-layer set (its
     async_eval was already submitted, so the GPU queue keeps the arrays
     alive until evaluated), then either load layer ``li``'s full stacked
-    tensors (``full_n`` unset / ``li < full_n``) or build the hot-stack
-    window (``hot_n``): numpy backing for layers ``li..li+ahead``,
-    GPU materialization for the window, dematerialize trailing layers.
+    tensors (``full_layer`` and ``full_n`` unset / ``li < full_n``) or
+    build the hot-stack window (``hot_n``): numpy backing for layers
+    ``li..li+ahead``, GPU materialization for the window, dematerialize
+    trailing layers.
+
+    ``full_layer=False`` switches the whole-layer load-drop off (the hot
+    window, if requested, still runs).  Callers should not install this
+    hook at all when both ``full_layer`` and ``hot_n`` are off, so a
+    disabled prefill keeps the plain per-expert on-demand path.
     """
     w = max(1, hot_window)
     ahead = max(1, w // 2)
@@ -44,6 +51,8 @@ def make_prefill_before_layer(all_stream_layers, *, full_n: int = 0,
                     exp_t.dematerialize_hot()
             if not full_n:
                 return
+        if not full_layer:
+            return
         exp = all_stream_layers.get(li)
         if exp is not None:
             exp.load_full_layer()

@@ -95,6 +95,28 @@ def test_override_and_reject():
         AutoConfig.from_pretrained(name="edge0-8b", bogus_field=1)
 
 
+def test_prefill_ondemand_switch_maps_onto_the_tier_preset():
+    """`--prefill-ondemand` adjusts the tier's options without replacing the
+    preset, and defaults to leaving it alone."""
+    base = AutoConfig.from_pretrained(name="edge0-8b")
+    assert base.prefill_ondemand is False
+    assert base.options.full_layer_prefill is True   # E3b, the tier default
+
+    ondemand = AutoConfig.from_pretrained(name="edge0-8b",
+                                          prefill_ondemand=True)
+    assert ondemand.options.full_layer_prefill is False
+    assert ondemand.options.prefill_full_layers == 0  # everything else kept
+    assert ondemand.options.prefill_hot == base.options.prefill_hot
+    assert ondemand.options.warm_willneed == base.options.warm_willneed
+    assert ondemand.moe_spec == base.moe_spec
+
+    # edge0-35b already prefills on demand (prefill_hot=32): no-op, not a
+    # preset rewrite.
+    q35 = AutoConfig.from_pretrained(name="edge0-35b", prefill_ondemand=True)
+    assert q35.options.full_layer_prefill is False
+    assert q35.options.prefill_hot == 32
+
+
 def test_demo_defaults():
     """The demo entry points run each tier's showcase configuration."""
     from edge0.registry import demo_kwargs

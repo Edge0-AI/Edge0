@@ -155,8 +155,9 @@ class Ling8BEngine(Edge0Engine):
 
         self._prefill_before_layer = make_prefill_before_layer(
             self._all_stream_layers,
+            full_layer=bool(getattr(opts, "full_layer_prefill", False)),
             full_n=getattr(opts, "prefill_full_layers", 0),
-            hot_n=0, hot_window=1)
+            hot_n=getattr(opts, "prefill_hot", 0), hot_window=1)
         self._history_prefetch = make_history_prefetch(
             self._all_stream_layers, enabled=cfg.prefetch_history)
 
@@ -212,8 +213,10 @@ class Ling8BEngine(Edge0Engine):
             and opts.full_layer_prefill)
         h = self.model.model(
             inputs, cache=self.cache,
-            before_layer_cb=self._prefill_before_layer if prefill_multi
-            else None,
+            before_layer_cb=(self._prefill_before_layer
+                             if (prefill_multi and (full_layer
+                                                    or opts.prefill_hot))
+                             else None),
             after_layer_cb=None,
             async_eval_per_layer=bool(prefill_multi and full_layer),
             prerouter_cache=(self._pg_stager.pg_cache

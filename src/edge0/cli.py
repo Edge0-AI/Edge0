@@ -68,6 +68,8 @@ def _engine_kwargs(args) -> dict:
         kw["lora"] = ""
     if getattr(args, "history_slots", False):
         kw["history_slots"] = True
+    if getattr(args, "prefill_ondemand", False):
+        kw["prefill_ondemand"] = True
     return kw
 
 
@@ -218,7 +220,24 @@ def cmd_convert(args) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def _add_engine_flags(p) -> None:
+    """Engine-construction flags shared by demo / chat / serve."""
+    p.add_argument("--no-prerouter", action="store_true")
+    p.add_argument("--no-lora", action="store_true")
+    p.add_argument("--history-slots", action="store_true",
+                   help="legacy staging: also fill staged slots from history "
+                        "for layers whose route is not a prerouter prediction "
+                        "(zeroes routed experts outside the slot set)")
+    p.add_argument("--prefill-ondemand", action="store_true",
+                   help="prefill through per-expert on-demand loads instead of "
+                        "the tier's whole-layer (E3b) path: reads only the "
+                        "routed experts (~0.4-0.8 GiB instead of the whole "
+                        "~4.1 GiB checkpoint for edge0-8b), which is what a "
+                        "machine whose page cache cannot hold the checkpoint "
+                        "needs")
+
+
+def _build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="edge0", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -237,12 +256,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="max tokens to generate (default: tier config)")
     p.add_argument("--show-thinking", action="store_true",
                    help="print the model's reasoning block too")
-    p.add_argument("--no-prerouter", action="store_true")
-    p.add_argument("--no-lora", action="store_true")
-    p.add_argument("--history-slots", action="store_true",
-                   help="legacy staging: also fill staged slots from history "
-                        "for layers whose route is not a prerouter prediction "
-                        "(zeroes routed experts outside the slot set)")
+    _add_engine_flags(p)
     p.set_defaults(fn=cmd_demo)
 
     p = sub.add_parser(
@@ -257,12 +271,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="max tokens to generate (default: tier config)")
     p.add_argument("--show-thinking", action="store_true",
                    help="print the model's reasoning block too")
-    p.add_argument("--no-prerouter", action="store_true")
-    p.add_argument("--no-lora", action="store_true")
-    p.add_argument("--history-slots", action="store_true",
-                   help="legacy staging: also fill staged slots from history "
-                        "for layers whose route is not a prerouter prediction "
-                        "(zeroes routed experts outside the slot set)")
+    _add_engine_flags(p)
     p.set_defaults(fn=cmd_chat)
 
     p = sub.add_parser(
@@ -276,19 +285,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--flask", action="store_true",
                    help="use the Flask transport (needs flask installed)")
-    p.add_argument("--no-prerouter", action="store_true")
-    p.add_argument("--no-lora", action="store_true")
-    p.add_argument("--history-slots", action="store_true",
-                   help="legacy staging: also fill staged slots from history "
-                        "for layers whose route is not a prerouter prediction "
-                        "(zeroes routed experts outside the slot set)")
+    _add_engine_flags(p)
     p.set_defaults(fn=cmd_serve)
 
     p = sub.add_parser("convert-adapters",
                        help="one-shot legacy npz -> safetensors migration")
     p.set_defaults(fn=cmd_convert)
 
-    args = ap.parse_args(argv)
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
     return args.fn(args)
 
 

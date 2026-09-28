@@ -87,3 +87,94 @@ def test_edge0_35b_real_checkpoint():
     )
     assert output
     assert len(output) <= MAX_NEW_TOKENS
+
+
+def test_edge0_8b_prefill_ondemand_switch_skips_whole_layers(monkeypatch):
+    """The `--prefill-ondemand` path (config switch -> engine) really takes
+    the on-demand prefill, and leaves the next token identical."""
+    from edge0.backends import core
+    from edge0.streaming.layer import StreamingSwitchGLU
+
+    model_dir = _checkpoint("EDGE0_8B_MODEL", "edge0-8b")
+    messages = [{"role": "user", "content": "你好，请用一句话介绍海滨城市。"}]
+
+    engine = AutoEngine.from_pretrained(model_dir, name="edge0-8b")
+    try:
+        ids = _chat_ids(engine, messages)
+        assert len(ids) > 1, "need a multi-token prefill"
+        engine.reset()
+        engine.prefill(ids)
+        baseline = int(core.argmax(engine.next_logits(), axis=-1).item())
+    finally:
+        engine.close()
+
+    loads: list[int] = []
+    original = StreamingSwitchGLU.load_full_layer
+
+    def counted(self, *args, **kwargs):
+        loads.append(1)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(StreamingSwitchGLU, "load_full_layer", counted)
+    engine = AutoEngine.from_pretrained(model_dir, name="edge0-8b",
+                                        prefill_ondemand=True)
+    try:
+        engine.reset()
+        engine.prefill(ids)
+        assert loads == [], (
+            f"--prefill-ondemand still loaded {len(loads)} whole layers")
+        assert int(core.argmax(engine.next_logits(), axis=-1).item()) == baseline
+    finally:
+        engine.close()
+
+
+def test_edge0_8b_ondemand_prefill_is_honored(monkeypatch):
+    """``full_layer_prefill=False`` must really skip the whole-layer prefill.
+
+    Regression guard: the flag was a no-op on this tier.  The prefill hook
+    was installed for every multi-token prefill regardless of the flag, and
+    with ``full_n=0`` ("every layer") it always fell through to
+    ``load_full_layer()`` -- so disabling it still read all 128 experts of
+    all 23 layers (~4.1 GiB for a 27-token prompt) instead of the routed
+    experts only (~0.42 GiB, measured on an M4 Pro).
+    """
+    from dataclasses import replace
+
+    from edge0.backends import core
+    from edge0.streaming.layer import StreamingSwitchGLU
+    from edge0.streaming.options import LayerOptions
+
+    model_dir = _checkpoint("EDGE0_8B_MODEL", "edge0-8b")
+    messages = [{"role": "user", "content": "你好，请用一句话介绍海滨城市。"}]
+
+    # 1) tier default (whole-layer load-drop prefill)
+    engine = AutoEngine.from_pretrained(model_dir, name="edge0-8b")
+    try:
+        prompt_ids = _chat_ids(engine, messages)
+        assert len(prompt_ids) > 1, "need a multi-token prefill"
+        engine.reset()
+        engine.prefill(prompt_ids)
+        baseline = int(core.argmax(engine.next_logits(), axis=-1).item())
+    finally:
+        engine.close()
+
+    # 2) on-demand prefill: no whole-layer load may fire, same next token
+    loads: list[int] = []
+    original = StreamingSwitchGLU.load_full_layer
+
+    def counted(self, *args, **kwargs):
+        loads.append(1)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(StreamingSwitchGLU, "load_full_layer", counted)
+    engine = AutoEngine.from_pretrained(
+        model_dir, name="edge0-8b",
+        options=replace(LayerOptions.prod_k8(), full_layer_prefill=False))
+    try:
+        engine.reset()
+        engine.prefill(prompt_ids)
+        assert loads == [], (
+            f"on-demand prefill still loaded {len(loads)} whole layers")
+        assert int(core.argmax(engine.next_logits(), axis=-1).item()) == baseline
+    finally:
+        engine.close()

@@ -68,6 +68,16 @@ class ModelConfig:
     hot_window: int = 4
     intra_staging: bool = False
     prefetch_history: bool = True
+    prefill_ondemand: bool = False    # force the per-expert on-demand prefill
+                                      # (full_layer_prefill=False) whatever the
+                                      # tier preset says.  The lever for
+                                      # machines whose page cache cannot hold
+                                      # the checkpoint: a whole-layer prefill
+                                      # streams every expert of every layer
+                                      # (~4.1 GiB for edge0-8b, whatever the
+                                      # prompt length), the on-demand path only
+                                      # the routed experts (~0.4-0.8 GiB for a
+                                      # 27-token prompt).
     port: int = 8000
     # acceptance profile (measured on the production Mac)
     target_tok_s: float = 0.0
@@ -86,11 +96,26 @@ class ModelConfig:
                     f"unknown {cls.__name__} override {key!r} "
                     f"(known: {sorted(f.name for f in fields(base))})")
             base = replace(base, **{key: value})
-        return base
+        return apply_prefill_switches(base)
 
     @classmethod
     def _defaults(cls, model_dir: str) -> "ModelConfig":
         raise NotImplementedError
+
+
+def apply_prefill_switches(cfg: "ModelConfig") -> "ModelConfig":
+    """Map the prefill convenience switch onto ``cfg.options``.
+
+    ``prefill_ondemand`` forces the per-expert on-demand prefill path
+    (``full_layer_prefill=False``) whatever the tier preset says; it is
+    exposed as ``edge0 demo|chat|serve --prefill-ondemand``.  While it stays
+    False the tier preset is returned untouched, so the presets keep their
+    measured defaults.
+    """
+    opts = getattr(cfg, "options", None)
+    if opts is None or not getattr(cfg, "prefill_ondemand", False):
+        return cfg
+    return replace(cfg, options=replace(opts, full_layer_prefill=False))
 
 
 def resolve_prerouter(pspec: PrerouterSpec, weights_file: str) -> PrerouterSpec:
