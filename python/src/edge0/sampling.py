@@ -10,7 +10,7 @@ def _mask_logits(logits, temperature, top_k, top_p):
     """Temperature / top-k / top-p truncation, shared by ``sample`` and
     any speculative verifier so both draw from the exact same
     distribution."""
-    logits = logits.astype(core.float32)
+    logits = core.astype(logits, core.float32)
     if temperature > 0:
         logits = logits / temperature
     if top_k is not None and top_k > 0:
@@ -21,10 +21,12 @@ def _mask_logits(logits, temperature, top_k, top_p):
         threshold = top[..., :1]
         logits = core.where(logits < threshold, float("-inf"), logits)
     if top_p is not None and top_p < 1.0:
-        sorted_vals = core.sort(logits, axis=-1)[..., ::-1]
+        # Descending sort as the negation of an ascending one (exact in
+        # IEEE arithmetic); torch cannot slice with a negative step.
+        sorted_vals = -core.sort(-logits, axis=-1)
         cum = core.cumsum(core.softmax(sorted_vals, axis=-1), axis=-1)
         cutoff = cum <= top_p
-        counts = core.sum(cutoff.astype(core.int32), axis=-1)
+        counts = core.sum(core.astype(cutoff, core.int32), axis=-1)
         k = core.maximum(counts, 1)
         threshold = core.take_along_axis(
             sorted_vals, (k - 1)[..., None], axis=-1)
@@ -46,10 +48,10 @@ def sample(logits, temperature=0.7, top_k=None, top_p=None,
     penalty applies to them (vectorized, no per-token host syncs).
     """
     if repetition_penalty != 1.0 and history:
-        logits = logits.astype(core.float32)
+        logits = core.astype(logits, core.float32)
         ids = core.array(sorted(set(int(x) for x in history)),
                        dtype=core.int32)
-        if ids.size:
+        if core.size(ids):
             vals = core.take(logits, ids)
             logits[ids] = core.where(
                 vals > 0,

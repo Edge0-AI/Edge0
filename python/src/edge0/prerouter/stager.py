@@ -51,7 +51,7 @@ def _topk_onehot_pos(idx, num_experts: int, pos: int = -1):
     idx = idx[..., pos, :][..., None, :]  # [B, 1, K]
     ar = core.arange(num_experts, dtype=idx.dtype)
     oh = (idx[..., None] == ar)  # [B, 1, K, E]
-    return oh.sum(axis=-2).astype(core.float32)
+    return core.astype(oh.sum(axis=-2), core.float32)
 
 
 class PrerouterStager:
@@ -158,7 +158,7 @@ class PrerouterStager:
         feats = core.concatenate([core.stack(inputs, 0), core.stack(cur_ohs, 0),
                                   core.stack(prev_ohs, 0)], axis=-1)
         if feats.dtype != dtype:
-            feats = feats.astype(dtype)
+            feats = core.astype(feats, dtype)
         f2 = feats.reshape(len(metas), -1)
         h1 = core.einsum("ni,nij->nj", f2, w1)
         act = gelu_erf(h1)
