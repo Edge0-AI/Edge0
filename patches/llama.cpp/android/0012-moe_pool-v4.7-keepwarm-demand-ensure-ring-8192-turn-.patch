@@ -1,0 +1,129 @@
+From 24f7d4c33b0fc3e176da129a986c4d2d7a7e3596 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 10:37:19 +0800
+Subject: [PATCH 12/14] =?UTF-8?q?moe=5Fpool=20v4.7:=20keepwarm=20=E8=BD=AE?=
+ =?UTF-8?q?=E6=9C=AB=E5=9B=9E=E7=81=8C=EF=BC=88demand=20ensure=20=E5=8F=8C?=
+ =?UTF-8?q?=E6=94=AF=E8=AE=B0=20ring=208192=EF=BC=8Cturn=20=E6=9C=AB=20det?=
+ =?UTF-8?q?ached=20=E7=BA=BF=E7=A8=8B=E6=8C=89=20E0=5FKEEPWARM=5FMB=20?=
+ =?UTF-8?q?=E9=A2=84=E7=AE=97=E6=8A=8A=E8=A2=AB=E9=80=90=E8=80=85=E4=BB=A5?=
+ =?UTF-8?q?=E9=A2=84=E5=8F=96=E7=BA=A7=E6=90=AC=E5=9B=9E=EF=BC=9BApp=2035b?=
+ =?UTF-8?q?=20=E6=A1=A3=3D512=EF=BC=89+=20pred=20feats=20f16=20=E9=87=8F?=
+ =?UTF-8?q?=E5=8C=96=EF=BC=88SPEC=20=C2=A71=20=E8=AE=AD=E7=BB=83=E5=88=86?=
+ =?UTF-8?q?=E5=B8=83=E5=AF=B9=E9=BD=90=EF=BC=8Cpf=20=E5=91=BD=E4=B8=AD?=
+ =?UTF-8?q?=E7=8E=87=E5=B7=AE=E5=80=BC=E5=80=99=E9=80=89=E2=91=A0=EF=BC=9B?=
+ =?UTF-8?q?pred=20OFF=20=E6=97=B6=E9=9B=B6=E8=A7=A6=E8=BE=BE=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 47 ++++++++++++++++++++++++++++++++++++
+ ggml/src/ggml-cpu/moe_pool.h |  3 +++
+ 2 files changed, 50 insertions(+)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index e9d3415..2098376 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -91,6 +91,12 @@ static long long g_pf_issued, g_pf_used, g_pf_waste, g_pf_drop, g_pf_miss, g_res
+ static char *   g_blob; static size_t g_blob_cap, g_blob_bump; static int g_blob_on;
+ static volatile int g_heads_on, g_pred_enabled;   // referenced early by init (defined in the pred section)
+ 
++// keepwarm (9/29 20s-between-turns case): accounts the (tix,e) touched by the current decode round; at turn end, evicted entries are refilled asynchronously when idle.
++#define KW_DEPTH 8192
++static struct { int32_t tix; int32_t e; } g_kw[KW_DEPTH];
++static unsigned g_kwh, g_kwt;
++static volatile int g_kw_busy;
++
+ static uint64_t now_ns(void) {
+     struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+     return (uint64_t) ts.tv_sec * 1000000000ull + (uint64_t) ts.tv_nsec;
+@@ -258,8 +264,15 @@ static float dot_f16_f32(const uint16_t * w, const float * x, int n) {
+ #endif
+ static inline float gelu_erf_f(float x) { return 0.5f * x * (1.0f + erff(x * 0.70710678118654752440f)); }
+ 
++static void moe_pool_f16_quant_feats(float * x, int n) {
++    for (int i = 0; i < n; i++) x[i] = (float) (__fp16) x[i];
++}
++
+ static void pred_do_job(struct pred_job * j) {
+     float h[512], out[256];
++    // SPEC sec.1: feats are cast to f16 before entering the network (training distribution = f16; feeding f32 directly would
++    // drift the top-K ranking on near-ties -- prime suspect #1 for the gap between the 10% pf hit rate and the 55% recorded profile).
++    { extern void moe_pool_f16_quant_feats(float * x, int n); moe_pool_f16_quant_feats(j->x, 2560); }
+     const uint16_t * fc1 = g_lr[j->layer].hd.fc1;
+     const uint16_t * fc2 = g_lr[j->layer].hd.fc2;
+     const uint16_t * lin = g_lr[j->layer].hd.lin;
+@@ -595,6 +608,7 @@ void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_id
+             struct slot_ent * s = &g_slots[si];
+             if (s->state == ST_READY) {
+                 p->hits++;
++                { unsigned h = g_kwh % KW_DEPTH; g_kw[h].tix = tix; g_kw[h].e = e; g_kwh++; }
+                 if (s->prefetched && !s->consumed) { g_pf_used++; s->consumed = 1; }
+                 list_push_back(si);
+                 pin_locked(si);
+@@ -629,6 +643,7 @@ void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_id
+             pthread_cond_wait(&g_scv, &g_lock);
+         }
+         if (slot < 0) continue;
++        { unsigned h = g_kwh % KW_DEPTH; g_kw[h].tix = tix; g_kw[h].e = e; g_kwh++; }
+         pin_locked(slot);
+         if (enqueue_io_locked(slot, 1)) {
+             if (nwait < 64) waiters[nwait++] = slot;
+@@ -676,6 +691,38 @@ void moe_pool_prefetch_impl(struct tensor_pool * p, int64_t e) {
+     pthread_mutex_unlock(&g_lock);
+ }
+ 
++// turn-end refill: move (tix,e) pairs in the ring that are currently not in the pool back at prefetch level
++// (demand=0 queue, evictable). budget_mb=0 -> read E0_KEEPWARM_MB (default 256MB, low intensity, never competes with the foreground).
++void moe_pool_keepwarm(int budget_mb) {
++    if (!g_ready) return;
++    if (budget_mb <= 0) {
++        const char * e = getenv("E0_KEEPWARM_MB");
++        budget_mb = e ? (int) atol(e) : 0;
++        if (budget_mb <= 0) budget_mb = 256;
++    }
++    if (g_kw_busy) return;
++    g_kw_busy = 1;
++    long long bytes = (long long) budget_mb * 1024 * 1024;
++    pthread_mutex_lock(&g_lock);
++    unsigned seen_end = g_kwh;
++    for (unsigned i = g_kwt; i < seen_end && bytes > 0; i++) {
++        int k = i % KW_DEPTH;
++        const int tix = g_kw[k].tix; const int32_t e2 = g_kw[k].e;
++        if (tix < 0 || tix >= g_ntp) continue;
++        struct tensor_pool * p = &g_tp[tix];
++        if (e2 < 0 || e2 >= p->n_experts) continue;
++        if (p->slot[e2] >= 0) continue;                     // already resident
++        const int32_t slot = claim_slot_locked(tix, e2);
++        if (slot < 0) break;
++        g_slots[slot].prefetched = 1;
++        if (!enqueue_io_locked(slot, 0)) { unclaim_locked(slot); break; }
++        bytes -= (long long) p->slice;
++    }
++    g_kwt = seen_end;                                       // consumed this round (whether or not fully refilled)
++    pthread_mutex_unlock(&g_lock);
++    g_kw_busy = 0;
++}
++
+ const void * moe_pool_row_ptr(const struct ggml_tensor * t, int64_t expert, const void * def) {
+     if (!g_ready || expert < 0) return def;
+     const struct tensor_pool * p = find_tp(t);
+diff --git a/ggml/src/ggml-cpu/moe_pool.h b/ggml/src/ggml-cpu/moe_pool.h
+index 82dfc74..3341e1d 100644
+--- a/ggml/src/ggml-cpu/moe_pool.h
++++ b/ggml/src/ggml-cpu/moe_pool.h
+@@ -42,6 +42,9 @@ int  moe_pool_load_heads(const char * path);
+ void moe_pool_bind_min(int layer, const struct ggml_tensor * t);
+ void moe_pool_note_routing(const struct ggml_tensor * src0, const int32_t * ids, int n_ids);
+ 
++// turn-end keepwarm refill (E0_KEEPWARM_MB budget, 0 = default 256MB)
++void moe_pool_keepwarm(int budget_mb);
++
+ // cross-model-switch reset (called by the llama shell's nativeFree)
+ void moe_pool_reset_all(void);
+ 
+-- 
+2.52.0.windows.1
+

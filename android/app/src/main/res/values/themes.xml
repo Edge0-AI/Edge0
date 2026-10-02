@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws the full UI; this theme only sets the window background
+      (edge-to-edge is enabled in the Activity). -->
+    <style name="Theme.Edge0" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+</resources>

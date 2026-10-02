@@ -1,0 +1,53 @@
+From c009a31c93bfb4d03d53a0b82ff4c756356583e6 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 16:58:30 +0800
+Subject: [PATCH 2/6] models/qwen3next,bailingmoe3: capture router input (m_in)
+ into t_layer_inp (edge0 private surface #2)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+On both edge0 archs the layer_inp channel semantics is redirected from "layer input" to "router
+input (post-ffn/attn-post-norm)" so the prerouter advisory heads can read features (W4 hook 1).
+Takes effect only while cparams.embeddings_layer_inp[il] is active (the set_outputs gate); other
+archs and the off state see zero difference. The existing D2H readback loop = extract_layer_inputs
+(the production-proven eagle3/dflash channel).
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ src/models/bailingmoe3.cpp | 3 +++
+ src/models/qwen3next.cpp   | 4 ++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/src/models/bailingmoe3.cpp b/src/models/bailingmoe3.cpp
+index 2643859..f736435 100644
+--- a/src/models/bailingmoe3.cpp
++++ b/src/models/bailingmoe3.cpp
+@@ -356,6 +356,9 @@ llama_model_bailingmoe3::graph::graph(const llama_model & model, const llm_graph
+ 
+         ggml_tensor * ffn_inp = ggml_add(ctx0, cur, inpSA);
+         cur = build_norm(ffn_inp, layer.ffn_norm, nullptr, LLM_NORM_RMS, il);
++        // edge0 W4 hook#1: capture router input (m_in) via the layer_inp channel
++        // (consumed only in prerouter mode; same annotation as qwen3next.cpp)
++        res->t_layer_inp[il] = cur;
+ 
+         if ((uint32_t) il < hparams.n_layer_dense_lead) {
+             cur = build_ffn(cur,
+diff --git a/src/models/qwen3next.cpp b/src/models/qwen3next.cpp
+index b63fc9c..9673e3b 100644
+--- a/src/models/qwen3next.cpp
++++ b/src/models/qwen3next.cpp
+@@ -183,6 +183,10 @@ llama_model_qwen3next::graph::graph(const llama_model & model, const llm_graph_p
+         // Post-attention norm
+         ggml_tensor * attn_post_norm = build_norm(cur, model.layers[il].attn_post_norm, nullptr, LLM_NORM_RMS, il);
+         cb(attn_post_norm, "attn_post_norm", il);
++        // edge0 W4 hook#1: capture router input (m_in) via the layer_inp channel.
++        // only consumed when embeddings_layer_inp[il] is active (prerouter mode);
++        // with the feature off, set_outputs() skips this slot entirely.
++        res->t_layer_inp[il] = attn_post_norm;
+ 
+         // FFN layer (MoE or dense) - without residual connection
+         cur = build_layer_ffn(attn_post_norm, il);
+-- 
+2.52.0.windows.1
+

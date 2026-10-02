@@ -1,0 +1,22 @@
+[package]
+name = "edge0-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "edge0"
+path = "src/main.rs"
+
+[dependencies]
+edge0-core.workspace = true
+edge0-pull.workspace = true
+clap.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+anyhow.workspace = true
+tracing = { workspace = true }
+tokio.workspace = true

@@ -1,0 +1,9 @@
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+app/src-tauri/gen/
+.edge0/
+wt/
+/models/
+benchmarks/
+*.log

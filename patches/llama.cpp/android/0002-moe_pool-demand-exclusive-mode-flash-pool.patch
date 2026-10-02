@@ -1,0 +1,84 @@
+From b8b7b832fad28d5926aea27e0667e98e24e45306 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 21:34:34 +0800
+Subject: [PATCH 02/14] moe_pool: demand-exclusive mode (flash-pool
+ requirements 1 and 3 complete)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- the 4096 pool-size arm read negative (0.173 < no-pool 0.188), convicting the mixed dual-track:
+  pool hits were bytes the kernel could have served anyway, and the pool's anonymous pages squeezed
+  the page cache -> net negative. Fix = decode small batches (<=16 ids) force evict-old/admit-new
+  and never fall back to mmap -- the pool becomes the only path to experts, expert file pages stay
+  entirely out of the page cache, and the full cache budget goes to dense (1.5GB kept hot); the LRU
+  head/tail order guarantees this batch's just-loaded rows are not evicted (safe).
+- prefill large batches stay best-effort (prevents ping-pong; overflow goes to the kernel).
+- vs the engine flash-pool: (1) sole path and (3) whole-granularity self-eviction are met; (2) the
+  async window needs phase-2 predictive lookahead (the fork #4 hook is already in place); (4) the
+  explicit budget accounting is on the record.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index 2f75ab1..06f4999 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -107,7 +107,7 @@ static void lru_front(struct slot_ent * s) {
+     g_lru_head = s;
+ }
+ 
+-static struct slot_ent * slot_alloc(size_t bytes, int tix) {
++static struct slot_ent * slot_alloc(size_t bytes, int tix, int force) {
+     struct slot_ent * s = NULL;
+     for (int i = 0; i < g_nslots; i++) {                       // first pick a free slot of the same size
+         if (g_slots[i]->expert == -1 && g_slots[i]->bytes == bytes) { s = g_slots[i]; break; }
+@@ -123,7 +123,8 @@ static struct slot_ent * slot_alloc(size_t bytes, int tix) {
+     }
+     if (!s) {                                                   // finally evict an older-generation LRU entry
+         for (struct slot_ent * c = g_lru_tail; c; c = c->prev) {
+-            if (c->expert < 0 || c->last_gen == g_gen) continue;
++            if (c->expert < 0) continue;
++            if (c->last_gen == g_gen && !force) continue;   // demand mode: allow evicting stale entries of THIS generation (just-used rows were already bumped to the LRU head)
+             g_tp[c->tix].slot_of[c->expert] = -1;
+             g_used -= c->bytes;
+             s = c; break;
+@@ -144,6 +145,9 @@ void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_id
+     struct tensor_pool * p = find_tp(t);
+     if (!p) { pthread_mutex_unlock(&g_lock); return; }
+     const int tix = (int) (p - g_tp);
++    // demand-exclusive mode: small batches (decode 1~4 tok) evict-old/admit-new with no mmap fallback -- pool = the only path to experts (flash-pool requirements 1 and 3)
++    // large batches (prefill) load best-effort: whatever doesn't fit is left to the kernel, preventing cross-layer ping-pong
++    const int demand = n_ids <= 16;
+     for (int i = 0; i < n_ids; i++) {
+         const int32_t e = ids[i];
+         if (e < 0 || e >= p->n_experts) continue;
+@@ -154,7 +158,7 @@ void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_id
+             continue;
+         }
+         p->misses++;
+-        struct slot_ent * s = slot_alloc(p->slice, tix);
++        struct slot_ent * s = slot_alloc(p->slice, tix, demand);
+         if (!s) break;
+         const off_t off = (off_t) (p->file_off + (uint64_t) e * p->stride);
+         const ssize_t got = pread(p->fd, s->base, p->slice, off);
+@@ -186,3 +190,13 @@ void moe_pool_stats(long long * hits, long long * misses, long long * loads, lon
+     if (bytes_loaded) *bytes_loaded = g_bytes_loaded;
+     if (cap_bytes) *cap_bytes = g_cap; if (used_bytes) *used_bytes = g_used;
+ }
++
++__attribute__((destructor)) static void moe_pool_dump(void) {
++    if (!g_ready || !getenv("E0_POOL_STATS")) {
++        return;
++    }
++    long long h = 0, m = 0, l = 0, e = 0, bl = 0; size_t cap = 0, used = 0;
++    moe_pool_stats(&h, &m, &l, &e, &bl, &cap, &used);
++    fprintf(stderr, "moe_pool stats: hits=%lld misses=%lld loads=%lld evicts=%lld loaded_mb=%lld cap_mb=%zu used_mb=%zu\n",
++            h, m, l, e, bl / (1024 * 1024), cap / (1024 * 1024), used / (1024 * 1024));
++}
+-- 
+2.52.0.windows.1
+

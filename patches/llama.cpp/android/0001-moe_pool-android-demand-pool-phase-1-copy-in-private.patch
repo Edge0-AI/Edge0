@@ -1,0 +1,414 @@
+From 6f0158a08cd763eac4bbc2a830ea52fe27996a87 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 20:54:33 +0800
+Subject: [PATCH 01/14] moe_pool: android demand-pool phase-1 (copy-in private
+ frames + lazy row-ptr + expert LRU)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- ggml-cpu/moe_pool.{c,h}: E0_POOL_MB gate (off by default = zero disturbance); copy-in private
+  frames (Android mlock RLIMIT=64KB rules out the pin-file-page design -- PROBE B-track closed);
+  demand miss = thread0 bulk pread before the barrier ("wholesale"); eviction = self-managed LRU
+  at whole-expert granularity + current-generation protection (rows still in compute are not
+  recycled); non-resident row pointers resolve lazily back to the original mmap (kernel backstop).
+- ggml-cpu.c MUL_MAT_ID, four hooks: include / IQP bypass disabled (self-computed row pointers
+  would skip the pool) / thread0 dispatches ensure after scanning ids / src0_cur row-pointer resolve
+- llama-model.cpp load-time registration: walk ml.contexts + name contains 'exps' + weight.offs
+  taken directly (stride%4096 conservative gate; pread does not move the file cursor; pointer idempotent)
+- Android path gates: llama-model.cpp AUTO mmap_support downgrade skippable (E0_MMAP_NOPREFETCH) +
+  bench E0_NO_REPACK + main.cpp setvbuf (root cause of the 217B truncation misattribution)
+- concurrency protocol = phase-1 single ctx (node barriers keep readers quiescent while ensure
+  writes); server parallel ctx = phase 2
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/CMakeLists.txt  |   1 +
+ ggml/src/ggml-cpu/ggml-cpu.c      |   6 +-
+ ggml/src/ggml-cpu/moe_pool.c      | 188 ++++++++++++++++++++++++++++++
+ ggml/src/ggml-cpu/moe_pool.h      |  40 +++++++
+ src/llama-model.cpp               |  37 +++++-
+ tools/llama-bench/llama-bench.cpp |   2 +
+ tools/llama-bench/main.cpp        |   3 +
+ 7 files changed, 274 insertions(+), 3 deletions(-)
+ create mode 100644 ggml/src/ggml-cpu/moe_pool.c
+ create mode 100644 ggml/src/ggml-cpu/moe_pool.h
+
+diff --git a/ggml/src/ggml-cpu/CMakeLists.txt b/ggml/src/ggml-cpu/CMakeLists.txt
+index 1c7338e..f3c945a 100644
+--- a/ggml/src/ggml-cpu/CMakeLists.txt
++++ b/ggml/src/ggml-cpu/CMakeLists.txt
+@@ -30,6 +30,7 @@ function(ggml_add_cpu_backend_variant_impl tag_name)
+         ggml-cpu/ggml-cpu.c
+         ggml-cpu/ggml-cpu.cpp
+         ggml-cpu/repack.cpp
++        ggml-cpu/moe_pool.c
+         ggml-cpu/repack.h
+         ggml-cpu/iqp.cpp
+         ggml-cpu/iqp.h
+diff --git a/ggml/src/ggml-cpu/ggml-cpu.c b/ggml/src/ggml-cpu/ggml-cpu.c
+index be7c2db..54f0d9a 100644
+--- a/ggml/src/ggml-cpu/ggml-cpu.c
++++ b/ggml/src/ggml-cpu/ggml-cpu.c
+@@ -15,6 +15,7 @@
+ #include "ops.h"
+ #include "ggml.h"
+ #include "common.h"
++#include "moe_pool.h"
+ 
+ #if defined(_MSC_VER) || defined(__MINGW32__)
+ #include <malloc.h> // using malloc.h with MSC/MINGW
+@@ -1610,7 +1611,7 @@ static void ggml_compute_forward_mul_mat_id(
+ 
+     // IQ panel gemm (see iqp.h); per expert eligibility is decided below, but the work buffer is
+     // reserved for the whole node (ggml_graph_plan sizes it without params, use_ref only skips the dispatch)
+-    const bool iqp = ggml_cpu_iqp_supports_mul_mat_id(dst) && !params->use_ref;
++    const bool iqp = ggml_cpu_iqp_supports_mul_mat_id(dst) && !params->use_ref && !moe_pool_pooled(src0);
+ 
+     char * iqp_panels = NULL;
+ 
+@@ -1672,6 +1673,9 @@ static void ggml_compute_forward_mul_mat_id(
+                 matrix_row_counts[i02] += 1;
+             }
+         }
++
++        // moe_pool: demand-pool dispatch -- bulk-read this ubatch's experts (unregistered tensors return immediately)
++        moe_pool_ensure(src0, (const int32_t *) ids->data, (int) (ids->ne[0] * ids->ne[1]));
+     }
+ 
+     // reset current_chunk
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+new file mode 100644
+index 0000000..2f75ab1
+--- /dev/null
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -0,0 +1,188 @@
++// moe_pool.c -- expert demand pool (Android phase 1, edge0/android-pool; no prediction, synchronous bulk reads).
++// Design = copy-in private frames + lazy row-pointer resolution: a hit = zero-fault direct read of the private frame; a miss =
++// thread0 preads the whole block before the ggml_barrier ("wholesale"); eviction = pool-managed LRU (whole-expert granularity).
++// Concurrency protocol (the premise phase 1 holds on; server parallel ctx is a phase-2 topic):
++//   the ggml-cpu thread pool barriers at EVERY graph-node boundary; ensure runs only on thread0 at the mul_mat_id entry,
++//   before the global barrier -> all readers are quiescent when writing; cross-ctx parallel decode is unguarded (documented red line).
++// Experts outside the pool / that don't fit: resident_slot=-1 -> the caller gets the default pointer and falls back to the original mmap (kernel backstop).
++// env: E0_POOL_MB (0/unset = off, zero disturbance).
++#include "moe_pool.h"
++#include "ggml.h"
++
++#include <pthread.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/mman.h>
++#include <unistd.h>
++
++#define MOE_POOL_MAX_TENSORS 192   // 40 layers x3 (gate/up/down) = 120 @35b; headroom kept
++
++struct slot_ent {
++    char *   base;           // arena private frame
++    int32_t  expert;         // -1 = free
++    int32_t  tix;
++    uint64_t last_gen;
++    size_t   bytes;
++    struct slot_ent * prev, * next;
++};
++
++struct tensor_pool {
++    const void * key;                // src0->data is stable after load; used as identity
++    int      fd;
++    uint64_t file_off;
++    size_t   slice;                  // private-frame size (page-aligned, >= stride)
++    size_t   stride;                 // per-expert step within the file
++    int64_t  n_experts;
++    int64_t * slot_of;               // [n_experts] slot index or -1 (no tearing concern under the quiesce protocol)
++    long long hits, misses;
++};
++
++static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
++static size_t   g_cap, g_used;
++static char *   g_arena;
++static size_t   g_bump;
++static uint64_t g_gen;
++static struct tensor_pool g_tp[MOE_POOL_MAX_TENSORS];
++static int      g_ntp;
++static struct slot_ent ** g_slots; static int g_nslots, g_slotcap;
++static struct slot_ent * g_lru_head, * g_lru_tail;
++static int      g_ready;
++static long long g_loads, g_evicts, g_bytes_loaded;
++
++static size_t align_up(size_t x) { return (x + 4095) & ~(size_t)4095; }
++
++void moe_pool_init(void) {
++    if (g_ready) return;
++    const char * e = getenv("E0_POOL_MB");
++    size_t mb = e ? (size_t) atol(e) : 0;
++    if (!mb) return;
++    g_cap = mb * 1024 * 1024;
++    void * m = mmap(NULL, g_cap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++    if (m == MAP_FAILED) return;
++    g_arena = m; g_ready = 1;
++}
++
++int moe_pool_enabled(void) { return g_ready; }
++static struct tensor_pool * find_tp(const struct ggml_tensor * t);
++
++void moe_pool_register(struct ggml_tensor * t, int fd, uint64_t file_off) {
++    if (!g_ready) return;
++    if (t->ne[2] < 8) return;                       // expert-stack shape
++    if (find_tp(t)) return;                                 // idempotent: same pointer never re-registered
++    const size_t total = (size_t) ggml_nbytes(t);
++    const size_t stride = total / (size_t) t->ne[2];
++    // conservative gate: pool only when the expert slice is naturally page-aligned (holds for this artifact); otherwise leave it to the kernel
++    if (stride % 4096) return;
++    const size_t slice = stride;
++    pthread_mutex_lock(&g_lock);
++    if (g_ntp >= MOE_POOL_MAX_TENSORS) { pthread_mutex_unlock(&g_lock); return; }
++    struct tensor_pool * p = &g_tp[g_ntp++];
++    p->key = t->data; p->fd = fd; p->file_off = file_off; p->slice = slice; p->stride = stride;
++    p->n_experts = t->ne[2];
++    p->slot_of = calloc(p->n_experts, sizeof(int64_t));
++    for (int64_t i = 0; i < p->n_experts; i++) p->slot_of[i] = -1;
++    pthread_mutex_unlock(&g_lock);
++}
++
++static struct tensor_pool * find_tp(const struct ggml_tensor * t) {
++    for (int i = 0; i < g_ntp; i++) if (g_tp[i].key == t->data) return &g_tp[i];
++    return NULL;
++}
++
++int moe_pool_pooled(const struct ggml_tensor * t) {
++    if (!g_ready || !t || !t->data) return 0;
++    return find_tp(t) != NULL;
++}
++
++// ---- LRU ----
++static void lru_unlink(struct slot_ent * s) {
++    if (s->prev) s->prev->next = s->next; else g_lru_head = s->next;
++    if (s->next) s->next->prev = s->prev; else g_lru_tail = s->prev;
++    s->prev = s->next = NULL;
++}
++static void lru_front(struct slot_ent * s) {
++    s->prev = NULL; s->next = g_lru_head;
++    if (g_lru_head) g_lru_head->prev = s; else g_lru_tail = s;
++    g_lru_head = s;
++}
++
++static struct slot_ent * slot_alloc(size_t bytes, int tix) {
++    struct slot_ent * s = NULL;
++    for (int i = 0; i < g_nslots; i++) {                       // first pick a free slot of the same size
++        if (g_slots[i]->expert == -1 && g_slots[i]->bytes == bytes) { s = g_slots[i]; break; }
++    }
++    if (!s && g_bump + bytes <= g_cap) {                       // then bump-allocate
++        s = calloc(1, sizeof(*s));
++        s->base = g_arena + g_bump; g_bump += bytes; s->bytes = bytes;
++        if (g_nslots == g_slotcap) {
++            g_slotcap = g_slotcap ? g_slotcap * 2 : 512;
++            g_slots = realloc(g_slots, (size_t) g_slotcap * sizeof(*g_slots));
++        }
++        g_slots[g_nslots++] = s;
++    }
++    if (!s) {                                                   // finally evict an older-generation LRU entry
++        for (struct slot_ent * c = g_lru_tail; c; c = c->prev) {
++            if (c->expert < 0 || c->last_gen == g_gen) continue;
++            g_tp[c->tix].slot_of[c->expert] = -1;
++            g_used -= c->bytes;
++            s = c; break;
++        }
++        if (s) { g_evicts++; }
++    }
++    if (!s) return NULL;                                        // pool full this generation / huge block: kernel backstop
++    if (s->expert >= 0) lru_unlink(s);
++    s->tix = tix; s->expert = -1;
++    g_used += s->bytes;
++    return s;
++}
++
++void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_ids) {
++    if (!g_ready) return;
++    pthread_mutex_lock(&g_lock);
++    g_gen++;
++    struct tensor_pool * p = find_tp(t);
++    if (!p) { pthread_mutex_unlock(&g_lock); return; }
++    const int tix = (int) (p - g_tp);
++    for (int i = 0; i < n_ids; i++) {
++        const int32_t e = ids[i];
++        if (e < 0 || e >= p->n_experts) continue;
++        if (p->slot_of[e] >= 0) {                               // hit (slot_of = slot_ent address)
++            p->hits++;
++            struct slot_ent * s = (struct slot_ent *) p->slot_of[e];
++            if (s->last_gen != g_gen) { lru_unlink(s); lru_front(s); s->last_gen = g_gen; }
++            continue;
++        }
++        p->misses++;
++        struct slot_ent * s = slot_alloc(p->slice, tix);
++        if (!s) break;
++        const off_t off = (off_t) (p->file_off + (uint64_t) e * p->stride);
++        const ssize_t got = pread(p->fd, s->base, p->slice, off);
++        if (got != (ssize_t) p->slice) { s->expert = -1; break; }
++        s->expert = e; s->last_gen = g_gen;
++        lru_front(s);
++        g_loads++; g_bytes_loaded += got;
++        p->slot_of[e] = (int64_t) (intptr_t) s;
++    }
++    pthread_mutex_unlock(&g_lock);
++}
++
++const void * moe_pool_row_ptr(const struct ggml_tensor * t, int64_t expert, const void * def) {
++    if (!g_ready || expert < 0) return def;
++    const struct tensor_pool * p = find_tp(t);
++    if (!p || expert >= p->n_experts) return def;
++    const int64_t si = p->slot_of[expert];
++    if (si < 0) return def;
++    const struct slot_ent * s = (const struct slot_ent *) si;
++    return (s->expert == expert) ? s->base : def;               // always true under the quiesce protocol; kept as a defensive check
++}
++
++void moe_pool_stats(long long * hits, long long * misses, long long * loads, long long * evicts,
++                    long long * bytes_loaded, size_t * cap_bytes, size_t * used_bytes) {
++    long long h = 0, m = 0;
++    for (int i = 0; i < g_ntp; i++) { h += g_tp[i].hits; m += g_tp[i].misses; }
++    if (hits) *hits = h; if (misses) *misses = m;
++    if (loads) *loads = g_loads; if (evicts) *evicts = g_evicts;
++    if (bytes_loaded) *bytes_loaded = g_bytes_loaded;
++    if (cap_bytes) *cap_bytes = g_cap; if (used_bytes) *used_bytes = g_used;
++}
+diff --git a/ggml/src/ggml-cpu/moe_pool.h b/ggml/src/ggml-cpu/moe_pool.h
+new file mode 100644
+index 0000000..ab9f7a1
+--- /dev/null
++++ b/ggml/src/ggml-cpu/moe_pool.h
+@@ -0,0 +1,40 @@
++// moe_pool.h -- expert demand pool (Android phase 1, no prediction; fork edge0/android-pool).
++// Foundation = copy-in private frames (Android mlock RLIMIT=64KB is hard-wired; the pin-file-page design is unusable -- see PROBE B-track closure).
++// hit = zero-fault direct read of private memory; miss = ensure() bulk preads the whole block ("wholesale" ~1GB/s vs page-fault "retail" 16MB/s);
++// eviction = this pool's own LRU (whole-expert granularity, never half an expert); long-tail experts outside the pool fall back to their original mmap pages, kernel-backed (lazy pointer resolution).
++#ifndef MOE_POOL_H
++#define MOE_POOL_H
++
++#include <stddef.h>
++#include <stdint.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++struct ggml_tensor;
++
++// called from the llama side before the first registration; E0_POOL_MB unset/0 -> never ready (zero disturbance to current behavior)
++void moe_pool_init(void);
++int moe_pool_enabled(void);
++
++// load-time registration: t = expert 3D tensor (src0), file_off = t's data offset in the model file, fd = file descriptor
++void moe_pool_register(struct ggml_tensor * t, int fd, uint64_t file_off);
++
++// query: is this tensor pool-managed (used to turn off the IQP/repack bypass)
++int moe_pool_pooled(const struct ggml_tensor * t);
++
++// thread0 only (before the barrier): bulk-read the experts named by the ids tensor into the pool (LRU makes room)
++void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_ids);
++
++// row-base resolution: resident -> private-frame pointer; otherwise -> default_ptr (original mmap address, kernel backstop)
++const void * moe_pool_row_ptr(const struct ggml_tensor * t, int64_t expert, const void * default_ptr);
++
++// stats snapshot (for debugging / accounting)
++void moe_pool_stats(long long * hits, long long * misses, long long * loads, long long * evicts,
++                    long long * bytes_loaded, size_t * cap_bytes, size_t * used_bytes);
++
++#ifdef __cplusplus
++}
++#endif
++#endif // MOE_POOL_H
+diff --git a/src/llama-model.cpp b/src/llama-model.cpp
+index e195f50..ec1089d 100644
+--- a/src/llama-model.cpp
++++ b/src/llama-model.cpp
+@@ -1,3 +1,13 @@
++#include <cstdlib>
++#include <cstring>
++#include <unistd.h>
++
++// moe_pool in-place declarations (same convention as fork edge0/prefetch.cc; implementation in ggml-cpu/moe_pool.c, linked into the same libllama)
++extern "C" {
++void        moe_pool_init(void);
++int         moe_pool_enabled(void);
++void        moe_pool_register(struct ggml_tensor * t, int fd, uint64_t file_off);
++}
+ #include "llama-model.h"
+ 
+ #include "llama-arch.h"
+@@ -1441,7 +1451,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
+ 
+     this->ml = &ml; // to be used by create_tensor() and load_arch_tensors()
+ 
+-    if (ml.use_mmap && params.load_mode == LLAMA_LOAD_MODE_AUTO) {
++    if (ml.use_mmap && params.load_mode == LLAMA_LOAD_MODE_AUTO && !getenv("E0_MMAP_NOPREFETCH")) {
+         for (const auto & dev : devices) {
+             ggml_backend_dev_props props;
+             ggml_backend_dev_get_props(dev.dev, &props);
+@@ -1731,7 +1741,9 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
+         }
+     }
+ 
+-    ml.init_mappings(true, use_mlock ? &pimpl->mlock_mmaps : nullptr);
++    // android gate (exp/llama-gguf-perf): E0_MMAP_NOPREFETCH=1 skips whole-file WILLNEED
++    const bool mmap_prefetch = !use_mlock && getenv("E0_MMAP_NOPREFETCH") == nullptr;
++    ml.init_mappings(mmap_prefetch, use_mlock ? &pimpl->mlock_mmaps : nullptr);
+     pimpl->mappings.reserve(ml.mappings.size());
+ 
+     // create the backend buffers
+@@ -1879,6 +1891,27 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
+         }
+     }
+ 
++    // moe_pool registration (Android phase 1): expert 3D tensors -> pool. With E0_POOL_MB unset this block has no side effects.
++    moe_pool_init();
++    if (moe_pool_enabled() && ml.use_mmap && !ml.files.empty()) {
++        auto reg = [&](ggml_tensor * t) {
++            if (!t || !strstr(t->name, "exps")) {
++                return;
++            }
++            const auto * w = ml.get_weight(t->name);
++            if (!w || w->idx >= ml.files.size()) {
++                return;
++            }
++            // pread does not depend on the file cursor, so the loader's fd is safe to use directly (no dup, avoids leaks)
++            moe_pool_register(t, ml.files[w->idx]->file_id(), (uint64_t) w->offs);
++        };
++        for (auto & ctx : ml.contexts) {
++            for (ggml_tensor * t = ggml_get_first_tensor(ctx.get()); t; t = ggml_get_next_tensor(ctx.get(), t)) {
++                reg(t);
++            }
++        }
++    }
++
+     return true;
+ }
+ 
+diff --git a/tools/llama-bench/llama-bench.cpp b/tools/llama-bench/llama-bench.cpp
+index 6541bb5..eff23ca 100644
+--- a/tools/llama-bench/llama-bench.cpp
++++ b/tools/llama-bench/llama-bench.cpp
+@@ -1229,6 +1229,8 @@ struct cmd_params_instance {
+         llama_model_params mparams = llama_model_default_params();
+ 
+         mparams.n_gpu_layers = n_gpu_layers;
++        // android gate: E0_NO_REPACK=1 -> no extra bufts (plain mmap zero-copy, kernel LRU)
++        if (getenv("E0_NO_REPACK")) { mparams.use_extra_bufts = false; }
+         if (!devices.empty()) {
+             mparams.devices = const_cast<ggml_backend_dev_t *>(devices.data());
+         }
+diff --git a/tools/llama-bench/main.cpp b/tools/llama-bench/main.cpp
+index 0c18bb0..339602e 100644
+--- a/tools/llama-bench/main.cpp
++++ b/tools/llama-bench/main.cpp
+@@ -1,5 +1,8 @@
++#include <cstdio>
++
+ int llama_bench(int argc, char ** argv);
+ 
+ int main(int argc, char ** argv) {
++    setvbuf(stderr, nullptr, _IONBF, 0);  // edge0 diag: unbuffered load log (217B truncation = stderr block-buffer)
+     return llama_bench(argc, argv);
+ }
+-- 
+2.52.0.windows.1
+

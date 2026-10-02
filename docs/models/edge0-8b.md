@@ -22,7 +22,7 @@ The performance profile is based on benchmarks of the current release adapter ve
 | Prefill chunk | 2048 |
 | Hot window | 1 |
 | Streaming prefetch history | on (`prefetch_history=True`) |
-| Serving port | 8083 |
+| Serving port | 8000 |
 | Measured throughput | 23.9–25.3 tok/s (M4 Pro) |
 | Measured peak activation memory | ≈ 1.0 GiB |
 
@@ -41,7 +41,7 @@ This tier uses the `LayerOptions.prod_k8()` preset (aligned with the reference d
 ### Serving via the CLI
 
 ```bash
-edge0 serve /path/to/checkpoint --host 127.0.0.1 --port 8083
+edge0 serve /path/to/checkpoint --host 127.0.0.1 --port 8000
 ```
 
 Optional arguments:
@@ -99,7 +99,7 @@ cfg = AutoConfig.from_pretrained("/path/to/checkpoint", name="edge0-8b")
 ### Non-streaming chat
 
 ```bash
-curl -s http://127.0.0.1:8083/v1/chat/completions \
+curl -s http://127.0.0.1:8000/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "edge0-8b",
@@ -131,7 +131,7 @@ Optional request fields: `model`, `messages` (with `role`/`content`; content sup
 ### Streaming chat (requires Flask)
 
 ```bash
-curl -N http://127.0.0.1:8083/v1/chat/completions \
+curl -N http://127.0.0.1:8000/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "edge0-8b",
@@ -152,7 +152,7 @@ from edge0 import AutoEngine
 engine = AutoEngine.from_pretrained(
     "/path/to/checkpoint",
     name="edge0-8b",
-    port=9083,                    # override the default port 8083
+    port=9083,                    # override the default port 8000
     target_tok_s=35.0,            # override the acceptance throughput target
     prerouter=None,               # disable the prerouter
     lora="",                      # disable LoRA

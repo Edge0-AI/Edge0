@@ -1,0 +1,95 @@
+From 7f9c2513d789728292e72c6708ed4ee497dadbab Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 23:28:28 +0800
+Subject: [PATCH 2/2] common+server: --pool-mb CLI (edge0 private surface #8)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+common_params.pool_mb + arg registration (env LLAMA_ARG_POOL_MB on the same line); server passes
+params_base.pool_mb + model.path into edge0_pref_init (signature extended; env E0_GGUF/E0_POOL_MB
+stay as harness/debug fallbacks, CLI takes precedence). Also removes the duplicate declaration
+block left over from #4. Smoke: 35b --pool-mb 1024 on a clean env -> POOL2 resolver=on tt=120,
+hit/fillD incrementing normally.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ common/arg.cpp                  | 11 +++++++++++
+ common/common.h                 |  1 +
+ tools/server/server-context.cpp | 14 ++++----------
+ 3 files changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/common/arg.cpp b/common/arg.cpp
+index 111e4ed..73ded46 100644
+--- a/common/arg.cpp
++++ b/common/arg.cpp
+@@ -2792,6 +2792,17 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
+             params.mem_budget_mb = value;
+         }
+     ).set_env("LLAMA_ARG_MEM_BUDGET_MB"));
++    add_opt(common_arg(
++        {"--pool-mb"}, "N",
++        "edge0: expert L1 cache pool of N MB (private pages, mul_mat_id direct read; 0=off)\n"
++        "(P-tier contract: pool bytes are the hard commitment, remaining RAM stays opportunistic OS cache)",
++        [](common_params & params, int value) {
++            if (value < 0) {
++                throw std::invalid_argument("invalid value");
++            }
++            params.pool_mb = value;
++        }
++    ).set_env("LLAMA_ARG_POOL_MB"));
+     GGML_ASSERT(params.n_gpu_layers < 0); // string_format would need to be extended for a default >= 0
+     add_opt(common_arg(
+         {"-ngl", "--gpu-layers", "--n-gpu-layers"}, "N",
+diff --git a/common/common.h b/common/common.h
+index bfa67d9..683b4e5 100644
+--- a/common/common.h
++++ b/common/common.h
+@@ -472,6 +472,7 @@ struct common_params {
+ 
+     int32_t n_gpu_layers       = -1;    // number of layers to store in VRAM, -1 is auto, <= -2 is all
+     int32_t mem_budget_mb      = 0;     // edge0: cap process max working set in MB (0=off; P-tier memory budget)
++    int32_t pool_mb            = 0;     // edge0: expert L1 cache pool in MB, private pages direct-read (0=off; DECISIONS 28/16)
+     int32_t main_gpu           = 0;     // the GPU that is used for scratch and small tensors
+     float   tensor_split[128]  = {0};   // how split tensors should be distributed across GPUs
+     bool    fit_params         = true;  // whether to fit unset model/context parameters to free device memory
+diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
+index 1859a24..f607072 100644
+--- a/tools/server/server-context.cpp
++++ b/tools/server/server-context.cpp
+@@ -1,19 +1,13 @@
+ #include "server-context.h"
+ 
+-// edge0 W4 prerouter advisory (impl: serve/prefetch.cc; DECISIONS 28-B)
++// edge0 W4 prerouter advisory + 28/16 real pool (impl: src/edge0/prefetch.cc; DECISIONS 28-B/16)
+ #include <cstdint>
+ struct llama_model;
+ struct llama_context;
+-bool edge0_pref_init(struct llama_model * model, struct llama_context * ctx);
++bool edge0_pref_init(struct llama_model * model, struct llama_context * ctx, int pool_mb, const char * gguf_path);
+ void edge0_pref_on_step(struct llama_context * ctx, int64_t last_row);
+ bool edge0_apply_mem_budget(int mb);   // serve/mem_budget.cc: --mem-budget-mb working-set hard cap
+ 
+-
+-// edge0 W4 prerouter advisory (DECISIONS 28-B; implementation in serve/prefetch.cc, compiled into the llama target)
+-struct llama_model;
+-struct llama_context;
+-bool edge0_pref_init(llama_model * model, llama_context * ctx);
+-void edge0_pref_on_step(llama_context * ctx, int64_t last_row);
+ #include "server-chat.h"
+ #include "server-common.h"
+ #include "server-http.h"
+@@ -1129,8 +1123,8 @@ private:
+             return false;
+         }
+ 
+-        // edge0 W4: prerouter advisory init (E0_PREROUTER unset => sleeps immediately)
+-        edge0_pref_init(model_tgt, ctx_tgt);
++        // edge0 W4+16: prerouter/pool init (both E0_PREROUTER and --pool-mb unset => sleeps immediately)
++        edge0_pref_init(model_tgt, ctx_tgt, params_base.pool_mb, params_base.model.path.c_str());
+ 
+         vocab = llama_model_get_vocab(model_tgt);
+ 
+-- 
+2.52.0.windows.1
+

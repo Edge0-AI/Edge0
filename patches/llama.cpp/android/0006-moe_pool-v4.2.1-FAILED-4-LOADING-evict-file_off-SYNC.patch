@@ -1,0 +1,91 @@
+From a07f9c8ad77f4ec1b169a540626cc172932071d3 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 01:18:49 +0800
+Subject: [PATCH 06/14] =?UTF-8?q?moe=5Fpool=20v4.2.1:=20FAILED=20=E9=87=8D?=
+ =?UTF-8?q?=E8=AF=95=E5=85=A5=E9=98=9F=E8=B7=AF=E5=BE=84=E5=85=88=E7=A6=BB?=
+ =?UTF-8?q?=E9=93=BE=EF=BC=88=E4=BA=8C=E5=B7=A1#4=EF=BC=9ALOADING=20?=
+ =?UTF-8?q?=E5=9C=A8=E9=93=BE=E7=A0=B4=E5=9D=8F=E4=B8=8D=E5=8F=98=E5=BC=8F?=
+ =?UTF-8?q?=E2=86=92evict=20=E5=8F=AF=E9=80=90=E5=9C=A8=E9=80=94=E6=A7=BD?=
+ =?UTF-8?q?=E5=8F=8C=E5=86=99=EF=BC=89+=20file=5Foff=20=E5=90=9E=E7=A0=81?=
+ =?UTF-8?q?=E4=BF=AE=E5=A4=8D=20+=20SYNC=20=E4=BA=8C=E5=88=86=E5=BC=80?=
+ =?UTF-8?q?=E5=85=B3=20+=20=E6=8C=87=E7=BA=B9=E8=B0=83=E8=AF=95=E4=BB=B6?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index 6f76c90..fa89ffd 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -383,6 +383,7 @@ static void slot_finalize_locked(int32_t si, int ok) {
+ // synchronous read on the main thread outside the lock (same as the engine's sync_load_locked; no one can move a LOADING slot, so it's safe)
+ static int load_sync_locked(int32_t si) {
+     struct slot_ent * s = &g_slots[si];
++    list_unlink(si);        // unlink: during the retry window this slot cannot be taken over by a claim (out-of-lock read vs double write)
+     struct tensor_pool * p = &g_tp[s->tix];
+     const uint64_t off = p->file_off + (uint64_t) s->expert * p->stride;
+     pthread_mutex_unlock(&g_lock);
+@@ -443,7 +444,7 @@ static long long mem_avail_mb(void) {
+     fclose(f);
+     return v;
+ }
+-// watermark trim (simplified form of the engine's trim): evict only non-pinned READY; no physical frame reclaim (the arena middle is not contiguous -- see ALIGNMENT.md).
++// watermark trim (isomorphic to the engine's trim): evict non-pinned READY + madvise(DONTNEED) on evicted slots to truly drop RSS (the engine frees tail blocks via os_anon_free; we use a single arena, so per-slot DONTNEED is the equivalent).
+ static void water_trim_locked(void) {
+     const char * fe = getenv("E0_MEM_FLOOR_MB");
+     if (!fe) return;
+@@ -467,6 +468,7 @@ static void water_trim_locked(void) {
+         list_unlink(v);
+         s->state = ST_EMPTY; s->expert = -1;
+         g_used_slots--; g_trims++; n++;
++        madvise(s->mem, g_slice, MADV_DONTNEED);   // the slot region is a contiguous 640KB: physical pages released at once and read back as zeros (rewritten by pread on reuse)
+     }
+     if (n) fprintf(stderr, "moe_pool trim: evicted=%d used=%d MemAvailable=%lldMB\n", n, g_used_slots, avail);
+ }
+@@ -514,7 +516,9 @@ void moe_pool_register(struct ggml_tensor * t, int fd, uint64_t file_off) {
+     if (p->role >= 0 && p->layer >= 0 && p->layer < 64) {
+         g_lr[p->layer].tix[p->role] = g_ntp - 1;
+     }
+-    p->key = t->data; snprintf(p->name, sizeof(p->name), "%s", t->name); p->fd = dup(fd);   // independent ownership: pread still works after the loader closed its fd (v4 hang incident) p->file_off = file_off; p->slice = stride; p->stride = stride;
++    p->key = t->data; snprintf(p->name, sizeof(p->name), "%s", t->name);
++    p->fd = dup(fd);   // independent ownership: pread still works after the loader closed its fd (v4 hang incident)
++    p->file_off = file_off; p->slice = stride; p->stride = stride;
+     p->n_experts = t->ne[2];
+     p->slot = calloc((size_t) p->n_experts, sizeof(int32_t));
+     for (int64_t i = 0; i < p->n_experts; i++) p->slot[i] = SLOT_NONE;
+@@ -633,6 +637,7 @@ void moe_pool_prefetch_impl(struct tensor_pool * p, int64_t e) {
+     const int32_t si = p->slot[e];
+     if (si >= 0) {
+         if (g_slots[si].state == ST_FAILED) {                // failed slot: retry once (enqueue)
++            list_unlink(si);                                 // second-audit case #4: LOADING must be unlinked (otherwise eviction could take an in-flight slot -> double write)
+             g_slots[si].state = ST_LOADING;
+             if (!enqueue_io_locked(si, 0)) {
+                 load_sync_locked(si);
+@@ -658,7 +663,18 @@ const void * moe_pool_row_ptr(const struct ggml_tensor * t, int64_t expert, cons
+     const int32_t si = p->slot[expert];
+     if (si < 0) return def;
+     const struct slot_ent * s = &g_slots[si];
+-    return (s->state == ST_READY && s->expert == expert) ? s->mem : def;
++    if (s->state == ST_READY && s->expert == expert) {
++        static int s_fp6;
++        if (getenv("E0_POOL_STATS") && s_fp6 < 6) {
++            s_fp6++;
++            const unsigned char * q = (const unsigned char *) s->mem;
++            const unsigned char * d2 = (const unsigned char *) def;
++            fprintf(stderr, "moe_pool fp: %s e=%d slot=%02x%02x%02x%02x def=%02x%02x%02x%02x\n",
++                    t->name, (int) expert, q[0], q[1], q[2], q[3], d2[0], d2[1], d2[2], d2[3]); fprintf(stderr, "moe_pool fp2: tix=%d file_off=%llu stride=%llu fd=%d\n", (int)(p - g_tp), (unsigned long long) p->file_off, (unsigned long long) p->stride, p->fd);
++        }
++        return s->mem;
++    }
++    return def;
+ }
+ 
+ void moe_pool_stats(long long * hits, long long * misses, long long * loads, long long * evicts,
+-- 
+2.52.0.windows.1
+

@@ -1,0 +1,125 @@
+From a49736d435951f641bd4bd4ba22fd6792ddb7839 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 15:57:45 +0800
+Subject: [PATCH 1/6] bailingmoe3: wire LoRA into main graph (edge0 private
+ surface #1)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Reroutes the 9 raw ggml_mul_mat call sites in the main graph through build_lora_mm (same shape as
+qwen3next): GDN branch wq/wk/wv (the causal_conv1d helper now takes the already-projected tensor)
++ ssm_f_a/ssm_beta/ssm_g_a/wo; MLA branch wq_b/wq/wqkv_gate/wo. wq_a/wkv_a_mqa/output have no
+adapter target and stay untouched; wk_b/wv_b are 3D batched with no upstream LoRA precedent,
+deferred to phase 2. The MTP graph has no adapter coverage and stays untouched.
+
+For edge0-8b the 147 LoRA pairs previously loaded but silently never entered the graph (the graph
+did not reference them); after this patch the 12-step golden probes went 9/12 -> 11/12 and R3
+free-gen accuracy 35.5% -> 43.6%.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ src/models/bailingmoe3.cpp | 30 ++++++++++++++----------------
+ 1 file changed, 14 insertions(+), 16 deletions(-)
+
+diff --git a/src/models/bailingmoe3.cpp b/src/models/bailingmoe3.cpp
+index e208c7d..2643859 100644
+--- a/src/models/bailingmoe3.cpp
++++ b/src/models/bailingmoe3.cpp
+@@ -171,8 +171,7 @@ static ggml_tensor * bailingmoe3_causal_conv1d(
+         ggml_tensor * conv_states_all,
+         ggml_tensor * conv_state_all,
+         int64_t qkv,
+-        ggml_tensor * x,
+-        ggml_tensor * proj_w,
++        ggml_tensor * x_proj,
+         ggml_tensor * conv_w,
+         int64_t d_conv,
+         int64_t head_dim,
+@@ -192,9 +191,8 @@ static ggml_tensor * bailingmoe3_causal_conv1d(
+             total_state_size * ggml_element_size(conv_state_all),
+             qkv * conv_state_size * ggml_element_size(conv_state_all));
+ 
+-    ggml_tensor * x_proj = ggml_mul_mat(ctx0, proj_w, x);
+-    x_proj = ggml_reshape_3d(ctx0, x_proj, d_inner, n_seq_tokens, n_seqs);
+-    ggml_tensor * conv_x = ggml_concat(ctx0, conv_state, ggml_transpose(ctx0, x_proj), 0);
++    ggml_tensor * x_proj_r = ggml_reshape_3d(ctx0, x_proj, d_inner, n_seq_tokens, n_seqs);
++    ggml_tensor * conv_x = ggml_concat(ctx0, conv_state, ggml_transpose(ctx0, x_proj_r), 0);
+ 
+     const int64_t K = (int64_t) n_rs_seq + 1;
+     const int64_t n_written = std::min<int64_t>(n_seq_tokens, K);
+@@ -260,16 +258,16 @@ llama_model_bailingmoe3::graph::graph(const llama_model & model, const llm_graph
+             ggml_tensor * conv_state_all = build_rs(inp_rs, conv_states_all, hparams.n_embd_r(), n_seqs);
+ 
+             ggml_tensor * q = bailingmoe3_causal_conv1d(
+-                    gf, ctx0, conv_states_all, conv_state_all, 0, cur, layer.wq, layer.ssm_q_conv,
++                    gf, ctx0, conv_states_all, conv_state_all, 0, build_lora_mm(layer.wq, cur), layer.ssm_q_conv,
+                     d_conv, head_dim, n_head, n_seq_tokens, n_seqs, n_tokens, cache_head, mem_size, cparams.n_rs_seq);
+             ggml_tensor * k = bailingmoe3_causal_conv1d(
+-                    gf, ctx0, conv_states_all, conv_state_all, 1, cur, layer.wk, layer.ssm_k_conv,
++                    gf, ctx0, conv_states_all, conv_state_all, 1, build_lora_mm(layer.wk, cur), layer.ssm_k_conv,
+                     d_conv, head_dim, n_head, n_seq_tokens, n_seqs, n_tokens, cache_head, mem_size, cparams.n_rs_seq);
+             ggml_tensor * v = bailingmoe3_causal_conv1d(
+-                    gf, ctx0, conv_states_all, conv_state_all, 2, cur, layer.wv, layer.ssm_v_conv,
++                    gf, ctx0, conv_states_all, conv_state_all, 2, build_lora_mm(layer.wv, cur), layer.ssm_v_conv,
+                     d_conv, head_dim, n_head, n_seq_tokens, n_seqs, n_tokens, cache_head, mem_size, cparams.n_rs_seq);
+ 
+-            ggml_tensor * gate = ggml_mul_mat(ctx0, layer.ssm_f_a, cur);
++            ggml_tensor * gate = build_lora_mm(layer.ssm_f_a, cur);
+             gate = ggml_add(ctx0, gate, layer.ssm_dt_b);
+             gate = ggml_reshape_3d(ctx0, gate, head_dim, n_head, n_tokens);
+             ggml_tensor * a = ggml_reshape_3d(ctx0, layer.ssm_a, 1, n_head, 1);
+@@ -277,7 +275,7 @@ llama_model_bailingmoe3::graph::graph(const llama_model & model, const llm_graph
+             gate = ggml_reshape_4d(ctx0, gate, head_dim, n_head, n_seq_tokens, n_seqs);
+             cb(gate, "kda_gate", il);
+ 
+-            ggml_tensor * beta = ggml_mul_mat(ctx0, layer.ssm_beta, cur);
++            ggml_tensor * beta = build_lora_mm(layer.ssm_beta, cur);
+             beta = ggml_sigmoid(ctx0, ggml_reshape_4d(ctx0, beta, 1, n_head, n_seq_tokens, n_seqs));
+ 
+             q = build_gdn_l2_norm(ctx0, q, hparams.f_norm_rms_eps);
+@@ -290,12 +288,12 @@ llama_model_bailingmoe3::graph::graph(const llama_model & model, const llm_graph
+             ggml_tensor * out = ggml_cont(ctx0, build_recurrent_attn(
+                     inp_rs, states_all, q, k, v, gate, beta, state, il));
+ 
+-            ggml_tensor * out_gate = ggml_mul_mat(ctx0, layer.ssm_g_a, cur);
++            ggml_tensor * out_gate = build_lora_mm(layer.ssm_g_a, cur);
+             out_gate = ggml_reshape_3d(ctx0, out_gate, head_dim, n_head, n_tokens);
+             out = ggml_reshape_3d(ctx0, out, head_dim, n_head, n_tokens);
+             out = build_norm(out, layer.ssm_o_norm, nullptr, LLM_NORM_RMS, il);
+             out = ggml_mul(ctx0, out, ggml_sigmoid(ctx0, out_gate));
+-            cur = ggml_mul_mat(ctx0, layer.wo, ggml_cont_2d(ctx0, out, d_inner, n_tokens));
++            cur = build_lora_mm(layer.wo, ggml_cont_2d(ctx0, out, d_inner, n_tokens));
+             cb(cur, "kda_out", il);
+         } else {
+             ggml_tensor * attn_input = cur;
+@@ -305,10 +303,10 @@ llama_model_bailingmoe3::graph::graph(const llama_model & model, const llm_graph
+                 cb(q_all, "q_a", il);
+                 q_all = build_norm(q_all, layer.attn_q_a_norm, nullptr, LLM_NORM_RMS, il);
+                 cb(q_all, "q_a_norm", il);
+-                q_all = ggml_mul_mat(ctx0, layer.wq_b, q_all);
++                q_all = build_lora_mm(layer.wq_b, q_all);
+                 cb(q_all, "q_b", il);
+             } else {
+-                q_all = ggml_mul_mat(ctx0, layer.wq, cur);
++                q_all = build_lora_mm(layer.wq, cur);
+             }
+             ggml_tensor * q_nope = ggml_view_3d(ctx0, q_all, qk_nope_head_dim, n_head, n_tokens,
+                     ggml_row_size(q_all->type, qk_head_dim),
+@@ -343,11 +341,11 @@ llama_model_bailingmoe3::graph::graph(const llama_model & model, const llm_graph
+             cur = build_attn(inp_attn, nullptr, nullptr, nullptr,
+                     q, k, kv, nullptr, nullptr, layer.wv_b, kq_scale, il);
+ 
+-            ggml_tensor * attn_gate = ggml_mul_mat(ctx0, layer.wqkv_gate, attn_input);
++            ggml_tensor * attn_gate = build_lora_mm(layer.wqkv_gate, attn_input);
+             attn_gate = ggml_sigmoid(ctx0, ggml_reshape_3d(ctx0, attn_gate, 1, n_head, n_tokens));
+             cur = ggml_reshape_3d(ctx0, cur, v_head_dim, n_head, n_tokens);
+             cur = ggml_mul(ctx0, cur, attn_gate);
+-            cur = ggml_mul_mat(ctx0, layer.wo, ggml_cont_2d(ctx0, cur, v_head_dim * n_head, n_tokens));
++            cur = build_lora_mm(layer.wo, ggml_cont_2d(ctx0, cur, v_head_dim * n_head, n_tokens));
+             cb(cur, "mla_out", il);
+         }
+ 
+-- 
+2.52.0.windows.1
+

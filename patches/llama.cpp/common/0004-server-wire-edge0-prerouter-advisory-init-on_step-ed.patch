@@ -1,0 +1,80 @@
+From 8688715e945011c1c192a611a2334e968ddd4283 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 18:25:12 +0800
+Subject: [PATCH 4/6] server: wire edge0 prerouter advisory init/on_step (edge0
+ private surface #4, app-layer)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+edge0_pref_init once load_model has ctx ready; edge0_pref_on_step(ctx, batch_view.n_tokens-1)
+after every llama_decode with ret==0. The implementation lives in src/edge0/prefetch.cc
+(= this repo's serve/ pieces, gitignored there, assembled by the vendor-build script on the
+release path). With E0_PREROUTER unset both call sites return immediately -- zero footprint.
+
+Smoke (35b r3+lora, 48tok, accounting mode): INIT heads=33 gates=33 exps=33 map=ok;
+head 54.0% ~ the reference machine's 55.2% => the ported formula closes the loop.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ .gitignore                      |  1 +
+ tools/server/server-context.cpp | 22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/.gitignore b/.gitignore
+index 9b58961..eae8d8d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -153,3 +153,4 @@ a.out.*
+ 
+ AGENTS.local.md
+ .pi/SYSTEM.md
++src/edge0/
+diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
+index b6835e4..35f5804 100644
+--- a/tools/server/server-context.cpp
++++ b/tools/server/server-context.cpp
+@@ -1,4 +1,18 @@
+ #include "server-context.h"
++
++// edge0 W4 prerouter advisory (impl: serve/prefetch.cc; DECISIONS 28-B)
++#include <cstdint>
++struct llama_model;
++struct llama_context;
++bool edge0_pref_init(struct llama_model * model, struct llama_context * ctx);
++void edge0_pref_on_step(struct llama_context * ctx, int64_t last_row);
++
++
++// edge0 W4 prerouter advisory (DECISIONS 28-B; implementation in serve/prefetch.cc, compiled into the llama target)
++struct llama_model;
++struct llama_context;
++bool edge0_pref_init(llama_model * model, llama_context * ctx);
++void edge0_pref_on_step(llama_context * ctx, int64_t last_row);
+ #include "server-chat.h"
+ #include "server-common.h"
+ #include "server-http.h"
+@@ -1111,6 +1125,9 @@ private:
+             return false;
+         }
+ 
++        // edge0 W4: prerouter advisory init (E0_PREROUTER unset => sleeps immediately)
++        edge0_pref_init(model_tgt, ctx_tgt);
++
+         vocab = llama_model_get_vocab(model_tgt);
+ 
+         n_ctx = llama_n_ctx(ctx_tgt);
+@@ -3685,6 +3702,11 @@ private:
+             }
+         });
+ 
++        // edge0 W4: prerouter advisory accounting/prefetch (returns immediately when dormant)
++        if (ret == 0) {
++            edge0_pref_on_step(ctx_tgt, (int64_t) batch_view.n_tokens - 1);
++        }
++
+         if (ret != 0) {
+             {
+                 std::string err;
+-- 
+2.52.0.windows.1
+

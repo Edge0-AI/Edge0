@@ -1,0 +1,43 @@
+From d1c5a393fa294dbac96f54c4002d68bf7b3a5147 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 17:04:59 +0800
+Subject: [PATCH 3/6] CMake: glob src/edge0/*.cc into llama target (edge0
+ private surface #3)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Release assembly (scripts/vendor-build.ps1) copies this repo's serve/ pieces into src/edge0/ and
+this glob compiles them into llama.lib; a missing/empty directory = pure no-op. The three W4 hooks
+exhaust the surface caps (#2 capture / #3 glob / #4 context wire-up), so all prerouter logic lives
+in serve/ and consumes no caps.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ src/CMakeLists.txt | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index afdaddc..961fc1c 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -7,6 +7,8 @@ llama_add_compile_flags()
+ # llama
+ 
+ file(GLOB LLAMA_MODELS_SOURCES "models/*.cpp")
++# edge0 private surface #3: directory for our own sources (the release path copies them in from serve/ via the vendor-build script; empty directory = no-op)
++file(GLOB LLAMA_EDGE0_SOURCES "edge0/*.cc" "edge0/*.cpp")
+ 
+ set(LLAMA_CORE_SOURCES
+     llama.cpp
+@@ -48,6 +50,7 @@ add_library(llama
+             ${LLAMA_CORE_SOURCES}
+             unicode.h
+             ${LLAMA_MODELS_SOURCES}
++            ${LLAMA_EDGE0_SOURCES}
+             )
+ 
+ set_target_properties(llama PROPERTIES
+-- 
+2.52.0.windows.1
+

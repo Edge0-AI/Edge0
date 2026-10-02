@@ -1,0 +1,59 @@
+From cda991a728b79384b05f1cb58c1ebca34eb31a49 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 00:36:57 +0800
+Subject: [PATCH 05/14] ggml-cpu/qwen3next: moe_pool hooks (IQP bypass gate,
+ ensure/note at MUL_MAT_ID, row-ptr lazy resolve, layer-input bind)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- ggml-cpu.c: #include moe_pool.h; at the MUL_MAT_ID entry thread0 runs moe_pool_ensure +
+  moe_pool_note_routing before the barrier (prefetch signal; the pool reads only and never touches
+  logits); row bases resolve lazily via moe_pool_row_ptr; iqf bypass gate && !moe_pool_pooled(src0)
+  (pooled tensors are barred from the repack dual-track)
+- qwen3next.cpp: moe_pool_bind_min after both t_layer_inp sites (feature source m_in for the
+  predictor head)
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/ggml-cpu.c | 1 +
+ src/models/qwen3next.cpp     | 6 ++++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/ggml/src/ggml-cpu/ggml-cpu.c b/ggml/src/ggml-cpu/ggml-cpu.c
+index 54f0d9a..656f780 100644
+--- a/ggml/src/ggml-cpu/ggml-cpu.c
++++ b/ggml/src/ggml-cpu/ggml-cpu.c
+@@ -1676,6 +1676,7 @@ static void ggml_compute_forward_mul_mat_id(
+ 
+         // moe_pool: demand-pool dispatch -- bulk-read this ubatch's experts (unregistered tensors return immediately)
+         moe_pool_ensure(src0, (const int32_t *) ids->data, (int) (ids->ne[0] * ids->ne[1]));
++        moe_pool_note_routing(src0, (const int32_t *) ids->data, (int) (ids->ne[0] * ids->ne[1]));
+     }
+ 
+     // reset current_chunk
+diff --git a/src/models/qwen3next.cpp b/src/models/qwen3next.cpp
+index 9673e3b..c081fd5 100644
+--- a/src/models/qwen3next.cpp
++++ b/src/models/qwen3next.cpp
+@@ -1,4 +1,9 @@
+ #include "models.h"
++
++// moe_pool in-place declarations (phase-2 Android: the builder binds m_in; implementation in ggml-cpu/moe_pool.c)
++extern "C" {
++void moe_pool_bind_min(int layer, const struct ggml_tensor * t);
++}
+ #include "llama-memory-recurrent.h"
+ 
+ void llama_model_qwen3next::load_arch_hparams(llama_model_loader & ml) {
+@@ -187,6 +192,7 @@ llama_model_qwen3next::graph::graph(const llama_model & model, const llm_graph_p
+         // only consumed when embeddings_layer_inp[il] is active (prerouter mode);
+         // with the feature off, set_outputs() skips this slot entirely.
+         res->t_layer_inp[il] = attn_post_norm;
++        moe_pool_bind_min(il, res->t_layer_inp[il]);
+ 
+         // FFN layer (MoE or dense) - without residual connection
+         cur = build_layer_ffn(attn_post_norm, il);
+-- 
+2.52.0.windows.1
+

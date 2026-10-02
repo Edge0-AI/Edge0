@@ -1,0 +1,56 @@
+From 961da91d656cecdeede567d05545e69352aee3f2 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 09:05:06 +0800
+Subject: [PATCH 10/14] =?UTF-8?q?moe=5Fpool=20v4.6:=20moe=5Fpool=5Fextra?=
+ =?UTF-8?q?=20=E5=AF=BC=E5=87=BA=EF=BC=88stall/=E6=A7=BD=E4=BD=8D/?=
+ =?UTF-8?q?=E9=A2=84=E5=8F=96=E6=B6=88=E8=B4=B9=E8=AE=A1=E6=95=B0=E2=80=94?=
+ =?UTF-8?q?=E2=80=94App=20metrics=20=E5=8D=A1=20pool/rss=20=E4=BE=9B?=
+ =?UTF-8?q?=E6=95=B0=E9=80=9A=E9=81=93=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 9 +++++++++
+ ggml/src/ggml-cpu/moe_pool.h | 4 ++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index 7584680..d7be8ca 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -710,6 +710,15 @@ void moe_pool_stats(long long * hits, long long * misses, long long * loads, lon
+     if (used_bytes) *used_bytes = (size_t) g_used_slots * g_slice;
+ }
+ 
++void moe_pool_extra(long long * stall_ns, long long * slots_used, long long * slots_total,
++                    long long * pf_used, long long * pf_mispredict) {
++    if (stall_ns) *stall_ns = g_stall_ns;
++    if (slots_used) *slots_used = g_used_slots;
++    if (slots_total) *slots_total = g_nslots;
++    if (pf_used) *pf_used = g_pf_used;
++    if (pf_mispredict) *pf_mispredict = g_pf_miss;
++}
++
+ __attribute__((destructor)) static void moe_pool_dump(void) {
+     if (!g_ready && !g_blob_on) return;
+     long long h = 0, m = 0;
+diff --git a/ggml/src/ggml-cpu/moe_pool.h b/ggml/src/ggml-cpu/moe_pool.h
+index e4c48ca..533d6ac 100644
+--- a/ggml/src/ggml-cpu/moe_pool.h
++++ b/ggml/src/ggml-cpu/moe_pool.h
+@@ -42,6 +42,10 @@ int  moe_pool_load_heads(const char * path);
+ void moe_pool_bind_min(int layer, const struct ggml_tensor * t);
+ void moe_pool_note_routing(const struct ggml_tensor * src0, const int32_t * ids, int n_ids);
+ 
++// v4 extended counters (App metrics channel: stall / slots / prefetch consumption)
++void moe_pool_extra(long long * stall_ns, long long * slots_used, long long * slots_total,
++                    long long * pf_used, long long * pf_mispredict);
++
+ // stats snapshot (for debugging / accounting)
+ void moe_pool_stats(long long * hits, long long * misses, long long * loads, long long * evicts,
+                     long long * bytes_loaded, size_t * cap_bytes, size_t * used_bytes);
+-- 
+2.52.0.windows.1
+

@@ -1,0 +1,55 @@
+From 437ebfe1a299b86f7e299dd0db93f79961c0a68a Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 02:23:09 +0800
+Subject: [PATCH 09/14] =?UTF-8?q?moe=5Fpool=20v4.5:=20=E9=A2=84=E5=8F=96?=
+ =?UTF-8?q?=20K8=E2=86=92K4=20+=20=E7=A7=AF=E5=8E=8B=E8=8A=82=E6=B5=81=206?=
+ =?UTF-8?q?4=E2=86=9232=EF=BC=88p6144pr=3D3.10=20=E5=8F=8D=E5=99=AC?=
+ =?UTF-8?q?=E6=A1=88=E2=80=94=E2=80=94=E9=A2=84=E5=8F=96=E9=A2=84=E7=AE=97?=
+ =?UTF-8?q?=3D=E6=9C=AC=E7=AB=AF=20UFS=20=E5=B8=A6=E5=AE=BD=EF=BC=8CK8=3D1?=
+ =?UTF-8?q?.23GB/tok=20=E8=B6=85=E8=BD=BD=202=20=E5=80=8D=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index 4d62904..7584680 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -270,16 +270,16 @@ static void pred_do_job(struct pred_job * j) {
+         out[o] = dot_f16_f32(lin + (size_t) o * 2560, j->x, 2560)
+                + dot_f16_f32(fc2 + (size_t) o * 512, h, 512);
+     }
+-    int top[8]; float tv[8]; for (int k = 0; k < 8; k++) { tv[k] = -1e30f; top[k] = -1; }
++    int top[4]; float tv[4]; for (int k = 0; k < 4; k++) { tv[k] = -1e30f; top[k] = -1; }
+     for (int e = 0; e < 256; e++) {
+-        for (int k = 0; k < 8; k++) {
++        for (int k = 0; k < 4; k++) {
+             if (out[e] > tv[k]) {
+-                for (int m = 7; m > k; m--) { tv[m] = tv[m-1]; top[m] = top[m-1]; }
++                for (int m = 3; m > k; m--) { tv[m] = tv[m-1]; top[m] = top[m-1]; }
+                 tv[k] = out[e]; top[k] = e; break;
+             }
+         }
+     }
+-    for (int k = 0; k < 8; k++) {
++    for (int k = 0; k < 4; k++) {
+         if (top[k] < 0) break;
+         for (int role = 0; role < 3; role++) {
+             const int64_t tix = g_lr[j->layer].tix[role];
+@@ -667,7 +667,7 @@ void moe_pool_prefetch_impl(struct tensor_pool * p, int64_t e) {
+         pthread_mutex_unlock(&g_lock);
+         return;
+     }
+-    if (g_qpn > 64) { g_pf_drop++; pthread_mutex_unlock(&g_lock); return; }   // throttle: drop prefetches when the main queue backs up
++    if (g_qpn > 32) { g_pf_drop++; pthread_mutex_unlock(&g_lock); return; }   // throttle v4.5 (K8 backlash case: 64 still exceeded the device bandwidth)
+     g_pf_issued++;
+     const int32_t slot = claim_slot_locked(tix, (int32_t) e);
+     if (slot < 0) { g_pf_drop++; pthread_mutex_unlock(&g_lock); return; }
+-- 
+2.52.0.windows.1
+
