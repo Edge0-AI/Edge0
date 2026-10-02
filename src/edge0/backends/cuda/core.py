@@ -217,10 +217,11 @@ def take(a, indices, axis=None):
     if axis is None:
         flat = a.reshape(-1)
         return flat[indices.reshape(-1)].reshape(indices.shape)
+    axis %= a.ndim
     idx_flat = indices.reshape(-1).to(torch.long)
     out = torch.index_select(a, axis, idx_flat)
-    rest = a.shape[:axis] + a.shape[axis + 1:]
-    return out.reshape(tuple(indices.shape) + rest)
+    return out.reshape(
+        tuple(a.shape[:axis]) + tuple(indices.shape) + tuple(a.shape[axis + 1:]))
 
 
 def _along_axis_index(a, indices, axis):

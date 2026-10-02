@@ -628,8 +628,12 @@ class Model(nn.Module):
             self.lm_head = _linear(args.hidden_size, args.vocab_size)
 
     def forward(self, inputs, cache=None, input_embeddings=None,
-                after_layer_cb=None):
-        h = self.model(inputs, cache, input_embeddings, after_layer_cb)
+                after_layer_cb=None, before_layer_cb=None,
+                async_eval_per_layer: bool = False, prerouter_cache=None):
+        h = self.model(inputs, cache, input_embeddings, after_layer_cb,
+                       before_layer_cb=before_layer_cb,
+                       async_eval_per_layer=async_eval_per_layer,
+                       prerouter_cache=prerouter_cache)
         if self.tie_word_embeddings:
             return F.linear(h, self.model.word_embeddings.weight)
         return self.lm_head(h)
