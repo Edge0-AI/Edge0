@@ -138,7 +138,7 @@ def load_safetensors(path: str, dtype=None) -> dict:
         store.close()
 
 
-def load_tokenizer(model_path):
+def load_tokenizer(model_path, *, trust_remote_code=False):
     """Identical to the MLX backend's implementation -- this already
     goes through ``transformers.AutoTokenizer`` with no MLX dependency,
     so it is genuinely backend-agnostic; duplicated here rather than
@@ -147,7 +147,8 @@ def load_tokenizer(model_path):
     installable)."""
     from transformers import AutoTokenizer
     return AutoTokenizer.from_pretrained(
-        model_path, local_files_only=True, trust_remote_code=True)
+        model_path, local_files_only=True,
+        trust_remote_code=trust_remote_code)
 
 
 _EXPERT_KEY_MARKERS = (".mlp.experts.", ".switch_mlp.")
@@ -180,7 +181,8 @@ _KEY_PREFIX_STRIP = {
 }
 
 
-def _resolve_model_class(model_path, raw_config: dict):
+def _resolve_model_class(model_path, raw_config: dict, *,
+                         trust_remote_code=False):
     """``config.json`` (+ directory, for trust_remote_code) -> a
     ``(constructed transformers config, model_cls, needs_trust_remote_code,
     key_prefix)`` tuple.
@@ -235,8 +237,13 @@ def _resolve_model_class(model_path, raw_config: dict):
         return config, Qwen3_5MoeForCausalLM, False, key_prefix
 
     if any("Bailing" in a for a in archs) or "bailing" in str(auto_map).lower():
+        if not trust_remote_code:
+            raise ValueError(
+                "this checkpoint requires remote model code; review its "
+                "Python files, then pass trust_remote_code=True explicitly")
         from transformers import AutoConfig, AutoModelForCausalLM
-        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        config = AutoConfig.from_pretrained(
+            model_path, trust_remote_code=trust_remote_code)
         return config, AutoModelForCausalLM, True, ""
 
     raise NotImplementedError(
@@ -353,7 +360,8 @@ def _install_quantized(model, state: dict, dtype) -> set:
 
 
 def load_model(model_path, lazy=True, strict=False, model_config=None,
-                get_model_classes=None, dtype=None):
+                get_model_classes=None, dtype=None,
+                trust_remote_code=False):
     """Load an edge0 checkpoint into its transformers model class.
 
     The published checkpoints are MLX checkpoints: quantized throughout
@@ -373,8 +381,9 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
     ``dtype`` casts the dense floating-point tensors (default: as stored,
     bf16). ``strict`` raises on non-expert parameters the checkpoint does
     not provide and on checkpoint tensors the model has no place for.
-    ``get_model_classes``/``model_config`` exist for signature parity with
-    the MLX backend and are unused: the class comes from config.json.
+    ``trust_remote_code`` explicitly enables checkpoint-supplied Python on
+    the generic Transformers path. The engine path uses Edge0's own model
+    classes and does not load checkpoint-supplied Python.
     """
     import json
     import os
@@ -396,9 +405,12 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
         key_prefix = ""
     else:
         hf_config, model_cls, needs_trust_remote_code, key_prefix = \
-            _resolve_model_class(model_path, raw_config)
+            _resolve_model_class(
+                model_path, raw_config,
+                trust_remote_code=trust_remote_code)
         with _params_on_meta():
-            model = model_cls.from_config(hf_config, trust_remote_code=True) \
+            model = model_cls.from_config(
+                hf_config, trust_remote_code=trust_remote_code) \
                 if needs_trust_remote_code else model_cls(hf_config)
 
     state = {}

@@ -33,7 +33,7 @@ def load_model(model_path, lazy=True, strict=False, model_config=None,
                        get_model_classes=get_model_classes)
 
 
-def load_tokenizer(model_path):
+def load_tokenizer(model_path, *, trust_remote_code=False):
     """Load a HuggingFace tokenizer from a LOCAL directory only.
 
     mlx-lm 0.31's ``load_tokenizer`` funnels the path through its
@@ -44,7 +44,8 @@ def load_tokenizer(model_path):
     """
     from transformers import AutoTokenizer
     return AutoTokenizer.from_pretrained(
-        model_path, local_files_only=True, trust_remote_code=True)
+        model_path, local_files_only=True,
+        trust_remote_code=trust_remote_code)
 
 
 def open_shards(model_dir: str) -> list:

@@ -43,13 +43,17 @@ are co-located with each checkpoint and load automatically, so
 ## Requirements
 
 - **OS / hardware**: the MLX backend runs on macOS with Apple Silicon
-  (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
-  platforms are supported yet.
+  (M1/M2/M3/M4). The Torch backend supports CPU and Apple MPS. NVIDIA
+  CUDA results documented here were measured on a DGX Spark (GB10).
+  Choose a PyTorch wheel compatible with your OS, GPU, and CUDA
+  driver (see [PyTorch's install selector](https://pytorch.org/get-started/locally/)).
 - **Python**: 3.10+ (3.12 recommended).
-- **MLX**: `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see
+- **MLX backend**: `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see
   `pyproject.toml`). Garbled, mixed-language output on Apple A18 / A18 Pro
   means an older `mlx`: `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'`
   ([#8](https://github.com/Edge0-AI/Edge0/issues/8)).
+- **CUDA backend**: install the PyTorch wheel for your system, then install
+  Edge0 with its optional `cuda` extra (which declares `torch>=2.14`).
 - **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
   `edge0-8b` (short contexts; see [Benchmark](#benchmark)). Add
   headroom for the OS, tokenizer, and long-context KV growth.
@@ -63,9 +67,8 @@ are co-located with each checkpoint and load automatically, so
   resolve the tier from the model name;
 - **Backend isolation**: all MLX code lives under `edge0/backends/mlx/`;
   the core logic (model specs, prerouter, streaming expert pool, server)
-  depends only on the backend facade (`edge0/backends/base.py`), so a new
-  backend implements the same facade (`backends/cuda/` is a reserved
-  slot) with zero changes to core code;
+  depends on the backend facade (`edge0/backends/base.py`), implemented by
+  the MLX and optional Torch backends;
 - **Adapters as safetensors**: LoRA and prerouter weights are
   `.safetensors` files with provenance metadata (source, version, owner
   layers), resolved from the model directory or `artifacts/`;
@@ -95,6 +98,18 @@ are co-located with each checkpoint and load automatically, so
 ```bash
 # Python >= 3.10; the MLX backend requires macOS with Apple Silicon
 python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+```
+
+### NVIDIA / CUDA backend
+
+Install the PyTorch wheel that matches your operating system, NVIDIA GPU,
+and CUDA driver using [PyTorch's install selector](https://pytorch.org/get-started/locally/).
+The CUDA backend was validated with PyTorch 2.14 and CUDA 13.0 on an NVIDIA
+GB10. Then install Edge0 with the optional extra and select the backend:
+
+```bash
+.venv/bin/pip install -e '.[cuda,dev,fetch]'
+EDGE0_BACKEND=cuda .venv/bin/edge0 serve edge0-35b
 ```
 
 ### 2) Download a model
