@@ -1,0 +1,60 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/edge0-core",
+    "crates/edge0-pull",
+    "crates/edge0d",
+    "crates/edge0-cli",
+    "crates/edge0-engine",
+    "crates/engine-tok",
+    "app/src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88.0"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+edge0-core = { path = "crates/edge0-core" }
+engine-tok = { path = "crates/engine-tok" }
+edge0-pull = { path = "crates/edge0-pull" }
+
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time", "sync", "net", "io-util", "process", "fs"] }
+axum = { version = "0.8", features = ["json"] }
+tower = "0.5"
+http = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+clap = { version = "4", features = ["derive"] }
+# system-proxy: outbound requests honor HTTPS_PROXY and friends.
+reqwest = { version = "0.12", default-features = false, features = [
+  "blocking",
+  "json",
+  "rustls-tls",
+  "stream",
+  "system-proxy",
+] }
+thiserror = "2"
+anyhow = "1"
+libc = "0.2"
+rand = "0.8"
+sha2 = "0.10"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+futures = "0.3"
+tokio-util = { version = "0.7", features = ["io"] }
+tokio-stream = "0.1"
+libloading = "0.8"
+tokenizers = "0.21"
+minijinja = { version = "2", features = ["json", "serde"] }
+minijinja-contrib = { version = "2", features = ["pycompat"] }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+base64 = "0.22"
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-build = { version = "2" }
+ts-rs = { version = "12", features = ["chrono-impl", "serde-json-impl"] }
+arboard = { version = "3", default-features = false }

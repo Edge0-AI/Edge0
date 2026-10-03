@@ -1,0 +1,44 @@
+From 63f3f978913f5307bb3a5b10b0b521c749e9dea7 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 18:51:32 +0800
+Subject: [PATCH 5/6] server: wire edge0_apply_mem_budget (P-tier memory
+ budget, env E0_MEM_BUDGET_MB)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Apply the process working-set hard cap before load_model (implementation in serve/mem_budget.cc).
+Verified: under a 12GB budget the server loads and generates normally, ws stays bounded and pages
+keep getting trimmed; no slowdown on this machine -- the standby cache backstops it (a large-RAM
+machine cannot measure true cold reads; interpretation logged).
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ tools/server/server-context.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
+index 35f5804..bc4c7a3 100644
+--- a/tools/server/server-context.cpp
++++ b/tools/server/server-context.cpp
+@@ -6,6 +6,7 @@ struct llama_model;
+ struct llama_context;
+ bool edge0_pref_init(struct llama_model * model, struct llama_context * ctx);
+ void edge0_pref_on_step(struct llama_context * ctx, int64_t last_row);
++bool edge0_apply_mem_budget(void);   // serve/mem_budget.cc: E0_MEM_BUDGET_MB working-set hard cap
+ 
+ 
+ // edge0 W4 prerouter advisory (DECISIONS 28-B; implementation in serve/prefetch.cc, compiled into the llama target)
+@@ -1110,6 +1111,9 @@ private:
+             params_base.load_progress_callback_user_data = &load_progress_text;
+         }
+ 
++        // edge0: P-tier memory budget (E0_MEM_BUDGET_MB unset = no-op; must take effect before the model loads)
++        edge0_apply_mem_budget();
++
+         llama_init = common_init_from_params(params_base);
+ 
+         model_tgt = llama_init->model();
+-- 
+2.52.0.windows.1
+

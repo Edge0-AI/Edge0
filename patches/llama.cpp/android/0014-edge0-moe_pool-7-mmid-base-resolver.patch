@@ -1,0 +1,56 @@
+From 0456216585cebdf82191547240e9ddc66c7284a4 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 20:25:27 +0800
+Subject: [PATCH 14/14] edge0 consolidation: register the moe_pool row
+ resolver into the #7 mmid-base resolver surface
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Moves the Android demand-pool's lazy row-pointer resolution out of the direct ggml-cpu.c row
+rewrite and into a registration, at the pool's first registration (g_ready=1), into common surface
+#7's ggml_edge0_mmid_base resolver. NULL keeps the original semantics; zero disturbance while the
+pool is not ready. Both platforms now share one resolver entry point, removing the duplicate
+src0_cur rewrites in #7 and moe_pool.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index 9bd55dc..388c3b5 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -11,6 +11,7 @@
+ //      E0_HEADS / E0_PREROUTER / E0_POOL_STATS (same meanings as v3).
+ #include "moe_pool.h"
+ #include "ggml.h"
++#include "ggml-cpu-impl.h"   // edge0 #7 resolver surface (ggml_edge0_mmid_base_fn / _set_mmid_resolver)
+ 
+ #include <errno.h>
+ #include <fcntl.h>
+@@ -102,6 +103,12 @@ static uint64_t now_ns(void) {
+     return (uint64_t) ts.tv_sec * 1000000000ull + (uint64_t) ts.tv_nsec;
+ }
+ 
++// edge0 consolidation: hang the pool's row resolution on the #7 mmid-base resolver surface (resident -> private frame; otherwise fall back to upstream arithmetic).
++// registered at first registration where g_ready=1; zero disturbance when the pool never becomes ready (E0_POOL_MB unset); NULL keeps the original semantics.
++static const char * moe_pool_mmid_resolver(const struct ggml_tensor * src0, int64_t id, size_t nb02) {
++    return (const char *) moe_pool_row_ptr(src0, id, (const char *) src0->data + id * nb02);
++}
++
+ void moe_pool_init(void) {
+     if (g_ready) return;
+     const char * e = getenv("E0_POOL_MB");
+@@ -527,6 +534,7 @@ void moe_pool_register(struct ggml_tensor * t, int fd, uint64_t file_off) {
+         g_slots = calloc((size_t) g_nslots, sizeof(struct slot_ent));
+         for (int i = 0; i < g_nslots; i++) { g_slots[i].mem = g_arena + (size_t) i * g_slice; g_slots[i].expert = -1; g_slots[i].tix = -1; }
+         g_ready = 1;
++        ggml_edge0_set_mmid_resolver(moe_pool_mmid_resolver);   // edge0 #7 consolidation: row bases go through the resolver surface
+         const char * ie = getenv("E0_IO_THREADS");
+         int nth = ie ? (int) atol(ie) : 4;
+         if (nth < 1) nth = 1; if (nth > 8) nth = 8;
+-- 
+2.52.0.windows.1
+

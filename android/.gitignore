@@ -1,0 +1,16 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+*/build
+*/.cxx
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+# engine build workbench (staging for libs; artifacts are never committed)
+/build-dl
+# model sources and converted gguf (self-service downloads)
+/models

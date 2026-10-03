@@ -1,0 +1,3 @@
+// Copy this file to Config/Local.xcconfig and set your Apple Developer Team ID.
+// Config/Local.xcconfig is excluded by .gitignore.
+DEVELOPMENT_TEAM =

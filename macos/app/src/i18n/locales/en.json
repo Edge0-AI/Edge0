@@ -1,0 +1,331 @@
+{
+  "app": {
+    "name": "edge0",
+    "localLabel": "LOCAL INFERENCE"
+  },
+  "platform": {
+    "note": "Requires macOS (Apple M3 or later)"
+  },
+  "status": {
+    "title": "Service status",
+    "shellVersion": "Shell version",
+    "daemon": "Service process",
+    "scope": "Owner",
+    "uptime": "Uptime",
+    "waiting": "Waiting for local service…",
+    "unavailable": "The local service is unavailable.",
+    "hostApp": "App version",
+    "port": "Endpoint",
+    "diskFree": "Disk free",
+    "throttled": "Throttled by macOS",
+    "yes": "yes",
+    "no": "no",
+    "seq": "Last event number",
+    "models": "Loaded models",
+    "noResident": "No model is currently loaded",
+    "residentUntil": "Loaded until",
+    "hours": "h",
+    "minutes": "min",
+    "stream_live": "Events: live",
+    "stream_idle": "Events: idle",
+    "stream_reconnecting": "Events: reconnecting",
+    "stream_resyncing": "Events: resyncing",
+    "mismatch": "Service was started by an older app ({{daemon}}); this app is {{app}}. Use the button to restart (no silent binary swap).",
+    "restartService": "Restart service",
+    "exited": "Service stopped unexpectedly (exit code {{code}})",
+    "startService": "Start service",
+    "unknown": "unknown",
+    "remote": "Connected to the remote service at {{base}}. Local service controls are unavailable.",
+    "devDaemon": "dev: daemon from local target dir (release ships inside .app)"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "font": {
+    "sm": "Small",
+    "md": "Default",
+    "lg": "Large"
+  },
+  "nav": {
+    "status": "Status",
+    "chat": "Chat",
+    "settings": "Settings",
+    "models": "Models",
+    "service": "Service",
+    "home": "Home",
+    "openSidebar": "Open sidebar",
+    "closeSidebar": "Close sidebar"
+  },
+  "common": {
+    "cancel": "Cancel"
+  },
+  "chat": {
+    "newThread": "New chat",
+    "rename": "Rename",
+    "deleteThread": "Delete chat",
+    "noThreads": "No chats yet",
+    "placeholder": "Type a message, Enter to send",
+    "send": "Send",
+    "stop": "Stop",
+    "regenerate": "Regenerate",
+    "editResend": "Edit & resend",
+    "resend": "Resend",
+    "copy": "Copy",
+    "copyReasoning": "Copy thinking",
+    "reasoning": "Thinking",
+    "aborted": "Response interrupted",
+    "saveFailed": "Not saved (conversation store write failed)",
+    "usage": "tokens in {{p}}/out {{c}}/total {{t}}",
+    "perf": {
+      "decode": "{{v}} tok/s decode",
+      "prefill": "{{v}} tok/s prefill",
+      "ttft": "first token {{ms}} ms",
+      "mem": "memory {{gi}} GiB"
+    },
+    "model": "Model",
+    "noModel": "(no installed model)",
+    "light": {
+      "resident": "loaded",
+      "loading": "loading",
+      "installed": "not loaded",
+      "absent": "unknown"
+    },
+    "loadModel": "Load",
+    "contextUsed": "context {{n}} tok",
+    "contextUnknown": "context: unknown",
+    "waitingService": "Waiting for local service…",
+    "greeting": "What would you like to explore?",
+    "suggestion": {
+      "water": "Will the water level rise when floating ice melts? Explain in two sentences.",
+      "story": "Write a sci-fi story with a twist in exactly six words.",
+      "shirts": "Five shirts take an hour to dry. How long will 30 take if they all dry at once under the same conditions?",
+      "averageSpeed": "I drive somewhere at 30 km/h. How fast must I drive back along the same route to average 60 km/h for the whole trip? Explain briefly."
+    },
+    "serviceAgent": "LaunchAgent service",
+    "serviceMenu": "Menu bar service",
+    "pickOrCreate": "Select or create a chat",
+    "noInstalledModel": "No models to chat with yet — download one first",
+    "goDownload": "Go to downloads",
+    "loadEarlier": "Load earlier messages",
+    "waitingFirstChunk": "Waiting for the model…",
+    "pickModelFirst": "Pick a model first",
+    "err": {
+      "notload": "Model not loaded — press Load, or download it",
+      "busy": "Service busy, retry shortly",
+      "cancel": "Generation cancelled",
+      "worker": "Engine worker crashed and was recycled — retry",
+      "param": "Request parameters rejected — check the model selection",
+      "missing": "Model not installed — download it first",
+      "memload": "Not enough memory to load this model — try a smaller model or free memory",
+      "gpu": "No GPU device — run edge0 diagnostics to check the environment",
+      "version": "Service version mismatch — restart it from the status page",
+      "generic": "Request failed"
+    }
+  },
+  "sidebar": {
+    "newChat": "New chat",
+    "history": "Chat history",
+    "navigation": "Navigation",
+    "resident": "loaded",
+    "idle": "idle",
+    "noService": "No service",
+    "bucket": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "week": "Previous 7 days",
+      "earlier": "Earlier"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "kicker": "Tune edge0 appearance and local service access",
+    "appearance": "Appearance",
+    "appearanceNote": "Theme and font size apply across the app immediately.",
+    "systemPrompt": "System prompt",
+    "systemPromptNote": "Optional instructions sent before each chat. Leave blank to disable.",
+    "systemPromptEnabled": "System prompt enabled",
+    "systemPromptDisabled": "No system prompt will be sent",
+    "systemPromptReset": "Use default",
+    "service": "Service",
+    "serviceNote": "View a compact summary; full controls, logs, and diagnostics live in the service console.",
+    "serviceUnavailable": "Service not connected",
+    "advancedNote": "Advanced service actions, request logs, and diagnostics live in the service console.",
+    "openConsole": "Open service console"
+  },
+  "gen": {
+    "precise": "Precise",
+    "balanced": "Balanced",
+    "creative": "Creative",
+    "hint": "Generation style: sampling temperature (Precise 0.2 / Balanced 0.7 / Creative 1.0), applied from the next message."
+  },
+  "models": {
+    "title": "Models & Downloads",
+    "kicker": "Manage models, keep them loaded, and track downloads",
+    "refresh": "Refresh",
+    "loading": "Reading catalog…",
+    "retry": "Retry",
+    "stale": "Couldn't refresh the model list. You can browse installed models, but downloads are paused.",
+    "rev": "Version",
+    "bytes": "Size",
+    "files": "Files",
+    "source": "Source",
+    "singleSource": "only one source",
+    "license": "License",
+    "notes": "Model card",
+    "state": {
+      "absent": "Not installed",
+      "installed": "Installed",
+      "update": "Update available"
+    },
+    "updateFrom": "Updatable from {{rev}}",
+    "download": "Download",
+    "updateDownload": "Download update",
+    "sourceAuto": "Auto source",
+    "sourceMs": "ModelScope",
+    "sourceHf": "Hugging Face",
+    "keepDefault": "Default keep time",
+    "keep30": "Keep loaded for 30 min",
+    "keepInf": "Keep loaded",
+    "load": "Load model",
+    "unload": "Unload model",
+    "loadingModel": "Loading…",
+    "delete": "Delete",
+    "bundled": "Bundled",
+    "bundledHint": "Shipped with this app build; delete is disabled.",
+    "deleteConfirm": "Delete this model? Run `edge0 gc` in Terminal to free space used by files no longer needed by any model.",
+    "residentUntil": "Loaded until",
+    "remaining": "~{{n}} min",
+    "unknown": "unknown",
+    "pause": "Pause",
+    "resume": "Resume",
+    "deleteTask": "Delete task",
+    "sourceSwitched": "Switched source",
+    "eta": "~{{n}} min left",
+    "estimating": "estimating speed…",
+    "verifying": "verifying…",
+    "phase": {
+      "probe": "Checking download sources",
+      "select-source": "Choosing a source",
+      "preflight": "Checking disk space",
+      "fetch": "Downloading",
+      "verify": "Verifying",
+      "stage": "Preparing files",
+      "commit": "Installing",
+      "register": "Finishing installation"
+    },
+    "err": {
+      "net": "Couldn't connect to the download provider. Check your network and try again.",
+      "src": "Couldn't reach either download provider. Try again later or switch networks.",
+      "disk": "Not enough disk space — free space and try again, or choose a smaller model.",
+      "hash": "Downloaded files failed integrity checks from both providers. Delete this task and try again.",
+      "sig": "The model catalog could not be verified. Do not bypass this check; try again later.",
+      "expired": "The model catalog is out of date. You can browse installed models, but try downloads again later.",
+      "minver": "This model needs a newer version of edge0. Update the app and try again.",
+      "conflict": "This model is being used by another request. Wait or cancel the request, then try again.",
+      "generic": "Request failed",
+      "invalid": "Model files do not match the installation record. They may be damaged or changed; delete the model and download it again."
+    },
+    "sourceDirect": "HuggingFace (direct)"
+  },
+  "welcome": {
+    "title": "Get started with edge0 on this Mac",
+    "body": "Recommended: {{model}} ({{bytes}}, stored in {{path}}) — inference runs entirely on-device.",
+    "startupTitle": "Service startup",
+    "headlessLabel": "Keep edge0 in the menu bar after login",
+    "headlessNote": "Registers a LaunchAgent; when unchecked, this app session owns the service.",
+    "errors": {
+      "disk": "Not enough disk space",
+      "memory": "There is not enough memory to load the recommended model",
+      "engine": "The local engine is unavailable",
+      "generic": "First launch did not complete"
+    },
+    "bytesUnknown": "size unknown",
+    "pathUnknown": "local app directory",
+    "downloadEnable": "Download & enable",
+    "skip": "Skip for now"
+  },
+  "service": {
+    "title": "Local API Service",
+    "kicker": "Manage lifecycle, access, and runtime diagnostics",
+    "sections": {
+      "lifecycle": "Lifecycle & ownership",
+      "lifecycleNote": "Start or stop the service and inspect ownership, version, and uptime.",
+      "logs": "Request log",
+      "logsNote": "Shows the request window since the current service start.",
+      "doctor": "Environment checks",
+      "doctorNote": "Shows daemon-provided findings and next actions."
+    },
+    "panel": {
+      "title": "Service Panel",
+      "start": "Start service",
+      "stop": "Stop service",
+      "busy": "Service operation in progress… (restart ends in-flight requests)",
+      "actionFailed": "The service action could not be completed.",
+      "port": "Listening",
+      "bind": "Bind address",
+      "scope": "Ownership",
+      "uptime": "Uptime",
+      "version": "Service version",
+      "versionMismatch": "Service was started by an older app ({{daemon}}); current app is {{app}}",
+      "home": "Storage location",
+      "token": "Access token",
+      "mask": "••••••••",
+      "copy": "Copy",
+      "copiedWarn": "Copied — clipboard now contains a sensitive credential",
+      "noCredential": "No credential needed (loopback is exempt)",
+      "notOwned": "This service was not started by this app; stop it via its owner",
+      "lan": "Allow LAN",
+      "lanOn": "On",
+      "lanOff": "Off",
+      "lanGoOn": "Confirm",
+      "lanConfirm": "The service will restart on a non-loopback address; in-flight requests will end. Continue?",
+      "lanGuide": "LAN allowed: other devices connect with `edge0 token` or the copied credential (/health stays token-free).",
+      "agent": "Startup owner",
+      "agentToMenu": "Stay in menu bar",
+      "agentToLaunchd": "Switch to LaunchAgent"
+    },
+    "log": {
+      "title": "Request Log",
+      "count": "{{n}} requests since start",
+      "note": "Window = events since this service started (ring buffer, 4096 max); cleared on restart",
+      "empty": "No requests since this service started",
+      "noCode": "(no error code)",
+      "th": {
+        "status": "Status",
+        "model": "Model",
+        "latency": "Latency / TTFT",
+        "tokens": "tokens",
+        "source": "Source"
+      },
+      "status": {
+        "done": "done",
+        "cancelled": "cancelled",
+        "error": "error"
+      },
+      "source": {
+        "loopback": "local",
+        "lan": "LAN",
+        "cli": "credential"
+      }
+    },
+    "doctor": {
+      "title": "Environment Check",
+      "loading": "Reading doctor results…",
+      "failed": "Cannot fetch doctor results (service not running)",
+      "retry": "Retry",
+      "next": "Next",
+      "goModels": "Go to Models",
+      "overall": {
+        "pass": "All passing",
+        "warn": "Warnings"
+      },
+      "verdict": {
+        "pass": "pass",
+        "warn": "warn",
+        "fail": "fail"
+      }
+    }
+  }
+}

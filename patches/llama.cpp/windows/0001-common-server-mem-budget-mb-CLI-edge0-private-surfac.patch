@@ -1,0 +1,80 @@
+From edef0ec1f8d5e43239b80fe3d91e01aa47a27e5a Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 19:54:14 +0800
+Subject: [PATCH 1/2] common+server: --mem-budget-mb CLI (edge0 private surface
+ #6)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+common_params.mem_budget_mb + arg registration (env LLAMA_ARG_MEM_BUDGET_MB on the same line);
+consumed by server before load_model => edge0_apply_mem_budget(mb). The env channel stays as a
+debug fallback. Smoke: --mem-budget-mb 16384 -> [mem-budget] applied; visible in --help.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ common/arg.cpp                  | 12 ++++++++++++
+ common/common.h                 |  1 +
+ tools/server/server-context.cpp |  4 ++--
+ 3 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/common/arg.cpp b/common/arg.cpp
+index 996ea75..111e4ed 100644
+--- a/common/arg.cpp
++++ b/common/arg.cpp
+@@ -2780,6 +2780,18 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
+             llm_add_n_cpu_ffn_overrides(value, LLM_FFN_DENSE_REGEX, params.tensor_buft_overrides);
+         }
+     ).set_env("LLAMA_ARG_N_CPU_FFN"));
++    add_opt(common_arg(
++        {"--mem-budget-mb"}, "N",
++        "edge0: cap this process' max working set at N MB (hard trim on overflow; 0=off)\n"
++
++        "(P-tier memory budget; predicted-hot pages can later be pinned within it)",
++        [](common_params & params, int value) {
++            if (value < 0) {
++                throw std::invalid_argument("invalid value");
++            }
++            params.mem_budget_mb = value;
++        }
++    ).set_env("LLAMA_ARG_MEM_BUDGET_MB"));
+     GGML_ASSERT(params.n_gpu_layers < 0); // string_format would need to be extended for a default >= 0
+     add_opt(common_arg(
+         {"-ngl", "--gpu-layers", "--n-gpu-layers"}, "N",
+diff --git a/common/common.h b/common/common.h
+index 63d0bad..bfa67d9 100644
+--- a/common/common.h
++++ b/common/common.h
+@@ -471,6 +471,7 @@ struct common_params {
+     std::vector<ggml_backend_dev_t> devices; // devices to use for offloading
+ 
+     int32_t n_gpu_layers       = -1;    // number of layers to store in VRAM, -1 is auto, <= -2 is all
++    int32_t mem_budget_mb      = 0;     // edge0: cap process max working set in MB (0=off; P-tier memory budget)
+     int32_t main_gpu           = 0;     // the GPU that is used for scratch and small tensors
+     float   tensor_split[128]  = {0};   // how split tensors should be distributed across GPUs
+     bool    fit_params         = true;  // whether to fit unset model/context parameters to free device memory
+diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
+index bc4c7a3..1859a24 100644
+--- a/tools/server/server-context.cpp
++++ b/tools/server/server-context.cpp
+@@ -6,7 +6,7 @@ struct llama_model;
+ struct llama_context;
+ bool edge0_pref_init(struct llama_model * model, struct llama_context * ctx);
+ void edge0_pref_on_step(struct llama_context * ctx, int64_t last_row);
+-bool edge0_apply_mem_budget(void);   // serve/mem_budget.cc: E0_MEM_BUDGET_MB working-set hard cap
++bool edge0_apply_mem_budget(int mb);   // serve/mem_budget.cc: --mem-budget-mb working-set hard cap
+ 
+ 
+ // edge0 W4 prerouter advisory (DECISIONS 28-B; implementation in serve/prefetch.cc, compiled into the llama target)
+@@ -1112,7 +1112,7 @@ private:
+         }
+ 
+         // edge0: P-tier memory budget (E0_MEM_BUDGET_MB unset = no-op; must take effect before the model loads)
+-        edge0_apply_mem_budget();
++        edge0_apply_mem_budget(params_base.mem_budget_mb);
+ 
+         llama_init = common_init_from_params(params_base);
+ 
+-- 
+2.52.0.windows.1
+

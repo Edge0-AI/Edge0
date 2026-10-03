@@ -1,0 +1,29 @@
+[package]
+name = "edge0-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "edge0_app"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+tauri.workspace = true
+edge0-core.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+futures.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+libc.workspace = true
+uuid.workspace = true
+arboard.workspace = true
+rusqlite = { version = "0.40.2", features = ["bundled"] }

@@ -73,7 +73,7 @@ per `start_layer`/`owners`. Family differences are expressed through three hooks
 | weight file | `prerouter_edge0_35b.safetensors` | `prerouter_edge0_8b.safetensors` |
 
 Both weight files are resolved from the model directory by default, with
-`artifacts/` (repo root, gitignored) as the fallback — see the README's
+`artifacts/` (Python project root, gitignored) as the fallback — see the README's
 "Models and adapters" section.
 
 ## Tests and regression

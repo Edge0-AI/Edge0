@@ -1,0 +1,32 @@
+From 4e039a16242eb10852bff812fa0e8acd2400a20e Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 21:35:19 +0800
+Subject: [PATCH 03/14] moe_pool: periodic stats dump (destructor path bypassed
+ by bench exit)
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index 06f4999..d27c2fb 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -148,6 +148,13 @@ void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_id
+     // demand-exclusive mode: small batches (decode 1~4 tok) evict-old/admit-new with no mmap fallback -- pool = the only path to experts (flash-pool requirements 1 and 3)
+     // large batches (prefill) load best-effort: whatever doesn't fit is left to the kernel, preventing cross-layer ping-pong
+     const int demand = n_ids <= 16;
++    static long s_calls;
++    if (getenv("E0_POOL_STATS") && (++s_calls % 2000) == 0) {
++        long long h = 0, m = 0, l = 0, e = 0, bl = 0; size_t cap = 0, used = 0;
++        moe_pool_stats(&h, &m, &l, &e, &bl, &cap, &used);
++        fprintf(stderr, "moe_pool@%ld: hits=%lld misses=%lld loads=%lld evicts=%lld used_mb=%zu\n",
++                s_calls, h, m, l, e, used / (1024 * 1024));
++    }
+     for (int i = 0; i < n_ids; i++) {
+         const int32_t e = ids[i];
+         if (e < 0 || e >= p->n_experts) continue;
+-- 
+2.52.0.windows.1
+

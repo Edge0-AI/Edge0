@@ -1,0 +1,22 @@
+[package]
+name = "edge0-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+rand.workspace = true
+thiserror.workspace = true
+libc.workspace = true
+libloading.workspace = true
+ts-rs.workspace = true
+
+[[bin]]
+# TypeScript binding generator: cargo run -p edge0-core --bin gen-ts -- app/src/gen
+name = "gen-ts"
+path = "src/bin/gen_ts.rs"

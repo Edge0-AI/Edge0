@@ -1,0 +1,198 @@
+{
+ "8b": {
+  "repo": "Edge0/Edge0-8B-A1B-preview",
+  "rev": {
+   "modelscope": "master",
+   "hf": "cadc35c7059469fad8569a63ce6c851172bbca61"
+  },
+  "files": [
+   {
+    "path": "chat_template.jinja",
+    "size": 6041,
+    "sha256": "eb6226c94ae38058f875d159f86a206b3a165828c0e7d6bda664ae14667f798a",
+    "skip": false
+   },
+   {
+    "path": "config.json",
+    "size": 3069,
+    "sha256": "5790c795d490d7b90eb04b269f5db4faad08bcc560f8da6e30b61057b1606340",
+    "skip": false
+   },
+   {
+    "path": "generation_config.json",
+    "size": 56,
+    "sha256": "64752c5973a55faf4cfc02604c7587c38b090f00013f91191f52362dcc79a4a8",
+    "skip": false
+   },
+   {
+    "path": "lora_edge0_8b.safetensors",
+    "size": 16413656,
+    "sha256": "a32ff07ba3d3b3c9811146c43a3f0e96af4ec2960ebc5072910f9a6663dc2e2e",
+    "skip": false
+   },
+   {
+    "path": "model.safetensors",
+    "size": 4508697328,
+    "sha256": "5bcde14438cfe13a547965573471e8ddc830de3a047dd2dfd38a0eb2b390d2b6",
+    "skip": false
+   },
+   {
+    "path": "prerouter_edge0_8b.safetensors",
+    "size": 38802304,
+    "sha256": "5f05d25e52ce18103d0867e5a0c79ec4e3334ad8c8906c22ec6266a95db2047c",
+    "skip": true
+   },
+   {
+    "path": "special_tokens_map.json",
+    "size": 580,
+    "sha256": "69b63b9f81044ead642d16a5fdc01bcc737dc1183746485c8397ab14d3126614",
+    "skip": false
+   },
+   {
+    "path": "tokenizer.json",
+    "size": 12205732,
+    "sha256": "40fb9d7d7795b8bd305aeff39ce9963f3f450915b9553f2938e009be9a1fed60",
+    "skip": false
+   },
+   {
+    "path": "tokenizer_config.json",
+    "size": 49671,
+    "sha256": "2456b0372956cd3e82f17e33372148b115a94970bfd4878ba5e7e60cd3204f74",
+    "skip": false
+   }
+  ],
+  "total_bytes": 4537376133,
+  "pool_mb": 2048
+ },
+ "35b": {
+  "repo": "Edge0/Edge0-35B-A3B-preview",
+  "rev": {
+   "modelscope": "master",
+   "hf": "e21098e7faa916a00f5493795f12f20497d032bb"
+  },
+  "files": [
+   {
+    "path": ".gitattributes",
+    "size": 2238,
+    "sha256": "f53d675d9d2a887034cf45c1403575f03c9878ceaabca7b10e7b6c494e1e194e",
+    "skip": true
+   },
+   {
+    "path": "20260908-223115.jpg",
+    "size": 1068426,
+    "sha256": "d7285e3c6d5f1039a8b5283031e27fd48aa0cebbb9fb57d180903481eeb8f204",
+    "skip": true
+   },
+   {
+    "path": "20260910-105854.mp4",
+    "size": 20328509,
+    "sha256": "b266d0ec149cb752581789df5846c23ca345501051ee9cc86de31415ed4d6a59",
+    "skip": true
+   },
+   {
+    "path": "README.md",
+    "size": 7012,
+    "sha256": "bba904365a53ec7b6981eb72adc42b17492a45fd304ab070869f38d171578833",
+    "skip": true
+   },
+   {
+    "path": "chat_template.jinja",
+    "size": 7764,
+    "sha256": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+    "skip": false
+   },
+   {
+    "path": "config.json",
+    "size": 23591,
+    "sha256": "a822a9e48b0aafbe3144ec37d4fb067e178ed96615ce6e4420b3149893cc5767",
+    "skip": false
+   },
+   {
+    "path": "configuration.json",
+    "size": 58,
+    "sha256": "c1b09db419119513247e9b8b912c4b9897106c9b20c6cada7e107d993c5435eb",
+    "skip": false
+   },
+   {
+    "path": "generation_config.json",
+    "size": 202,
+    "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+    "skip": false
+   },
+   {
+    "path": "lora_edge0_35b.safetensors",
+    "size": 42413928,
+    "sha256": "a407f6d27bb55e39e6461bd4bce1fd90489e70c7582b68a796fb764bdb441ec1",
+    "skip": false
+   },
+   {
+    "path": "model-00001-of-00004.safetensors",
+    "size": 4395019264,
+    "sha256": "f7fff28fecb8221e53787c6339c938b113bcb94c7bbc60d09a8826eba08ef1ab",
+    "skip": false
+   },
+   {
+    "path": "model-00002-of-00004.safetensors",
+    "size": 5368472749,
+    "sha256": "31dcdb1c49eebdb1505bd14e3cb33f9cf900bd2546b638f2464694ae763a033f",
+    "skip": false
+   },
+   {
+    "path": "model-00003-of-00004.safetensors",
+    "size": 5368324139,
+    "sha256": "3e66de06a1f03dade16a612a368cfce4a4c9caa4efd7d28185454384082cec03",
+    "skip": false
+   },
+   {
+    "path": "model-00004-of-00004.safetensors",
+    "size": 4377211365,
+    "sha256": "a5d0cf03519c26f8b506df6b0ba60526e5c08c8cea22d0c21ce92950e58a5422",
+    "skip": false
+   },
+   {
+    "path": "model.safetensors.index.json",
+    "size": 180182,
+    "sha256": "e359cd95565275b923fed8df019dd8e869d9af5dc4a621b4114ab7a8e6c534d1",
+    "skip": false
+   },
+   {
+    "path": "preprocessor_config.json",
+    "size": 390,
+    "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+    "skip": false
+   },
+   {
+    "path": "prerouter_edge0_35b.safetensors",
+    "size": 138422000,
+    "sha256": "93d07af08e1f5c8d174e941016740cb4d2c143c6b90f33581237679eca9b006f",
+    "skip": true
+   },
+   {
+    "path": "processor_config.json",
+    "size": 1312,
+    "sha256": "51c5f33646392e0bf1ed3e96be02504da47406c21c6cb86925d8908d1a6c4da7",
+    "skip": false
+   },
+   {
+    "path": "tokenizer.json",
+    "size": 19989343,
+    "sha256": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "skip": false
+   },
+   {
+    "path": "tokenizer_config.json",
+    "size": 1139,
+    "sha256": "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182",
+    "skip": false
+   },
+   {
+    "path": "vocab.json",
+    "size": 6722759,
+    "sha256": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003",
+    "skip": false
+   }
+  ],
+  "total_bytes": 19578368185,
+  "pool_mb": 4096
+ }
+}

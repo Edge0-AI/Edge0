@@ -13,9 +13,21 @@ dist/
 # Trained adapter artifacts (never committed; see README)
 artifacts/
 
+# Downloaded model checkpoints (never committed; see README quick start).
+# Anchored so the source package python/src/edge0/models/ is not matched.
+/models/
+/python/models/
+
+# Platform build areas materialized by the engine/vendor scripts (never commit):
+# isolated patch-replay worktrees, the pinned llama.cpp checkout, and the
+# local engine-depot bootstrap fallback (see windows/scripts/vendor-build.ps1).
+/wt/
+/vendor/
+.edge0/
+
 # macOS
 .DS_Store
 
 # Bench / runtime logs
 *.log
-scripts/alignment_results.json
+python/scripts/alignment_results.json
