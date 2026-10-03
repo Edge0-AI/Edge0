@@ -1,0 +1,23 @@
+edge0
+Copyright 2026 Edge0
+
+This product is licensed under the Apache License, Version 2.0.
+See the LICENSE file.
+
+Third-party notices
+-------------------
+
+mlx (third_party/mlx)
+  Copyright 2023 Apple Inc.
+  Licensed under the MIT License. See third_party/mlx/LICENSE.
+
+Models
+------
+
+Edge0-8B-A1B-preview and Edge0-35B-A3B-preview are published on Hugging Face
+under Apache-2.0:
+
+  https://huggingface.co/Edge0/Edge0-8B-A1B-preview
+  https://huggingface.co/Edge0/Edge0-35B-A3B-preview
+
+The upstream inference framework is https://github.com/Edge0-AI/edge0 (Apache-2.0).

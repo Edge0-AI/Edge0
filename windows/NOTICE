@@ -1,0 +1,21 @@
+NOTICE — edge0 / windows (release tree)
+========================================
+
+This file records third-party material contained in or referenced by this subproject.
+Licensing of the distribution is governed by the LICENSE file at the monorepo root.
+
+1. ggml-org/llama.cpp (MIT) — https://github.com/ggml-org/llama.cpp
+   The engine is the pristine upstream checkout pinned at commit 7ab4ee7 (tag b11100),
+   located at the monorepo root vendor/llama.cpp. All modifications ship as replayable
+   patch bands under patches/llama.cpp/ (never committed into the vendor tree).
+
+2. Rust crates (see app/src-tauri/Cargo.lock for exact versions/licenses):
+   tauri 2, serde, reqwest (rustls), sha2, hex, windows-sys — each under its own license.
+
+3. JS/npm packages (see app/package.json + package-lock.json): React, Vite, Tailwind,
+   streamdown/markdown rendering stack — each under its own license.
+
+4. Model weights (downloaded at runtime, not part of this repository):
+   Edge0/Edge0-8B-A1B-preview and Edge0/Edge0-35B-A3B-preview — published in MLX format,
+   converted on-device to GGUF Q4_1 by the tools/ converter chain. Model-card license
+   applies to the weights and applies to the conversion outputs unchanged.

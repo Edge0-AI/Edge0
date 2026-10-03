@@ -1,0 +1,1013 @@
+From b2ce036a670a9b3657d2342eadf4a6949275601c Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 00:36:44 +0800
+Subject: [PATCH 04/14] moe_pool v4: full engine-parity pool (staging queues,
+ pin, blob, trim, metrics)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Feature parity with the mainline engine's streaming/expert_pool, landed item by item:
+- equal-size slot state machine EMPTY/LOADING/READY/FAILED + IO-thread queue (E0_IO_THREADS, default 4)
+- dual queues: the demand-dedicated queue pops first (mixed FIFO was confirmed to suffer prefetch
+  head-of-line blocking -- the 14s/token pseudo-hang incident)
+- pin protocol: slots in compute are unevictable; released wholesale at the next ensure entry
+  (barrier quiescence contract)
+- acquire hitting LOADING waits on a cv + FAILED falls back synchronously (stall_ms metered, ~ the
+  engine's acq metric)
+- resident blob: one copy-in per non-expert mmap-view tensor (E0_BLOB_MB, isomorphic to the engine's
+  img mirror)
+- watermark trim E0_MEM_FLOOR_MB (when MemAvailable drops below the line, evict non-pinned READY
+  down to 60%)
+- metrics aligned with the engine's PoolMetrics: hits/misses/stall/pf_issued-used-waste-drop-miss/flash/evicts/trims
+- prefetch K=4->8 (teacher n_ids=8 evidences 35b top-8) + throttled drop when the main queue backs up >64
+- registration point moved: tensors at the tail of load_tensors have data=NULL (ml.contexts copies),
+  so llama_model_load now calls llama_model::moe_wire() after load_tensors (tensors_by_name primary
+  set, virtual-interface hook)
+- registered fds are always dup()'d (hang incident: pread got EBADF after the loader closed the original fd)
+- find_tp matches by name + self-corrects the pointer (graph-copy pointers != load-set pointers)
+
+Known differences from the engine (on record): the worker head math is the scalar version (NEON
+queued); trim does no physical tail-block release (the bump arena's middle is not contiguous);
+prep-slot tail pre-conversion is N/A (llama dequantizes ad hoc).
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 714 +++++++++++++++++++++++++++++------
+ ggml/src/ggml-cpu/moe_pool.h |  18 +-
+ src/llama-model.cpp          |  70 +++-
+ src/llama-model.h            |   2 +
+ src/llama.cpp                |   1 +
+ 5 files changed, 667 insertions(+), 138 deletions(-)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index d27c2fb..6f76c90 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -1,92 +1,535 @@
+-// moe_pool.c -- expert demand pool (Android phase 1, edge0/android-pool; no prediction, synchronous bulk reads).
+-// Design = copy-in private frames + lazy row-pointer resolution: a hit = zero-fault direct read of the private frame; a miss =
+-// thread0 preads the whole block before the ggml_barrier ("wholesale"); eviction = pool-managed LRU (whole-expert granularity).
+-// Concurrency protocol (the premise phase 1 holds on; server parallel ctx is a phase-2 topic):
+-//   the ggml-cpu thread pool barriers at EVERY graph-node boundary; ensure runs only on thread0 at the mul_mat_id entry,
+-//   before the global barrier -> all readers are quiescent when writing; cross-ctx parallel decode is unguarded (documented red line).
+-// Experts outside the pool / that don't fit: resident_slot=-1 -> the caller gets the default pointer and falls back to the original mmap (kernel backstop).
+-// env: E0_POOL_MB (0/unset = off, zero disturbance).
++// moe_pool.c -- expert demand pool v4 (implements the engine streaming/expert_pool contract item by item, edge0/android-pool).
++// Design = copy-in private frames (Android mlock RLIMIT=64KB hard-wired; pin-file-page unusable) + equal-size slot state machine
++//   (EMPTY/LOADING/READY/FAILED) + IO-thread queue reads (prefetch enqueues and returns; acquire hitting LOADING waits on a cv;
++//   demand misses are dispatched in batches then awaited together -- mirroring the engine's "async serves prefetch only, cold reads metered as stall" structure, plus batch overlap) +
++//   pin protocol (slots in compute are unevictable; released wholesale at the next ensure entry -- barrier quiescence premise) +
++//   resident blob (the non-expert region pread'd once into a private frame, killing dense mmap "retail" page faults).
++// Determinism contract (same as the engine): slot-state transitions occur only on the main thread under lock; IO threads only write bytes + set terminal states; completion timing affects only
++//   stall (speed), never the generation result. Cross-ctx parallel decode is unguarded (documented red line; phase-2 topic).
++// env: E0_POOL_MB (pool budget, 0/unset = off, zero disturbance) E0_BLOB_MB (non-expert copy-in budget, 0 = off)
++//      E0_IO_THREADS (default 4) E0_MEM_FLOOR_MB (watermark: when MemAvailable falls below this, trim down to 60%)
++//      E0_HEADS / E0_PREROUTER / E0_POOL_STATS (same meanings as v3).
+ #include "moe_pool.h"
+ #include "ggml.h"
+ 
++#include <errno.h>
++#include <fcntl.h>
+ #include <pthread.h>
++#include <stdatomic.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/mman.h>
++#include <time.h>
+ #include <unistd.h>
+ 
+ #define MOE_POOL_MAX_TENSORS 192   // 40 layers x3 (gate/up/down) = 120 @35b; headroom kept
++#define MOE_Q_MAX            4096  // IO queue depth (over the limit: prefetch dropped / demand goes synchronous)
++#define MOE_PIN_MAX          512   // per-ensure pin cap on slots (unique experts <= n_experts=256)
++
++enum { ST_EMPTY = 0, ST_LOADING = 1, ST_READY = 2, ST_FAILED = 3 };
++#define SLOT_NONE (-1)
+ 
+ struct slot_ent {
+-    char *   base;           // arena private frame
+-    int32_t  expert;         // -1 = free
++    void *   mem;
++    int32_t  expert;                 // -1 = EMPTY
+     int32_t  tix;
+-    uint64_t last_gen;
+-    size_t   bytes;
+-    struct slot_ent * prev, * next;
++    uint8_t  state;
++    uint8_t  pinned;
++    uint8_t  prefetched;             // slot claimed by prefetch (source of used/wasted accounting)
++    uint8_t  consumed;               // prefetch consumed by acquire (counted once per slot)
++    uint64_t clock;
++    int32_t  lru_prev, lru_next;
++    uint8_t  on_list;
+ };
+ 
+ struct tensor_pool {
+-    const void * key;                // src0->data is stable after load; used as identity
++    const void * key;                // identity pointer (self-corrected by name matching at runtime)
++    char     name[96];               // v4 primary key: the compute tensor may be a graph copy -- pointers differ, names match
++    int      layer;                  // parsed from blk.N.
++    int      role;                   // 0 gate / 1 up / 2 down / -1 non-expert
+     int      fd;
+     uint64_t file_off;
+-    size_t   slice;                  // private-frame size (page-aligned, >= stride)
++    size_t   slice;                  // slot bytes (= stride, the equal-size premise)
+     size_t   stride;                 // per-expert step within the file
+     int64_t  n_experts;
+-    int64_t * slot_of;               // [n_experts] slot index or -1 (no tearing concern under the quiesce protocol)
++    int32_t *slot;                   // [n_experts] -> slot number or SLOT_NONE
+     long long hits, misses;
+ };
+ 
+ static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
+-static size_t   g_cap, g_used;
++static pthread_cond_t  g_scv  = PTHREAD_COND_INITIALIZER;   // slot-terminal-state / watermark wakeup
++static pthread_cond_t  g_qcv  = PTHREAD_COND_INITIALIZER;   // IO queue wakeup
++
++static size_t   g_cap_bytes;                                 // converted from E0_POOL_MB
++static size_t   g_slice;                                     // fixed at first registration (equal-size)
+ static char *   g_arena;
+-static size_t   g_bump;
+-static uint64_t g_gen;
++static struct slot_ent * g_slots;
++static int      g_nslots, g_used_slots;
++static int32_t  g_empty_cursor;
++static int32_t  g_lru_head = SLOT_NONE, g_lru_tail = SLOT_NONE;  // contains READY/FAILED only
++static uint64_t g_clock;
++static int32_t  g_inflight;
++static int      g_ready, g_io_on, g_stop;
++static long long g_stuckq;   // cumulative count of inflight>0 with both queues empty (tasks vanished)
++
++static int      g_qd[64];    static int g_qdh, g_qdt, g_qdn;              // demand-dedicated queue (higher priority)
++static int      g_qp[MOE_Q_MAX]; static int g_qph, g_qpt, g_qpn;          // prefetch main queue
++
+ static struct tensor_pool g_tp[MOE_POOL_MAX_TENSORS];
+ static int      g_ntp;
+-static struct slot_ent ** g_slots; static int g_nslots, g_slotcap;
+-static struct slot_ent * g_lru_head, * g_lru_tail;
+-static int      g_ready;
+-static long long g_loads, g_evicts, g_bytes_loaded;
++static int32_t  g_pins[MOE_PIN_MAX]; static int g_npins;
+ 
+-static size_t align_up(size_t x) { return (x + 4095) & ~(size_t)4095; }
++// accounting (subset aligned with the engine's PoolMetrics)
++static long long g_loads, g_evicts, g_trims;
++static long long g_flash;                                    // bytes admitted to the pool (worker + synchronous)
++static long long g_iofail;
++static long long g_stall_ns;                                 // cumulative main-thread read waits (~ the engine's stall/acq metric)
++static long long g_pf_issued, g_pf_used, g_pf_waste, g_pf_drop, g_pf_miss, g_rescue;
++
++// resident blob (copy-in of the non-expert region)
++static char *   g_blob; static size_t g_blob_cap, g_blob_bump; static int g_blob_on;
++static volatile int g_heads_on, g_pred_enabled;   // referenced early by init (defined in the pred section)
++
++static uint64_t now_ns(void) {
++    struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
++    return (uint64_t) ts.tv_sec * 1000000000ull + (uint64_t) ts.tv_nsec;
++}
+ 
+ void moe_pool_init(void) {
+     if (g_ready) return;
+     const char * e = getenv("E0_POOL_MB");
+     size_t mb = e ? (size_t) atol(e) : 0;
++    const char * be = getenv("E0_BLOB_MB");
++    size_t bmb = be ? (size_t) atol(be) : 0;
++    if (bmb) {
++        g_blob_cap = bmb * 1024 * 1024;
++        void * m = mmap(NULL, g_blob_cap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++        if (m != MAP_FAILED) { g_blob = m; g_blob_on = 1; }
++    }
+     if (!mb) return;
+-    g_cap = mb * 1024 * 1024;
+-    void * m = mmap(NULL, g_cap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+-    if (m == MAP_FAILED) return;
+-    g_arena = m; g_ready = 1;
++    g_cap_bytes = mb * 1024 * 1024;                          // slots are created at first registration (once slice is known)
++    if (getenv("E0_POOL_STATS")) fprintf(stderr, "moe_pool init: pool_mb=%zu blob_on=%d heads_on=%d pred=%d\n", mb, g_blob_on, g_heads_on, g_pred_enabled);
++    const char * hp = getenv("E0_HEADS");
++    if (hp && hp[0]) {
++        moe_pool_load_heads(hp);
++    }
+ }
+ 
+-int moe_pool_enabled(void) { return g_ready; }
+ static struct tensor_pool * find_tp(const struct ggml_tensor * t);
+ 
++int moe_pool_enabled(void) { return g_ready; }
++int moe_pool_blob_enabled(void) { return g_blob_on; }
++
++void * moe_pool_blob_add(size_t nbytes) {
++    if (!g_blob_on || !nbytes) return NULL;
++    const size_t need = (nbytes + 4095) & ~(size_t)4095;
++    if (g_blob_bump + need > g_blob_cap) return NULL;        // budget exhausted: this tensor stays in mmap (see dump for accounting)
++    void * p = g_blob + g_blob_bump;
++    g_blob_bump += need;
++    return p;
++}
++
++// ===================== v3 -> v4: predictive prefetch engine (advisory head; the pool is read-only and never touches logits) =====================
++// Math = PREROUTER_SPEC sec.2: logits = linear_init(x) + fc2(gelu_erf(fc1(x))),
++//   x = [m_in(2048) | cur_onehot(256) | prev_onehot(256)]; the top-K prediction set is used only for prefetch; routing remains teacher.
++#include <math.h>
++#define PRED_RINGSZ 128
++struct pred_job {
++    int      layer;
++    int      ntok;
++    float    x[2560];                    // feats: 0..2047 = m_in last-token row, 2048..2303 = cur_oh, 2304..2559 = prev_oh
++    int32_t  cur_ids[8];  int n_cur;
++    int32_t  prev_ids[8]; int n_prev;
++};
++static struct {
++    int      bound;
++    const struct ggml_tensor * min;
++    int64_t  tix[3];                     // g_tp indices of gate/up/down, filled back at registration
++    struct { const uint16_t * fc1, * fc2, * lin; } hd;
++    int32_t  prev_exec[8]; int n_prev;
++} g_lr[64];
++static struct pred_job g_ring[PRED_RINGSZ];
++static volatile int g_ring_head, g_ring_tail, g_worker_on;
++static char * g_headmap; static size_t g_headmap_sz;
++
++static void * pred_worker(void * arg);
++struct tensor_pool;
++void moe_pool_prefetch_impl(struct tensor_pool * p, int64_t e);
++
++int moe_pool_load_heads(const char * path) {
++    int fd = open(path, O_RDONLY);
++    if (fd < 0) return 0;
++    size_t sz = (size_t) lseek(fd, 0, SEEK_END); lseek(fd, 0, SEEK_SET);
++    void * m = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, 0);
++    close(fd);
++    if (m == MAP_FAILED) return 0;
++    g_headmap = m; g_headmap_sz = sz;
++    uint32_t magic; memcpy(&magic, m, 4);
++    if (magic != 0x44483045u) return 0;
++    int n; memcpy(&n, (char *) m + 4, 4);
++    size_t off = 8;
++    for (int i = 0; i < n; i++) {
++        int layer; memcpy(&layer, (char *) m + off, 4); off += 4;
++        uint32_t l1, l2, l3;
++        memcpy(&l1, (char *) m + off, 4); memcpy(&l2, (char *) m + off + 4, 4); memcpy(&l3, (char *) m + off + 8, 4);
++        off += 12;
++        if (layer >= 0 && layer < 64) {
++            g_lr[layer].hd.fc1 = (const uint16_t *) ((char *) m + off);
++            g_lr[layer].hd.fc2 = (const uint16_t *) ((char *) m + off + l1);
++            g_lr[layer].hd.lin = (const uint16_t *) ((char *) m + off + l1 + l2);
++        }
++        off += (size_t) l1 + l2 + l3;
++    }
++    g_heads_on = 1;
++    g_pred_enabled = getenv("E0_PREROUTER") != NULL;
++    return 1;
++}
++
++void moe_pool_bind_min(int layer, const struct ggml_tensor * t) {
++    if (layer >= 0 && layer < 64) { g_lr[layer].min = t; g_lr[layer].bound = 1; }
++}
++
++void moe_pool_note_routing(const struct ggml_tensor * src0, const int32_t * ids, int n_ids) {
++    static int s_nr1;
++    if (getenv("E0_POOL_STATS") && !s_nr1) { s_nr1 = 1; fprintf(stderr, "moe_pool note#1: pred=%d heads=%d n_ids=%d name=%s\n", g_pred_enabled, g_heads_on, n_ids, src0->name); }
++    if (!g_pred_enabled || !g_heads_on || n_ids <= 0 || n_ids > 8) return;
++    int layer = -1; const char * q = strstr(src0->name, "blk.");
++    if (q) layer = (int) strtol(q + 4, NULL, 10);
++    if (layer < 0 || layer >= 64) return;
++    if (!g_lr[layer].bound || !g_lr[layer].min || !g_lr[layer].hd.fc1) return;
++    const struct ggml_tensor * min = g_lr[layer].min;
++    if (!min->data) return;
++    const int64_t n_embd = min->ne[0];
++    if (n_embd > 2048 || min->ne[1] < 1) return;
++    pthread_mutex_lock(&g_lock);
++    if (g_ring_head - g_ring_tail >= PRED_RINGSZ) { pthread_mutex_unlock(&g_lock); return; }  // backpressure: drop the prefetch
++    struct pred_job * j = &g_ring[g_ring_head % PRED_RINGSZ];
++    g_ring_head++;
++    j->layer = layer; j->n_cur = n_ids;
++    const float * row = (const float *) ((const char *) min->data + (min->ne[1] - 1) * min->nb[1]);
++    memcpy(j->x, row, (size_t) n_embd * sizeof(float));
++    memset(j->x + n_embd, 0, (2048 - (size_t) n_embd) * sizeof(float));
++    memset(&j->x[2048], 0, (2560 - 2048) * sizeof(float));
++    for (int i = 0; i < n_ids; i++) if (ids[i] >= 0 && ids[i] < 256) j->x[2048 + ids[i]] = 1.0f;
++    j->n_prev = g_lr[layer].n_prev;
++    for (int i = 0; i < j->n_prev; i++) {
++        const int32_t e = g_lr[layer].prev_exec[i];
++        if (e >= 0 && e < 256) j->x[2304 + e] = 1.0f;
++    }
++    memcpy(j->cur_ids, ids, (size_t) n_ids * sizeof(int32_t));
++    memcpy(g_lr[layer].prev_exec, ids, (size_t) n_ids * sizeof(int32_t));   // teacher facts go into prev
++    g_lr[layer].n_prev = n_ids;
++    if (!g_worker_on) {
++        g_worker_on = 1;
++        pthread_t th;
++        pthread_create(&th, NULL, pred_worker, NULL);
++        pthread_detach(th);
++    }
++    pthread_mutex_unlock(&g_lock);
++}
++
++static inline float f16tof(uint16_t h) {
++    const uint32_t w = (uint32_t) h << 16;
++    float f; memcpy(&f, &w, 4); return f;
++}
++static inline float gelu_erf_f(float x) { return 0.5f * x * (1.0f + erff(x * 0.70710678118654752440f)); }
++
++static void pred_do_job(struct pred_job * j) {
++    float h[512], out[256];
++    const uint16_t * fc1 = g_lr[j->layer].hd.fc1;
++    const uint16_t * fc2 = g_lr[j->layer].hd.fc2;
++    const uint16_t * lin = g_lr[j->layer].hd.lin;
++    for (int o = 0; o < 512; o++) {
++        const uint16_t * wrow = fc1 + (size_t) o * 2560;
++        float acc = 0;
++        for (int i = 0; i < 2560; i++) acc += f16tof(wrow[i]) * j->x[i];
++        h[o] = gelu_erf_f(acc);
++    }
++    for (int o = 0; o < 256; o++) {
++        const uint16_t * wr = lin + (size_t) o * 2560;
++        const uint16_t * wc = fc2 + (size_t) o * 512;
++        float acc = 0;
++        for (int i = 0; i < 2560; i++) acc += f16tof(wr[i]) * j->x[i];
++        for (int i = 0; i < 512; i++) acc += f16tof(wc[i]) * h[i];
++        out[o] = acc;
++    }
++    int top[8]; float tv[8]; for (int k = 0; k < 8; k++) { tv[k] = -1e30f; top[k] = -1; }
++    for (int e = 0; e < 256; e++) {
++        for (int k = 0; k < 8; k++) {
++            if (out[e] > tv[k]) {
++                for (int m = 7; m > k; m--) { tv[m] = tv[m-1]; top[m] = top[m-1]; }
++                tv[k] = out[e]; top[k] = e; break;
++            }
++        }
++    }
++    for (int k = 0; k < 8; k++) {
++        if (top[k] < 0) break;
++        for (int role = 0; role < 3; role++) {
++            const int64_t tix = g_lr[j->layer].tix[role];
++            if (tix < 0) continue;
++            moe_pool_prefetch_impl(&g_tp[tix], top[k]);
++        }
++    }
++}
++
++static void * pred_worker(void * arg) {
++    (void) arg;
++    while (1) {
++        int head_i = -1;
++        pthread_mutex_lock(&g_lock);
++        if (g_ring_head > g_ring_tail) head_i = g_ring_tail++;
++        pthread_mutex_unlock(&g_lock);
++        if (head_i < 0) { usleep(200); continue; }
++        pred_do_job(&g_ring[head_i % PRED_RINGSZ]);
++    }
++    return NULL;
++}
++
++// ===================== slot / LRU / queue core (v4) =====================
++
++static void list_unlink(int32_t i) {
++    struct slot_ent * s = &g_slots[i];
++    if (!s->on_list) return;
++    if (s->lru_prev != SLOT_NONE) g_slots[s->lru_prev].lru_next = s->lru_next; else g_lru_head = s->lru_next;
++    if (s->lru_next != SLOT_NONE) g_slots[s->lru_next].lru_prev = s->lru_prev; else g_lru_tail = s->lru_prev;
++    s->lru_prev = s->lru_next = SLOT_NONE; s->on_list = 0;
++}
++static void list_push_back(int32_t i) {
++    struct slot_ent * s = &g_slots[i];
++    if (s->on_list) list_unlink(i);
++    s->lru_prev = g_lru_tail; s->lru_next = SLOT_NONE;
++    if (g_lru_tail != SLOT_NONE) g_slots[g_lru_tail].lru_next = i; else g_lru_head = i;
++    g_lru_tail = i; s->on_list = 1;
++}
++static void account_evict(struct slot_ent * s) {              // same as the engine's account_prefetch_eviction
++    if (s->prefetched && !s->consumed) g_pf_miss++;
++    s->prefetched = 0; s->consumed = 0;
++}
++static int32_t evict_victim_locked(void) {                    // first non-pinned entry at the LRU head (chain contains READY/FAILED only)
++    for (int32_t i = g_lru_head; i != SLOT_NONE; ) {
++        int32_t nxt = g_slots[i].lru_next;
++        if (!g_slots[i].pinned) return i;
++        i = nxt;
++    }
++    return SLOT_NONE;
++}
++static void unclaim_locked(int32_t si) {                      // claim a slot then back out (e.g. queue full)
++    struct slot_ent * s = &g_slots[si];
++    g_tp[s->tix].slot[s->expert] = SLOT_NONE;
++    account_evict(s);
++    s->state = ST_EMPTY; s->expert = -1; s->tix = -1;
++    g_used_slots--;
++}
++// Claim a slot for (tix,e): EMPTY cursor first, then the non-pinned LRU head (READY/FAILED). LOADING is never evictable.
++static int32_t claim_slot_locked(int tix, int32_t e) {
++    int32_t si = SLOT_NONE;
++    for (int t = 0; t < g_nslots; t++) {
++        int32_t i = (g_empty_cursor + t) % g_nslots;
++        if (g_slots[i].state == ST_EMPTY) { si = i; g_empty_cursor = (i + 1) % g_nslots; g_used_slots++; break; }
++    }
++    if (si < 0) {
++        si = evict_victim_locked();
++        if (si < 0) return SLOT_NONE;
++        struct slot_ent * vs = &g_slots[si];
++        g_tp[vs->tix].slot[vs->expert] = SLOT_NONE;
++        if (vs->state == ST_READY) g_evicts++;
++        account_evict(vs);
++        list_unlink(si);
++    }
++    struct slot_ent * s = &g_slots[si];
++    s->tix = tix; s->expert = e; s->state = ST_LOADING;
++    s->pinned = 0; s->prefetched = 0; s->consumed = 0; s->clock = ++g_clock;
++    g_tp[tix].slot[e] = si;
++    return si;
++}
++static int enqueue_io_locked(int32_t si, int demand) {   // demand=1 goes to the dedicated queue (popped first)
++    if (demand) {
++        if (g_qdn >= 64) return 0;
++        g_qd[g_qdt] = si; g_qdt = (g_qdt + 1) % 64; g_qdn++;
++    } else {
++        if (g_qpn >= MOE_Q_MAX) return 0;
++        g_qp[g_qpt] = si; g_qpt = (g_qpt + 1) % MOE_Q_MAX; g_qpn++;
++    }
++    g_inflight++;
++    pthread_cond_broadcast(&g_qcv);
++    return 1;
++}
++static ssize_t pread_full(int fd, void * dst, size_t n, off_t off) {
++    size_t got = 0;
++    int tries = 0;
++    while (got < n) {
++        ssize_t r = pread(fd, (char *) dst + got, n - got, off + (off_t) got);
++        if (r > 0) { got += (size_t) r; continue; }
++        if (r == 0) break;                                  // EOF: real failure
++        if (errno == EINTR) continue;
++        if (++tries < 200) { struct timespec ts = { 0, 1000000 }; nanosleep(&ts, NULL); continue; }
++        static int s_once;
++        if (!s_once) { s_once = 1; fprintf(stderr, "moe_pool pread ERRNO=%d fd=%d off=%lld\n", errno, fd, (long long) off); }
++        break;                                              // permanent error: give up (FAILED -> kernel fallback, never hangs)
++    }
++    return (ssize_t) got == n ? (ssize_t) n : -1;
++}
++static void slot_finalize_locked(int32_t si, int ok) {
++    static int s_fin8;
++    if (getenv("E0_POOL_STATS") && s_fin8 < 8) { s_fin8++; fprintf(stderr, "moe_pool io-fin#%d: slot=%d ok=%d qn=%d inf=%d\n", s_fin8, si, ok, g_qdn + g_qpn, g_inflight); }
++    struct slot_ent * s = &g_slots[si];
++    if (ok) { s->state = ST_READY; g_flash += g_slice; }
++    else    { s->state = ST_FAILED; g_iofail++; }
++    list_push_back(si);
++    if (g_inflight > 0) g_inflight--;
++    pthread_cond_broadcast(&g_scv);
++}
++// synchronous read on the main thread outside the lock (same as the engine's sync_load_locked; no one can move a LOADING slot, so it's safe)
++static int load_sync_locked(int32_t si) {
++    struct slot_ent * s = &g_slots[si];
++    struct tensor_pool * p = &g_tp[s->tix];
++    const uint64_t off = p->file_off + (uint64_t) s->expert * p->stride;
++    pthread_mutex_unlock(&g_lock);
++    const ssize_t got = pread_full(p->fd, s->mem, p->slice, (off_t) off);
++    pthread_mutex_lock(&g_lock);
++    if (got == (ssize_t) p->slice) { g_loads++; slot_finalize_locked(si, 1); return 1; }
++    slot_finalize_locked(si, 0);
++    return 0;
++}
++static void wait_ready_locked(int32_t si) {
++    const uint64_t t0 = now_ns();
++    while (g_slots[si].state == ST_LOADING && !g_stop) { if (g_inflight > 0 && g_qdn == 0 && g_qpn == 0) { g_stuckq++; if (g_stuckq < 6) fprintf(stderr, "moe_pool STUCKQ#%lld: si=%d infl=%d used=%d\n", g_stuckq, si, g_inflight, g_used_slots); } pthread_cond_wait(&g_scv, &g_lock); }
++    g_stall_ns += (long long) (now_ns() - t0);
++}
++static void pin_locked(int32_t si) {
++    struct slot_ent * s = &g_slots[si];
++    if (s->pinned) return;
++    s->pinned = 1;
++    if (g_npins < MOE_PIN_MAX) g_pins[g_npins++] = si;
++}
++
++static void * io_thread(void * arg) {
++    (void) arg;
++    for (;;) {
++        int32_t si;
++        pthread_mutex_lock(&g_lock);
++        while (g_qdn + g_qpn == 0 && !g_stop) pthread_cond_wait(&g_qcv, &g_lock);
++        if (g_stop) { pthread_mutex_unlock(&g_lock); return NULL; }
++        if (g_qdn > 0)      { si = g_qd[g_qdh]; g_qdh = (g_qdh + 1) % 64; g_qdn--; }
++        else if (g_qpn > 0) { si = g_qp[g_qph]; g_qph = (g_qph + 1) % MOE_Q_MAX; g_qpn--; }
++        else                { pthread_mutex_unlock(&g_lock); continue; }
++        struct slot_ent * s = &g_slots[si];
++        const int fd = g_tp[s->tix].fd;
++        const uint64_t off = g_tp[s->tix].file_off + (uint64_t) s->expert * g_tp[s->tix].stride;
++        void * mem = s->mem;
++        const size_t slice = g_slice;
++        pthread_mutex_unlock(&g_lock);
++        const ssize_t got = pread_full(fd, mem, slice, (off_t) off);
++        pthread_mutex_lock(&g_lock);
++        if (g_slots[si].state == ST_LOADING && g_slots[si].mem == mem) {
++            if (got == (ssize_t) slice) { g_loads++; slot_finalize_locked(si, 1); }
++            else slot_finalize_locked(si, 0);
++        } else {
++            if (g_inflight > 0) g_inflight--;                 // main thread already voided it: this read's result is discarded
++            pthread_cond_broadcast(&g_scv);
++        }
++        pthread_mutex_unlock(&g_lock);
++    }
++}
++
++static long long mem_avail_mb(void) {
++    FILE * f = fopen("/proc/meminfo", "r");
++    if (!f) return -1;
++    char ln[256]; long long v = -1;
++    while (fgets(ln, sizeof(ln), f)) {
++        if (!strncmp(ln, "MemAvailable:", 13)) { v = atoll(ln + 13) / 1024; break; }
++    }
++    fclose(f);
++    return v;
++}
++// watermark trim (simplified form of the engine's trim): evict only non-pinned READY; no physical frame reclaim (the arena middle is not contiguous -- see ALIGNMENT.md).
++static void water_trim_locked(void) {
++    const char * fe = getenv("E0_MEM_FLOOR_MB");
++    if (!fe) return;
++    const long long floor_mb = atoll(fe);
++    if (floor_mb <= 0) return;
++    const long long avail = mem_avail_mb();
++    if (avail < 0 || avail >= floor_mb) return;
++    const int target = (int) (g_nslots * 6 / 10);
++    int n = 0;
++    while (g_used_slots > target) {
++        int32_t v = SLOT_NONE;
++        for (int32_t i = g_lru_head; i != SLOT_NONE; ) {
++            int32_t nxt = g_slots[i].lru_next;
++            if (!g_slots[i].pinned) { v = i; break; }
++            i = nxt;
++        }
++        if (v < 0) break;
++        struct slot_ent * s = &g_slots[v];
++        g_tp[s->tix].slot[s->expert] = SLOT_NONE;
++        account_evict(s);
++        list_unlink(v);
++        s->state = ST_EMPTY; s->expert = -1;
++        g_used_slots--; g_trims++; n++;
++    }
++    if (n) fprintf(stderr, "moe_pool trim: evicted=%d used=%d MemAvailable=%lldMB\n", n, g_used_slots, avail);
++}
++
++// ===================== public API =====================
++
+ void moe_pool_register(struct ggml_tensor * t, int fd, uint64_t file_off) {
+-    if (!g_ready) return;
+-    if (t->ne[2] < 8) return;                       // expert-stack shape
+-    if (find_tp(t)) return;                                 // idempotent: same pointer never re-registered
++    if (!g_cap_bytes) return;
++    if (getenv("E0_POOL_STATS") && g_ntp == 0) {
++        fprintf(stderr, "moe_pool reg#1: %s ne2=%lld nbytes=%zu\n", t->name, (long long) t->ne[2], (size_t) ggml_nbytes(t));
++    }
++    if (t->ne[2] < 8) return;                                // expert-stack shape
++    if (find_tp(t)) return;                                  // idempotent: same pointer never re-registered
+     const size_t total = (size_t) ggml_nbytes(t);
+     const size_t stride = total / (size_t) t->ne[2];
+-    // conservative gate: pool only when the expert slice is naturally page-aligned (holds for this artifact); otherwise leave it to the kernel
+-    if (stride % 4096) return;
+-    const size_t slice = stride;
++    if (stride % 4096) return;                               // conservative gate: only page-aligned slices get pooled (holds for this artifact)
++    if (!g_ready) {                                          // fixed at first registration: equal-size slot array
++        g_slice = stride;
++        g_nslots = (int) (g_cap_bytes / g_slice);
++        g_arena = mmap(NULL, g_slice * (size_t) g_nslots, PROT_READ | PROT_WRITE,
++                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++        if (g_arena == MAP_FAILED) { g_arena = NULL; g_nslots = 0; return; }
++        g_slots = calloc((size_t) g_nslots, sizeof(struct slot_ent));
++        for (int i = 0; i < g_nslots; i++) { g_slots[i].mem = g_arena + (size_t) i * g_slice; g_slots[i].expert = -1; g_slots[i].tix = -1; }
++        g_ready = 1;
++        const char * ie = getenv("E0_IO_THREADS");
++        int nth = ie ? (int) atol(ie) : 4;
++        if (nth < 1) nth = 1; if (nth > 8) nth = 8;
++        if (!g_io_on) {
++            g_io_on = 1;
++            for (int i = 0; i < nth; i++) {
++                pthread_t th; pthread_create(&th, NULL, io_thread, NULL); pthread_detach(th);
++            }
++        }
++    }
++    if (stride != g_slice) return;                           // the v4 premise is equal-size slots (same as the engine); odd-shaped tensors go to the kernel
+     pthread_mutex_lock(&g_lock);
+     if (g_ntp >= MOE_POOL_MAX_TENSORS) { pthread_mutex_unlock(&g_lock); return; }
+     struct tensor_pool * p = &g_tp[g_ntp++];
+-    p->key = t->data; p->fd = fd; p->file_off = file_off; p->slice = slice; p->stride = stride;
++    p->layer = -1; p->role = -1;
++    { const char * q = strstr(t->name, "blk."); if (q) p->layer = (int) strtol(q + 4, NULL, 10); }
++    if (strstr(t->name, "gate_exps")) p->role = 0;
++    else if (strstr(t->name, "up_exps")) p->role = 1;
++    else if (strstr(t->name, "down_exps")) p->role = 2;
++    if (p->role >= 0 && p->layer >= 0 && p->layer < 64) {
++        g_lr[p->layer].tix[p->role] = g_ntp - 1;
++    }
++    p->key = t->data; snprintf(p->name, sizeof(p->name), "%s", t->name); p->fd = dup(fd);   // independent ownership: pread still works after the loader closed its fd (v4 hang incident) p->file_off = file_off; p->slice = stride; p->stride = stride;
+     p->n_experts = t->ne[2];
+-    p->slot_of = calloc(p->n_experts, sizeof(int64_t));
+-    for (int64_t i = 0; i < p->n_experts; i++) p->slot_of[i] = -1;
++    p->slot = calloc((size_t) p->n_experts, sizeof(int32_t));
++    for (int64_t i = 0; i < p->n_experts; i++) p->slot[i] = SLOT_NONE;
++    if (getenv("E0_POOL_STATS") && g_ntp <= 2) {
++        fprintf(stderr, "moe_pool reg-ok#%d: %s nslots=%d\n", g_ntp, t->name, g_nslots);
++    }
+     pthread_mutex_unlock(&g_lock);
+ }
+ 
+ static struct tensor_pool * find_tp(const struct ggml_tensor * t) {
+     for (int i = 0; i < g_ntp; i++) if (g_tp[i].key == t->data) return &g_tp[i];
++    // v4: the tensor used by compute may be a graph copy (pointer != load-time set) -- match by name and re-bind the pointer
++    for (int i = 0; i < g_ntp; i++) {
++        if (!strcmp(g_tp[i].name, t->name)) { g_tp[i].key = t->data; return &g_tp[i]; }
++    }
+     return NULL;
+ }
+ 
+@@ -95,115 +538,152 @@ int moe_pool_pooled(const struct ggml_tensor * t) {
+     return find_tp(t) != NULL;
+ }
+ 
+-// ---- LRU ----
+-static void lru_unlink(struct slot_ent * s) {
+-    if (s->prev) s->prev->next = s->next; else g_lru_head = s->next;
+-    if (s->next) s->next->prev = s->prev; else g_lru_tail = s->prev;
+-    s->prev = s->next = NULL;
+-}
+-static void lru_front(struct slot_ent * s) {
+-    s->prev = NULL; s->next = g_lru_head;
+-    if (g_lru_head) g_lru_head->prev = s; else g_lru_tail = s;
+-    g_lru_head = s;
+-}
+-
+-static struct slot_ent * slot_alloc(size_t bytes, int tix, int force) {
+-    struct slot_ent * s = NULL;
+-    for (int i = 0; i < g_nslots; i++) {                       // first pick a free slot of the same size
+-        if (g_slots[i]->expert == -1 && g_slots[i]->bytes == bytes) { s = g_slots[i]; break; }
+-    }
+-    if (!s && g_bump + bytes <= g_cap) {                       // then bump-allocate
+-        s = calloc(1, sizeof(*s));
+-        s->base = g_arena + g_bump; g_bump += bytes; s->bytes = bytes;
+-        if (g_nslots == g_slotcap) {
+-            g_slotcap = g_slotcap ? g_slotcap * 2 : 512;
+-            g_slots = realloc(g_slots, (size_t) g_slotcap * sizeof(*g_slots));
+-        }
+-        g_slots[g_nslots++] = s;
+-    }
+-    if (!s) {                                                   // finally evict an older-generation LRU entry
+-        for (struct slot_ent * c = g_lru_tail; c; c = c->prev) {
+-            if (c->expert < 0) continue;
+-            if (c->last_gen == g_gen && !force) continue;   // demand mode: allow evicting stale entries of THIS generation (just-used rows were already bumped to the LRU head)
+-            g_tp[c->tix].slot_of[c->expert] = -1;
+-            g_used -= c->bytes;
+-            s = c; break;
+-        }
+-        if (s) { g_evicts++; }
+-    }
+-    if (!s) return NULL;                                        // pool full this generation / huge block: kernel backstop
+-    if (s->expert >= 0) lru_unlink(s);
+-    s->tix = tix; s->expert = -1;
+-    g_used += s->bytes;
+-    return s;
+-}
+-
+ void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_ids) {
+-    if (!g_ready) return;
++    if (!g_ready || n_ids <= 0) return;
+     pthread_mutex_lock(&g_lock);
+-    g_gen++;
++    // release all pins from the previous node wholesale (barrier quiescence premise: all compute threads of the previous tensor finished)
++    for (int i = 0; i < g_npins; i++) g_slots[g_pins[i]].pinned = 0;
++    g_npins = 0;
+     struct tensor_pool * p = find_tp(t);
++    static int s_np;
++    if (getenv("E0_POOL_STATS") && s_np < 3) { s_np++; fprintf(stderr, "moe_pool ensure#%d: %s ptr=%p buf=%p ntp=%d key0=%p\n", s_np, t->name, t->data, (void*)t->buffer, g_ntp, g_ntp ? g_tp[0].key : NULL); }
+     if (!p) { pthread_mutex_unlock(&g_lock); return; }
+     const int tix = (int) (p - g_tp);
+-    // demand-exclusive mode: small batches (decode 1~4 tok) evict-old/admit-new with no mmap fallback -- pool = the only path to experts (flash-pool requirements 1 and 3)
+-    // large batches (prefill) load best-effort: whatever doesn't fit is left to the kernel, preventing cross-layer ping-pong
+-    const int demand = n_ids <= 16;
++    const int exclusive = n_ids <= 16;                       // decode: demand-exclusive; prefill: best-effort
+     static long s_calls;
+     if (getenv("E0_POOL_STATS") && (++s_calls % 2000) == 0) {
+-        long long h = 0, m = 0, l = 0, e = 0, bl = 0; size_t cap = 0, used = 0;
+-        moe_pool_stats(&h, &m, &l, &e, &bl, &cap, &used);
+-        fprintf(stderr, "moe_pool@%ld: hits=%lld misses=%lld loads=%lld evicts=%lld used_mb=%zu\n",
+-                s_calls, h, m, l, e, used / (1024 * 1024));
++        long long h = 0, m = 0;
++        for (int i = 0; i < g_ntp; i++) { h += g_tp[i].hits; m += g_tp[i].misses; }
++        fprintf(stderr, "moe_pool@%ld: hits=%lld misses=%lld loads=%lld evicts=%lld used_mb=%zu"
++                        " stall_ms=%lld pf=%lld/%lld/%lld/%lld flash_mb=%lld trims=%lld\n",
++                s_calls, h, m, g_loads, g_evicts, (size_t) g_used_slots * g_slice / (1024 * 1024),
++                g_stall_ns / 1000000, g_pf_issued, g_pf_used, g_pf_waste, g_pf_miss,
++                g_flash / (1024 * 1024), g_trims);
+     }
++    water_trim_locked();
++
++    int32_t waiters[64]; int nwait = 0;                      // slots enqueued in this batch; awaited together after dispatch (queue parallelism)
+     for (int i = 0; i < n_ids; i++) {
+         const int32_t e = ids[i];
+         if (e < 0 || e >= p->n_experts) continue;
+-        if (p->slot_of[e] >= 0) {                               // hit (slot_of = slot_ent address)
+-            p->hits++;
+-            struct slot_ent * s = (struct slot_ent *) p->slot_of[e];
+-            if (s->last_gen != g_gen) { lru_unlink(s); lru_front(s); s->last_gen = g_gen; }
++        int32_t si = p->slot[e];
++        if (si >= 0) {                                       // already in the pool
++            struct slot_ent * s = &g_slots[si];
++            if (s->state == ST_READY) {
++                p->hits++;
++                if (s->prefetched && !s->consumed) { g_pf_used++; s->consumed = 1; }
++                list_push_back(si);
++                pin_locked(si);
++                continue;
++            }
++            if (s->state == ST_LOADING) {                    // wait for the async prefetch (same as the engine)
++                pin_locked(si);
++                g_rescue++;
++                wait_ready_locked(si);
++                if (s->state == ST_FAILED && !load_sync_locked(si)) break;
++                p->hits++;
++                if (s->prefetched && !s->consumed) { g_pf_used++; s->consumed = 1; }
++                list_push_back(si);
++                continue;
++            }
++            // stale FAILED slot: reload synchronously
++            pin_locked(si);
++            g_rescue++;
++            if (!load_sync_locked(si)) break;
++            p->hits++; list_push_back(si);
+             continue;
+         }
++        // cold path: claim a slot + enqueue (or synchronous when the queue is full)
+         p->misses++;
+-        struct slot_ent * s = slot_alloc(p->slice, tix, demand);
+-        if (!s) break;
+-        const off_t off = (off_t) (p->file_off + (uint64_t) e * p->stride);
+-        const ssize_t got = pread(p->fd, s->base, p->slice, off);
+-        if (got != (ssize_t) p->slice) { s->expert = -1; break; }
+-        s->expert = e; s->last_gen = g_gen;
+-        lru_front(s);
+-        g_loads++; g_bytes_loaded += got;
+-        p->slot_of[e] = (int64_t) (intptr_t) s;
++        int32_t slot;
++        for (;;) {
++            slot = claim_slot_locked(tix, e);
++            if (slot >= 0) break;
++            if (!exclusive || g_inflight <= 0) break;
++            static int s_c40;
++            if (getenv("E0_POOL_STATS") && s_c40 < 40) { s_c40++; fprintf(stderr, "moe_pool corner: infl=%d used=%d qd=%d qp=%d\n", g_inflight, g_used_slots, g_qdn, g_qpn); }
++            pthread_cond_wait(&g_scv, &g_lock);
++        }
++        if (slot < 0) continue;
++        pin_locked(slot);
++        if (enqueue_io_locked(slot, 1)) {
++            if (nwait < 64) waiters[nwait++] = slot;
++            else wait_ready_locked(slot);                    // rare window overrun: wait in place
++        } else {
++            if (!load_sync_locked(slot)) break;
++        }
++    }
++    static int s_nw8;
++    if (getenv("E0_POOL_STATS") && s_nw8 < 4) { s_nw8++; fprintf(stderr, "moe_pool enq-done#%d: nwait=%d miss=%d qn=%d inf=%d\n", s_nw8, nwait, p->misses, g_qdn + g_qpn, g_inflight); }
++    for (int i = 0; i < nwait; i++) {
++        static int s_w400;
++        if (getenv("E0_POOL_STATS") && s_w400 < 400) { s_w400++; fprintf(stderr, "moe_pool w: slot=%d st=%d infl=%d qd=%d qp=%d\n", waiters[i], (int)g_slots[waiters[i]].state, g_inflight, g_qdn, g_qpn); }
++        wait_ready_locked(waiters[i]);
++        struct slot_ent * s = &g_slots[waiters[i]];
++        if (s->state == ST_FAILED && !load_sync_locked(waiters[i])) break;
+     }
+     pthread_mutex_unlock(&g_lock);
+ }
+ 
++// prefetch entry (called by pred_worker): enqueue and return immediately, never waits; dropped if there is no room (acquire backstops).
++void moe_pool_prefetch_impl(struct tensor_pool * p, int64_t e) {
++    if (!g_ready || e < 0 || e >= p->n_experts) return;
++    const int tix = (int) (p - g_tp);
++    pthread_mutex_lock(&g_lock);
++    const int32_t si = p->slot[e];
++    if (si >= 0) {
++        if (g_slots[si].state == ST_FAILED) {                // failed slot: retry once (enqueue)
++            g_slots[si].state = ST_LOADING;
++            if (!enqueue_io_locked(si, 0)) {
++                load_sync_locked(si);
++            }
++        }
++        g_pf_waste++;
++        pthread_mutex_unlock(&g_lock);
++        return;
++    }
++    if (g_qpn > 64) { g_pf_drop++; pthread_mutex_unlock(&g_lock); return; }   // throttle: drop prefetches when the main queue backs up
++    g_pf_issued++;
++    const int32_t slot = claim_slot_locked(tix, (int32_t) e);
++    if (slot < 0) { g_pf_drop++; pthread_mutex_unlock(&g_lock); return; }
++    g_slots[slot].prefetched = 1;
++    if (!enqueue_io_locked(slot, 0)) { unclaim_locked(slot); g_pf_drop++; }
++    pthread_mutex_unlock(&g_lock);
++}
++
+ const void * moe_pool_row_ptr(const struct ggml_tensor * t, int64_t expert, const void * def) {
+     if (!g_ready || expert < 0) return def;
+     const struct tensor_pool * p = find_tp(t);
+     if (!p || expert >= p->n_experts) return def;
+-    const int64_t si = p->slot_of[expert];
++    const int32_t si = p->slot[expert];
+     if (si < 0) return def;
+-    const struct slot_ent * s = (const struct slot_ent *) si;
+-    return (s->expert == expert) ? s->base : def;               // always true under the quiesce protocol; kept as a defensive check
++    const struct slot_ent * s = &g_slots[si];
++    return (s->state == ST_READY && s->expert == expert) ? s->mem : def;
+ }
+ 
+ void moe_pool_stats(long long * hits, long long * misses, long long * loads, long long * evicts,
+                     long long * bytes_loaded, size_t * cap_bytes, size_t * used_bytes) {
+     long long h = 0, m = 0;
+     for (int i = 0; i < g_ntp; i++) { h += g_tp[i].hits; m += g_tp[i].misses; }
+-    if (hits) *hits = h; if (misses) *misses = m;
+-    if (loads) *loads = g_loads; if (evicts) *evicts = g_evicts;
+-    if (bytes_loaded) *bytes_loaded = g_bytes_loaded;
+-    if (cap_bytes) *cap_bytes = g_cap; if (used_bytes) *used_bytes = g_used;
++    if (hits) *hits = h;
++    if (misses) *misses = m;
++    if (loads) *loads = g_loads;
++    if (evicts) *evicts = g_evicts;
++    if (bytes_loaded) *bytes_loaded = g_flash;
++    if (cap_bytes) *cap_bytes = g_cap_bytes;
++    if (used_bytes) *used_bytes = (size_t) g_used_slots * g_slice;
+ }
+ 
+ __attribute__((destructor)) static void moe_pool_dump(void) {
+-    if (!g_ready || !getenv("E0_POOL_STATS")) {
+-        return;
+-    }
+-    long long h = 0, m = 0, l = 0, e = 0, bl = 0; size_t cap = 0, used = 0;
+-    moe_pool_stats(&h, &m, &l, &e, &bl, &cap, &used);
+-    fprintf(stderr, "moe_pool stats: hits=%lld misses=%lld loads=%lld evicts=%lld loaded_mb=%lld cap_mb=%zu used_mb=%zu\n",
+-            h, m, l, e, bl / (1024 * 1024), cap / (1024 * 1024), used / (1024 * 1024));
++    if (!g_ready && !g_blob_on) return;
++    long long h = 0, m = 0;
++    for (int i = 0; i < g_ntp; i++) { h += g_tp[i].hits; m += g_tp[i].misses; }
++    fprintf(stderr, "moe_pool stats: hits=%lld misses=%lld loads=%lld evicts=%lld trims=%lld stuck=%lld "
++                    "stall_ms=%lld pf=%lld/%lld/%lld/%lld/%lld flash_mb=%lld iofail=%lld "
++                    "cap_mb=%zu used_mb=%d blob_mb=%zu\n",
++            h, m, g_loads, g_evicts, g_trims, g_stuckq, g_stall_ns / 1000000,
++            g_pf_issued, g_pf_used, g_pf_waste, g_pf_drop, g_pf_miss,
++            g_flash / (1024 * 1024), g_iofail,
++            g_cap_bytes / (1024 * 1024), (int) ((size_t) g_used_slots * g_slice / (1024 * 1024)),
++            g_blob_bump / (1024 * 1024));
+ }
+diff --git a/ggml/src/ggml-cpu/moe_pool.h b/ggml/src/ggml-cpu/moe_pool.h
+index ab9f7a1..e4c48ca 100644
+--- a/ggml/src/ggml-cpu/moe_pool.h
++++ b/ggml/src/ggml-cpu/moe_pool.h
+@@ -1,7 +1,9 @@
+-// moe_pool.h -- expert demand pool (Android phase 1, no prediction; fork edge0/android-pool).
++// moe_pool.h -- expert demand pool v4 (aligned with the engine streaming/expert_pool contract; fork edge0/android-pool).
+ // Foundation = copy-in private frames (Android mlock RLIMIT=64KB is hard-wired; the pin-file-page design is unusable -- see PROBE B-track closure).
+-// hit = zero-fault direct read of private memory; miss = ensure() bulk preads the whole block ("wholesale" ~1GB/s vs page-fault "retail" 16MB/s);
+-// eviction = this pool's own LRU (whole-expert granularity, never half an expert); long-tail experts outside the pool fall back to their original mmap pages, kernel-backed (lazy pointer resolution).
++// v4 design = engine-isomorphic: equal-size slot state machine (EMPTY/LOADING/READY/FAILED) + IO-thread queue (prefetch enqueues and returns;
++//   acquire hitting LOADING waits on a cv) + pin protocol (unevictable while in compute) + resident blob (non-expert region copy-in) +
++//   watermark trim + stall/prefetch metrics. Hit = zero page faults; cold read = wholesale whole blocks (batched dispatch, awaited together).
++// env: E0_POOL_MB / E0_BLOB_MB / E0_IO_THREADS / E0_MEM_FLOOR_MB / E0_HEADS / E0_PREROUTER.
+ #ifndef MOE_POOL_H
+ #define MOE_POOL_H
+ 
+@@ -30,6 +32,16 @@ void moe_pool_ensure(const struct ggml_tensor * t, const int32_t * ids, int n_id
+ // row-base resolution: resident -> private-frame pointer; otherwise -> default_ptr (original mmap address, kernel backstop)
+ const void * moe_pool_row_ptr(const struct ggml_tensor * t, int64_t expert, const void * default_ptr);
+ 
++// v4 resident blob (isomorphic to the engine's network.cpp img mirror): one copy-in per non-expert mmap-view tensor.
++// E0_BLOB_MB unset / budget exhausted -> blob_add returns NULL (caller stays as-is, zero disturbance).
++int    moe_pool_blob_enabled(void);
++void * moe_pool_blob_add(size_t nbytes);
++
++// phase 2: predictive prefetch (E0_HEADS weight files + E0_PREROUTER switch)
++int  moe_pool_load_heads(const char * path);
++void moe_pool_bind_min(int layer, const struct ggml_tensor * t);
++void moe_pool_note_routing(const struct ggml_tensor * src0, const int32_t * ids, int n_ids);
++
+ // stats snapshot (for debugging / accounting)
+ void moe_pool_stats(long long * hits, long long * misses, long long * loads, long long * evicts,
+                     long long * bytes_loaded, size_t * cap_bytes, size_t * used_bytes);
+diff --git a/src/llama-model.cpp b/src/llama-model.cpp
+index ec1089d..b9e0907 100644
+--- a/src/llama-model.cpp
++++ b/src/llama-model.cpp
+@@ -7,6 +7,8 @@ extern "C" {
+ void        moe_pool_init(void);
+ int         moe_pool_enabled(void);
+ void        moe_pool_register(struct ggml_tensor * t, int fd, uint64_t file_off);
++void      * moe_pool_blob_add(size_t nbytes);
++int         moe_pool_blob_enabled(void);
+ }
+ #include "llama-model.h"
+ 
+@@ -1891,28 +1893,60 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
+         }
+     }
+ 
+-    // moe_pool registration (Android phase 1): expert 3D tensors -> pool. With E0_POOL_MB unset this block has no side effects.
++    // moe_pool: init stays here (heads/env parsing has zero dependencies); registration and blob live in moe_wire() --
++    // inside load_tensors the ml.contexts tensor set has data unbound (measured NULL); the primary set lives in tensors_by_name.
+     moe_pool_init();
+-    if (moe_pool_enabled() && ml.use_mmap && !ml.files.empty()) {
+-        auto reg = [&](ggml_tensor * t) {
+-            if (!t || !strstr(t->name, "exps")) {
+-                return;
+-            }
+-            const auto * w = ml.get_weight(t->name);
+-            if (!w || w->idx >= ml.files.size()) {
+-                return;
+-            }
+-            // pread does not depend on the file cursor, so the loader's fd is safe to use directly (no dup, avoids leaks)
+-            moe_pool_register(t, ml.files[w->idx]->file_id(), (uint64_t) w->offs);
+-        };
+-        for (auto & ctx : ml.contexts) {
+-            for (ggml_tensor * t = ggml_get_first_tensor(ctx.get()); t; t = ggml_get_next_tensor(ctx.get(), t)) {
+-                reg(t);
++
++    return true;
++}
++
++// edge0 v4 (llama_model_load calls this after load_tensors): the tensors_by_name primary set now has its data pointers
++// bound. Expert tensors are registered into the pool; with E0_BLOB_MB on, each non-expert mmap-view tensor gets one copy-in (isomorphic to the engine's img mirror).
++void llama_model_base::moe_wire(llama_model_loader & ml) {
++    if (!ml.use_mmap || ml.files.empty()) {
++        return;
++    }
++    for (auto & [name, t] : tensors_by_name) {
++        if (!t || !t->data || !strstr(t->name, "exps")) {
++            continue;
++        }
++        const auto * w = ml.get_weight(name.c_str());
++        if (!w || w->idx >= ml.files.size()) {
++            continue;
++        }
++        // pread does not depend on the file cursor, so the loader's fd is safe to use directly (no dup, avoids leaks)
++        moe_pool_register(t, ml.files[w->idx]->file_id(), (uint64_t) w->offs);
++    }
++    if (!moe_pool_blob_enabled()) {
++        return;
++    }
++    size_t blob_copied = 0;
++    for (auto & [name, t] : tensors_by_name) {
++        if (!t || !t->data || strstr(t->name, "exps") || ggml_nbytes(t) == 0) {
++            continue;
++        }
++        bool in_mapping = false;
++        for (const auto & mapping : pimpl->mappings) {
++            const uint8_t * lo = (const uint8_t *) mapping->addr();
++            const uint8_t * hi = lo + mapping->size();
++            const uint8_t * p  = (const uint8_t *) t->data;
++            if (p >= lo && p < hi) {
++                in_mapping = true;
++                break;
+             }
+         }
++        if (!in_mapping) {
++            continue;   // heap tensors (already converted/copied) are resident anyway -- leave them alone
++        }
++        void * dst = moe_pool_blob_add(ggml_nbytes(t));
++        if (!dst) {
++            continue;   // budget exhausted: stay in mmap (visible as blob_mb in the dump)
++        }
++        memcpy(dst, t->data, ggml_nbytes(t));
++        t->data = dst;
++        blob_copied += ggml_nbytes(t);
+     }
+-
+-    return true;
++    fprintf(stderr, "moe_pool blob copy-in: %zu MiB\n", blob_copied / (1024 * 1024));
+ }
+ 
+ ggml_tensor * llama_model_base::create_tensor(llama_model_loader & ml, const LLM_TN_IMPL & tn, const std::initializer_list<int64_t> & ne, int flags) {
+diff --git a/src/llama-model.h b/src/llama-model.h
+index 984b2cf..47aaf83 100644
+--- a/src/llama-model.h
++++ b/src/llama-model.h
+@@ -751,6 +751,7 @@ struct llama_model {
+     bool has_tensor_overrides() const;
+ 
+     const struct ggml_tensor * get_tensor(const char * name) const;
++    virtual void moe_wire(llama_model_loader & ml) { (void) ml; }  // edge0 v4: pool+blob registration hook
+ 
+     float get_rope_freq_base (const llama_cparams & cparams, int il) const;
+     float get_rope_freq_scale(const llama_cparams & cparams, int il) const;
+@@ -821,6 +822,7 @@ struct llama_model_base : public llama_model {
+     void load_hparams(llama_model_loader & ml) override;
+     void load_vocab  (llama_model_loader & ml) override;
+     bool load_tensors(llama_model_loader & ml) override;
++    void moe_wire(llama_model_loader & ml) override;  // edge0 v4
+ 
+     // model must define these
+     void load_arch_hparams(llama_model_loader & ml) override = 0;
+diff --git a/src/llama.cpp b/src/llama.cpp
+index ad8e443..b09ffb7 100644
+--- a/src/llama.cpp
++++ b/src/llama.cpp
+@@ -369,6 +369,7 @@ static std::pair<int, llama_model *> llama_model_load(struct gguf_context * meta
+         if (!model->load_tensors(ml)) {
+             return {-2, nullptr};
+         }
++        model->moe_wire(ml);   // edge0 v4: expert pool + resident blob registration (see llama-model.cpp)
+ 
+         return {0, model_ptr.release()};
+     } catch (const std::exception & err) {
+-- 
+2.52.0.windows.1
+

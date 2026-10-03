@@ -9,6 +9,9 @@ jobs:
   test-macos:
     name: Unit tests (macOS + MLX)
     runs-on: macos-14
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,6 +25,9 @@ jobs:
   hygiene:
     name: Repo hygiene (pure Python, no MLX)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

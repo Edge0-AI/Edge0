@@ -1,0 +1,24 @@
+# House rule: all text is stored and checked out with LF.
+# (Batch wrappers are the only exception -- cmd.exe needs CRLF.)
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaries: never touch line endings, never treat as text
+*.so binary
+*.a binary
+*.dll binary
+*.exe binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.icns binary
+*.jar binary
+*.zip binary
+*.bin binary
+*.gguf binary
+*.safetensors binary
+*.e0b binary
+# repo-specific addition: the technical report lives at paper/main.pdf
+*.pdf binary

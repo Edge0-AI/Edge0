@@ -1,0 +1,42 @@
+From ee1237ee6ce144d24097406654a64d14cad8ce82 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 17:45:30 +0800
+Subject: [PATCH 13/14] =?UTF-8?q?moe=5Fpool=20v4.7.1:=20reset=5Fall=C3=97k?=
+ =?UTF-8?q?eepwarm=20=E7=AB=9E=E4=BA=89=E5=8A=A0=E5=9B=BA=E2=80=94?=
+ =?UTF-8?q?=E2=80=94=E5=85=A5=E5=8F=A3=E7=AD=89=20g=5Fkw=5Fbusy=20?=
+ =?UTF-8?q?=E6=B8=85=EF=BC=88=E2=89=A42s=EF=BC=89+=20=E5=9B=9E=E7=81=8C?=
+ =?UTF-8?q?=E5=BE=AA=E7=8E=AF=E9=80=90=E6=A7=BD=E9=87=8D=E6=A3=80=20g=5Fre?=
+ =?UTF-8?q?ady=EF=BC=88unload=20=E4=B8=AD=E9=80=94=E7=AB=8B=E5=81=9C?=
+ =?UTF-8?q?=EF=BC=8C=E9=98=B2=20freed=20arena=20UAF=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index 2098376..9bd55dc 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -706,6 +706,7 @@ void moe_pool_keepwarm(int budget_mb) {
+     pthread_mutex_lock(&g_lock);
+     unsigned seen_end = g_kwh;
+     for (unsigned i = g_kwt; i < seen_end && bytes > 0; i++) {
++        if (!g_ready) break;                                   // stop immediately if reset came in midway
+         int k = i % KW_DEPTH;
+         const int tix = g_kw[k].tix; const int32_t e2 = g_kw[k].e;
+         if (tix < 0 || tix >= g_ntp) continue;
+@@ -769,6 +770,7 @@ void moe_pool_extra(long long * stall_ns, long long * slots_used, long long * sl
+ // cross-model-switch reset (insurance against the 9/29 crash-family incident): called by nativeFree. After waiting for the IO
+ // drain, all state is zeroed; the next moe_pool_init/register rebuilds under the new env. Head mappings are kept (those files don't change with the model).
+ void moe_pool_reset_all(void) {
++    for (int w = 0; w < 200 && g_kw_busy; w++) usleep(10000);   // keepwarm in-flight hard gate (prevents the UAF race)
+     pthread_mutex_lock(&g_lock);
+     while (g_inflight > 0) pthread_cond_wait(&g_scv, &g_lock);       // wait for in-flight reads to terminate
+     for (int i = 0; i < g_ntp; i++) { free(g_tp[i].slot); g_tp[i].slot = NULL; }
+-- 
+2.52.0.windows.1
+

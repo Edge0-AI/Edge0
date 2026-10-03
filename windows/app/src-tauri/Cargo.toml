@@ -1,0 +1,31 @@
+[package]
+name = "edge0-app"
+version = "0.1.0"
+description = "edge0 Windows desktop shell (Tauri 2) — pull/convert/load/chat"
+edition = "2021"
+rust-version = "1.88"
+
+[lib]
+name = "edge0_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "blocking", "json"] }
+sha2 = "0.10"
+hex = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+# Job Object binding for kill-on-close process governance (engine child dies with the shell).
+# Win32_Threading is required: JOBOBJECT_EXTENDED_LIMIT_INFORMATION is gated behind it.
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = true

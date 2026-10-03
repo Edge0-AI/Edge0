@@ -1,0 +1,114 @@
+From 5fa766c64759650fc259a7d45eed2c3b31034917 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Mon, 28 Sep 2026 21:59:15 +0800
+Subject: [PATCH 6/6] edge0 private surface #7: mul_mat_id expert-base resolver
+ (L1 pool hook)
+
+Three expert-base computations (ggml-cpu.c forward_mul_mat_id, iqp.cpp panel
+path, repack.cpp template path) now route through ggml_edge0_mmid_base(src0,
+id, nb02). Default NULL resolver = exact upstream arithmetic (zero behavior
+change); the llama-side edge0 pool installs a resolver at init to serve expert
+bytes from committed private pages (byte-verified vs the file view by
+E0_POOL_SELFCHECK sampling). Export macro keyed on ggml_cpu_EXPORTS (this fork
+builds ggml-cpu as its own DLL); decls wrapped in extern "C".
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/ggml-cpu-impl.h | 20 ++++++++++++++++++++
+ ggml/src/ggml-cpu/ggml-cpu.c      | 14 +++++++++++++-
+ ggml/src/ggml-cpu/iqp.cpp         |  2 +-
+ ggml/src/ggml-cpu/repack.cpp      |  2 +-
+ 4 files changed, 35 insertions(+), 3 deletions(-)
+
+diff --git a/ggml/src/ggml-cpu/ggml-cpu-impl.h b/ggml/src/ggml-cpu/ggml-cpu-impl.h
+index 5dd9ec8..85cfc1c 100644
+--- a/ggml/src/ggml-cpu/ggml-cpu-impl.h
++++ b/ggml/src/ggml-cpu/ggml-cpu-impl.h
+@@ -5,6 +5,26 @@
+ #include "ggml.h"
+ #include "ggml-impl.h"
+ 
++// edge0 private surface #7 — MoE expert-base indirection for the edge0 L1 pool
++// (installed at runtime by serve/prefetch.cc; NULL = upstream pass-through semantics).
++// this fork builds ggml-cpu as a standalone DLL: decoration is bidirectional via the target's EXPORTS macro (GGML_API resolves to import inside this target's translation units, so it cannot be used).
++#if defined(_WIN32) && defined(ggml_cpu_EXPORTS)
++#  define EDGE0_MMID_API __declspec(dllexport)
++#elif defined(_WIN32)
++#  define EDGE0_MMID_API __declspec(dllimport)
++#else
++#  define EDGE0_MMID_API
++#endif
++#ifdef __cplusplus
++extern "C" {
++#endif
++typedef const char * (*ggml_edge0_mmid_base_fn)(const struct ggml_tensor * src0, int64_t id, size_t nb02);
++EDGE0_MMID_API void         ggml_edge0_set_mmid_resolver(ggml_edge0_mmid_base_fn fn);
++EDGE0_MMID_API const char * ggml_edge0_mmid_base(const struct ggml_tensor * src0, int64_t id, size_t nb02);
++#ifdef __cplusplus
++}
++#endif
++
+ #include <stdlib.h> // load `stdlib.h` before other headers to work around MinGW bug: https://sourceforge.net/p/mingw-w64/bugs/192/
+ //#include <stddef.h>
+ #include <stdbool.h>
+diff --git a/ggml/src/ggml-cpu/ggml-cpu.c b/ggml/src/ggml-cpu/ggml-cpu.c
+index 8bb0ff7..be7c2db 100644
+--- a/ggml/src/ggml-cpu/ggml-cpu.c
++++ b/ggml/src/ggml-cpu/ggml-cpu.c
+@@ -1469,6 +1469,18 @@ UseGgmlGemm2:;
+ 
+ // ggml_compute_forward_mul_mat_id
+ 
++// edge0 private surface #7 — expert-base indirection (pool hook; default = upstream math)
++static ggml_edge0_mmid_base_fn g_edge0_mmid_base_fn = NULL;
++
++void ggml_edge0_set_mmid_resolver(ggml_edge0_mmid_base_fn fn) {
++    g_edge0_mmid_base_fn = fn;
++}
++
++const char * ggml_edge0_mmid_base(const struct ggml_tensor * src0, int64_t id, size_t nb02) {
++    return g_edge0_mmid_base_fn ? g_edge0_mmid_base_fn(src0, id, nb02)
++                                : (const char *) src0->data + id * nb02;
++}
++
+ #define MMID_MATRIX_ROW(row_id, i1) matrix_rows[(row_id)*ids->ne[0]*ids->ne[1] + (i1)]
+ 
+ struct mmid_row_mapping {
+@@ -1684,7 +1696,7 @@ static void ggml_compute_forward_mul_mat_id(
+             continue;
+         }
+ 
+-        const char * src0_cur = (const char *) src0->data + cur_a * nb02;
++        const char * src0_cur = ggml_edge0_mmid_base(src0, cur_a, nb02);  // edge0 #7
+         const void * wdata = (src1->type == vec_dot_type) ? src1->data : params->wdata;
+         const size_t row_size = ggml_row_size(vec_dot_type, ne10);
+ 
+diff --git a/ggml/src/ggml-cpu/iqp.cpp b/ggml/src/ggml-cpu/iqp.cpp
+index b9201db..031d7b3 100644
+--- a/ggml/src/ggml-cpu/iqp.cpp
++++ b/ggml/src/ggml-cpu/iqp.cpp
+@@ -1147,7 +1147,7 @@ void ggml_compute_forward_mul_mat_id_iqp(const struct ggml_compute_params * para
+ 
+     block_iqp_x8 * panel = (block_iqp_x8 *) ((char *) panels + (size_t) ith * ggml_cpu_iqp_scratch_size(dst));
+ 
+-    const char * src0_cur = (const char *) src0->data + cur_a * nb02;
++    const char * src0_cur = ggml_edge0_mmid_base(src0, cur_a, nb02);  // edge0 #7
+ 
+     const int64_t ngroups = ne01 / IQP_NB_ROWS;
+ 
+diff --git a/ggml/src/ggml-cpu/repack.cpp b/ggml/src/ggml-cpu/repack.cpp
+index d56db98..f402385 100644
+--- a/ggml/src/ggml-cpu/repack.cpp
++++ b/ggml/src/ggml-cpu/repack.cpp
+@@ -4873,7 +4873,7 @@ template <typename BLOC_TYPE, int64_t INTER_SIZE, int64_t NB_COLS, ggml_type PAR
+                 continue;
+             }
+ 
+-            const auto * src0_cur = (const char *) src0->data + cur_a*nb02;
++            const auto * src0_cur = ggml_edge0_mmid_base(src0, cur_a, nb02);  // edge0 #7
+ 
+             //const int64_t nr0 = ne01; // src0 rows
+             const int64_t nr1 = cne1; // src1 rows
+-- 
+2.52.0.windows.1
+

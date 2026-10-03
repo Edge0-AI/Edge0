@@ -1,0 +1,20 @@
+NOTICE - edge0 / android
+================================
+
+Licensed under Apache-2.0 (see the LICENSE at the monorepo root). Besides our
+own code, this project contains or references the following third-party material:
+
+1. llama.cpp - MIT (commit 7ab4ee7, release b11100, pinned)
+   Location: ../vendor/llama.cpp (pristine upstream checkout, never patched in
+   place). Built with ../patches/llama.cpp/{common,android} replayed (20
+   hook-point bands) into the shipped shared libraries (libllama, libggml*).
+   ggml (Apache-2.0) is developed inside the same upstream tree. Not vendored
+   as files; built from source by the consumer (tools/llama/build_vendor_libs.sh).
+
+2. Gradle/Maven dependencies (Apache-2.0 / MIT / BSD)
+   Kotlin, Jetpack Compose, AndroidX (Activity, Room, DataStore, Lifecycle),
+   kotlinx-serialization, mikepenz multiplatform-markdown-renderer-m3 (MIT),
+   JUnit. Resolved at build time; each ships its own license text.
+
+3. Model assets - Edge0/Edge0-8B-A1B-preview and Edge0/Edge0-35B-A3B-preview on
+   Hugging Face; terms per the model cards. Not part of the source distribution.

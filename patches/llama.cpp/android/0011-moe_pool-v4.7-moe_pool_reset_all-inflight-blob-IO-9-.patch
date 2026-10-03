@@ -1,0 +1,76 @@
+From b946e2ad525538a04c784bbd730e890004be9997 Mon Sep 17 00:00:00 2001
+From: Alex Zhou <alex.zhou@edge0.ai>
+Date: Tue, 29 Sep 2026 09:22:43 +0800
+Subject: [PATCH 11/14] =?UTF-8?q?moe=5Fpool=20v4.7:=20moe=5Fpool=5Freset?=
+ =?UTF-8?q?=5Fall=EF=BC=88=E8=B7=A8=E6=A8=A1=E5=9E=8B=E5=88=87=E6=8D=A2?=
+ =?UTF-8?q?=E5=85=A8=E5=A4=8D=E4=BD=8D=E2=80=94=E2=80=94=E7=AD=89=20inflig?=
+ =?UTF-8?q?ht=20=E6=8E=92=E7=A9=BA=E3=80=81=E6=A7=BD=E8=A1=A8/=E6=B3=A8?=
+ =?UTF-8?q?=E5=86=8C/blob=20=E5=BD=92=E9=9B=B6=E3=80=81IO=20=E7=BA=BF?=
+ =?UTF-8?q?=E7=A8=8B=E7=95=99=E5=9C=BA=E5=A4=8D=E7=94=A8=EF=BC=9B9/29=208b?=
+ =?UTF-8?q?->35b=20=E9=97=AA=E9=80=80=E6=A1=88=E7=9A=84=E5=90=8C=E6=97=8F?=
+ =?UTF-8?q?=E5=9C=B0=E9=9B=B7=E6=8E=92=E9=9B=B7=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ ggml/src/ggml-cpu/moe_pool.c | 27 +++++++++++++++++++++++++++
+ ggml/src/ggml-cpu/moe_pool.h |  3 +++
+ 2 files changed, 30 insertions(+)
+
+diff --git a/ggml/src/ggml-cpu/moe_pool.c b/ggml/src/ggml-cpu/moe_pool.c
+index d7be8ca..e9d3415 100644
+--- a/ggml/src/ggml-cpu/moe_pool.c
++++ b/ggml/src/ggml-cpu/moe_pool.c
+@@ -719,6 +719,33 @@ void moe_pool_extra(long long * stall_ns, long long * slots_used, long long * sl
+     if (pf_mispredict) *pf_mispredict = g_pf_miss;
+ }
+ 
++// cross-model-switch reset (insurance against the 9/29 crash-family incident): called by nativeFree. After waiting for the IO
++// drain, all state is zeroed; the next moe_pool_init/register rebuilds under the new env. Head mappings are kept (those files don't change with the model).
++void moe_pool_reset_all(void) {
++    pthread_mutex_lock(&g_lock);
++    while (g_inflight > 0) pthread_cond_wait(&g_scv, &g_lock);       // wait for in-flight reads to terminate
++    for (int i = 0; i < g_ntp; i++) { free(g_tp[i].slot); g_tp[i].slot = NULL; }
++    g_ntp = 0;
++    for (int i = 0; i < 64; i++) { g_lr[i].tix[0] = g_lr[i].tix[1] = g_lr[i].tix[2] = -1; }
++    if (g_slots) {
++        for (int i = 0; i < g_nslots; i++) {
++            struct slot_ent * sl = &g_slots[i];
++            if (sl->on_list) list_unlink(i);
++            sl->state = ST_EMPTY; sl->expert = -1; sl->tix = -1; sl->pinned = 0;
++            sl->prefetched = 0; sl->consumed = 0;
++        }
++        free(g_slots); g_slots = NULL;
++    }
++    if (g_arena) { munmap(g_arena, g_slice * (size_t) g_nslots); g_arena = NULL; }
++    g_nslots = 0; g_used_slots = 0; g_empty_cursor = 0; g_slice = 0;
++    g_lru_head = g_lru_tail = SLOT_NONE;
++    g_qdn = g_qpn = 0; g_qph = g_qpt = g_qdh = g_qdt = 0;
++    if (g_blob) { madvise(g_blob, g_blob_cap, MADV_DONTNEED); g_blob_bump = 0; }
++    g_ready = 0; g_cap_bytes = 0;
++    g_npins = 0;
++    pthread_mutex_unlock(&g_lock);
++}
++
+ __attribute__((destructor)) static void moe_pool_dump(void) {
+     if (!g_ready && !g_blob_on) return;
+     long long h = 0, m = 0;
+diff --git a/ggml/src/ggml-cpu/moe_pool.h b/ggml/src/ggml-cpu/moe_pool.h
+index 533d6ac..82dfc74 100644
+--- a/ggml/src/ggml-cpu/moe_pool.h
++++ b/ggml/src/ggml-cpu/moe_pool.h
+@@ -42,6 +42,9 @@ int  moe_pool_load_heads(const char * path);
+ void moe_pool_bind_min(int layer, const struct ggml_tensor * t);
+ void moe_pool_note_routing(const struct ggml_tensor * src0, const int32_t * ids, int n_ids);
+ 
++// cross-model-switch reset (called by the llama shell's nativeFree)
++void moe_pool_reset_all(void);
++
+ // v4 extended counters (App metrics channel: stall / slots / prefetch consumption)
+ void moe_pool_extra(long long * stall_ns, long long * slots_used, long long * slots_total,
+                     long long * pf_used, long long * pf_mispredict);
+-- 
+2.52.0.windows.1
+

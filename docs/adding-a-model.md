@@ -42,7 +42,7 @@ The subclass only needs to implement the class method `_defaults(model_dir) -> C
 
 Key points:
 
-- The repository root ships `scripts/convert_adapters_legacy.py`, which one-shot converts the training npz exports into safetensors artifacts under `artifacts/`; `ModelConfig.artifact(name)` (`models/base.py:28–30`) returns the absolute paths of those artifacts, and the adapter uses them to fill in the LoRA / prerouter weight paths.
+- `ModelConfig.artifact(name)` (`models/base.py`) resolves an adapter's absolute path — from the model directory first, falling back to the gitignored `artifacts/` cache — and the adapter uses it to fill in the LoRA / prerouter weight paths.
 - LoRA overrides go through `resolve_lora` (`models/base.py:88–95`): a bare model name resolves to that tier's artifacts, `"model_dir"` means "keep the training weights in place", and an empty string disables it.
 
 ## Step 3: `build_model` / `build_engine`
@@ -105,7 +105,7 @@ The lookup order of `_resolve_name` (registry.py:42–56): explicit `name` → t
 
 - `config.json` exists, and its `model_type` is registered (or covered by your `TYPE_ALIASES`);
 - the weights are in safetensors format, with key prefixes matching `moe_spec.key_template` (e.g. `language_model.model.layers.N.mlp.switch_mlp`);
-- the LoRA / prerouter weights are `.safetensors` files carrying metadata (see the comment at the top of `models/base.py`: they are converted one-shot from the training npz by `convert_adapters_legacy.py`).
+- the LoRA / prerouter weights are `.safetensors` files carrying metadata (see the comment at the top of `models/base.py`).
 
 The directory basename is the last-resort resolution fallback (`_model_type_from_dir`), so aligning the directory name with the registered name is recommended, but not required.
 

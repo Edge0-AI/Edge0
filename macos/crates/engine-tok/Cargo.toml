@@ -1,0 +1,17 @@
+[package]
+name = "engine-tok"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+# Tokenizer staticlib linked into the native engine. Callers own the JSON envelope.
+[lib]
+name = "edge0_engine_tok"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+serde_json.workspace = true
+tokenizers.workspace = true
+minijinja.workspace = true
+minijinja-contrib.workspace = true

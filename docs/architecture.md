@@ -19,12 +19,10 @@ box: `edge0-35b` (Qwen3.6-35B-A3B, K=4) and `edge0-8b` (Ling 3.0 hybrid, K=8).
    future CUDA backend (`backends/cuda/`, selected via the `EDGE0_BACKEND`
    environment variable);
 3. **Adapters unified on safetensors**: LoRA and prerouter weights are both
-   `.safetensors` files carrying metadata; legacy npz training exports are
-   converted by a one-off migration script and then deprecated;
+   `.safetensors` files carrying metadata;
 4. **Unified terminology**: the pre-routing head is always called the
-   **prerouter** — zero legacy-term residue in code and docs. The legacy npz
-   exports are migrated by `scripts/convert_adapters_legacy.py`, which
-   normalizes their key namespace to `layers.<N>.<part>.weight`.
+   **prerouter** — zero legacy-term residue in code and docs. Prerouter
+   weight keys are normalized to `layers.<N>.<part>.weight`.
 
 ## Layered Structure
 
