@@ -453,3 +453,106 @@ def test_flask_http_streams_before_generation_finishes():
         eng.resume.set()
         response.close()
     assert b"data: [DONE]\n\n" in body
+
+
+# ---- SSE incremental decode (multi-byte characters split across ids) ------
+
+
+def _byte_level_bpe(seed_texts):
+    """A real byte-level BPE (the family the shipped Qwen/Ling tokenizers
+    belong to): out-of-vocabulary characters fall back to per-byte tokens,
+    so a multi-byte character ends up split across several ids."""
+    from tokenizers import (Tokenizer, decoders, models, pre_tokenizers,
+                            trainers)
+
+    tok = Tokenizer(models.BPE())
+    tok.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
+    tok.decoder = decoders.ByteLevel()
+    trainer = trainers.BpeTrainer(
+        vocab_size=300, special_tokens=["<|endoftext|>"],
+        initial_alphabet=pre_tokenizers.ByteLevel.alphabet())
+    tok.train_from_iterator(seed_texts, trainer=trainer)
+    return tok
+
+
+class _BpeTok:
+    """Engine-tokenizer facade over a byte-level BPE (what the server sees)."""
+
+    def __init__(self, tok):
+        self._tok = tok
+        self.bos_token_id = 0
+
+    def apply_chat_template(self, messages, tokenize=False,
+                            add_generation_prompt=True,
+                            enable_thinking=False):
+        return "<|im_start|>user\nx<|im_end|>\n<|im_start|>assistant\n"
+
+    def encode(self, text):
+        return list(self._tok.encode(text).ids)
+
+    def decode(self, tokens):
+        return self._tok.decode(list(tokens))
+
+
+class SplitEngine:
+    """Engine that emits a fixed id sequence whose bytes split a character."""
+
+    name = "split"
+
+    def __init__(self, tok, ids):
+        self._tok = tok
+        self.ids = list(ids)
+        self.pos = 0
+        self.cfg = SimpleNamespace(gen=GenerationConfig())
+
+    def generate(self, ids, gen_config=None, on_token=None, **kw):
+        if on_token is not None:
+            for t in self.ids:
+                on_token(t)
+        return list(self.ids)
+
+    def stats(self):
+        return {}
+
+    def reset(self):
+        self.pos = 0
+
+
+def test_chat_stream_incremental_decode_of_split_characters():
+    """The streamed deltas must equal the non-streaming text.
+
+    A byte-level BPE token carries a byte fragment, not a character:
+    decoding each id in isolation turns any multi-byte UTF-8 character it
+    belongs to into U+FFFD, so the old per-id path corrupted every
+    non-ASCII reply while the non-streaming path (whole id list) stayed
+    correct.  Assert on that exact trigger: an id sequence whose bytes
+    split a character, streamed through the handler.
+    """
+    tok = _byte_level_bpe(["你好世界 hello world", "中文测试 沿着海滨",
+                           "日本語テスト"])
+    trigger = "你好，用一句话介绍海滨城市。"
+    ids = list(tok.encode(trigger).ids)
+
+    # Precondition: the trigger really splits a character across ids, so
+    # per-id decode is corrupt by construction (this is the bug).
+    isolated = [tok.decode([i]) for i in ids]
+    assert any("\ufffd" in p for p in isolated), \
+        "trigger does not split a multi-byte character across ids"
+    assert "\ufffd" not in tok.decode(ids)
+
+    eng = SplitEngine(_BpeTok(tok), ids)
+    srv = QueueServer(eng, model_name="split")
+    events = _chat_stream(srv, {
+        "messages": [{"role": "user", "content": "hi"}], "stream": True,
+    })
+    body = b"".join(events)
+    chunks = [json.loads(e[6:]) for e in
+              body.decode("utf-8").split("\n\n")
+              if e and e != "data: [DONE]"]
+    deltas = [c["choices"][0]["delta"]["content"]
+              for c in chunks if c["choices"][0]["delta"].get("content")]
+
+    streamed = "".join(deltas)
+    non_streamed = decode_tokens(eng, ids)
+    assert streamed == non_streamed == trigger
+    assert "\ufffd" not in streamed
