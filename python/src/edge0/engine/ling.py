@@ -343,13 +343,15 @@ class Ling8BEngine(Edge0Engine):
             ).from_string(src)
         return self._chat_tpl
 
-    def encode_chat(self, messages, think=None) -> list:
+    def encode_chat(self, messages, think=None, tools=None) -> list:
         """Tokenize chat messages with the deployment chat template.
 
         ``think`` mirrors THINK_MODE: True renders "detailed thinking on"
         (the model answers with a reasoning preamble), False renders
         "detailed thinking off" (direct answer).  Defaults to the
-        engine's ``think`` flag.
+        engine's ``think`` flag. ``tools`` is the OpenAI-style function
+        list from the request, forwarded to the template's own ``# Tools``
+        system-prompt section and ``<tool_call>`` format instructions.
         """
         if think is None:
             think = self.think
@@ -366,8 +368,15 @@ class Ling8BEngine(Edge0Engine):
             messages=msgs,
             add_generation_prompt=True,
             enable_thinking=bool(think),
-            tools=None,
+            tools=tools,
         )
         # transformers encode would prepend/append special tokens by
         # default; the template text is already complete.
         return self._tok.encode(text, add_special_tokens=False)
+
+    def parse_tool_calls(self, text: str):
+        """Split generated ``text`` into (content, OpenAI tool_calls) per
+        this checkpoint's chat template ``<tool_call>name<arg_key>...``
+        dialect (see edge0.server.tool_calls)."""
+        from edge0.server.tool_calls import parse_ling_tool_calls
+        return parse_ling_tool_calls(text)

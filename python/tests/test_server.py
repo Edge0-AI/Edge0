@@ -12,7 +12,9 @@ import json
 import threading
 import time
 from http.server import ThreadingHTTPServer
-from types import SimpleNamespace
+from pathlib import Path
+from types import MethodType, SimpleNamespace
+from urllib.error import HTTPError
 from urllib import request as urlrequest
 
 import pytest
@@ -51,8 +53,10 @@ class FakeTok:
 
     def apply_chat_template(self, messages, tokenize=False,
                             add_generation_prompt=True,
-                            enable_thinking=False):
+                            enable_thinking=False, tools=None):
         text = "<tpl>" + json.dumps(messages)
+        if tools:
+            text += "<tools>" + json.dumps(tools)
         if add_generation_prompt:
             text += "<|im_start|>assistant\n"
         return text
@@ -113,6 +117,49 @@ class FakeEngine:
         self.pos = 0
 
 
+class ToolCallTok(FakeTok):
+    """Decodes generated tokens to a Ling-style ``<tool_call>`` block, the
+    same shape the real edge0-8b template asks the model to emit.
+    Like a real tokenizer, decode is prefix-stable: the cumulative
+    decode of the id list equals the whole block."""
+
+    # FakeEngine.generate() emits ids 11, 12, 13; each id maps to
+    # one fixed piece so decode([11, 12, 13]) is the full block.
+    _PIECES = {
+        11: "<tool_call>calculator\n",
+        12: "<arg_key>expression</arg_key>\n<arg_value>2 + 2</arg_value>\n",
+        13: "</tool_call>\n",
+    }
+
+    def decode(self, tokens):
+        return "".join(self._PIECES.get(t, "") for t in tokens)
+
+
+class ToolCallEngine(FakeEngine):
+    """FakeEngine + the real Ling tool-call parser, so tests exercise the
+    actual edge0.server.tool_calls integration, not a re-implementation
+    of it."""
+
+    def __init__(self, tok=None):
+        super().__init__(tok=tok or ToolCallTok())
+
+    def parse_tool_calls(self, text: str):
+        from edge0.server.tool_calls import parse_ling_tool_calls
+        return parse_ling_tool_calls(text)
+
+
+_TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "calculator",
+        "description": "Calculate an arithmetic expression.",
+        "parameters": {"type": "object",
+                       "properties": {"expression": {"type": "string"}},
+                       "required": ["expression"]},
+    },
+}]
+
+
 def _req(**kw) -> ChatRequest:
     payload = {
         "model": "fake",
@@ -153,6 +200,70 @@ def test_parse_stream_flag_and_sampling():
     assert req.top_k == 32
     assert req.max_tokens == 16
     assert req.stream is True
+
+
+def test_parse_preserves_tools_and_tool_choice():
+    req = _req(tools=_TOOLS, tool_choice="auto")
+    assert req.tools == _TOOLS
+    assert req.tool_choice == "auto"
+
+
+def test_parse_message_tool_calls_and_tool_role_roundtrip():
+    req = parse_chat_request({"messages": [
+        {"role": "user", "content": "compute 2+2"},
+        {"role": "assistant", "content": None, "tool_calls": [
+            {"id": "call_1", "type": "function",
+             "function": {"name": "calculator",
+                          "arguments": '{"expression": "2 + 2"}'}}]},
+        {"role": "tool", "tool_call_id": "call_1", "content": "4"},
+    ]})
+    assert req.messages[1].tool_calls[0]["function"]["name"] == "calculator"
+    assert req.messages[1].content == ""  # null, not the string "None"
+    assert req.messages[2].tool_call_id == "call_1"
+
+
+@pytest.mark.parametrize("arguments", ['{"expression": "2 + 2"}',
+                                        {"expression": "2 + 2"}])
+def test_parse_normalizes_tool_arguments_without_mutating_payload(arguments):
+    payload = {"messages": [{"role": "assistant", "content": None,
+                            "tool_calls": [{
+                                "id": "call_1", "type": "function",
+                                "function": {"name": "calculator",
+                                             "arguments": arguments},
+                            }]}]}
+    before = json.dumps(payload)
+    req = parse_chat_request(payload)
+    call = req.messages[0].tool_calls[0]
+    assert call["function"]["arguments"] == {"expression": "2 + 2"}
+    assert call["id"] == "call_1"
+    assert json.dumps(payload) == before
+
+
+@pytest.mark.parametrize("arguments", ["{broken", "[]", "null", '"text"',
+                                        "42", [], None])
+def test_parse_rejects_invalid_tool_arguments(arguments):
+    with pytest.raises(ValueError, match="arguments.*JSON object"):
+        parse_chat_request({"messages": [{
+            "role": "assistant", "content": None,
+            "tool_calls": [{"type": "function", "function": {
+                "name": "calculator", "arguments": arguments}}],
+        }]})
+
+
+@pytest.mark.parametrize("calls", ["bad", {}, [None], [{"function": "bad"}]])
+def test_parse_rejects_invalid_tool_call_shapes(calls):
+    with pytest.raises(ValueError, match="tool_calls"):
+        parse_chat_request({"messages": [{
+            "role": "assistant", "content": None, "tool_calls": calls,
+        }]})
+
+
+def test_parse_tool_call_without_arguments_uses_empty_object():
+    req = parse_chat_request({"messages": [{
+        "role": "assistant", "content": None,
+        "tool_calls": [{"function": {"name": "get_time"}}],
+    }]})
+    assert req.messages[0].tool_calls[0]["function"]["arguments"] == {}
 
 
 # ---- sse / decode ---------------------------------------------------------
@@ -293,6 +404,202 @@ def test_chat_once_response_shape():
     assert out["usage"]["completion_tokens"] == 3
 
 
+# ---- tool calls (#115) -----------------------------------------------------
+
+
+@pytest.fixture(params=["ling", "qwen"])
+def real_template_engine(request):
+    from tokenizers import Tokenizer
+    from tokenizers.models import WordLevel
+    from transformers import PreTrainedTokenizerFast
+
+    family = request.param
+    template_dir = Path(__file__).parent / "fixtures" / "tool_templates" / family
+    template = (template_dir / "chat_template.jinja").read_text(encoding="utf-8")
+    tokenizer = PreTrainedTokenizerFast(
+        tokenizer_object=Tokenizer(WordLevel({"[UNK]": 0}, unk_token="[UNK]")),
+        unk_token="[UNK]", chat_template=template,
+    )
+
+    class TemplateTok(FakeTok):
+        output = (
+            "<tool_call>calculator<arg_key>expression</arg_key>"
+            "<arg_value>2 + 2</arg_value></tool_call>"
+            if family == "ling" else
+            "<tool_call>\n<function=calculator>\n<parameter=expression>\n"
+            "2 + 2\n</parameter>\n</function>\n</tool_call>"
+        )
+
+        def apply_chat_template(self, *args, **kwargs):
+            return tokenizer.apply_chat_template(*args, **kwargs)
+
+        def encode(self, text, **kwargs):
+            return super().encode(text)
+
+        def decode(self, tokens):
+            return self.output
+
+    engine = ToolCallEngine(tok=TemplateTok())
+    if family == "ling":
+        from edge0.engine.ling import Ling8BEngine
+        engine.dir = str(template_dir)
+        engine.think = False
+        engine._chat_tpl = None
+        engine._chat_template = MethodType(Ling8BEngine._chat_template, engine)
+        engine.encode_chat = MethodType(Ling8BEngine.encode_chat, engine)
+    else:
+        from edge0.engine.qwen import Qwen35Engine
+        engine.parse_tool_calls = MethodType(Qwen35Engine.parse_tool_calls, engine)
+    return engine
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_tool_call_roundtrip_renders_real_template(real_template_engine, stream):
+    engine = real_template_engine
+    server = QueueServer(engine)
+    user = {"role": "user", "content": "Use the calculator for 2 + 2."}
+    payload = {"messages": [user], "tools": _TOOLS}
+    if stream:
+        frames = b"".join(_chat_stream(server, payload)).decode().split("\n\n")
+        chunk = json.loads(frames[-3][6:])["choices"][0]
+        assert chunk["finish_reason"] == "tool_calls"
+        assistant = {"role": "assistant", **chunk["delta"]}
+        # A client accumulates indexed SSE deltas into a message.
+        assistant["tool_calls"] = [
+            {k: v for k, v in call.items() if k != "index"}
+            for call in assistant["tool_calls"]
+        ]
+    else:
+        choice = _chat_once(server, payload)["choices"][0]
+        assert choice["finish_reason"] == "tool_calls"
+        assistant = choice["message"]
+    call = assistant["tool_calls"][0]
+    assert isinstance(call["function"]["arguments"], str)
+    engine._tok.output = "The result is 4."
+    result = _chat_once(server, {
+        "messages": [user, assistant, {
+            "role": "tool", "tool_call_id": call["id"],
+            "name": "calculator", "content": "4",
+        }], "tools": _TOOLS,
+    })
+    prompt = engine._tok.encoded_text
+    assert "<tool_response>\n4\n</tool_response>" in prompt
+    assert "<tool_call>" in prompt
+    assert "2 + 2" in prompt
+    assert result["choices"][0]["message"]["content"] == "The result is 4."
+
+
+def test_chat_once_ignores_tool_call_text_without_tools_field():
+    """No ``tools`` in the request -> the raw <tool_call> XML the fake
+    generation returns is left as plain content, exactly today's
+    (buggy) behavior -- this only changes when the client opts in."""
+    srv = QueueServer(ToolCallEngine())
+    out = _chat_once(srv, {"messages": [{"role": "user", "content": "hi"}]})
+    ch = out["choices"][0]
+    assert "tool_calls" not in ch["message"]
+    assert "<tool_call>" in ch["message"]["content"]
+    assert ch["finish_reason"] == "stop"
+
+
+def test_chat_once_parses_tool_calls_when_requested():
+    srv = QueueServer(ToolCallEngine())
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "compute 2 + 2"}],
+        "tools": _TOOLS, "tool_choice": "auto",
+    })
+    ch = out["choices"][0]
+    assert ch["message"]["content"] is None
+    assert ch["finish_reason"] == "tool_calls"
+    calls = ch["message"]["tool_calls"]
+    assert len(calls) == 1
+    fn = calls[0]["function"]
+    assert fn["name"] == "calculator"
+    assert json.loads(fn["arguments"]) == {"expression": "2 + 2"}
+    assert calls[0]["type"] == "function"
+    assert calls[0]["id"].startswith("call_")
+
+
+def test_chat_once_tool_choice_none_suppresses_parsing():
+    srv = QueueServer(ToolCallEngine())
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "compute 2 + 2"}],
+        "tools": _TOOLS, "tool_choice": "none",
+    })
+    ch = out["choices"][0]
+    assert "tool_calls" not in ch["message"]
+    assert "<tool_call>" in ch["message"]["content"]
+
+
+def test_chat_once_tools_requested_but_engine_cannot_parse():
+    """An engine with no parse_tool_calls (unsupported family) must not
+    crash a tools-enabled request; it just can't extract structured
+    calls, same as today."""
+    srv = QueueServer(FakeEngine())
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "hi"}], "tools": _TOOLS,
+    })
+    ch = out["choices"][0]
+    assert "tool_calls" not in ch["message"]
+    assert ch["finish_reason"] == "stop"
+
+
+def test_chat_stream_tools_requested_buffers_and_emits_final_tool_calls():
+    srv = QueueServer(ToolCallEngine())
+    events = _chat_stream(srv, {
+        "messages": [{"role": "user", "content": "compute 2 + 2"}],
+        "stream": True, "tools": _TOOLS, "tool_choice": "auto",
+    })
+    body = b"".join(events)
+    frames = [e for e in body.decode("utf-8").split("\n\n") if e]
+    assert frames[-1] == "data: [DONE]"
+    chunks = [json.loads(e[6:]) for e in frames[:-1]]
+    # No raw <tool_call> XML in any per-token delta -- buffered, not
+    # streamed token-by-token, unlike the no-tools path.
+    for c in chunks[:-1]:
+        assert "<tool_call>" not in json.dumps(c)
+    final = chunks[-1]["choices"][0]
+    assert final["finish_reason"] == "tool_calls"
+    assert final["delta"]["content"] is None
+    calls = final["delta"]["tool_calls"]
+    assert calls[0]["index"] == 0
+    assert calls[0]["function"]["name"] == "calculator"
+    assert json.loads(calls[0]["function"]["arguments"]) == {
+        "expression": "2 + 2"}
+
+
+def test_chat_stream_indexes_multiple_tool_calls():
+    class MultiCallTok(ToolCallTok):
+        def decode(self, tokens):
+            return super().decode(tokens) * 2
+
+    server = QueueServer(ToolCallEngine(tok=MultiCallTok()))
+    frames = b"".join(_chat_stream(server, {
+        "messages": [{"role": "user", "content": "hi"}], "tools": _TOOLS,
+    })).decode().split("\n\n")
+    calls = json.loads(frames[-3][6:])["choices"][0]["delta"]["tool_calls"]
+    assert [call["index"] for call in calls] == [0, 1]
+    assert calls[0]["id"] != calls[1]["id"]
+
+
+def test_chat_stream_without_tools_keeps_immediate_per_token_deltas():
+    """Regression guard: requests with no tools must keep the existing
+    immediate per-token streaming -- buffering is scoped to tool-enabled
+    requests only."""
+    srv = QueueServer(ToolCallEngine())
+    events = _chat_stream(srv, {
+        "messages": [{"role": "user", "content": "hi"}], "stream": True,
+    })
+    body = b"".join(events)
+    frames = [e for e in body.decode("utf-8").split("\n\n") if e]
+    chunks = [json.loads(e[6:]) for e in frames[:-1]]
+    deltas = [c["choices"][0]["delta"].get("content")
+              for c in chunks if c["choices"][0]["delta"]]
+    # unchanged from the no-tools path: one delta per token, each
+    # emitted as the token arrives -- not the whole buffered response
+    assert len(deltas) == 3
+    assert chunks[-1]["choices"][0]["finish_reason"] == "stop"
+
+
 def test_chat_stream_events_sequence():
     srv = QueueServer(FakeEngine())
     events = _chat_stream(srv, {
@@ -351,6 +658,47 @@ def test_chat_stream_yields_before_generation_finishes():
 
 
 # ---- stdlib HTTP transport ------------------------------------------------
+
+
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize("transport", ["stdlib", "flask"])
+def test_http_rejects_invalid_tool_arguments_before_generation(stream, transport):
+    engine = FakeEngine()
+    server = QueueServer(engine)
+    payload = {"stream": stream, "messages": [{
+        "role": "assistant", "content": None,
+        "tool_calls": [{"type": "function", "function": {
+            "name": "calculator", "arguments": "{broken"}}],
+    }]}
+    if transport == "flask":
+        if not _HAS_FLASK:
+            pytest.skip("flask is not installed")
+        response = create_app(server).test_client().post(
+            "/v1/chat/completions", json=payload)
+        assert response.status_code == 400
+        error = response.get_json()
+    else:
+        handler = type("Edge0Handler", (_StdlibHandler,), {"server_q": server})
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        try:
+            req = urlrequest.Request(
+                f"http://127.0.0.1:{httpd.server_address[1]}/v1/chat/completions",
+                data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with pytest.raises(HTTPError) as exc:
+                urlrequest.urlopen(req, timeout=10)
+            with exc.value as response:
+                assert response.code == 400
+                error = json.loads(response.read())
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+            thread.join(timeout=5)
+    assert "arguments must be a JSON object" in error["error"]["message"]
+    assert engine.generated == []
 
 
 def test_stdlib_http_end_to_end():

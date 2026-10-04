@@ -113,6 +113,13 @@ class Qwen35Engine(Edge0Engine):
 
     name = "edge0-35b"
 
+    def parse_tool_calls(self, text: str):
+        """Split generated ``text`` into (content, OpenAI tool_calls) per
+        this checkpoint's chat template ``<tool_call><function=...>``
+        dialect (see edge0.server.tool_calls)."""
+        from edge0.server.tool_calls import parse_qwen_tool_calls
+        return parse_qwen_tool_calls(text)
+
     def __init__(self, model_dir: str, cfg, tokenizer=None):
         # NAN_BANG_COLLAPSE_FIX parity (engine/ling.py): hidden clip default
         # 1000 unless the deployer overrides QWEN_HIDDEN_CLIP explicitly.
