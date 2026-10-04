@@ -81,9 +81,12 @@ Presets: `staged_k4()` (edge0-35b: staged decode with 4 slots, prefill hot stack
 `warm_willneed` is consulted only by `prefetch()` when there are missing experts
 and by `stage_experts()` on staged layers. Turning it on does not enable either
 path. Disabling history prefetch and staging removes those automatic decode
-paths, but explicit prefetch calls (including `prefetch_from_prefill()`) can
-still issue readahead. The flag does not warm plain on-demand or whole-layer
-loads by itself, so it is not a general first-token-latency switch (see #110).
+paths, but a direct `prefetch(experts)` call can still issue readahead for
+missing experts. `prefetch_from_prefill()` calls `prefetch()` only if a prefill
+expert set was captured while staging was enabled; with staging disabled from
+initialization, it is a no-op. The flag does not warm plain on-demand or
+whole-layer loads by itself, so it is not a general first-token-latency switch
+(see #110).
 
 The whole-layer prefill is the fastest path **when the checkpoint stays in the page cache** (warm 27-token prefill: 0.24 s vs 0.37 s on-demand on an M4 Pro), and the slowest one when it does not (cold: 5.3 s / 4.06 GiB read vs 0.6-1.1 s / 0.4-0.8 GiB; the on-demand figure varies with how many distinct experts the prompt routes to). `edge0 demo|chat|serve --prefill-ondemand` selects the on-demand path for machines in the second group.
 
