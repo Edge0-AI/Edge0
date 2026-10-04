@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from edge0.moe.spec import (MoESpec, QuantSpec, RouterKind, WeightLayout)
@@ -57,6 +59,41 @@ def test_block_of_digit_segments():
     block = s.block_of(m, 2)
     assert block.name == "switch"
     assert s.block_of(m, 0) is m.language_model.model.layers[0].mlp.switch_mlp
+
+
+def test_layer_exists_stops_at_end_of_list():
+    spec = _spec()
+    model = _FakeModel(n=2)
+    assert spec.layer_exists(model, 0) is True
+    assert spec.layer_exists(model, 1) is True
+    assert spec.layer_exists(model, 2) is False
+    assert spec.layer_exists(_FakeModel(n=0), 0) is False
+
+
+def test_layer_exists_stops_on_attribute_error():
+    spec = _spec(block_path="layer_{layer}")
+    model = SimpleNamespace(layer_0=object(), layer_1=object())
+    assert spec.layer_exists(model, 0) is True
+    assert spec.layer_exists(model, 1) is True
+    assert spec.layer_exists(model, 2) is False
+
+
+def test_layer_exists_reraises_unrelated_index_error():
+    spec = _spec(block_path="layers.{layer}.experts.9")
+    model = SimpleNamespace(layers=[SimpleNamespace(experts=[object()])])
+    with pytest.raises(IndexError):
+        spec.layer_exists(model, 0)
+
+
+@pytest.mark.parametrize("block_path", [
+    "missing.layers.{layer}.mlp",
+    "layers.{layer}.missing",
+])
+def test_layer_exists_reraises_unrelated_attribute_error(block_path):
+    spec = _spec(block_path=block_path)
+    model = SimpleNamespace(layers=[SimpleNamespace(mlp=object())])
+    with pytest.raises(AttributeError):
+        spec.layer_exists(model, 0)
 
 
 def test_layer_of_defaults_from_block_path():
