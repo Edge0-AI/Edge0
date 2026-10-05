@@ -146,3 +146,11 @@ def test_notice_link_resolves():
     assert m, "README should link the NOTICE file"
     target = ROOT / m.group(1)
     assert target.is_file(), f"README NOTICE link target missing: {target}"
+
+
+def test_readme_names_peak_memory_as_mlx_allocator():
+    """Readers mistook "peak active memory" for process RSS (#106)."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "Peak MLX allocator memory" in readme
+    assert "mlx.core.get_peak_memory()" in readme
+    assert "not process RSS" in readme

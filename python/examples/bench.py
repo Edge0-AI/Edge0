@@ -3,7 +3,7 @@
 
 Runs the same measurement shape as the deployment's bench: prefill ->
 sampled warmup steps -> timed sampled decode -> report tok/s and MLX
-peak active memory.  Works for both tiers; the tier is auto-detected
+MLX allocator peak memory (`mlx.core.get_peak_memory`).  Works for both tiers; the tier is auto-detected
 from the checkpoint (or forced via the model name).
 
 Usage:
@@ -126,10 +126,10 @@ def run_bench(engine, ntok: int, warmup: int) -> dict:
               f"({pf_tps:.0f} tok/s)  "
               f"decode={len(out)}/{t_decode:.2f}s  "
               f"tok/s={results[-1]['tok_s']:.1f}  "
-              f"peak_active={peak_gib:.2f} GiB", flush=True)
+              f"mlx_allocator_peak={peak_gib:.2f} GiB", flush=True)
     mean_ts = sum(r["tok_s"] for r in results) / len(results)
     max_peak = max(r["peak_gib"] for r in results)
-    print(f"[bench] mean tok/s={mean_ts:.1f}  peak_active<={max_peak:.2f} GiB",
+    print(f"[bench] mean tok/s={mean_ts:.1f}  mlx_allocator_peak<={max_peak:.2f} GiB",
           flush=True)
     return {"runs": results, "mean_tok_s": mean_ts, "peak_gib": max_peak}
 

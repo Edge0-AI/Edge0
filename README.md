@@ -120,14 +120,16 @@ edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). Max 100:
 Measured with `python/examples/bench.py` (3.3k-token prompt prefill → 10
 sampled warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 
-| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory | Test machine |
+| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak MLX allocator memory | Test machine |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
 | `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
 *Cold = first request after process start (expert weights fault in from
 SSD); warm = subsequent requests (page cache resident). Prefill numbers
-are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`).*
+are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`). Peak MLX
+allocator memory is `mlx.core.get_peak_memory()` after decode — not
+process RSS.*
 
 Reproduce:
 
@@ -151,9 +153,12 @@ python examples/bench.py edge0-8b     # via $EDGE0_8B_MODEL
   `python/pyproject.toml`). Garbled, mixed-language output on Apple A18 /
   A18 Pro means an older `mlx`: `pip install 'mlx==0.30.6'
   'mlx-metal==0.30.6'` ([#8](https://github.com/Edge0-AI/Edge0/issues/8)).
-- **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
-  `edge0-8b` (short contexts; see [Benchmark](#benchmark)). Add
-  headroom for the OS, tokenizer, and long-context KV growth.
+- **Memory**: ~2.9 GB **MLX allocator** peak for `edge0-35b`, ~1.0 GB for
+  `edge0-8b` (short contexts; see [Benchmark](#benchmark)). That figure is
+  `mlx.core.get_peak_memory()`, not process RSS — file-backed expert pages,
+  the MLX buffer cache, tokenizer, and interpreter are extra. The paper
+  reports process footprints roughly 2× the allocator peak on a 16 GB M2.
+  Add headroom for the OS, tokenizer, and long-context KV growth.
 - **Disk**: the 4-bit checkpoints are ~23 GB (`edge0-35b`) and ~4.2 GB
   (`edge0-8b`); expert weights are mmapped and read on demand, they are
   not loaded into RAM up front.
