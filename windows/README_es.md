@@ -1,5 +1,7 @@
 # edge0-windows — Guía de compilación de release
 
+> Nota: la sección de backend HIP y de modelos GGUF MoE está, por ahora, solo en el README en inglés ([`README.md`](README.md), §1.2 y §1.4).
+
 [English](README.md) | [中文](README_zh.md) | [日本語](README_ja.md) | Español | [Français](README_fr.md)
 
 Este documento está dirigido a **desarrolladores que compilan o evalúan la aplicación de Windows desde el código fuente**. Cubre: inicio rápido (compilar → ejecutar → probar), rendimiento medido en la máquina de referencia y las decisiones técnicas detrás del stack.
@@ -19,7 +21,9 @@ Atribución de terceros: consulta `NOTICE` en este directorio. Fichas de modelo:
 | SO | Windows 10 / 11 x64 |
 | Visual Studio 2022 | carga de trabajo C++ (MSVC) |
 | CMake | ≥ 3.21 |
-| Vulkan SDK | para `ggml-vulkan` (cualquier dGPU AMD/NVIDIA/Intel; la iGPU funciona pero es más lenta) |
+| SDK de AMD HIP para Windows (ROCm) | **backend de GPU por defecto** (`-Backend hip`) para RDNA2 (gfx1030/1031/1032) y RDNA4 (gfx1200/1201). Versión 6.1 o superior; el instalador define `HIP_PATH` |
+| Ninja | herramienta de compilación para configurar HIP (`winget install Ninja-build.Ninja`) |
+| Vulkan SDK | backend de GPU de respaldo (`-Backend vulkan`) para cualquier dGPU AMD/NVIDIA/Intel; la iGPU funciona pero es más lenta |
 | Rust | stable, con `cargo` (shell de Tauri 2) |
 | Node.js | LTS (`npm`) |
 | Python | 3.10+ con `numpy` (conversor en el dispositivo + benchmarks) |
@@ -30,7 +34,8 @@ Atribución de terceros: consulta `NOTICE` en este directorio. Fichas de modelo:
 ```powershell
 git clone https://github.com/Edge0-AI/edge0
 cd edge0/windows
-pwsh -File scripts/vendor-build.ps1        # first build ≈ 10–20 min (compiles llama.cpp + Vulkan kernels)
+pwsh -File scripts/vendor-build.ps1                     # HIP (ROCm) for RDNA2 + RDNA4
+pwsh -File scripts/vendor-build.ps1 -Backend vulkan     # Vulkan fallback
 ```
 
 El script resuelve el depósito del motor de dos formas y después materializa el suministro:
@@ -141,7 +146,7 @@ flowchart LR
   end
   B --> C[("pinned llama.cpp fork<br/>7ab4ee7 + 8 patches")]
   B2 --> C
-  C -->|Vulkan: dense attn / GDN / norms| D[(GPU)]
+  C -->|HIP (ROCm) o Vulkan: attn densa / GDN / normas| D[(GPU)]
   C -->|"-cmoe: expert weights"| E[(CPU, mmap +<br/>L1 advisory pool)]
   C --> F[llama-server<br/>127.0.0.1 OpenAI API]
   F --> G[Tauri 2 shell<br/>supervisor + chat UI]

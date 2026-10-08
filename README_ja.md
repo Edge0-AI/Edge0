@@ -46,7 +46,7 @@
 | **macOS** アプリ & CLI | [`macos/`](macos/README_ja.md) | Rust | ✅ オープンソース化(2026-09-30) |
 | **iOS** アプリ | [`ios/`](ios/README_ja.md) | Swift + MLX Swift | ✅ オープンソース化(2026-09-30) |
 | **Android** アプリ & エンジン | [`android/`](android/README_ja.md) | Kotlin + ネイティブエンジン | ✅ オープンソース化(2026-09-30) |
-| **Windows** アプリ & エンジン | [`windows/`](windows/README_ja.md) | C++ + Vulkan | ✅ オープンソース化(2026-09-30) |
+| **Windows** アプリ & エンジン | [`windows/`](windows/README_ja.md) | C++ + HIP (ROCm) / Vulkan | ✅ オープンソース化(2026-09-30) |
 
 ### モデル
 
@@ -225,7 +225,7 @@ engine.close()   # release mmaps / expert cache
 - **macOS**: ローカル CLI / デーモン / デスクトップアプリ(Rust)— [`macos/README_ja.md`](macos/README_ja.md) を参照
 - **iOS**: オンデバイス iPhone アプリ(Swift + MLX Swift)— [`ios/README_ja.md`](ios/README_ja.md) を参照
 - **Android**: オンデバイスアプリ + ネイティブエンジン(Kotlin)— [`android/README_ja.md`](android/README_ja.md) を参照
-- **Windows**: デスクトップアプリ + ネイティブエンジン(C++ + Vulkan)— [`windows/README_ja.md`](windows/README_ja.md) を参照
+- **Windows**: デスクトップアプリ + ネイティブエンジン(C++ + HIP (ROCm) / Vulkan)— [`windows/README_ja.md`](windows/README_ja.md) を参照
 
 **統合推論フレームワーク** — 1 つのアクセス層、iOS / macOS / Android / Windows / Python へ自動適応するランタイム — は **2026 年 Q4** に登場します。[ロードマップ](#ロードマップ)を参照。
 

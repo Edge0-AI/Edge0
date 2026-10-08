@@ -61,7 +61,7 @@ Un repositorio, una receta, runtimes por plataforma:
 | Aplicación y CLI para **macOS** | [`macos/`](macos/README_es.md) | Rust | ✅ Código abierto (2026-09-30) |
 | Aplicación para **iOS** | [`ios/`](ios/README_es.md) | Swift + MLX Swift | ✅ Código abierto (2026-09-30) |
 | Aplicación y motor para **Android** | [`android/`](android/README_es.md) | Kotlin + motor nativo | ✅ Código abierto (2026-09-30) |
-| Aplicación y motor para **Windows** | [`windows/`](windows/README_es.md) | C++ + Vulkan | ✅ Código abierto (2026-09-30) |
+| Aplicación y motor para **Windows** | [`windows/`](windows/README_es.md) | C++ + HIP (ROCm) / Vulkan | ✅ Código abierto (2026-09-30) |
 
 ### Modelos
 
@@ -304,7 +304,7 @@ más detalles en el README de cada directorio:
 - **macOS**: CLI / demonio / aplicación de escritorio local (Rust) — consulta [`macos/README_es.md`](macos/README_es.md)
 - **iOS**: aplicación para iPhone en el dispositivo (Swift + MLX Swift) — consulta [`ios/README_es.md`](ios/README_es.md)
 - **Android**: aplicación en el dispositivo + motor nativo (Kotlin) — consulta [`android/README_es.md`](android/README_es.md)
-- **Windows**: aplicación de escritorio + motor nativo (C++ + Vulkan) — consulta [`windows/README_es.md`](windows/README_es.md)
+- **Windows**: aplicación de escritorio + motor nativo (C++ + HIP (ROCm) / Vulkan) — consulta [`windows/README_es.md`](windows/README_es.md)
 
 El **framework de inferencia unificado** — una única capa de acceso, con el
 runtime adaptándose automáticamente a iOS / macOS / Android / Windows /

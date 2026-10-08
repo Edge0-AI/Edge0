@@ -49,7 +49,9 @@ export function ModelPill({
   const st = engineStore.status;
   const installed = installedTiers();
   const candidates = candidateModels(installed);
-  const light = model ? deriveLight(st, engineStore.loadingTier, installed, model) : "absent";
+  // A local GGUF file served by the running engine is the resident model, whatever tier the thread names.
+  const ggufResident = st?.running && st.tier === "local-gguf" ? (st.model ?? "local GGUF") : null;
+  const light = ggufResident ? "resident" : model ? deriveLight(st, engineStore.loadingTier, installed, model) : "absent";
 
   // metering: on message/model/port change, debounce 400 ms then measure via the two-hop call.
   const msgVer = useSyncExternalStore(
@@ -112,7 +114,7 @@ export function ModelPill({
         className="flex min-w-0 max-w-[18rem] items-center gap-1.5 rounded-full border border-line bg-surface2 px-2.5 py-1.5 text-xs font-medium text-fg hover:border-accent/50 hover:bg-surface"
       >
         <LightDot light={light} />
-        <span className="max-w-[10rem] truncate">{model || t("chat.noModel")}</span>
+        <span className="max-w-[10rem] truncate">{ggufResident ?? (model || t("chat.noModel"))}</span>
         <span className="text-muted" data-testid="context-meter">
           {contextTokens === null ? t("chat.contextUnknown") : t("chat.contextUsed", { n: contextTokens })}
         </span>

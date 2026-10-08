@@ -89,6 +89,22 @@ pub fn run(state: &engine::EngineState) -> Value {
         check("engine", "fail", format!("missing {}", exe.display()), Some("E-ENGINE-MISSING"), Some("set EDGE0_BIN_DIR"))
     });
 
+    // engine backend and the GPU the engine itself reports (llama-server --list-devices;
+    // no model is loaded). A missing engine is reported once, by the engine check above.
+    checks.push(check("backend", "pass", format!("{} (bin {})", paths::backend(), paths::bin_dir().display()), None, None));
+    if exe.exists() {
+        match crate::gguf::detect_gpu() {
+            Ok(Some(d)) => checks.push(check("gpu", "pass",
+                format!("{} {} ({:.1} GiB free of {:.1} GiB)", d.id, d.desc,
+                        d.free_mib as f64 / 1024.0, d.total_mib as f64 / 1024.0), None, None)),
+            Ok(None) => checks.push(check("gpu", "warn", "engine reports no GPU device (CPU only)",
+                Some("E-GPU-MISSING"), Some("check the driver and the backend build (EDGE0_BACKEND=hip|vulkan)"))),
+            Err(e) => checks.push(check("gpu", "warn", e, None, None)),
+        }
+    } else {
+        checks.push(check("gpu", "warn", "engine missing: GPU not probed", None, None));
+    }
+
     // per-tier presence (all catalog tiers): not installed = warn pointing at the
     // Models page; registered + files present = pass
     let models = read_models_json();
@@ -106,9 +122,10 @@ pub fn run(state: &engine::EngineState) -> Value {
         }
     }
 
-    // pool telemetry: engine running but no POOL2 init line in the log = warn (surfaced honestly)
+    // pool telemetry: engine running but no POOL2 init line in the log = warn (surfaced honestly).
+    // Local GGUF loads never pass --pool-mb, so the check applies to Edge0 tiers only.
     let st = engine::status(state);
-    if st["running"].as_bool().unwrap_or(false) {
+    if st["running"].as_bool().unwrap_or(false) && st["tier"] != "local-gguf" {
         let log = st["log"].as_str().unwrap_or("");
         match engine::pool_telemetry(log) {
             Some(line) => checks.push(check("pool-telemetry", "pass", line, None, None)),

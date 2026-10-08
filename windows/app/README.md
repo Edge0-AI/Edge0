@@ -26,8 +26,9 @@ cargo test --test real8b -- --ignored --nocapture   # full chain: 4.5 GB downloa
 |---|---|---|
 | `EDGE0_HOME` | `%USERPROFILE%\.edge0` | app home (models/state/logs/tmp) |
 | `EDGE0_REPO` | this repo checkout | where `tools/` conversion scripts live |
-| `EDGE0_PY` | `python` | interpreter for the converter chain |
-| `EDGE0_BIN_DIR` | depot engine build dir (`…/wt/win/build-vk/bin/Release`) | directory containing `llama-server.exe` |
+| `EDGE0_PY` | `python` | interpreter for the converter chain and `tools/gguf_tool.py` |
+| `EDGE0_BIN_DIR` | depot engine build of the selected backend (`…/wt/win/build-hip/bin` or `…/wt/win/build-vk/bin/Release`) | directory containing `llama-server.exe` |
+| `EDGE0_BACKEND` | `hip` when the HIP depot build exists, else `vulkan` | engine backend: `hip` (ROCm, RDNA2 and RDNA4) or `vulkan` (fallback) |
 | `EDGE0_PHYS_MEM_GB` | detected (conservative) | override for the memory-tier clamp |
 | `EDGE0_TEST_SOURCE` | `modelscope` | source pin for headless tests (`huggingface` also supported) |
 
@@ -37,6 +38,7 @@ cargo test --test real8b -- --ignored --nocapture   # full chain: 4.5 GB downloa
 models/edge0-<tier>/           download target (dir name is a hard contract of the converter;
                                per-file sha256 verified before atomic rename)
 models/edge0-<tier>-gguf/      conversion output (gguf + adapter + manifest.json idempotency gate)
+models/local-gguf/            folder scanned for local GGUF files (MoE families; read-only inspection)
 state/downloads/<t>.json       resume checkpoints   state/verified-<t>.json per-file sha ledger
 state/models.json              installed-model registry
 logs/engine-*.log, logs/convert-*.log              engine & converter output

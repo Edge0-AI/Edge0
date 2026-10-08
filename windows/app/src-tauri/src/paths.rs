@@ -62,14 +62,45 @@ pub fn repo_root() -> PathBuf {
         })
 }
 
-/// Engine binary directory; override with EDGE0_BIN_DIR. Default is the monorepo depot
-/// build (`<repo>/../wt/win/build-vk/bin/Release`, i.e. edge0/wt/... relative to this
-/// windows/ subproject). For a sparse/bootstrap build, set EDGE0_BIN_DIR to the engine
-/// location printed by scripts/vendor-build.ps1.
+/// Engine backend. EDGE0_BACKEND=hip|vulkan selects one explicitly. Unset means HIP
+/// (ROCm, for RDNA2 gfx103x and RDNA4 gfx120x) when its depot build exists, otherwise
+/// Vulkan. The chosen backend is reported by app_paths and doctor, never hidden.
+pub fn backend() -> &'static str {
+    match std::env::var("EDGE0_BACKEND").unwrap_or_default().trim().to_ascii_lowercase().as_str() {
+        "hip" => "hip",
+        "vulkan" => "vulkan",
+        _ => {
+            if backend_build_dir("hip").join("bin").exists() {
+                "hip"
+            } else {
+                "vulkan"
+            }
+        }
+    }
+}
+
+/// Depot build directory of a backend: `<repo>/../wt/win/build-{hip,vk}`.
+fn backend_build_dir(backend: &str) -> PathBuf {
+    let leaf = if backend == "hip" { "build-hip" } else { "build-vk" };
+    repo_root().join("../wt/win").join(leaf)
+}
+
+/// Engine binary directory; override with EDGE0_BIN_DIR. Default is the depot build of
+/// the selected backend (see backend()). Multi-config builds put binaries in bin/Release
+/// and single-config (Ninja) builds in bin; whichever directory holds llama-server wins.
+/// For a sparse/bootstrap build, set EDGE0_BIN_DIR to the engine location printed by
+/// scripts/vendor-build.ps1.
 pub fn bin_dir() -> PathBuf {
-    std::env::var("EDGE0_BIN_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| repo_root().join("../wt/win/build-vk/bin/Release"))
+    if let Ok(p) = std::env::var("EDGE0_BIN_DIR") {
+        return PathBuf::from(p);
+    }
+    let base = backend_build_dir(backend()).join("bin");
+    let release = base.join("Release");
+    if !release.join("llama-server.exe").exists() && base.join("llama-server.exe").exists() {
+        base
+    } else {
+        release
+    }
 }
 
 #[cfg(test)]

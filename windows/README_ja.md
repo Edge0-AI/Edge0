@@ -1,5 +1,7 @@
 # edge0-windows — リリースビルドガイド
 
+> 注: HIP バックエンドと GGUF MoE モデルのセクションは、現時点では英語版 README のみにあります([`README.md`](README.md)、§1.2 と §1.4)。
+
 [English](README.md) | [中文](README_zh.md) | 日本語 | [Español](README_es.md) | [Français](README_fr.md)
 
 このドキュメントは、**ソースから Windows アプリをビルドまたは評価する開発者**向けのものです。内容は、クイックスタート(ビルド → 実行 → テスト)、リファレンスマシンでの実測パフォーマンス、そしてスタックの背後にある技術的選択です。
@@ -19,7 +21,9 @@ edge0 は**モノレポ**として公開されています — [`Edge0-AI/edge0`
 | OS | Windows 10 / 11 x64 |
 | Visual Studio 2022 | C++ ワークロード(MSVC) |
 | CMake | ≥ 3.21 |
-| Vulkan SDK | `ggml-vulkan` 用(AMD/NVIDIA/Intel の dGPU ならどれでも;iGPU でも動作するがより遅い) |
+| AMD HIP SDK for Windows(ROCm) | **既定の GPU バックエンド**(`-Backend hip`)。RDNA2(gfx1030/1031/1032)と RDNA4(gfx1200/1201)向け。バージョン 6.1 以降。インストーラーが `HIP_PATH` を設定 |
+| Ninja | HIP の構成に使うビルドツール(`winget install Ninja-build.Ninja`) |
+| Vulkan SDK | 代替の GPU バックエンド(`-Backend vulkan`)。AMD/NVIDIA/Intel の dGPU ならどれでも。iGPU でも動作するがより遅い |
 | Rust | stable、`cargo` 付き(Tauri 2 シェル) |
 | Node.js | LTS(`npm`) |
 | Python | 3.10+ と `numpy`(デバイス上コンバータ + ベンチ) |
@@ -30,7 +34,8 @@ edge0 は**モノレポ**として公開されています — [`Edge0-AI/edge0`
 ```powershell
 git clone https://github.com/Edge0-AI/edge0
 cd edge0/windows
-pwsh -File scripts/vendor-build.ps1        # first build ≈ 10–20 min (compiles llama.cpp + Vulkan kernels)
+pwsh -File scripts/vendor-build.ps1                     # HIP (ROCm) for RDNA2 + RDNA4
+pwsh -File scripts/vendor-build.ps1 -Backend vulkan     # Vulkan fallback
 ```
 
 スクリプトはエンジンデポを 2 つの方法で解決し、サプライを実体化します:
@@ -141,7 +146,7 @@ flowchart LR
   end
   B --> C[("pinned llama.cpp fork<br/>7ab4ee7 + 8 patches")]
   B2 --> C
-  C -->|Vulkan: dense attn / GDN / norms| D[(GPU)]
+  C -->|HIP (ROCm) または Vulkan: 密な attn / GDN / norm| D[(GPU)]
   C -->|"-cmoe: expert weights"| E[(CPU, mmap +<br/>L1 advisory pool)]
   C --> F[llama-server<br/>127.0.0.1 OpenAI API]
   F --> G[Tauri 2 shell<br/>supervisor + chat UI]

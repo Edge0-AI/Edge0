@@ -1,5 +1,7 @@
 # edge0-windows — 发布构建指南
 
+> 注：HIP 后端与 GGUF MoE 模型的内容目前只在英文版 README 中（[`README.md`](README.md)，§1.2 与 §1.4）。
+
 [English](README.md) | 中文 | [日本語](README_ja.md) | [Español](README_es.md) | [Français](README_fr.md)
 
 本文档面向**从源码构建或评估 Windows App 的开发者**。内容包括：快速开始（构建 → 运行 → 测试）、参考机器上的性能实测，以及技术栈背后的技术选型。
@@ -19,7 +21,9 @@ edge0 以 **monorepo** 形式发布 —— [`Edge0-AI/edge0`](https://github.com
 | 系统 | Windows 10 / 11 x64 |
 | Visual Studio 2022 | C++ 工作负载（MSVC） |
 | CMake | ≥ 3.21 |
-| Vulkan SDK | 用于 `ggml-vulkan`（任意 AMD/NVIDIA/Intel 独显；核显可用但更慢） |
+| AMD HIP SDK（Windows，ROCm） | **默认 GPU 后端**（`-Backend hip`），面向 RDNA2（gfx1030/1031/1032）与 RDNA4（gfx1200/1201）。版本 6.1 或更高；安装程序会设置 `HIP_PATH` |
+| Ninja | 配置 HIP 时使用的构建工具（`winget install Ninja-build.Ninja`） |
+| Vulkan SDK | 备用 GPU 后端（`-Backend vulkan`），适用于任意 AMD/NVIDIA/Intel 独显；核显可用但更慢 |
 | Rust | stable 版，带 `cargo`（Tauri 2 外壳） |
 | Node.js | LTS（`npm`） |
 | Python | 3.10+ 且带 `numpy`（端上转换器 + 基准测试） |
@@ -30,7 +34,8 @@ edge0 以 **monorepo** 形式发布 —— [`Edge0-AI/edge0`](https://github.com
 ```powershell
 git clone https://github.com/Edge0-AI/edge0
 cd edge0/windows
-pwsh -File scripts/vendor-build.ps1        # first build ≈ 10–20 min (compiles llama.cpp + Vulkan kernels)
+pwsh -File scripts/vendor-build.ps1                     # HIP (ROCm) for RDNA2 + RDNA4
+pwsh -File scripts/vendor-build.ps1 -Backend vulkan     # Vulkan fallback
 ```
 
 脚本以两种方式解析引擎 depot，然后物化供给：
@@ -141,7 +146,7 @@ flowchart LR
   end
   B --> C[("pinned llama.cpp fork<br/>7ab4ee7 + 8 patches")]
   B2 --> C
-  C -->|Vulkan: dense attn / GDN / norms| D[(GPU)]
+  C -->|HIP（ROCm）或 Vulkan：稠密 attn / GDN / norm| D[(GPU)]
   C -->|"-cmoe: expert weights"| E[(CPU, mmap +<br/>L1 advisory pool)]
   C --> F[llama-server<br/>127.0.0.1 OpenAI API]
   F --> G[Tauri 2 shell<br/>supervisor + chat UI]
