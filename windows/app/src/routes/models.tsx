@@ -19,6 +19,7 @@ import { humanBytes } from "../lib/byteFormat";
 import { codeOf, errKey, t } from "../lib/t";
 import type { CatTier } from "../api/client";
 import { DownloadCardBody } from "../models/cards";
+import { LocalGgufPanel } from "../models/gguf";
 
 export function ModelsPage() {
   const [, force] = useState(0);
@@ -51,6 +52,8 @@ export function ModelsPage() {
       {tiers.map(([tier, rec]) => (
         <TierCard key={tier} tier={tier} rec={rec} />
       ))}
+
+      <LocalGgufPanel />
     </section>
   );
 }

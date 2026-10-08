@@ -1,0 +1,282 @@
+{
+  "schema": 1,
+  "engine_pin": "llama.cpp 7ab4ee7 (b11100) + edge0 patch bands",
+  "note": "Each arch must appear as a quoted name in src/llama-arch.cpp at the pin. Check with: gguf_tool.py registry-check --llama-src <vendor/llama.cpp>. Examples are Hugging Face repos confirmed to exist; an empty list means no example has been checked. Expansion beyond this pin is out of scope.",
+  "families": [
+    {
+      "id": "qwen3-moe",
+      "label": "Qwen3 MoE",
+      "archs": [
+        "qwen3moe"
+      ],
+      "models": "Qwen3-30B-A3B, Qwen3-235B-A22B, Qwen3-Coder-30B-A3B",
+      "examples": [
+        "unsloth/Qwen3-30B-A3B-GGUF",
+        "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF"
+      ]
+    },
+    {
+      "id": "qwen35-moe",
+      "label": "Qwen3.5 / 3.6 MoE",
+      "archs": [
+        "qwen35moe"
+      ],
+      "models": "Qwen3.5 and Qwen3.6 MoE checkpoints (35B-A3B class, e.g. Qwen3.6-35B-A3B)",
+      "examples": []
+    },
+    {
+      "id": "qwen3-next",
+      "label": "Qwen3-Next",
+      "archs": [
+        "qwen3next"
+      ],
+      "models": "Qwen3-Next-80B-A3B (hybrid linear-attention MoE)",
+      "examples": []
+    },
+    {
+      "id": "qwen3-vl-moe",
+      "label": "Qwen3-VL MoE (text path)",
+      "archs": [
+        "qwen3vlmoe"
+      ],
+      "models": "Qwen3-VL MoE checkpoints. Only the text path is wired in this shell; image input needs the mmproj projector.",
+      "examples": []
+    },
+    {
+      "id": "qwen2-moe",
+      "label": "Qwen2 MoE",
+      "archs": [
+        "qwen2moe"
+      ],
+      "models": "Qwen1.5-MoE-A2.7B, Qwen2-57B-A14B",
+      "examples": []
+    },
+    {
+      "id": "gpt-oss",
+      "label": "gpt-oss",
+      "archs": [
+        "gpt-oss"
+      ],
+      "models": "gpt-oss-20b, gpt-oss-120b (MXFP4 expert weights)",
+      "examples": [
+        "ggml-org/gpt-oss-20b-GGUF",
+        "ggml-org/gpt-oss-120b-GGUF"
+      ]
+    },
+    {
+      "id": "laguna",
+      "label": "Poolside Laguna",
+      "archs": [
+        "laguna"
+      ],
+      "models": "Laguna XS.2 (33B-A3B). Laguna XS 2.1 is announced as GGUF; confirm the repo before downloading.",
+      "examples": [
+        "Lucebox/Laguna-XS.2-GGUF"
+      ]
+    },
+    {
+      "id": "glm4-moe",
+      "label": "GLM-4.5 / 4.6 / 4.7 MoE",
+      "archs": [
+        "glm4moe"
+      ],
+      "models": "GLM-4.5, GLM-4.5-Air, GLM-4.6, GLM-4.7",
+      "examples": [
+        "unsloth/GLM-4.5-Air-GGUF",
+        "unsloth/GLM-4.6-GGUF"
+      ]
+    },
+    {
+      "id": "glm5-dsa",
+      "label": "GLM-5 (DSA)",
+      "archs": [
+        "glm-dsa"
+      ],
+      "models": "GLM-5 family. The pinned source header cites GLM-5.2.",
+      "examples": []
+    },
+    {
+      "id": "deepseek-v2-v3",
+      "label": "DeepSeek V2 / V3 / R1 (and Kimi K2)",
+      "archs": [
+        "deepseek2"
+      ],
+      "models": "DeepSeek-V2, DeepSeek-V3, DeepSeek-R1. Kimi K2 uses the DeepSeek-V3 layout.",
+      "examples": []
+    },
+    {
+      "id": "deepseek-v32",
+      "label": "DeepSeek V3.2",
+      "archs": [
+        "deepseek32"
+      ],
+      "models": "DeepSeek-V3.2 family",
+      "examples": []
+    },
+    {
+      "id": "mixtral",
+      "label": "Mixtral",
+      "archs": [
+        "llama"
+      ],
+      "requires_experts": true,
+      "models": "Mixtral 8x7B / 8x22B. Runs on the plain llama arch with expert tensors; the family matches only when expert_count > 0.",
+      "examples": []
+    },
+    {
+      "id": "llama4",
+      "label": "Llama 4 (Scout / Maverick)",
+      "archs": [
+        "llama4"
+      ],
+      "models": "Llama 4 Scout, Llama 4 Maverick",
+      "examples": []
+    },
+    {
+      "id": "minimax-m2",
+      "label": "MiniMax M2",
+      "archs": [
+        "minimax-m2"
+      ],
+      "models": "MiniMax-M2 family",
+      "examples": []
+    },
+    {
+      "id": "ernie45-moe",
+      "label": "ERNIE 4.5 MoE",
+      "archs": [
+        "ernie4_5-moe"
+      ],
+      "models": "ERNIE-4.5-21B-A3B, ERNIE-4.5-300B-A47B",
+      "examples": []
+    },
+    {
+      "id": "hunyuan-moe",
+      "label": "Hunyuan MoE",
+      "archs": [
+        "hunyuan-moe"
+      ],
+      "models": "Hunyuan-A13B and related",
+      "examples": []
+    },
+    {
+      "id": "olmoe",
+      "label": "OLMoE",
+      "archs": [
+        "olmoe"
+      ],
+      "models": "OLMoE-1B-7B and related",
+      "examples": []
+    },
+    {
+      "id": "granite-moe",
+      "label": "Granite MoE",
+      "archs": [
+        "granitemoe"
+      ],
+      "models": "IBM Granite MoE checkpoints",
+      "examples": []
+    },
+    {
+      "id": "ling-bailing-moe",
+      "label": "Ling / Bailing MoE",
+      "archs": [
+        "bailingmoe",
+        "bailingmoe2",
+        "bailingmoe3"
+      ],
+      "models": "Ling-lite, Ling-plus, Ling 2.x / 3.x. The Edge0 8B patches target bailingmoe3 (patch 0001 in patches/llama.cpp).",
+      "examples": []
+    },
+    {
+      "id": "dots1",
+      "label": "dots.llm1",
+      "archs": [
+        "dots1"
+      ],
+      "models": "dots.llm1 MoE",
+      "examples": []
+    },
+    {
+      "id": "phimoe",
+      "label": "Phi-3.5-MoE",
+      "archs": [
+        "phimoe"
+      ],
+      "models": "Phi-3.5-MoE-instruct",
+      "examples": []
+    },
+    {
+      "id": "lfm2-moe",
+      "label": "LFM2 MoE",
+      "archs": [
+        "lfm2moe"
+      ],
+      "models": "Liquid LFM2 MoE checkpoints",
+      "examples": []
+    },
+    {
+      "id": "nemotron-h-moe",
+      "label": "Nemotron-H MoE",
+      "archs": [
+        "nemotron_h_moe"
+      ],
+      "models": "NVIDIA Nemotron-H MoE checkpoints",
+      "examples": []
+    },
+    {
+      "id": "step35",
+      "label": "Step 3.5 (MoE)",
+      "archs": [
+        "step35"
+      ],
+      "models": "Step3p5 MoE checkpoints",
+      "examples": []
+    },
+    {
+      "id": "mistral4",
+      "label": "Mistral 4",
+      "archs": [
+        "mistral4"
+      ],
+      "models": "Mistral 4 family (MoE when expert_count > 0)",
+      "examples": []
+    },
+    {
+      "id": "exaone-moe",
+      "label": "EXAONE MoE",
+      "archs": [
+        "exaone-moe"
+      ],
+      "models": "LG EXAONE MoE checkpoints",
+      "examples": []
+    },
+    {
+      "id": "mimo2",
+      "label": "Xiaomi MiMo",
+      "archs": [
+        "mimo2"
+      ],
+      "models": "Xiaomi MiMo MoE checkpoints",
+      "examples": []
+    },
+    {
+      "id": "kimi-linear",
+      "label": "Kimi Linear",
+      "archs": [
+        "kimi-linear"
+      ],
+      "models": "Kimi Linear MoE checkpoints (hybrid KDA + MLA)",
+      "examples": []
+    },
+    {
+      "id": "kimi-k3",
+      "label": "Kimi K3 (text)",
+      "archs": [
+        "kimi-k3"
+      ],
+      "models": "Kimi-K3 text model (hybrid KDA + MLA)",
+      "examples": []
+    }
+  ]
+}

@@ -58,7 +58,7 @@ One repo, one recipe, per-platform runtimes:
 | **macOS** app & CLI | [`macos/`](macos/README.md) | Rust | ✅ Open-sourced (2026-09-30) |
 | **iOS** app | [`ios/`](ios/README.md) | Swift + MLX Swift | ✅ Open-sourced (2026-09-30) |
 | **Android** app & engine | [`android/`](android/README.md) | Kotlin + native engine | ✅ Open-sourced (2026-09-30) |
-| **Windows** app & engine | [`windows/`](windows/README.md) | C++ + Vulkan | ✅ Open-sourced (2026-09-30) |
+| **Windows** app & engine | [`windows/`](windows/README.md) | C++ + HIP (ROCm) / Vulkan | ✅ Open-sourced (2026-09-30) |
 
 ### Models
 
@@ -290,7 +290,7 @@ in each directory's README:
 - **macOS**: local CLI / daemon / desktop app (Rust) — see [`macos/README.md`](macos/README.md)
 - **iOS**: on-device iPhone app (Swift + MLX Swift) — see [`ios/README.md`](ios/README.md)
 - **Android**: on-device app + native engine (Kotlin) — see [`android/README.md`](android/README.md)
-- **Windows**: desktop app + native engine (C++ + Vulkan) — see [`windows/README.md`](windows/README.md)
+- **Windows**: desktop app + native engine (C++ + HIP/ROCm and Vulkan) — see [`windows/README.md`](windows/README.md)
 
 The **unified inference framework** — one access layer, runtime
 auto-adapting to iOS / macOS / Android / Windows / Python — arrives in

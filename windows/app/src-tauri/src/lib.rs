@@ -4,6 +4,7 @@ pub mod catalog;
 pub mod convert;
 pub mod doctor;
 pub mod engine;
+pub mod gguf;
 pub mod paths;
 pub mod pull;
 pub mod sink;
@@ -40,7 +41,9 @@ fn catalog_get() -> Value {
 fn app_paths() -> Value {
     json!({ "home": paths::home().to_string_lossy(),
             "repo": paths::repo_root().to_string_lossy(),
-            "bin_dir": paths::bin_dir().to_string_lossy() })
+            "bin_dir": paths::bin_dir().to_string_lossy(),
+            "backend": paths::backend(),
+            "gguf_dir": gguf::local_dir().to_string_lossy() })
 }
 
 #[tauri::command]
@@ -105,6 +108,34 @@ async fn doctor_run(app: AppHandle) -> Result<Value, String> {
 }
 
 #[tauri::command]
+async fn gguf_scan(dir: Option<String>) -> Result<Value, String> {
+    // Header reads only (no tensor data), but a folder walk can still take seconds on HDD.
+    tauri::async_runtime::spawn_blocking(move || gguf::scan(dir.as_deref()))
+        .await
+        .map_err(|e| format!("E-GGUF-JOIN {e}"))?
+}
+
+#[tauri::command]
+async fn gguf_inspect(path: String, ctx: Option<u32>) -> Result<Value, String> {
+    // Runs the helper and llama-server --list-devices: both off the main thread.
+    tauri::async_runtime::spawn_blocking(move || gguf::inspect_for_gpu(&path, ctx.unwrap_or(8192)))
+        .await
+        .map_err(|e| format!("E-GGUF-JOIN {e}"))?
+}
+
+#[tauri::command]
+async fn gguf_load(app: AppHandle, path: String, ctx: Option<u32>) -> Result<Value, String> {
+    // Same contract as model_load: the readiness poll blocks, so it runs on a blocking thread.
+    tauri::async_runtime::spawn_blocking(move || {
+        let st = app.state::<AppState>();
+        let s: Arc<dyn sink::Sink> = Arc::new(sink::TauriSink(app.clone()));
+        engine::start_gguf(&s, &st.engine, &path, ctx.unwrap_or(8192))
+    })
+    .await
+    .map_err(|e| format!("E-LOAD-JOIN {e}"))?
+}
+
+#[tauri::command]
 async fn model_delete(app: AppHandle, tier: String) -> Result<Value, String> {
     // Multi-GB deletion (seconds under HDD / AV scanning) stays off the main thread;
     // the resident check (engine::status) happens inside the closure too.
@@ -147,7 +178,8 @@ pub fn run() {
             catalog_get, app_paths, models_installed,
             download_start, download_status, download_cancel,
             model_load, model_unload, engine_status,
-            doctor_run, model_delete
+            doctor_run, model_delete,
+            gguf_scan, gguf_inspect, gguf_load
         ])
         .build(tauri::generate_context!())
         .expect("edge0 shell failed to start")

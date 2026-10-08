@@ -37,3 +37,20 @@ jobs:
         run: pip install pytest
       - name: Hygiene checks
         run: pytest tests/test_repo_hygiene.py
+
+  windows-tools:
+    name: Windows GGUF helper (stdlib Python; family registry vs pinned engine)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Materialize the pinned engine tree (for the registry check)
+        run: |
+          git clone --filter=blob:none https://github.com/ggml-org/llama.cpp vendor/llama.cpp
+          git -C vendor/llama.cpp checkout --detach "$(cut -d' ' -f1 vendor.llama.pin)"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Test gguf_tool.py and the MoE family registry
+        run: pytest windows/tools/tests -q

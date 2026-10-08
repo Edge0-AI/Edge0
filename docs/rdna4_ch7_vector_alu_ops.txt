@@ -1,0 +1,1415 @@
+
+--- PAGE 90 ---
+7.7. Packed Math
+Packed math is a form of operation that accelerates arithmetic on two values packed into the same VGPR. It
+performs operations on two 16-bit values within a DWORD as if they were separate threads. For example, a
+packed add of V0=V1+V2 is really two separate adds: adding the low 16 bits of each DWORD and storing the
+result in the low 16 bits of V0, and adding the high halves and storing the result in the high 16 bits of V0.
+Packed math uses the instructions below and the microcode format "VOP3P". This format has OPSEL and NEG
+fields for both the low and high operands, and does not have ABS and OMOD.
+Table 37. Packed Math Opcodes:
+Packed Math ops
+V_PK_MUL_F16
+V_PK_MINIMUM_F16
+V_PK_FMA_F16
+V_PK_ADD_F16
+V_PK_MAXIMUM_F16
+V_PK_FMAC_F16
+V_PK_MIN_NUM_F16
+V_PK_MAX_NUM_F16
+V_PK_ADD_I16
+V_PK_MIN_I16
+V_PK_MAD_I16
+V_PK_ADD_U16
+V_PK_MIN_U16
+V_PK_MAD_U16
+V_PK_SUB_I16
+V_PK_MAX_I16
+V_PK_MUL_LO_U16
+V_PK_SUB_U16
+V_PK_MAX_U16
+V_FMA_MIX_F32
+V_FMA_MIXHI_F16
+V_FMA_MIXLO_F16
+V_PK_LSHLREV_B16
+V_PK_LSHRREV_B16
+V_PK_ASHRREV_I16
+V_DOT2_F32_BF16
+V_DOT2_F32_F16
+V_DOT4_F32_FP8_BF8
+V_DOT4_F32_BF8_FP8
+V_DOT4_F32_FP8_FP8
+V_DOT4_F32_BF8_BF8
+V_DOT4_I32_IU8
+V_DOT4_U32_U8
+V_DOT8_I32_IU4
+V_DOT8_U32_U4
+
+V_FMA_MIX* and WMMA instructions are not packed math, but perform a single MAD
+operation on a mixture of 16- and 32-bit inputs. They are listed here because they use the
+VOP3P encoding. Matrix multiply operations are described in a later section.
+VOP3P Instruction Fields
+Field
+Size
+Description
+OP
+7
+instruction opcode
+SRC0
+9
+first instruction argument. May come from: VGPR, SGPR, VCC, M0, exec or a constant
+SRC1
+9
+second instruction argument. May come from: VGPR, SGPR, VCC, M0, exec or a constant
+SRC2
+9
+third instruction argument. May come from: VGPR, SGPR, VCC, M0, exec or a constant
+VDST
+8
+VGPR that takes the result.
+NEG
+3
+negate the input (invert sign bit) for the lower-16bit operand. float inputs only.
+bit 0 is for src0, bit 1 is for src1 and bit 2 is for src2.
+For V_FMA_MIX* opcodes, this modifies all inputs.
+For DOT…IU… and WMMA…IU… NEG[1:0] = signed(1)/unsigned(0) for src0 and src1,
+and NEG[2] behavior is undefined.
+"RDNA4" Instruction Set Architecture
+7.7. Packed Math
+80 of 697
+
+--- PAGE 91 ---
+Field
+Size
+Description
+NEG_HI
+3
+negate the input (invert sign bit) for the higher-16bit operand. float inputs only.
+bit 0 is for src0, bit 1 is for src1 and bit 2 is for src2.
+For V_FMA_MIX* opcodes, this acts as an ABS (absolute value) modifier.
+For DOT…IU… and WMMA…IU… NEG_HI behavior is undefined.
+OPSEL
+3
+Select the high (1) or low (0) operand as input to the operation that results in the lower-half of the
+destination. [0] = src0, [1] = src1, [2] = src2
+If either the source operand or destination operand is 32bits, the corresponding OPSEL bit must set
+to zero. This rule does not apply to MIX instructions, which have a unique interpretation of OPSEL. See
+notes below.
+OPSEL works for 16-bit VGPR, SGPR and literal-constant sources; for inline constant sources OPSEL
+must be zero (value only exists in lower 16 bits). (only wave64 uses OPSEL[1]), and OPSEL[2] is
+unused.
+OPSEL_HI
+3
+Select the high (1) or low (0) operand as input to the operation that results in the upper-half of the
+destination. [0] = src0, [1] = src1, [2] = src2. Concatenation of ISA fields {OPSLH2, OPSLH}. If either
+the source operand or destination operand is 32bits or is a constant, the corresponding OPSEL_HI
+bit must set to zero. This rule does not apply to MIX instructions, which have a unique interpretation of
+OPSEL. See notes below.
+CM
+1
+clamp result.
+Float arithmetic: clamp result to [0, 1.0]; -0 is clamped to +0.
+Signed integer arithmetic: clamp result to [INT_MIN, INT_MAX]
+Unsigned integer arithmetic: clamp result to [0, UINT_MAX]
+Where "INT_MIN" and "INT_MAX" are the largest negative and positive representable integers for
+the size of integer being used (16, 32 or 64 bit). "UINT_MAX" is the largest unsigned int.
+OPSEL for MIX instructions
+MIX, MIXLO and MIXHI interpret OPSEL and OPSEL_HI as three 2-bit fields, one per source operand:
+{ OPSEL_HI[0], OPSEL[0] } controls source0;
+{ OPSEL_HI[1], OPSEL[1] } controls source1;
+{ OPSEL_HI[2], OPSEL[2] } controls source2.
+These 2-bit fields control source-selection for each of the 3 source operands:
+2’b00: Src[31:0] as FP32
+2’b01: Src[31:0] as FP32
+2’b10: Src[15:0] as FP16
+2’b11: Src[31:16] as FP16
+V_WMMA…IU… and V_DOT4…IU… with NEG:
+These instructions use the NEG[1:0] bits to indicate signed (0=unsigned, 1=signed) per input source
+instead of meaning "negate". NEG[2] should be set to zero (behavior is undefined). NEG_HI must be zero.
+DOT4_F32_{FP8,BF8}_{FP8,BF8}
+OPSEL must be zero, and OPSEL_HI must be 7. Only SRC2 can apply NEG/NEG_HI (NEG_HI acts as the
+ABS modifier for these ops). OMOD and CLAMP are not supported, and round-mode is round-to-nearest-
+even. Exceptions are not reported.
+WMMA_*_{FP8,BF8}_{FP8,BF8}
+No OPSEL (has other uses), ABS, NEG, OMOD, DPP, FP16_OVFL or clamp support. Matrix sources A and
+B must come from VGPRs; C may be a VGPR or inline constant. Exceptions are not reported.
+"RDNA4" Instruction Set Architecture
+7.7. Packed Math
+81 of 697
+
+--- PAGE 92 ---
+7.7.1. Scalar Constants with Packed Math
+This section defines the rules for scalar constants in packed math operations and how much data is read per
+operand.
+Input Type
+PK_F16
+PK_F32
+All cases use OPSEL to select high
+or low 16 bits per op.
+VGPR
+1 vgpr
+2 vgprs. opsel selects high/low
+dword
+SGPR
+1 SGPR
+1 SGPR
+Literal32
+M0
+{31’h0, SCC}
+like SGPR
+replicates literal to 64 bits. no
+opsel (redundant)
+EXEC
+invalid
+invalid
+Inline Const
+{16’h0, const}
+32-bit const. no opsel
+7.7.2. Inline Constants with Packed Math
+Inline constants may be used with packed math, but they require the use of OPSEL. Inline constants produce a
+value in only the low 16-bits of the 32-bit constant value. Inline constants used with float 16-bit sources produce
+an F16 constant value. Without using OPSEL, only the lower half of the source would contain the constant. To
+use the inline constant in both halves, use OPSEL to select the lower input for both low and high sources.
+BF16 uses 32-bit float constants and then the BF16 operand selects the upper 16 bits of the FP32 constant
+(matches the definition of BF16).
+For WMMA and DOT instructions sourcing 16-bit data, the LSBs of the inline constant value are used.
+Any packed math instructions (excluding WMMA) that have source float data sizes less than 16 bits do not work
+with inline constants. 8-bit and 4-bit integer inlines constants work as expected.
+Opcode
+inline
+OPSEL
+DOT4_I32_IU8
+use 32bit inline src0/1 (ignore OPSEL)
+OPSEL/OPSEL_HI on src0/1
+DOT8_I32_IU4
+use 32bit inline src0/1 (ignore OPSEL)
+OPSEL/OPSEL_HI on src0/1
+DOT4_U32_U8
+use 32bit inline src0/1 (ignore OPSEL)
+OPSEL/OPSEL_HI on src0/1
+DOT8_U32_U4
+use 32bit inline src0/1 (ignore OPSEL)
+OPSEL/OPSEL_HI on src0/1
+DOT2_F32_F16
+use FP32 inline, supports OPSEL
+OPSEL/OPSEL_HI on src0/1
+DOT2_F32_BF16
+upper16(FP32)/same as replicate (src0/1) ignore OPSEL
+OPSEL/OPSEL_HI on src0/1
+DOT2ACC_F32_F16
+Duplicate lo to hi, ignore OPSEL
+none
+DOT2ACC_F32_BF16
+Duplicate lo to hi, ignore OPSEL
+none
+7.8. Dual Issue VALU (VOPD)
+The VOPD instruction encoding allows a single shader instruction to encode two separate VALU operations
+that are executed in parallel. The two operations must be independent of each other. This instruction has
+certain restrictions that must be met - hardware does not function correctly if they are not. This instruction
+format is legal only for wave32. It must not be used by wave64’s.
+"RDNA4" Instruction Set Architecture
+7.8. Dual Issue VALU (VOPD)
+82 of 697
+
+--- PAGE 93 ---
+The instruction defines 2 operations, named "X" and "Y", each with their own source and destination VGPRs.
+The two instructions packed into this one ISA are referred to as OpcodeX and OpcodeY.
+• OpcodeX sources data from SRC0X (a VGPR, SGPR or constant), and SRC1X (a VGPR);
+• OpcodeY sources data from SRC0Y (a VGPR, SGPR or constant), and SRC1Y (a VGPR).
+Restrictions:
+• Each of the two instructions may use up to 2 VGPRs
+• Each instruction in the pair may use at most 1 SGPR or they may share a single literal
+◦Legal combinations for the dual-op: at most 2 SGPRs, or 1 SGPR + 1 literal, or share a literal.
+▪SCC and EXEC as data count as one SGPR
+• SRC0 can be either a VGPR or SGPR (or constant)
+• VSRC1 can only be a VGPR
+• Instructions must not exceed the VGPR source-cache port limits
+◦SRC0x and SRC0y must come from different VGPR banks (bank# = SRC % 4), or be the same VGPR and
+same sized operand. Same for SRC1.
+◦Each cache has 3 read ports: one dedicated to SRC0, one dedicated to SRC1 and one for SRC2
+▪A cache can read all 3 of them at once, but it can’t read two SRC0’s at once (or SRC1/2).
+◦SRCX0 and SRCY0 must use different VGPR banks;
+◦VSRCX1 and VSRCY1 must use different banks.
+▪FMAMK is an exception : V = S0 + K * S1 ("S1" uses the SRC2 read port)
+▪V_MOV_B32 when in OPY uses SRC2 (not SRC0) if OPX is also a V_MOV_B32.
+◦If both operations use the SRC2 input, then one SRC2 input must be even and the other SRC2 input
+must be odd. The following operations use SRC2: FMAMK_F32 (second input operand);
+DOT2ACC_F32_F16, DOT2ACC_F32_BF16, FMAC_F32 (destination operand).
+◦These are hard rules - the instruction does not function if these rules are broken
+• The pair of instructions combined have the following restrictions:
+◦At most one literal constant, or they may share the same literal
+◦Dest VGPRs: one must be even and the other odd
+◦The two instructions must be independent of each other: The OPX instruction must not overwrite
+sources of the OPY instruction but the OPY instruction may overwrite the sources of the OPX
+instruction without creating a hazard.
+• Must not use DPP
+• Must be wave32.
+VOPD Instruction Fields
+Field
+Size
+Description
+opX
+4
+instruction opcode for the X operation
+opY
+5
+instruction opcode for the Y operation
+src0X
+9
+Source 0 for X operation. May be a VGPR, SGPR, exec, inline or literal constant
+src0Y
+9
+Source 0 for Y operation. May be a VGPR, SGPR, exec, inline or literal constant
+vsrc1X
+8
+Source 1 for X operation. Must be a VGPR. Ignored for V_MOV_B32
+vsrc1Y
+8
+Source 1 for Y operation. Must be a VGPR. Ignored for V_MOV_B32
+"RDNA4" Instruction Set Architecture
+7.8. Dual Issue VALU (VOPD)
+83 of 697
+
+--- PAGE 94 ---
+Field
+Size
+Description
+vdstX
+8
+Destination VGPR for X operation.
+vdstY
+7
+Destination VGPR for Y operation. vdstY specifies bits [7:1]. The LSB of the destination address is:
+~vdstX[0]. vdstX and vdstY: one must be even and the other is an odd VGPR.
+OPX Opcodes:
+#
+Opcode
+#
+Opcode
+0
+V_DUAL_FMAC_F32
+7
+V_DUAL_MUL_DX9_ZERO_F32
+1
+V_DUAL_FMAAK_F32
+8
+V_DUAL_MOV_B32
+2
+V_DUAL_FMAMK_F32
+9
+V_DUAL_CNDMASK_B32
+3
+V_DUAL_MUL_F32
+10
+V_DUAL_MAX_NUM_F32
+4
+V_DUAL_ADD_F32
+11
+V_DUAL_MIN_NUM_F32
+5
+V_DUAL_SUB_F32
+12
+V_DUAL_DOT2ACC_F32_F16
+6
+V_DUAL_SUBREV_F32
+13
+V_DUAL_DOT2ACC_F32_BF16
+OPY Opcodes:
+#
+Opcode
+#
+Opcode
+0
+V_DUAL_FMAC_F32
+9
+V_DUAL_CNDMASK_B32
+1
+V_DUAL_FMAAK_F32
+10
+V_DUAL_MAX_NUM_F32
+2
+V_DUAL_FMAMK_F32
+11
+V_DUAL_MIN_NUM_F32
+3
+V_DUAL_MUL_F32
+12
+V_DUAL_DOT2ACC_F32_F16
+4
+V_DUAL_ADD_F32
+13
+V_DUAL_DOT2ACC_F32_BF16
+5
+V_DUAL_SUB_F32
+16
+V_DUAL_ADD_NC_U32
+6
+V_DUAL_SUBREV_F32
+17
+V_DUAL_LSHLREV_B32
+7
+V_DUAL_MUL_DX9_ZERO_F32
+18
+V_DUAL_AND_B32
+8
+V_DUAL_MOV_B32
+V_CNDMASK_B32 is the "VOP2" form that uses VCC as the select. VCC counts as one SGPR read.
+VOPD instruction pairs generate only a single exception if either or both raise an exception.
+7.9. Cross-Lane and Data Parallel Processing (DPP)
+The VALU offers a number of capabilities for transferring data between different lanes of a wave:
+Instruction
+Function
+V_PERM_B32
+Byte swizzle within 64-bits of source data; unique swizzle per lane (not cross-lane)
+V_PERMLANE16_B32
+Arbitrary gather-style lane swizzle with group of 16-lanes (0-15, 16-31, etc) with uniform
+swizzle control
+V_PERMLANE16_VAR_B32
+Same as above, but unique lane-select per lane.
+V_PERMLANEX16_B32
+Same as V_PERMLANE16_B32, but access opposite group of 16-lanes: lanes 0-15 read from
+lanes 16-31, and lanes 16-31 read from lanes 0-15.
+V_PERMLANEX16_VAR_B32
+Same as above, but unique lane-select per lane.
+V_PERMLANE64_B32
+Swap upper 32-lanes and lower 32-lanes. NOP for wave32.
+DPP8
+ALU instruction that also has an arbitrary 8 lane swizzle within groups of 8 lanes (0..7, 8..15,
+etc)
+"RDNA4" Instruction Set Architecture
+7.9. Cross-Lane and Data Parallel Processing (DPP)
+84 of 697
+
+--- PAGE 95 ---
+Instruction
+Function
+DPP16
+ALU instruction that also has a swizzle selected from a menu of swizzles, selecting one
+input within groups of 16-lanes.
+DS_SWIZZLE
+LDS operation: swizzles within a group of 32 lanes from a fixed menu of swizzles (rotate,
+broadcast, swap)
+DS_PERMUTE / BPERMUTE
+LDS operation: permute or backwards-permute across all lanes (64 for wave64)
+Permutes are opcodes, and DPP is specified as an operand.
+Data Parallel Processing (DPP) operations allow VALU instruction to select operands from different lanes
+(threads) rather than just using a thread’s own data. DPP operations are indicated by the use of the inline
+constant: DPP8, DPP8FI, or DPP16 in the SRC0 operand. Note that since SRC0 is set to the DPP value, the actual
+VGPR address for SRC0 comes from the DPP DWORD.
+One example of using DPP is for scan operations. A scan operation is one that computes a value per thread that
+is based on the values of the previous threads and possibly itself. E.g. a running sum is the sum of the values
+from previous threads in the vector. A reduction operation is essentially a scan that returns a single value from
+the highest numbered active thread. A scan operation requires that the EXEC mask to be set to all 1’s for proper
+operation. Unused threads (lanes) should be set prior to the scan to a value that does not affect the result.
+There are two forms of the DPP instruction word:
+DPP8
+allows arbitrary swizzling between groups of 8 lanes
+DPP16
+allows a set of predefined swizzles between groups of 16 lanes
+DPP may be used only with: VOP1, VOP2, VOPC, VOP3 and VOP3P (but not "packed math" ops).
+Table 38. Which instructions support DPP
+Encoding
+Opcodes
+Rule
+VOP1
+All 64-bit opcodes
+NO DPP
+READFIRSTLANE_B32
+NO DPP
+SWAP
+NO DPP
+V_NOP
+NO DPP
+PERMLANE
+NO DPP
+All Others
+Allow DPP
+VOP2
+All 64-bit Opcodes
+NO DPP
+FMAMK/AK_F32/F16
+NO DPP
+All Others
+Allow DPP
+VOP3P
+V_DOT4_I32_IU8
+V_DOT4_U32_U8
+V_DOT8_I32_IU4
+V_DOT8_U32_U4
+V_PK_*
+WMMA
+NO DPP
+V_FMA_MIX*
+Allow DPP
+VINTERP
+ALL
+NO DPP
+VOPD
+ALL
+NO DPP
+"RDNA4" Instruction Set Architecture
+7.9. Cross-Lane and Data Parallel Processing (DPP)
+85 of 697
+
+--- PAGE 96 ---
+Encoding
+Opcodes
+Rule
+VOP3
+All 64-bit Opcodes
+NO DPP
+CVT_PK_F32_*
+NO DPP
+MUL_LO_U32
+MUL_HI_{U32, I32}
+NO DPP
+QSAD_PK_*
+NO DPP
+MQSAD_*
+NO DPP
+READLANE*
+NO DPP
+WRITELANE*
+NO DPP
+PERMLANE*
+NO DPP
+SWAP*
+NO DPP
+Others
+Allow DPP
+VOPC
+All 64-bit opcodes
+NO DPP
+Others
+Allow DPP
+7.9.1. DPP16
+DPP16 allows selection of data within groups of 16 lanes with a fixed set of possible swizzle patterns.
+When using DPP with VOP3/VOP3P, the OPSEL must be set such that the low result only uses low inputs, and
+the high result only uses high inputs.
+The DPP16 DWORD has ABS and NEG controls in the SRC*_IMOD fields. When DPP16 is used in a VOP3 (has
+ABS and NEG) or VOP3P (has NEG), these rules dictate which fields are applied:
+• VOP3’s ABS & NEG fields are used, and DPP16’s are ignored
+• VOP3P’s NEG/NEG_HI fields are used and DPP16’s ABS & NEG are ignored.
+DPP16 Instruction Fields
+Field
+BITS
+Description
+row_mask
+31:28
+Applies to the VGPR destination write only, does not impact the thread mask when fetching
+source VGPR data. For VOPC, the SGPR/VCC bit associated with the disabled lane receives
+zero.
+31==0: lanes[63:48] are disabled (wave 64 only)
+30==0: lanes[47:32] are disabled (wave 64 only)
+29==0: lanes[31:16] are disabled
+28==0: lanes[15:0] are disabled
+bank_mask
+27:24
+Applies to the VGPR destination write only, does not impact the thread mask when fetching
+source VGPR data. For VOPC, the SGPR/VCC bit associated with the disabled lane receives
+zero.
+In wave32 mode:
+27==0: lanes[12:15, 28:31] are disabled
+26==0: lanes[8:11, 24:27] are disabled
+25==0: lanes[4:7, 20:23] are disabled
+24==0: lanes[0:3, 16:19] are disabled
+In wave64 mode:
+27==0: lanes[12:15, 28:31, 44:47, 60:63] are disabled
+26==0: lanes[8:11, 24:27, 40:43, 56:59] are disabled
+25==0: lanes[4:7, 20:23, 36:39, 52:55] are disabled
+24==0: lanes[0:3, 16:19, 32:35, 48:51] are disabled
+Notice: the term "bank" here is not the same as was used for the VGPR bank.
+"RDNA4" Instruction Set Architecture
+7.9. Cross-Lane and Data Parallel Processing (DPP)
+86 of 697
+
+--- PAGE 97 ---
+Field
+BITS
+Description
+src1_imod
+23:22
+23: Apply Absolute value to SRC1
+22: Apply Negate to SRC1 (done after absolute value)
+src0_imod
+21:20
+21: Apply Absolute value to SRC0
+20: Apply Negate to SRC0 (done after absolute value)
+BC
+19
+Bound_ctrl is used to determine what a thread should do if its source operand is from a
+disabled thread or invalid input: use the value zero, or disable the write. For example, a right
+shift into lane 0 is an invalid input, so the VALU uses Bound_ctrl to decide if lane 0’s src0 should
+be 0 or if it’s VGPR write enable should be disabled.
+19==0: Do not write when source is invalid or out-of-range (DPP_BOUND_OFF)
+19==1: Use zero as input if source is invalid or out-of-range. (DPP_BOUND_ZERO)
+FI
+18
+Fetch inactive lane behavior:
+18 == 0: If source lane is invalid (disabled thread or out-of-range), use "bound_ctrl" to
+determine the source value.
+18 == 1: If the source lane is disabled, fetch the source value anyway (ignoring the
+bound_ctrl bit). If the source lane is out-of-range, behavior is decided by the bound_ctrl bit.
+rsvd
+17
+Reserved
+dpp_ctrl
+16:8
+Data Share control word.
+DPP_QUAD_PERM{00:FF}
+000-0FF
+DPP_UNUSED
+100
+DPP_ROW_SL{1:15}
+101-10F
+DPP_ROW_SR{1:15}
+111-11F
+DPP_ROW_RR{1:15}
+121-12F
+DPP_ROW_MIRROR
+140
+DPP_ROW_HALF_MIRROR
+141
+DPP_ROW_SHARE{0:15}
+150 - 15F
+DPP_ROW_XMASK{0:15}
+160 - 16F
+Src0
+7:0
+VGPR address of srcA operand
+Table 39. BC and FI Behavior
+BC
+FI
+Source lane out-of-
+range
+Source lane in-range
+but disabled
+Source lane in-range
+and active
+0
+0
+Disable write
+Disable write
+Normal
+1
+0
+Src0 = 0
+Src0 = 0
+Normal
+0
+1
+Src0 = 0
+Normal
+Normal
+1
+1
+Normal
+Normal
+Normal
+Where "out of range" means the lane offset goes outside a group of 16 lanes (e.g. 0..15, or 16..31).
+When using DPP with V_CMP or V_CMPX and setting bound_ctrl=0, lanes that have their EXEC mask bit set to
+zero instead of not writing the bit, a zero bit is written. "FI" (Fetch Inactive) with DPP16 causes a lane to act as if
+it is active when supplying data, but the compare result for that lane is still zero for V_CMPX (V_CMPX with
+FI=1 does not turn on a lane that was off).
+7.9.2. DPP8
+DPP8 allows arbitrary cross-lane swizzling within groups of 8 lanes. There are two forms of DPP8: normal,
+which reads zero from lanes whose EXEC mask bit is zero, and DPP8FI, which fetches data from inactive lanes
+instead of using the value zero.
+"RDNA4" Instruction Set Architecture
+7.9. Cross-Lane and Data Parallel Processing (DPP)
+87 of 697
+
+--- PAGE 98 ---
+When using DPP8 with VOP3/VOP3P, the OPSEL field must be set such that the low result only uses low inputs,
+and the high result only uses high inputs. DPP8 follows DPP16’s "BC = 1" behavior and assumes all source lanes
+are in-range.
+DPP8 Instruction Fields
+Field
+Size
+Description
+SRC
+8
+Source 0 (VGPR). Since the VOP1/VOP2 source0 slot was filled with the constant "DPP" or
+"DPPFI", this field provides the actual source0 vgpr.
+SEL0
+SEL1
+SEL2
+SEL3
+SEL4
+SEL5
+SEL6
+SEL7
+3
+Selects which lane to pull data from, within a group of 8 lanes.
+SEL0 selects which lane to read from to supply data into lane 0.
+SEL1 selects which lane to read from to supply data into lane 1.
+etc.
+0 = read from lane 0, 1 = read from lane 1, … 7 = read from lane 7.
+Lanes 0-7 can pull from any of lanes 0-7; lanes 8-15 can pull from lanes 8-15, etc.
+7.10. Pseudo-scalar Transcendental ALU ops
+This is a collection of VALU ops that operate on a single lane of data where both the source and destination are
+SGPRs. These use the VALU pipeline like any other VALU op, and are encoded in the VOP3 format.
+Pseudo-Scalar F32 Trans ops
+Pseudo-Scalar F16 Trans ops
+V_S_EXP_F32
+V_S_EXP_F16
+V_S_LOG_F32
+V_S_LOG_F16
+V_S_RCP_F32
+V_S_RCP_F16
+V_S_RSQ_F32
+V_S_RSQ_F16
+V_S_SQRT_F32
+V_S_SQRT_F16
+Notes
+• Half-SGPRs are not supported for 16-bit data. The data is expected to be in bits[15:0], and the full 32-bits are
+written with the upper half receiving zeros.
+• These use the usual DENORMAL and ROUND mode bits
+• These produce exceptions like their VALU equivalent instructions
+• Value of EXEC is ignored and the instructions execute even when EXEC==0.
+• VCC may not be used as a destination
+• OPSEL[3] must be set to zero (write to LSBs of SGPR); setting to 1 may result in garbage data.
+• The destination is specified in VDST, not in the SDST field.
+7.11. VGPR Indexing
+The VALU provides a set of instructions that move or swap VGPRs where the source, dest or both are indexed
+by a value in the M0 register. Indices are unsigned.
+Table 40. VGPR Indexing Instructions
+"RDNA4" Instruction Set Architecture
+7.10. Pseudo-scalar Transcendental ALU ops
+88 of 697
+
+--- PAGE 99 ---
+Instruction
+Index
+Function
+V_MOVRELD_B32
+M0[31:0]
+Move with relative destination:
+VGPR[dst + M0[31:0]] = VGPR[src]
+V_MOVRELS_B32
+Move with relative source: 
+VGPR[dst] = VGPR[src + M0[31:0]]
+V_MOVRELSD_B32
+Move with relative source and destination:
+VGPR[dst + M0[31:0]] = VGPR[src + M0[31:0]]
+V_MOVRELSD_2_B32
+Src: M0[9:0]
+Dst: M0[25:16]
+Move with relative source and destination, each different:
+VGPR[dst + M0[25:16]] = VGPR[src + M0[9:0]]
+V_SWAPREL_B32
+Swap two VGPRs, each relative to a separate index:
+tmp = VGPR[src + M0[9:0]]
+VGPR[src + M0[9:0]] = VGPR[dst + M0[25:16]]
+VGPR[dst + M0[25:16]] = tmp
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+Wave Matrix Multiply-Accumulate (WMMA) instructions provide acceleration for matrix-multiplication
+operations. Each WMMA or SWMMAC (Sparse WMMA) instruction performs a single matrix multiply
+operation with the data in VGPRs holding one each of the A, B, C and D-matrices. One matrix is striped across all
+of the lanes - it’s not one matrix per lane. The instructions are encoded using the VOP3P encoding.
+These perform: A * B + C ⇒ D, where A, B, C and D are matrices.
+Simplified example of matrix multiplication on 4x4 matrices:
+Additional information can be found on the GPUOpen blog:
+https://gpuopen.com/learn/wmma_on_rdna3/
+This blog post pertains to RDNA3 but may aid in understanding RDNA4.
+The AMD Matrix Instruction Calculator:
+(https://github.com/ROCm/amd_matrix_instruction_calculator)
+contains a helper tool that allows developers to view detailed information about the matrix instructions
+in the RDNA4 architecture. It allows users to query instruction-level information such as computational
+throughput and register usage. It also allows users to generate mappings between matrix element and
+hardware registers for each matrix instruction and their modifiers.
+SWMMAC instructions take a sparse matrix for matrix A (matrix B must be dense). Sparse matrices consume
+half the storage space by requiring that two out of every 4 elements be zero. Index sets are included to specify
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+89 of 697
+
+--- PAGE 100 ---
+which 2 elements out of every 4 are zero.
+Table 41. WMMA Instructions
+Instruction
+Matrix A
+Matrix B
+Matrix C
+Result Matrix
+V_WMMA_F32_16X16X16_F16
+16x16 F16
+16x16 F16
+16x16 F32
+16x16 F32
+V_WMMA_F32_16X16X16_BF16
+16x16 BF16
+16x16 BF16
+16x16 F32
+16x16 F32
+V_WMMA_F16_16X16X16_F16
+16x16 F16
+16x16 F16
+16x16 F16
+16x16 F16
+V_WMMA_BF16_16X16X16_BF16
+16x16 BF16
+16x16 BF16
+16x16 BF16
+16x16 BF16
+V_WMMA_I32_16X16X16_IU8
+16x16 IU8
+16x16 IU8
+16x16 I32
+16x16 I32
+V_WMMA_I32_16X16X16_IU4
+16x16 IU4
+16x16 IU4
+16x16 I32
+16x16 I32
+V_WMMA_I32_16X16X32_IU4
+16x32 IU4
+32x16 IU4
+16x16 I32
+16x16 I32
+V_WMMA_F32_16X16X16_FP8_FP8
+16x16 FP8
+16x16 FP8
+16x16 F32
+16x16 F32
+V_WMMA_F32_16X16X16_FP8_BF8
+16x16 FP8
+16x16 BF8
+16x16 F32
+16x16 F32
+V_WMMA_F32_16X16X16_BF8_FP8
+16x16 BF8
+16x16 FP8
+16x16 F32
+16x16 F32
+V_WMMA_F32_16X16X16_BF8_BF8
+16x16 BF8
+16x16 BF8
+16x16 F32
+16x16 F32
+Sparse Matrix Operations
+(A-Matrix size shown is after sparse data expansion)
+V_SWMMAC_F32_16X16X32_F16
+16x32 F16
+32x16 F16
+16x16 F32
+16x16 F32
+V_SWMMAC_F32_16X16X32_BF16
+16x32 BF16
+32x16 BF16
+16x16 F32
+16x16 F32
+V_SWMMAC_F16_16X16X32_F16
+16x32 F16
+32x16 F16
+16x16 F16
+16x16 F16
+V_SWMMAC_BF16_16X16X32_BF16
+16x32 BF16
+32x16 BF16
+16x16 BF16
+16x16 BF16
+V_SWMMAC_I32_16X16X32_IU8
+16x32 IU8
+32x16 IU8
+16x16 I32
+16x16 I32
+V_SWMMAC_I32_16X16X32_IU4
+16x32 IU4
+32x16 IU4
+16x16 I32
+16x16 I32
+V_SWMMAC_I32_16X16X64_IU4
+16x64 IU4
+64x16 IU4
+16x16 I32
+16x16 I32
+V_SWMMAC_F32_16X16X32_FP8_FP8
+16x32 FP8
+32x16 FP8
+16x16 F32
+16x16 F32
+V_SWMMAC_F32_16X16X32_FP8_BF8
+16x32 FP8
+32x16 BF8
+16x16 F32
+16x16 F32
+V_SWMMAC_F32_16X16X32_BF8_FP8
+16x32 BF8
+32x16 FP8
+16x16 F32
+16x16 F32
+V_SWMMAC_F32_16X16X32_BF8_BF8
+16x32 BF8
+32x16 BF8
+16x16 F32
+16x16 F32
+"IU4" and "IU8" mean that the operand is either signed or unsigned (4 or 8 bits) as indicated by the NEG bits
+instead of performing negation.
+The NEG[1:0] field is repurposed for the "IU" integer types to indicate whether the inputs are signed or not
+(0=unsigned, 1=signed). For WMMA using IU8/IU4 NEG[0] indicates if the A-matrix is signed, NEG[1] indicates
+if the B-matrix is signed; NEG[2] and NEG_HI[2:0] must be zero. The destination is signed for the integer types.
+For WMMA using F16/BF16, NEG[1:0] is applied on SRC1 and SRC0’s low 16bit. NEG_HI[1:0] is applied on SRC1
+and SRC0’s high 16bit. {NEG_HI[2], NEG[2]} is applied on SRC2, and acts as {ABS, NEG}.
+For WMMA using FP8/BF8, NEG must be set to zero for the A- and B-matrices.
+7.12.1. Requirements for WMMA data hazards
+In the table below "WMMA" is either WMMA or SWMMAC, and "V_NOP" means either a V_NOP instruction or
+another unrelated (independent) VALU instruction in between the first and second instruction in the table.
+First Instruction
+Second Instruction
+Requirement between First and Second Inst
+The cases below are required for correct function
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+90 of 697
+
+--- PAGE 101 ---
+First Instruction
+Second Instruction
+Requirement between First and Second Inst
+WMMA
+WMMA where matrix A, B or index are the same
+as or overlap with previous WMMA instruction’s
+D-matrix.
+At least 1 V_NOP or independent VALU
+instruction. This is required for correct function.
+WMMA
+WMMA instruction with same VGPR of previous
+WMMA instruction’s Matrix D as Matrix C
+Stall if the first and second instruction are not the
+same type of WMMA or use ABS/NEG on SRC2 of
+the second instruction.
+WMMA
+WMMA instruction with overlapped VGPR of
+previous WMMA instruction’s Matrix D as Matrix
+C
+Hardware may stall.
+WMMA
+VALU instruction reads the previous WMMA
+instruction’s Matrix D
+Hardware may stall.
+WMMA
+WMMA instruction reads the VALU’s result as
+Matrix A/B/C
+Hardware may stall.
+7.12.2. Matrix Element Storage in VGPRs
+This section describes in detail where each element in a matrix is stored: which lane and which VGPR. The
+tables below shows how matrix elements are stored in VGPRs for various data-sizes and wave-sizes. "Verilog"-
+style notation is used to represent bit extractions.
+Simplified view of matrix layout in VGPRs:
+The A matrix is laid out in VGPRs such that one row of data is striped across VGPRs within one lane (although
+due to storage limitations it may wrap into another lane). The B, C and D matrices are laid out in the opposite
+manner: one row of the matrix is striped across the lanes within one VGPR.
+The next section provides the details of this layout.
+All layouts follow the below procedure to map a matrix element referenced by its row and column to a specific
+VGPR address, lane index and bit offset within the VGPR. For sparse matrices this procedure is applied on the
+pre-expanded matrix data.
+row=0..31 col=0..15
+Memory[row][col] → VGPR[lane][vgpr][startPosn*dataSize + dataSize-1 : startPosn*dataSize ]
+StartPosn is scaled by dataSize to indicate where within a VGPR DWORD the data is placed.
+E.g. dataSize=8 and startPosn=2 means data is in bits: [23:16].
+Data Size
+Field
+Wave32
+Wave64
+A-Matrix 16x16 (M x K) Matrix
+16
+lane
+{ col[2], row[3:0] }
+{ col[3:2], row[3:0] }
+vgpr
+{ col[3], col[1] }
+col[1]
+startPosn
+col[0]
+col[0]
+8
+lane
+{ col[3], row[3:0] }
+{ col[2], col[3], row[3:0] }
+vgpr
+col[2]
+0
+startPosn
+col[1:0]
+col[1:0]
+4
+lane
+{ col[3], row[3:0] }
+{0, col[3], row[3:0]}
+vgpr
+0
+0
+startPosn
+col[2:0]
+col[2:0]
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+91 of 697
+
+--- PAGE 102 ---
+Data Size
+Field
+Wave32
+Wave64
+A-Matrix 16x32 (M x K) Matrix
+4
+lane
+{ col[4], row[3:0] }
+{col[3], col[4], row[3:0]}
+vgpr
+col[3]
+0
+startPosn
+col[2:0]
+col[2:0]
+B-Matrix 16x16 (K x N) Matrix
+16
+lane
+{ row[2], col[3:0] }
+{ row[3:2], col[3:0] }
+vgpr
+{ row[3], row[1] }
+row[1]
+startPosn
+row[0]
+row[0]
+8
+lane
+{ row[3], col[3:0] }
+{ row[2], row[3], col[3:0] }
+vgpr
+row[2]
+0
+startPosn
+row[1:0]
+row[1:0]
+4
+lane
+{ row[3], col[3:0] }
+{ 0, row[3], col[3:0] }
+vgpr
+0
+0
+startPosn
+row[2:0]
+row[2:0]
+B-Matrix 32x16 (K x N) Matrix
+4
+lane
+{ row[4], col[3:0] }
+{ row[3], row[4], col[3:0] }
+vgpr
+row[3]
+0
+startPosn
+row[2:0]
+row[2:0]
+Matrix C and D (16x16)
+32
+lane
+{ row[3], col[3:0] }
+{ row[2], row[3], col[3:0] }
+vgpr
+row[2:0]
+row[1:0]
+startPosn
+0
+0
+16
+lane
+{ row[3], col[3:0] }
+{ row[2], row[3], col[3:0] }
+vgpr
+row[2:1]
+row[1]
+startPosn
+row[0]
+row[0]
+• WMMA_16X16X16_IU4 : works with wave64 but uses only lanes 0..31; others unused.
+• WMMA_16X16X32_IU4 : works with wave32 but uses 2 VGPRs
+Table 42. ISA Operand Fields
+Instruction Type
+Operand
+Meaning
+WMMA / SWMMAC
+SRC0
+A-Matrix
+WMMA / SWMMAC
+SRC1
+B-Matrix
+WMMA
+SRC2
+C-Matrix
+SWMMAC
+SRC2
+Sparse Index Data
+WMMA
+VDST
+D-Matrix
+SWMMAC
+VDST
+C-Matrix and D-Matrix. 
+SWMMAC reads VDST and accumulates into it.
+Table 43. Matrix Sizes and VGPR Usage
+Data Size Wave
+size
+A-Matrix Size packed
+(MxK)
+A-Matrix Size
+Expanded
+Dense A,B VGPRs
+Sparse # VGPRs
+16
+32
+16x16
+16x32
+A=B=4
+A=4, B=8, S=0.5
+64
+16x16
+16x32
+A=B=2
+A=2, B=4, S=0.25
+8
+32
+16x16
+16x32
+A=B=2
+A=2, B=4, S=0.5
+64
+16x16
+16x32
+A=B=1
+A=1, B=2, S=0.25
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+92 of 697
+
+--- PAGE 103 ---
+Data Size Wave
+size
+A-Matrix Size packed
+(MxK)
+A-Matrix Size
+Expanded
+Dense A,B VGPRs
+Sparse # VGPRs
+4
+32
+16x16
+16x32
+A=B=1 from first subv
+only
+A=1, B=2, S=0.5
+64
+16x16
+16x32
+A=B=1 from first subv
+only
+A=0.5, B=2, S=0.25
+4
+32
+16x32
+16x64
+A=B=2
+A=2, B=4, S=1
+64
+16x32
+16x64
+A=B=1
+A=1, B=2, S=0.5
+"subv" = sub-vector (32 lanes of a wave64)
+◦"first subv" = lanes 0..31
+"S" = sparse matrix index VGPRs
+"0.5" = just lanes 0..31 of the wave64’s lanes 0..63, or for wave32 uses just lanes 0..15
+"0.25" = uses just 16 lanes of 64.
+Example: 16x16 A-Matrix of 16-bit data in Row-Major order:
+This diagram shows the layout of an A-matrix in memory. The number shown in each element is the WORD-
+address (i.e. byte address divided by 2).
+Layout of that same matrix in VGPRs:
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+93 of 697
+
+--- PAGE 104 ---
+Register format for dense matrix results:
+In order to store the matrices C and D (the result of a WMMA/SWMMAC operation), the rows of the matrix are
+split into chunkSize = waveSize / 16 chunks. In other words, the rows are split in half for wave32 mode and
+into four equal parts for wave64 mode. The lanes of the wave grouped into chunks of 16 lanes, with each lane
+holding chunkSize = 16 / (waveSize / 16) values.
+For wave32 mode, the first chunk (lanes 0..15) receives the first half of each row (indices 0..7) and the second
+chunk (lanes 16..31) receives the second half (indices (8..15). In wave64 mode, the chunks are permuted so that
+the first 32 lanes are the even chunks and the second 32 lanes have the odd chucks. That is, lanes 0..15 receive
+m = 0..3, lanes 16..31 have m=8..11, lanes 32..47 have m=4..7, and lanes 48..63 have m=12..15.
+The columns of the result matrix are spread across the 16 lanes in each chunk. Each lane holds chunkSize
+elements from its row, packed contiguously into VGPRs. In the case of 16-bit matrix outputs, such as for the
+WMMA_F16_16x16x16_F16 instruction, two result elements are packed into each result VGPR, with even elements
+in the lower 16 bits.
+That is, for 32-bit matrix results, this is the map:
+matrix[row][col] -> VGPR[(row / 8) * 16 + col][row % 8]
+and for 16-bit outputs, the map is:
+matrix[row][col] -> VGPR[(row / 8) * 16 + col][(row % 8) / 2][15 + (row % 2) * 16:(row % 2) * 16]
+In wave64 mode, the following is the map for 32-bit outputs:
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+94 of 697
+
+--- PAGE 105 ---
+matrix[row][col] -> VGPR[(row / 4) % 2 * 32 + (row / 8) * 16 + col][row % 4]
+and for 16-bit outputs, the map is:
+matrix[row][col] -> VGPR[(row / 4) % 2 * 32 + (row / 8) * 16 + col][(row % 4) / 2][15 + (row % 2) *
+16:(row % 2) * 16]
+For example, the result layout of WMMA_F32_16x16x16xF16 in wave32 mode, showing "D[M, N]":
+          VGPR:
+LANE
+V0
+V1
+…
+V7
+0
+D[0, 0]
+D[1, 0]
+…
+D[7, 0]
+1
+D[0, 1]
+D[0, 1]
+…
+D[7, 1]
+…
+…
+…
+…
+…
+15
+D[0, 15]
+D[1, 15]
+…
+D[7, 15]
+16
+D[8, 0]
+D[9, 0]
+…
+D[15, 0]
+…
+…
+…
+…
+…
+31
+D[8, 15]
+D[9, 15]
+…
+D[15, 15]
+and the layout for WMMA_F16_16x16x16_F16 for wave32 mode is:
+          VGPR:
+LANE
+V0[15:0]
+V0[31:16]
+…
+V3[31:16]
+0
+D[0, 0]
+D[1, 0]
+…
+D[7, 0]
+1
+D[0, 1]
+D[1, 1]
+…
+D[7, 1]
+…
+…
+…
+…
+…
+15
+D[0, 15]
+D[1, 15]
+…
+D[7, 15]
+16
+D[8, 0]
+D[9, 0]
+…
+D[15, 0]
+…
+…
+…
+…
+…
+31
+D[8, 15]
+D[9, 15]
+…
+D[15, 15]
+In wave64 mode, the layout for WMMA_F32_16x16x16_F16 changes to:
+          VGPR:
+LANE
+V0
+V1
+V2
+V3
+0
+D[0, 0]
+D[1, 0]
+D[2, 0]
+D[3, 0]
+1
+D[0, 1]
+D[1, 1]
+…
+D[3, 1]
+…
+…
+…
+…
+…
+15
+D[0, 15]
+D[1, 15]
+D[2, 15]
+D[3, 15]
+16
+D[8, 0]
+D[9, 0]
+D[10, 0]
+D[11, 0]
+…
+…
+…
+…
+…
+32
+D[4, 0]
+D[5, 0]
+D[6, 0]
+D[7, 0]
+…
+…
+…
+…
+…
+63
+D[12, 15]
+D[13, 15]
+D[14, 15]
+D[15, 15]
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+95 of 697
+
+--- PAGE 106 ---
+7.12.3. Structured Sparse Matrices
+A-matrices may be sparse, where a packed (M x K/2) A-matrix represents a (M x K) matrix in which 2 out of
+every 4 elements in the "K" dimension are zero. Sparse matrices use an additional set of index data which has
+two 2-bit index values to define the expansion from packed to unpacked format. When the A-matrix is a 4:2
+sparse matrix, the corresponding B-matrix must be (K x N), and loaded in column-major order.
+Sparsity information is loaded into a single VGPR and each 2-bit index entry identifies which 2 out 4 elements
+are non-zero. The two indices have the rule: Idx0 < Idx1. Sparse matrix index bits are arranged in the VGPR in
+the same way that columns are arranged in the A-matrix: the values that can be found in the lane-0 VGPRs are
+the same ones controlled by the index values in lane 0 of the index VGPR.
+All vector-memory loads (with or without transpose) are the same as the 16x16 matrix load, except that two
+load instructions are used and they load into the next consecutive group of VGPRs.
+The K dimension is often 32, so expanding the A-matrix requires 16 index values to expand 16→32.
+Wave32: each lane has 8 index values per lane (since the 16 columns data of are divided over 32 lanes).
+Wave64: each lane has 4 index values per lane (since the 16 columns data of are divided over 64 lanes).
+Sparse matrix index VGPRs contain two or four sets of index data. These may correspond to two or four A-
+matrices. The VGPR holding the indices can hold 2 sets of indices in wave32 that are selected using OPSEL[0] of
+the WMMA instruction, and 4 sets for wave64 selected by OPSEL[1:0]. Matrices with larger K values operate
+similarly.
+Expanding a packed sparse A-matrix for expanded 16x32:
+  For row = 0..15
+    For col = 0..31, step=4    // step through groups of 4 columns (K) in the expanded A matrix
+        // Idx0 & idx1 indicate which 2 of 4 A-matrix entries are non-zero
+        idxLane =  <same as VGPR layout lane#>
+        idxFirstBit = isWave64 ? (col[2:2]*4) : (col[3:2]*4)
+        idx0 =  VGPR[idxLane][idxFirstBit+1 : idxFirstBit+0]
+        idx1 =  VGPR[idxLane][idxFirstBit+3 : idxFirstBit+2]
+        idx0_value = Packed_A_matrix[row][col/2]
+        idx1_value = Packed_A_matrix[row][col/2 + 1]
+        Unpacked_A_Matrix[row][col+0] = idx0==0 ? idx0_value : 0
+        Unpacked_A_Matrix[row][col+1] = idx0==1 ? idx0_value :
+                                        idx1==1 ? idx1_value : 0;
+        Unpacked_A_Matrix[row][col+2] = idx0==2 ? idx0_value :
+                                        idx1==2 ? idx1_value : 0;
+        Unpacked_A_Matrix[row][col+3] = idx1==3 ? idx1_value : 0;
+"RDNA4" Instruction Set Architecture
+7.12. Wave Matrix Multiply Accumulate (WMMA)
+96 of 697
+
+--- PAGE 107 ---
+Chapter 8. Scalar Memory Operations
+Scalar Memory Loads (SMEM) instructions allow a shader program to load data from memory into SGPRs
+through the Constant Cache ("Kcache"). Instructions can load from 1 to 16 DWORDs. Data is loaded directly
+into SGPRs without any format conversion (no data formatting is supported).
+The scalar unit loads consecutive DWORDs from memory to the SGPRs. One common use for SMEM loads is
+for loading ALU constants and for indirect T#/S#/V# lookup.
+Loads come in two forms: one that simply takes a base-address pointer, and the other that uses a buffer
+resource (V#) to provide: base, size and stride.
+8.1. Microcode Encoding
+Scalar memory load instructions are encoded using the SMEM microcode format.
+The fields are described in the table below:
+Table 44. SMEM Encoding Field Descriptions
+Field
+Size
+Description
+OP
+6
+Opcode. See the next table.
+SDATA
+7
+SDATA specifies the SGPRs to load the data into.
+• Loads of 2 DWORDs must have an even SDST-sgpr.
+• Loads of 3 or more DWORDs must have their SDST-gpr aligned to a multiple of 4 SGPRs.
+• SDATA must be: SGPR or VCC. Not: EXEC, or M0. NULL is allowed
+SBASE
+6
+SGPR-pair (SBASE has an implied LSB of zero) that provides a base address, or for BUFFER
+instructions, a set of 4 SGPRs (4-sgpr aligned) that hold the buffer resource. 
+For BUFFER instructions, the only resource fields used are: base, stride, num_records.
+IOFFSET
+24
+Instruction Address Offset : An immediate signed byte offset.
+Negative IOFFSETs only work with S_LOAD; a negative IOFFSETs applied to S_BUFFER results
+in a MEMVIOL.
+SOFFSET
+7
+SGPR that has the 32-bit unsigned byte offset. May only specify an SGPR, M0 or set to "NULL" to
+not use (offset=0).
+SCOPE
+2
+Memory Scope
+TH
+2
+Memory Temporal Hint
+See Cache Controls: SCOPE and Temporal-Hint for more information about SCOPE and TH bits.
+Table 45. SMEM Instructions
+Opcode #
+Name
+Opcode #
+Name
+0
+S_LOAD_B32
+19
+S_BUFFER_LOAD_B256
+1
+S_LOAD_B64
+20
+S_BUFFER_LOAD_B512
+2
+S_LOAD_B128
+21
+S_BUFFER_LOAD_B96
+3
+S_LOAD_B256
+24
+S_BUFFER_LOAD_I8
+4
+S_LOAD_B512
+25
+S_BUFFER_LOAD_U8
+"RDNA4" Instruction Set Architecture
+8.1. Microcode Encoding
+97 of 697

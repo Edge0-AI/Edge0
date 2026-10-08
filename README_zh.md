@@ -62,7 +62,7 @@ MoE 模型跑在消费级硬件上——峰值内存由**激活**专家集而非
 | **macOS** 桌面 App 与 CLI | [`macos/`](macos/README_zh.md) | Rust | ✅ 已开源（2026-09-30） |
 | **iOS** App | [`ios/`](ios/README_zh.md) | Swift + MLX Swift | ✅ 已开源（2026-09-30） |
 | **Android** App 与引擎 | [`android/`](android/README_zh.md) | Kotlin + 原生引擎 | ✅ 已开源（2026-09-30） |
-| **Windows** App 与引擎 | [`windows/`](windows/README_zh.md) | C++ + Vulkan | ✅ 已开源（2026-09-30） |
+| **Windows** App 与引擎 | [`windows/`](windows/README_zh.md) | C++ + HIP (ROCm) / Vulkan | ✅ 已开源（2026-09-30） |
 
 ### 模型
 
@@ -281,7 +281,7 @@ engine.close()   # 释放 mmap / 专家缓存
   [`ios/README_zh.md`](ios/README_zh.md)
 - **Android**：端侧 App + 原生引擎（Kotlin）—— 详见
   [`android/README_zh.md`](android/README_zh.md)
-- **Windows**：桌面 App + 原生引擎（C++ + Vulkan）—— 详见
+- **Windows**：桌面 App + 原生引擎（C++ + HIP (ROCm) / Vulkan）—— 详见
   [`windows/README_zh.md`](windows/README_zh.md)
 
 **统一推理框架**（接入层统一，runtime 自动适配 iOS / macOS / Android /

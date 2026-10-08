@@ -1,0 +1,725 @@
+
+--- PAGE 154 ---
+Chapter 12. Local Data Share Operations
+Local data store (LDS) is a low-latency, RAM scratchpad for temporary data storage and for sharing data
+between threads within a work-group. Accessing data through LDS may be significantly lower latency and
+higher bandwidth than going through memory.
+For compute workloads, it allows a simple method to pass data between threads in different waves within the
+same work-group. For graphics, it is also used to hold vertex parameters for pixel shaders.
+The high bandwidth of the LDS memory is achieved not only through its proximity to the ALUs, but also
+through simultaneous access to its memory banks. Thus, it is possible to concurrently execute many store or
+load operations simultaneously. If, however, more than one access attempt is made to the same bank at the
+same time, a bank conflict occurs. In this case, for indexed and atomic operations, the hardware is designed to
+prevent the attempted concurrent accesses to the same bank by turning them into serial accesses. This can
+decrease the effective bandwidth of the LDS. For increased throughput (optimal efficiency), therefore, it is
+important to avoid bank conflicts. A knowledge of request scheduling and address mapping can be key to help
+achieving this.
+Data can be loaded into LDS either by transferring it from VGPRs to LDS using "DS" instructions, or by loading
+in from memory. When loading from memory, the data may be loaded into VGPRs first or for some types of
+loads it may be loaded directly into LDS from memory. To store data from LDS to global memory, data is read
+from LDS and placed into the work-item’s VGPRs, then written out to global memory. To make effective use of
+the LDS, a shader program must perform many operations on what is transferred between global memory and
+LDS.
+LDS space is allocated per work-group or wave (when work-groups not used) and recorded in dedicated LDS-
+base/size (allocation) registers that are not writable by the shader. These restrict all LDS accesses to the space
+owned by the work-group or wave.
+12.1. Overview
+There are 128kB of memory per work-group processor split up into 64 banks of DWORD-wide RAMs. These 64
+banks are further sub-divided into two sets of 32-banks each where 32 of the banks are affiliated with a pair of
+SIMD32’s, and the other 32 banks are affiliated with the other pair of SIMD32’s within the WGP. Each bank is a
+512x32 two-port RAM (1R/1W per clock cycle). DWORDs are placed in the banks serially, but all banks can
+execute a store or load simultaneously. One work-group can request up to 64kB memory.
+LDS atomics are performed in the LDS hardware. Although ALUs are not directly used for these operations,
+latency is incurred by the LDS executing this function.
+12.1.1. LDS Modes and Allocation: CU vs. WGP Mode
+Work-groups of waves are dispatched in one of two modes: CU or WGP. See this section for details: WGP and
+CU Mode
+"RDNA4" Instruction Set Architecture
+12.1. Overview
+144 of 697
+
+--- PAGE 155 ---
+12.1.2. LDS Access Methods
+LDS may be accessed via:
+Indexed load/store and Atomic ops
+Load/store address comes from a VGPR and data to/from VGPR.
+LDS-ops require up to 3 inputs: 2data+1addr and immediate return VGPR.
+Direct Load
+Loads a single DWORD from LDS and broadcasts the data to a VGPR across all lanes.
+Parameter Interpolation Load
+Reads pixel parameters from LDS per quad and loads them into one VGPR.
+Reads all 3 parameters per quad (P1, P1-P0 and P2-P0) and loads them into 3 lanes within the quad (the 4th
+lane receives zero).
+12.2. Pixel Parameter Interpolation
+For pixel waves, vertex attribute data is preloaded into LDS and barycentrics (I, J) are preloaded into VGPRs
+before the wave starts. Parameter interpolation can be performed by loading attribute data from LDS into
+VGPRs using DS_PARAM_LOAD and then using V_INTERP instructions to interpolate the value per pixel.
+LDS-Parameter loads are used to read vertex parameter data and store them in VGPRs to be used for parameter
+interpolation. These instructions operate like memory instructions except they use EXPcnt to track outstanding
+reads and decrement EXPCnt when they arrive in VGPRs.
+Pixel shaders can be launched before their parameter data has been written into LDS. Once the data is
+available in LDS, the wave’s STATUS register "LDS_READY" bit is set to 1. Pixel shader waves stall if an
+DS_DIRECT_LOAD or DS_PARAM_LOAD is to be issued before LDS_READY is set.
+The most common form of interpolation involves weighting vertex parameters by the barycentric coordinates
+"I" and "J". A common calculation is:
+    Result = P0 + I * P10 + J * P20
+        where "P10" is (P1 - P0), and "P20" is (P2 - P0)
+Parameter interpolation involves two types of instructions:
+• DS_PARAM_LOAD : to read packed parameter data from LDS into a VGPR (data packed per quad)
+• V_INTERP_* : VALU FMA instructions that unpack parameter data across lanes in a quad.
+12.2.1. LDS Parameter Loads
+Parameter Loads are available only in CU mode (not WGP mode).
+DS_PARAM_LOAD reads three parameters (P0, P10, P20) of one 32-bit attribute or of two 16-bit attributes from
+LDS into VGPRs. The are 3 parameters (P0, P10 and P20) are the same for the 4 pixels within a quad. These
+values are spread out across VGPR lanes 0, 1 and 2 of each quad. Interpolation is then performed using FMA
+"RDNA4" Instruction Set Architecture
+12.2. Pixel Parameter Interpolation
+145 of 697
+
+--- PAGE 156 ---
+with DPP so each lane uses its I or J value with the quad’s shared P0, P10 and P20 values.
+Table 69. VDSDIR Instruction Fields
+Field
+Size
+Description
+OP
+2
+Opcode:
+    0: DS_PARAM_LOAD
+    1: DS_DIRECT_LOAD
+    2,3: Reserved
+WAITVDST
+4
+Wait for the number of previously issued still outstanding VALU instructions to be less than
+or equal to this number. Used to avoid Write-After-Read hazards on VGPRs.
+VDST
+8
+Destination VGPR
+ATTR_CHAN
+2
+Attribute channel: 0=X, 1=Y, 2=Z, 3=W. Unused for DS_DIRECT_LOAD.
+ATTR
+6
+Attribute number: 0 - 32. Unused for DS_DIRECT_LOAD.
+WAITVMVS
+1
+Wait for all previous VMEM ops to have read their VGPR sources: 0=wait, 1=don’t wait
+(similar to S_WAITCNT).
+( M0 )
+32
+DS_DIRECT_LOAD:
+    { 13’b0, DataType[2:0], LDS_address[15:0] } //addr in bytes
+DS_PARAM_LOAD:
+    Use of the M0 register is automatic. M0 must contain:
+    1’b0, new_prim_mask[15:1], lds_param_offset[15:0] }
+M0 is implicitly read for this instruction and must be initialized before these instructions.
+new_prim_mask
+a mask that has a bit per quad indicating that this quad begins a new primitive; zero indicates same
+primitive as previous quad. There is an implied "one" for the first quad in the wave (every wave begins a
+new primitive) and so bit[0] is omitted.
+lds_param_offset
+The parameter offset indicates the starting address of the parameters in LDS. Space before that can be used
+as temporary wave storage space. Lds_param_offset bits [6:0] must be set to zero.
+Example DS_PARAM_LOAD (new_prim_mask[3:0] = 0110)
+LDS_ADDR = lds_base + param_offset + attr#*numPrimsInVector*12DWORDs + prim#*12 + attr_offset
+(attr_offset = 0..11 : 0 = P0.x, 1 = P0.Y, … 11 = P2.W)
+From NewPrimMask h/w derives NumPrimInVec and Prim# (0..15)
+If the dest-VGPR is out of range, the load is still performed but EXEC is forced to zero.
+"RDNA4" Instruction Set Architecture
+12.2. Pixel Parameter Interpolation
+146 of 697
+
+--- PAGE 157 ---
+DS_PARAM_LOAD and DS_DIRECT_LOAD use EXEC per quad (if any pixel is enabled in the quad, data is
+written to all 4 pixels/threads in the quad).
+12.2.1.1. 16-bit Parameter Data
+16-bit parameters are packed in LDS as pairs of attributes in DWORDs: ATTR0.X and ATTR1.X share a DWORD.
+There is an alternate packing mode where the parameters are not packed (one 16-bit param in low half of
+DWORD). These attributes can be read with the same DS_PARAM_LOAD instruction, and returns the packed
+DWORD with 2 attributes (when they are packed). Interpolation can then be done using specific mixed-
+precision FMA opcodes, along with DPP (to select P0, P10 or P20) and OPSEL (to select upper or lower 16-bits).
+Barycentrics are 32-bits, not 16 bit.
+12.2.1.2. Parameter Load Data Hazard Avoidance
+These data dependency rules apply to both parameter and direct loads.
+DS_DIRECT_LOAD and DS_PARAM_LOAD read data from LDS and write it into VGPRs, and they use EXPcnt to
+track when the instruction has completed and written the VGPRs.
+It is up to the shader program to ensure that data hazards are avoided. These instructions are issued along a
+different path from VALU instructions so it is possible that previous VALU instructions may still be reading
+from the VGPR that these LDS instructions are going to write and this could lead to a hazard.
+EXPcnt is used to track read-after-write hazards where DS_PARAM_LOAD writes a value to a VGPR and another
+instruction reads it. The shader program uses "S_WAIT_EXPCNT" to wait for results from a DS_DIRECT_LOAD
+or DS_PARAM_LOAD to be available in VGPRs before consuming it in a subsequent instruction. The VINTERP
+instructions have a "wait_EXPcnt" field to assist in avoid this hazard.
+These are skipped when EXEC==0 and EXPCnt==0 (like memory ops).
+Mixed exports & LDS-direct/param instructions from the same wave might not complete in order (both use
+EXPcnt), requiring "S_WAIT_EXPCNT 0" if they are overlapped.
+    DS_PARAM_LOAD V2
+    S_WAIT_EXPCNT 0
+A potential Write-After-Read hazard exists if a VALU instruction reads a VGPR and then DS_PARAM_LOAD
+writes that VGPR: It is possible the DS_PARAM_LOAD overwrites the VALU’s source VGPR before it was read.
+The user must prevent this by using the "wait_va_vdst" field of the DS_PARAM_LOAD instruction. Setting this
+field to zero is the safest setting. This field indicates the maximum number of uncompleted VALU instructions
+that may be outstanding when this DS_PARAM_LOAD is issued. Use this to ensure any dependent VALU
+instructions have completed.
+Another potential data hazard involves DS_PARAM_LOAD overwriting a VGPR that has not yet been read as a
+source by a previous VMEM (LDS, Texture, Buffer, Flat) instruction. To avoid this hazard, the user must ensure
+that the VMEM instruction has read its source VGPRs. This can be achieved by issuing any VALU or export
+instruction before the DS_PARAM_LOAD, or by using the WAITVMVS field. Setting this to zero is the safest value
+"RDNA4" Instruction Set Architecture
+12.2. Pixel Parameter Interpolation
+147 of 697
+
+--- PAGE 158 ---
+and prevents the hazard..
+12.3. VALU Parameter Interpolation
+Parameter interpolation is performed using an FMA operation that includes a built-in DPP operation to unpack
+the per-quad P0/P10/P20 values into per-lane values. Because this instruction reads data from neighboring
+lanes, the implicit DPP acts as if "fetch invalid = 1", so that the instruction can read data from neighboring lanes
+that have EXEC==0, rather than getting the value 0 from those. Standard interpolation is calculating:
+  Per-Pixel-Parameter = P0 + I * P10 + J * P20   // I, J are per-pixel; P0/P10/P20 are per-primitive
+This parameter interpolation is realized using a pair of instructions:
+  V_INTERP_P10_F32  V5, V0, V1, v2  // tmp = P0 + I*P10  uses DPP8=1,1,1,1,5,5,5,5; Src2(P0) uses
+DPP8=0,0,0,0,4,4,4,4
+  V_INTERP_P20_F32  V5, V3, V4, V5  // dst = J*P20 + tmp  uses DPP8=2,2,2,2,6,6,6,6
+Table 70. Parameter Interpolation Instruction Fields
+Field
+Size Description
+OP
+5
+Instruction Opcode:
+V_INTERP_P10_F32
+// tmp = P0 + I*P10. hardcoded DPP8 on 2 sources
+V_INTERP_P2_F32
+// D = tmp + J*P20. hardcoded DPP8 on 1 source
+V_INTERP_P10_F16_F32
+// tmp = P0 + I*P10. hardcoded DPP8 on 2 sources
+V_INTERP_P2_F16_F32
+// D = tmp + J*P20. hardcoded DPP8 on 1 source
+V_INTERP_RTZ_P10_F16_F32
+// same as above, but round-toward-zero
+V_INTERP_RTZ_P2_F16_F32
+// same as above, but round-toward-zero
+SRC0
+9
+First argument VGPR: Parameter data (P0 or P20) from LDS stored in a VGPR.
+SRC1
+9
+Second argument VGPR: I or J barycentric
+SRC2
+9
+Third argument VGPR: "P10" ops holds P10 data; "P2" ops holds partial result from "P10" op.
+VDST
+8
+Destination VGPR
+NEG
+3
+Negate the input (invert sign bit).
+bit 0 is for src0, bit 1 is for src1 and bit 2 is for src2.
+For 16-bit interpolation this applies to both low and high halves.
+WaitEXP 3
+Wait for EXPcnt to be less than or equal to this value before issuing this instruction.
+Used to wait for a specific previous DS_PARAM_LOAD to have completed.
+OPSEL
+4
+Operation select for 16-bit math: 1=select high half, 0=select low half
+[0]=src0, [1]=src1, [2]=src2, [3]=dest
+For dest=0, dest_vgpr[31:0] = {prev_dst_vgpr[31:16], result[15:0] }
+For dest=1, dest_vgpr[31:0] = {result[15:0], prev_dst_vgpr[15:0] }
+OPSEL may only be used for 16-bit operands, and must be zero for any other operands/results.
+CM
+1
+Clamp result to [0, 1.0]
+"RDNA4" Instruction Set Architecture
+12.3. VALU Parameter Interpolation
+148 of 697
+
+--- PAGE 159 ---
+The VINTERP instructions include a builtin "S_WAIT_EXPCNT" to easily allow data hazard resolution for data
+produced by DS_PARAM_LOAD.
+Instructions Restrictions and Limitations:
+• V_INTERP instructions do not detect or report exceptions
+• V_INTERP instructions do not support data forwarding into inputs that would normally come from LDS
+data (sources A and C for V_INTERP_P10_* and source A for V_INTERP_P2_*).
+VGPRs are preloaded with some or all of:
+• I_persp_sample, J_persp_sample, I_persp_center, J_persp_center,
+• I_persp_centroid, J_persp_centroid,
+• I/W, J/W, 1.0/W,
+• I_linear_sample, J_linear_sample,
+• I_linear_center, J_linear_center,
+• I_linear_centroid, J_linear_centroid
+These instructions consume data that was supplied by DS_PARAM_LOAD. These instructions contain a built-in
+"S_WAIT_EXPCNT <= N" capability to allow for efficient software pipelining.
+ds_param_load V0,  attr0
+ds_param_load V10, attr1
+ds_param_load V20, attr2
+ds_param_load V30, attr3
+v_interp_p0    V1,  V0[1],  Vi, V0[0]    S_WAIT_EXPCNT <=3 //Wait V0
+v_interp_p0    V11, V10[1], Vi, V10[0]   S_WAIT_EXPCNT <=2
+v_interp_p0    V21, V20[1], Vi, V20[0]   S_WAIT_EXPCNT <=1
+v_interp_p0    V31, V30[1], Vi, V30[0]   S_WAIT_EXPCNT <=0 //Wait V30
+v_interp_p2    V2,  V0[2],  Vj, V1
+v_interp_p2    V12, V10[2], Vj, V11
+v_interp_p2    V22, V20[2], Vj, V21
+v_interp_p2    V32, V30[2], Vj, V31
+12.3.1. 16-bit Parameter Interpolation
+16-bit interpolation operates on pairs of attribute values packed into a 16-bit VGPR. These use the same I and J
+values during interpolation. OPSEL is used to select the upper or lower portion of the data.
+There are variants of the 16-bit interpolation instructions that override the round mode to "round toward zero".
+V_INTERP_P10_F16_F32 dst.f32 = vgpr_hi/lo.f16 * vgpr.f32 + vgpr_hi/lo.f16 // tmp = P10 * I + P0
+• allows OPSEL; Src0 uses DPP8=1,1,1,1,5,5,5,5; Src2 uses DPP8=0,0,0,0,4,4,4,4
+V_INTERP_P2_F16_F32 dst.f16 = vgpr_hi/lo.f16 * vgpr.f32 + vgpr.f32 // dst = P2 * J + tmp
+• allows OPSEL; Src0 uses DPP8=2,2,2,2,6,6,6,6
+"RDNA4" Instruction Set Architecture
+12.3. VALU Parameter Interpolation
+149 of 697
+
+--- PAGE 160 ---
+12.4. LDS Direct Load
+Direct access is allowed only in CU mode, not WGP mode.
+The DS_DIRECT_LOAD instruction reads a single DWORD from LDS and returns it to a VGPR, broadcasting it
+to all active lanes in the wave. M0 provides the address and data type. DS_DIRECT_LOAD uses EXEC per quad,
+not per pixel: if any pixel in a quad is enabled then the data is written to all 4 pixels in the quad.
+DS_DIRECT_LOAD uses EXPcnt to track completion.
+DS_DIRECT_LOAD uses the same instruction format and fields as DS_PARAM_LOAD. See Pixel Parameter
+Interpolation.
+LDS_addr = M0[15:0] (byte address and must be DWORD aligned)
+DataType = M0[18:16]
+    0 unsigned byte
+    1 unsigned short
+    2 DWORD
+    3 unused
+    4 signed byte
+    5 signed short
+    6,7 Reserved
+Example:  DS_DIRECT_LOAD  V4     // load the value from LDS-address in M0[15:0] to V4
+Signed byte and short data is sign-extend to 32 bits before writing the result to a VGPR; unsigned byte and short
+data is zero-extended to 32 bits before writing to a VGPR.
+12.5. Data Share Indexed and Atomic Access
+The data-share can perform indexed and atomic data share operations.
+Indexed and atomic operations supply a unique address per work-item from the VGPRs to the LDS, and supply
+or return unique data per work-item back to VGPRs. Due to the internal banked structure of LDS, operations
+can complete in as little as one cycle, or take many more, depending upon the number of bank conflicts
+(addresses that map to the same memory bank).
+Indexed operations are simple LDS load and store operations that read data from, and return data to, VGPRs.
+Atomic operations are arithmetic operations that combine data from VGPRs and data in LDS, and write the
+result back to LDS. Atomic operations have the option of returning the LDS "pre-op" value to VGPRs.
+LDS Indexed and atomic instructions use DScnt to track when they have completed. DScnt is incremented as
+each instruction is issued, and decremented when they have completed execution. LDS instructions stay in-
+order with other LDS instructions from the same wave.
+The table below lists and briefly describes the LDS instruction fields.
+"RDNA4" Instruction Set Architecture
+12.4. LDS Direct Load
+150 of 697
+
+--- PAGE 161 ---
+Table 71. VDS Instruction Fields
+Field
+Size Description
+OP
+8
+LDS opcode.
+OFFSET0 8
+Immediate address offset. Interpretation varies with opcode:
+Instructions with one address: combine the offset fields into a 16-bit unsigned byte offset: {offset1,
+offset0}.
+Instructions that have 2 addresses (e.g. {LOAD, STORE, XCHG}_2ADDR): use the offsets separately as 2 8-
+bit unsigned offsets. Each offset is multiplied by 4 for 8, 16 and 32-bit data; multiplied by 8 for 64-bit data.
+OFFSET1 8
+VDST
+8
+VGPR to which result is written: either from LDS-load or atomic return value.
+ADDR
+8
+VGPR that supplies the byte address offset.
+DATA0
+8
+VGPR that supplies first data source.
+DATA1
+8
+VGPR that supplies second data source.
+M0
+16
+Unsigned byte Offset[15:0] used for: ds_load_addtid_b32, ds_write_addtid_b32
+The M0 register is not used for most LDS-indexed operations: only the "ADDTID" instructions read M0 and for
+these it represents a byte address.
+Table 72. LDS Indexed Load/Store
+Load / Store
+Description
+DS_LOAD_{B32,B64,B96,B128,U8,I8,U16,I16}
+Load one value per thread into VGPRs; if signed, sign extend to
+DWORD; zero extend if unsigned.
+DS_LOAD_2ADDR_{B32,B64}
+Load two values at unique addresses.
+DS_LOAD_2ADDR_STRIDE64_{B32,B64}
+Load 2 values at unique addresses; offset *= 64.
+DS_STORE_{B8,B16,B32,B64,B96,B128}
+Store one value from VGPR to LDS.
+DS_STORE_2ADDR_{B32,B64}
+Store two values.
+DS_STORE_2ADDR_STRIDE64_{B32,B64}
+Store two values, offset *= 64.
+DS_STOREXCHG_RTN_{B32,B64}
+Exchange GPR with LDS-memory.
+DS_STOREXCHG_2ADDR_RTN_{B32,B64}
+Exchange two separate GPRs with LDS-memory.
+DS_STOREXCHG_2ADDR_STRIDE64_RTN_{B32,B64} Exchange GPR with LDS-memory; offset *= 64.
+"D16 ops" - Load ops write only 16bits of VGPR, low or high; Store ops use 16bits of VGPR:
+DS_STORE_{B8, B16}_D16_HI
+Store 8 or 16 bits using high 16 bits of VGPR.
+DS_LOAD_{U8, I8, U16}_D16
+Load unsigned or signed 8 or 16 bits into low-half of VGPR
+DS_LOAD_{U8, I8, U16}_D16_HI
+Load unsigned or signed 8 or 16 bits into high-half of VGPR
+DS_LOAD_ADDTID_B32
+DS_STORE_ADDTID_B32
+Load and store B32, using thread-ID as part of the address-offset.
+Other non-load/store ops not considered "atomic ops"
+DS_PERMUTE_B32
+DS_BPERMUTE_B32
+DS_BPERMUTE_FI_B32
+Forward & Backward permute. Does not write any LDS memory. See
+LDS Lane-permute Ops for details.
+DS_SWIZZLE_B32
+DWORD swizzle; no data is written to LDS memory.
+DS_CONSUME
+Subtract countBits(EXEC) from memory, return pre-op value.
+DS_APPEND
+Add countBits(EXEC) to memory, return pre-op value.
+"RDNA4" Instruction Set Architecture
+12.5. Data Share Indexed and Atomic Access
+151 of 697
+
+--- PAGE 162 ---
+Single Address Instructions
+LDS_Addr = LDS_BASE + VGPR[ADDR] + {OFFSET1,OFFSET0}
+Double Address Instructions
+LDS_Addr0 = LDS_BASE + VGPR[ADDR] + OFFSET0*ADJ +
+LDS_Addr1 = LDS_BASE + VGPR[ADDR] + OFFSET1*ADJ +
+   Where ADJ = 4 for 8, 16 and 32-bit data types; and ADJ = 8 for 64-bit.
+The double address instructions are: LOAD_2ADDR*, STORE_2ADDR*, and STOREXCHG_2ADDR_*. The
+address comes from VGPR, and both VGPR[ADDR] and OFFSET are byte addresses. At the time of wave
+creation, LDS_BASE is assigned to the physical LDS region owned by this wave or work-group.
+DS_{LOAD,STORE}_ADDTID Addressing
+LDS_Addr = LDS_BASE + {OFFSET1, OFFSET0} + TID(0..63)*4 + M0
+  Note: no part of the address comes from a VGPR.  M0 must be DWORD-aligned.
+The "ADDTID" (add thread-id) is a separate form where the base address for the instruction is common to all
+threads, but then each thread has a fixed offset added in based on its thread-ID within the wave. This allows a
+convenient way to quickly transfer data between VGPRs and LDS without having to use a VGPR to supply an
+address.
+12.5.1. LDS Atomic Ops
+Atomic ops combine data from a VGPR with data in LDS, write the result back to LDS memory and optionally
+return the "pre-op" value from LDS memory back to a VGPR. When multiple lanes in a wave access the same
+LDS location there it is not specified in which order the lanes perform their operations, only that each lane
+performs the complete read-modify-write operation before another lane operates on the data.
+LDS_Addr0 = LDS_BASE + VGPR[ADDR] + {OFFSET1,OFFSET0}
+VGPR[ADDR] is a byte address. VGPRs 0,1 and dst are double-GPRs for doubles data. VGPR data sources can
+only be VGPRs or constant values, not SGPRs. Floating point atomic ops use the MODE register to control
+denormal flushing behavior.
+Atomic Opcodes
+Instruction Fields: op, offset0, offset1, vdst, addr, data0, data1
+32-bit no return
+32-bit with return
+64-bit no return
+64-bit with return
+ds_add_u32
+ds_add_rtn_u32
+ds_add_u64
+ds_add_rtn_u64
+ds_sub_u32
+ds_sub_rtn_u32
+ds_sub_u64
+ds_rsub_rtn_u64
+ds_rsub_u32
+ds_rsub_rtn_u32
+ds_rsub_u64
+ds_rsub_rtn_u64
+ds_inc_u32
+ds_inc_rtn_u32
+ds_inc_u64
+ds_inc_rtn_u64
+ds_dec_u32
+ds_dec_rtn_u32
+ds_dec_u64
+ds_dec_rtn_u64
+ds_min_{u32,i32}
+ds_min_rtn_{u32,i32}
+ds_min_{u64,i64}
+ds_min_rtn_{u64,i64}
+"RDNA4" Instruction Set Architecture
+12.5. Data Share Indexed and Atomic Access
+152 of 697
+
+--- PAGE 163 ---
+Atomic Opcodes
+ds_max_{u32,i32}
+ds_max_rtn_{u32,i32}
+ds_max_{u64,i64}
+ds_max_rtn_{u64,i64}
+ds_min_num_f32
+ds_min_num_rtn_f32
+ds_min_num_f64
+ds_min_num_rtn_f64
+ds_max_num_f32
+ds_max_num_rtn_f32
+ds_max_num_f64
+ds_max_num_rtn_f64
+ds_and_b32
+ds_and_rtn_b32
+ds_and_b64
+ds_and_rtn_b64
+ds_or_b32
+ds_or_rtn_b32
+ds_or_b64
+ds_or_rtn_b64
+ds_xor_b32
+ds_xor_rtn_b32
+ds_xor_b64
+ds_xor_rtn_b64
+ds_mskor_b32
+ds_mskor_rtn_b32
+ds_mskor_b64
+ds_mskor_rtn_b64
+ds_cmpstore_b32
+ds_cmpstore_rtn_b32
+ds_cmpstore_b64
+ds_cmpstore_rtn_b64
+ds_add_f32
+ds_add_rtn_f32
+ds_pk_add_f16
+ds_pk_add_rtn_f16
+ds_pk_add_bf16
+ds_pk_add_rtn_bf16
+ds_storexchg_rtn_b32
+ds_storexchg_rtn_b64
+ds_storexchg_2addr_rtn_b32
+ds_storexchg_2addr_rtn_b64
+ds_storexchg_2addr_stride64_rtn_b
+32
+ds_storexchg_2addr_stride64_rtn_b
+64
+ds_condxchg32_rtn_b64
+ds_clampsub_u32
+ds_clampsub_rtn_u32
+ds_condsub_u32
+ds_condsub_rtn_u32
+12.5.2. LDS Lane-permute Ops
+DS_PERMUTE instructions allow data to be swizzled arbitrarily across 32 lanes for wave32, or across all 64
+lanes of a wave64. Two versions of the instruction are provided: forward (scatter) and backward (gather).
+These instructions use the LDS hardware but do not use any memory storage, and may be used by waves that
+have not allocated any LDS space. The instructions supply a data value from VGPRs and an index value per
+lane.
+• ds_permute_b32 : Dst[index[0..31]] = src[0..31]      Where [0..31] is the lane number
+• ds_bpermute_b32 : Dst[0..31] = src[index[0..31]]
+◦For wave64, replace "31" with "63" above.
+The EXEC mask is honored for both reading the source and writing the destination, except for
+DS_BPERMUTE_FI_B32 which reads all lanes and EXEC applies only to which lanes to write. Index values out
+of range wrap around: for wave32, only index bits [6:2] are used, the other bits of the index are ignored; for
+wave64 index bits [7:2] are used. Reading from disabled lanes returns zero.
+In the instruction word: VDST is the dest VGPR, ADDR is the index VGPR, and DATA0 is the source data VGPR.
+Note that index values are in bytes (so multiply by 4), and have the 'offset0' field added to them before use.
+"RDNA4" Instruction Set Architecture
+12.5. Data Share Indexed and Atomic Access
+153 of 697
+
+--- PAGE 164 ---
+12.5.3. DS Stack Operations for Ray Tracing
+These LDS instructions can be used to manage a per-thread shallow stack in LDS used in ray tracing BVH
+traversal. BVH structures consist of box nodes and triangle nodes. A box node has up to four child node
+pointers which may all be returned to the shader (to VGPRs) for a given ray (thread). The traversal shader
+follows one pointer per ray per iteration, so extra pointers are pushed to a per-thread stack in LDS. Note: the
+returned pointers are sorted.
+This "short stack" has a limited size beyond which the stack wraps around and overwrites older items. When
+the stack is exhausted, the shader switches to a stackless mode where it looks up the parent of the current node
+from a table in memory. The shader tracks the last visited address to avoid re-traversing subtrees.
+DS_BVH_STACK_PUSH4_POP1_RTN_B32
+push 4 and pop 1
+vgpr(dst), vgpr(stack_addr), vgpr(lvaddr), vgpr[4](data)
+DS_BVH_STACK_PUSH8_POP1_RTN_B32
+push 8 and pop 1
+dst, stack_addr, last_node_ptr, data[8], stack_size
+DS_BVH_STACK_PUSH8_POP2_RTN_B64 
+push 8, pop 1 and one tri-pop
+dst[2], stack_addr, last_node_ptr, data[8], stack_size
+Field
+Size
+Description
+OP
+8
+DS_STORE_STACK
+OFFSET0
+8
+bits[4:0] carry StackSize
+OFFSET1
+8
+bit[1] primitive range enabled
+bit[0] triangle pair optimization
+VDST
+9
+Destination VGPR for resulting address (e.g. X or top of stack). Must be 0-255.
+Returns the next "LV addr"
+"RDNA4" Instruction Set Architecture
+12.5. Data Share Indexed and Atomic Access
+154 of 697
+
+--- PAGE 165 ---
+Field
+Size
+Description
+ADDR
+8
+STACK_VGPR: Both a source and destination VGPR:
+supplies the LDS stack address and is written back with updated address.
+stack_addr[31:18] = stack_base[15:2] : stack base address (relative to allocated LDS space).
+stack_addr[17:16] = stack_size[1:0] : 0=8DWORDs, 1=16, 2=32, 3=64 DWORDs per thread
+stack_addr[15:0] = stack_index[15:0]. (bits [1:0] must be zero).
+DATA0
+9
+LVADDR: Last Visited Address. Is compared with data values (next field) to determine the next
+node to visit. Must be 0-255.
+DATA1
+9
+4 VGPRs (X,Y,Z,W). Must be 0-255.
+M0
+16
+Unused.
+Address Fields:
+Field
+Bits
+Size
+Type
+Description
+valid_entries
+4:0
+5
+uint
+The number of valid(non-clobbered) entries on the stack
+entries_to_tlas
+9:5
+5
+uint
+The number of entries that must be popped before a BLAS→TLAS transition
+should happen
+ring_addr
+14:10
+5
+uint
+The rolling address in the ring buffer where new items are pushed onto the
+stack at or popped from.
+stack_base_addr
+28:15
+14
+uint
+DWORD offset in LDS where the ring buffer for the lane should be stored at
+has_tlas_in_stack
+29
+1
+boolean
+0: All valid entries in the stack are from the same BVH
+1: Some valid entries in the stack are from a parent’s BVH
+has_overflowed
+30
+1
+boolean
+0: Rolling stack has not lost any entries pushed onto the stack
+1: Some of the items pushed on the stack have been lost (for example
+because of clobbering)
+blas_to_tlas_pop
+31
+1
+boolean
+0: The last pop was from the same BVH as the previous pop
+1: The last pop was from the parent BVH of the previous pop (so the parent
+ray should be restored)
+"RDNA4" Instruction Set Architecture
+12.5. Data Share Indexed and Atomic Access
+155 of 697
+
+--- PAGE 166 ---
+Chapter 13. Float Memory Atomics
+Floating point atomics can be issued as LDS, Buffer, and Flat/Global/Scratch instructions.
+Memory atomics do not report any numeric exceptions (e.g. signaling NaN).
+13.1. Rounding
+LDS and Memory atomics have the rounding mode for float-atomic-add fixed at "round to nearest even". The
+MODE.round bits are ignored for atomics.
+13.2. Denormals
+When these operate on floating point data, there is the possibility of the data containing denormal numbers, or
+the operation producing a denormal. The floating point atomic instructions have the option of passing
+denormal values through, or flushing them to zero.
+LDS-indexed instructions allow denormals to be passed through or flushed to zero based on the
+MODE.denormal wave-state register. As with VALU ops, "denorm_single" affects F32 ops and "denorm_double"
+affects F64 and F16. LDS instructions use both FP_DENORM bits (allow_input_denormal,
+allow_output_denormal) to control flushing of inputs and outputs separately. Using MODE allows LDS and
+VALU to produce identical results for float ops.
+• Float 16 and 32 bit adder uses both input and output denorm flush controls from MODE
+• Float 64 bit adder does not flush denorms
+• Float MIN and MAX use only the "input denormal" flushing control
+◦Each input to the comparisons flushes the mantissa of both operands to zero before the compare if the
+exponent is zero and the flush denorm control is active.
+◦Min and Max flush input denormals first when enabled, then perform the Min/Max operation on the
+flushed denormals
+◦Float CompareStore ("compare swap") flushes both input and output denormals based on the "flush
+input denormals" control.
+LDS (DS)
+LDS (FLAT)
+L2 Cache
+Data Fabric
+Operation
+Flush
+Input
+Denorm
+Flush
+Output
+Denorm
+Flush
+Input
+Denorm
+Flush
+Output
+Denorm
+Flush
+Input
+Denorm
+Flush
+Output
+Denorm
+Flush
+Input
+Denorm
+Flush
+Output
+Denorm
+ADD_F32
+Mode.I
+Mode.O
+NoFlush
+NoFlush
+NoFlush
+NoFlush
+Reg
+Reg
+PK_ADD_F16 / _BF16
+Mode.I
+Mode.O
+NoFlush
+NoFlush
+NoFlush
+NoFlush
+Reg
+Reg
+Compare-Store /
+Compare-Swap
+Mode.I
+Mode.I
+NoFlush
+NoFlush
+NoFlush
+NoFlush
+NoFlush
+NoFlush
+• NoFlush: Do No flush denorms
+• Mode.I : flushing is controlled by MODE.denorm (input denormal control)
+• Mode.O : flushing is controlled by MODE.denorm (output denormal control)
+• Reg : denormal flushing is controlled by a config register (which should be set to "No flush")
+"RDNA4" Instruction Set Architecture
+13.1. Rounding
+156 of 697

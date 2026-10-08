@@ -1,0 +1,1280 @@
+﻿--- RDNA4 PAGE 13 ---
+Chapter 1. Introduction
+This document describes the instruction set and shader program accessible state for RDNA4 devices.
+The AMD RDNA4 processor implements a parallel micro-architecture that provides a platform for computer
+graphics applications and general-purpose data parallel applications.
+1.1. Terminology
+The following terminology and conventions are used in this document:
+Table 1. Conventions
+*
+Any number of alphanumeric characters in the name of a code format, parameter, or instruction.
+[1,2)
+A range that includes the left-most value (in this case, 1), but excludes the right-most value (in this
+case, 2).
+[1,2]
+A range that includes both the left-most and right-most values.
+{x | y} or {x, y}
+One of the multiple options listed. In this case, X or Y. For example, S_AND_{B32, B64} defines
+two legal instructions: S_AND_B32 and S_AND_B64.
+0.0
+A floating-point value.
+1011b
+'b0010
+32ΓÇÖb0010
+A binary value, in this example a 4-bit value.
+A binary value of unspecified size.
+A 32-bit binary value. Binary values may include underscores for readability and can be ignored
+when parsing the value. If fewer than 32 bits are shown, the upper bits are assumed to be zero.
+0x1A
+'h123
+24ΓÇÖh01A3B4
+A hexadecimal value.
+A hexadecimal value.
+A 24-bit hexadecimal value.
+7:4
+[7:4]
+A bit range, from bit 7 to bit 4, inclusive. The high-order bit is shown first. May be enclosed in
+brackets.
+italicized word or phrase The first use of a term or concept basic to the understanding of GPU-based computing.
+Table 2. Basic Terms
+Term
+Description
+RDNA4 Processor
+The RDNA4 shader processor is a scalar and vector ALU with memory access designed to run
+complex programs on behalf of a wave.
+Kernel
+A program executed by the shader processor for each work-item submitted to it.
+Shader Program
+Same meaning as "Kernel". The shader types are:
+CS (Compute Shader), and for graphics-capable devices, PS (Pixel Shader), GS (Geometry Shader),
+and HS (Hull Shader).
+Dispatch
+A dispatch launches a 1D, 2D, or 3D grid of work to the RDNA4 processor array.
+Work-group
+A work-group is a collection of waves that have the ability to synchronize with each other with
+barriers; they also can share data through the Local Data Share. Waves in a work-group all run on
+the same WGP.
+Wave
+A collection of 32 or 64 work-items that execute in parallel on a single RDNA4 processor.
+Work-item
+A single element of work: one element from the dispatch grid , or in graphics a pixel, vertex or
+primitive.
+Thread
+A synonym for "work-item".
+Lane
+A synonym for "work-item" typically used only when describing VALU operations.
+SA
+Shader Array. A collection of compute units.
+"RDNA4" Instruction Set Architecture
+1.1. Terminology
+3 of 697
+
+--- RDNA4 PAGE 14 ---
+Term
+Description
+SE
+Shader Engine. A collection of shader arrays.
+SGPR
+Scalar General Purpose Registers. 32-bit registers that are shared by work-items in each wave.
+VGPR
+Vector General Purpose Registers. 32-bit registers that are private to each work-items in a wave.
+LDS
+Local Data Share. A multi-bank scratch memory allocated to waves or work-groups
+VMEM
+Vector Memory. Refers to LDS, Texture, Global, Flat and Scratch memory.
+SIMD
+Single Instruction Multiple Data. In this document a SIMD refers to the Vector ALU unit that
+processes instructions for a single wave.
+SIMD32
+Single Instruction Multiple Data that operates on 32 work-items in parallel.
+CWSR
+Compute Wave Save-Restore (context switch)
+Literal Constant
+A 32-bit integer or float constant that is placed in the instruction stream.
+Scalar ALU (SALU)
+The scalar ALU operates on one value per wave and manages all control flow.
+Vector ALU (VALU)
+The vector ALU maintains Vector GPRs that are unique for each work-item and execute arithmetic
+operations uniquely on each work-item.
+Work-group Processor
+(WGP)
+The basic unit of shader computation hardware, including scalar & vector ALUΓÇÖs and memory, as
+well as LDS and scalar caches. In some contexts this is also referred to as a "Double Compute Unit" or
+"Compute Unit Pair".
+Compute Unit (CU)
+One half of a WGP. Contains 2 SIMD32ΓÇÖs that share one path to memory.
+Microcode format
+The microcode format describes the bit patterns used to encode instructions. Each instruction is
+32-bits or more, in units of 32-bits.
+Instruction
+An instruction is the basic unit of the kernel. Instructions include: vector ALU, scalar ALU,
+memory transfer, and control flow operations.
+NGG
+Next Generation Graphics pipeline
+Quad
+A quad is a 2x2 group of screen-aligned pixels. This is relevant for sampling texture maps.
+Texture Sampler (S#)
+A texture sampler is a 128-bit entity that describes how the vector memory system reads and
+samples (filters) a texture map.
+Texture Resource (T#)
+A texture resource descriptor describes an image in memory: address, data format, width, height,
+depth, etc.
+Buffer Resource (V#)
+A buffer resource descriptor describes a buffer in memory: address, data format, stride, etc.
+DPP
+Data Parallel Primitives: VALU instructions that can pass data between work-items
+LSB
+Least Significant Bit
+MSB
+Most Significant Bit
+DWORD
+32-bit data
+SHORT
+16-bit data
+BYTE
+8-bit data
+$
+Cache. Frequently used as a suffix abbreviation, as in "Inst$" to mean "Instruction Cache".
+K
+Constant. Occasionally used to refer to constants, constant-buffers or constant-cache ("K$")
+Table 3. Instruction suffixes have the following definitions:
+Format
+Meaning
+B32
+binary (untyped data) 32-bit
+B64
+binary (untyped data) 64-bit
+F16
+floating-point 16-bit (sign + exp5 + mant10)
+F32
+floating-point 32-bit (IEEE 754 single-precision float) (sign + exp8 + mant23)
+F64
+floating-point 64-bit (IEEE 754 double-precision float) (sign + exp11 + mant52)
+BF16
+floating-point 16-bit for machine learning ("bfloat16"). (sign + exp8 + mant7)
+F8
+floating-point 8-bit (also called "FP8"): (sign + exp4 + mant3)
+BF8
+floating-point 8-bit : (sign + exp5 + mant2)
+I8
+signed 8-bit integer
+"RDNA4" Instruction Set Architecture
+1.1. Terminology
+4 of 697
+
+--- RDNA4 PAGE 15 ---
+Format
+Meaning
+I16
+signed 16-bit integer
+I32
+signed 32-bit integer
+I64
+signed 64-bit integer
+U8
+unsigned 8-bit integer
+U16
+unsigned 16-bit integer
+U32
+unsigned 32-bit integer
+U64
+unsigned 64-bit integer
+D.i
+Destination that is a signed integer
+D.u
+Destination that is an unsigned integer
+D.f
+Destination that is a float
+S*.i
+Source that is a signed integer. E.g. S2.i means "source 2 is a signed integer"
+S*.u
+Source that is an unsigned integer
+S*.f
+Source that is a float
+If an instruction has two suffixes (for example, _I32_F32), the first suffix indicates the destination type, the
+second the source type.
+The following abbreviations are used in instruction definitions:
+ΓÇó D = destination
+ΓÇó U = unsigned integer
+ΓÇó S = source
+ΓÇó SCC = scalar condition code
+ΓÇó I = signed integer
+ΓÇó B = bitfield
+Note: .u or .i specifies to interpret the argument as an unsigned or signed integer.
+1.2. Hardware Overview
+The figure below shows a block diagram of the AMD RDNA4 Generation series processors:
+"RDNA4" Instruction Set Architecture
+1.2. Hardware Overview
+5 of 697
+
+--- RDNA4 PAGE 16 ---
+Figure 1. AMD RDNA4 Generation Series Block Diagram
+The RDNA4 device includes a data-parallel processor array, a command processor, a memory controller, and
+other logic (not shown). The command processor reads commands that the host has written to memory-
+mapped registers in the system-memory address space. The command processor sends hardware-generated
+interrupts to the host when the command is completed. The memory controller has direct access to all device
+memory and the host-specified areas of system memory. To satisfy read and write requests, the memory
+controller performs the functions of a direct-memory access (DMA) controller, including computing memory-
+address offsets based on the format of the requested data in memory.
+In the RDNA4 environment, a complete application includes two parts:
+ΓÇó a program running on the host processor, and
+ΓÇó programs, called shader programs or kernels, running on the RDNA4 processor.
+The RDNA4 programs are controlled by a driver running on the host that:
+ΓÇó Sets internal base-address and other configuration registers,
+ΓÇó Specifies the data domain on which the RDNA4 processor is to operate,
+ΓÇó Invalidates and flushes caches on the RDNA4 processor, and
+ΓÇó Causes the RDNA4 processor to begin execution of a program.
+1.2.1. Work-Group Processor
+The processor array is the heart of the RDNA4 processor. The array is organized as a set of Work-Group
+Processor (WGP) pipelines, each independent from the others, that operate in parallel on streams of floating-
+point or integer data.
+The WGP processor pipelines can process data or, through the memory controller, transfer data to, or from,
+memory. Computation in a WGP processor pipeline can be made conditional. Outputs written to memory can
+also be made conditional.
+"RDNA4" Instruction Set Architecture
+1.2. Hardware Overview
+6 of 697
+
+--- RDNA4 PAGE 17 ---
+When it receives a request, the WGP processor pipeline loads instructions and data from memory, begins
+execution, and continues until the end of the kernel. As kernels are running, the processor array hardware
+automatically fetches instructions from memory into on-chip caches; software plays no role in this. Kernels
+can load data from off-chip memory into on-chip general-purpose registers (GPRs) and caches.
+The RDNA4 devices can detect floating point exceptions in hardware and can generate interrupts to the host.
+These exceptions can be recorded for post-execution analysis.
+The RDNA4 hides memory latency by keeping track of potentially hundreds of work-items in various stages of
+execution, and by overlapping compute operations with memory-access operations.
+1.2.2. Cache System Hierarchy
+The memory system is divided into a number of levels of hierarchy. The figure below shows the memory
+hierarchy that is available to each work-item. The actual number of GPRs may differ from what is shown in the
+image below.
+Figure 2. Shared Memory Hierarchy
+"R/W" = read/write cache.
+1.2.2.1. Local Data Share (LDS)
+Work-items within a work-group may share data with other work-items in the same work-group through the
+cache-memory system, or through the local shared memory (LDS).
+Each work-group processor (WGP) has a 128kB memory space that enables low-latency communication
+between work-items within a work-group, or the work-items within a wave; this is the local data share (LDS).
+This memory is configured with 64 banks, each with 512 entries of 4 bytes. The shared memory contains 64
+integer atomic units to enable fast, unordered atomic operations. This memory can be used as a software cache
+for predictable re-use of data, a data exchange machine for the work-items of a work-group, or as a cooperative
+"RDNA4" Instruction Set Architecture
+1.2. Hardware Overview
+7 of 697
+
+--- RDNA4 PAGE 18 ---
+way to enable efficient access to off-chip memory. A single work-group may allocate up to 64kB of LDS space.
+1.2.3. Device Memory
+The AMD RDNA4 devices offer several methods for access to off-chip memory from the processing elements
+(PE) within each WGP. On the primary read path, the device consists of multiple channels of L2 cache that
+provides data to read-only L1 caches, and finally to L0 caches per WGP. The memory cache is formed by two
+levels of cache: the first-level (GL1) for write-combining cache (collect scatter and store operations and
+combine them to provide good access patterns to memory); the second (L2) is a read/write cache with atomic
+units that lets each processing element complete unordered atomic accesses that return the initial value.
+Specific cache-less load instructions can force data to be retrieved from device memory during an execution of
+a load clause.
+The instruction cache provides shader instructions to each SIMD, and the constant cache provides access to
+scalar constants. Both of these caches are read-only.
+Each processing element provides the destination address on which the atomic operation acts, the data to be
+used in the atomic operation, and a return address for the read/write atomic unit to store the pre-op value in
+memory.
+Each store or atomic operation can receive an acknowledgment from the cache system to the requesting PE
+upon completing the write at the requested cache scope, or for atomics-with-return value, upon receiving the
+"pre-op" value from memory. This acknowledgment enables one processing element to implement a fence to
+maintain serial consistency by ensuring all writes have been posted to memory prior to completing a
+subsequent write. In this manner, the system can maintain a relaxed consistency model between all parallel
+work-items operating on the system. Each scatter write from a given PE to a given memory channel maintains
+order.
+"RDNA4" Instruction Set Architecture
+1.2. Hardware Overview
+8 of 697
+
+--- RDNA4 PAGE 19 ---
+Chapter 2. Shader Concepts
+RDNA4 shader programs (kernels) are programs executed by the shader processor. Conceptually, the shader
+program is executed independently on every work-item, but in reality the processor groups up to 32 or 64
+work-items into a wave, that executes the shader program on all 32 or 64 work-items in one pass ("wave32" or
+"wave64").
+The RDNA4 processor consists primarily of:
+ΓÇó A scalar ALU, that operates on one value per wave (common to all work-items)
+ΓÇó A vector ALU, that operates on unique values per work-item
+ΓÇó Local data storage, that allows work-items within a work-group to communicate and share data
+ΓÇó Scalar memory, that can transfer data to SGPRs from memory through a cache
+ΓÇó Vector memory, that can transfer data between VGPRs and memory , including sampling texture maps
+ΓÇó Exports that transfer data from the shader to dedicated graphics rendering hardware
+Program control flow is handled using scalar ALU instructions. This includes if/else, branches and looping.
+Scalar ALU (SALU) and memory instructions work on an entire wave and operate on up to two SGPRs, as well
+as literal constants.
+Vector memory and ALU instructions operate on all work-items in the wave at one time. In order to support
+branching and conditional execution, every wave has an EXECute mask that determines which work-items are
+active at that moment, and which are dormant. Active work-items execute the vector instruction, and dormant
+ones treat the instruction as a NOP. The EXEC mask can be written at any time by Scalar ALU instructions or
+vector ALU comparisons.
+Vector ALU instructions can typically take up to three arguments, which can come from VGPRs, SGPRs, or
+literal constants that are part of the instruction stream. They operate on all work-items enabled by the EXEC
+mask. Vector compare and add-with-carry-out return a bit-per-work-item mask back to the SGPRs to indicate,
+per work-item, which had a "true" result from the compare or generated a carry-out.
+Vector memory instructions transfer data between VGPRs and memory. Each work-item supplies its own
+memory address and supplies or receives unique data. These instructions are also subject to the EXEC mask.
+2.1. Wave32 and Wave64
+The shader supports both waves of 32 work-items ("wave32") and waves of 64 work-items ("wave64").
+Both wave sizes are supported for all operations except VOPD (dual-VALU), but shader programs must be
+compiled for and run as a particular wave size, regardless of how many work-items are active in any given
+wave.
+Wave32 waves issue each instruction at most once. Wave64 waves typically execute each instruction twice:
+once for the low half (work-items 31-0) and then again for the high half (work-items 63-32). This occurs only for
+VALU and VMEM (LDS, texture, buffer, flat, scratch, global) instructions; scalar ALU and memory as well as
+branch and messages are issued only once regardless of the wave size. Export requests also issue just once
+regardless of wave size.
+Hardware may choose to skip either half if the EXEC mask for that half is all zeros, but does not skip both
+"RDNA4" Instruction Set Architecture
+2.1. Wave32 and Wave64
+9 of 697
+
+--- RDNA4 PAGE 20 ---
+halves for VMEM instructions as that would confuse the outstanding-memory-instruction counters, unless
+there are no outstanding VMEM instructions from this wave. It also does not skip either half of a VALU
+instruction that writes an SGPR. See Instruction Skipping: EXEC==0 for details on instruction skipping rules.
+Hardware operates such that both passes of a wave64 use the state of the wave prior to instruction execution;
+the first pass of the wave64 does not affect the input to the second pass.
+There is an exception to this rule for wave64 VALU instructions that both read and write the same SGPR. See Wave64
+Destination Restrictions on SGPRs.
+In addition to the EXEC mask being different between the low and high half, scalar inputs may vary between
+the two passes. Both passes use the same constants, but different masks and carry-in/out.
+The differences in the second pass are:
+ΓÇó Input increments: Carry-in, div-fmas and v_cndmask all use the next SGPR (SSRC + 1, or VCC_HI)
+ΓÇó Output increments: Carry-out, div-scale and v_cmp all write to the next SGPR (SDST + 1, or VCC_HI)
+Γùªv_cmpx writes to EXEC_HI instead of EXEC_LO
+The upper 32-bits of EXEC and VCC are ignored for wave32 waves. VCCZ and EXECZ reflect the status of the
+lowest 32-bits of VCC and EXEC respectively for wave32 waves.
+2.2. Shader Types
+2.2.1. Compute Shaders
+Compute kernels (shaders) are generic programs that can run on the RDNA4 processor, taking data from
+memory, processing it, and writing results back to memory. Compute kernels are created by a dispatch, which
+causes the RDNA4 processors to run the kernel over all of the work-items in a 1D, 2D, or 3D grid of data. The
+RDNA4 processor walks through this grid and generates waves, which then run the compute kernel. Each
+work-item is initialized with its unique address (index) within the grid. Based on this index, the work-item
+computes the address of the data it is required to work on and what to do with the results.
+2.2.2. Graphics Shaders
+The shader supports 3 types of graphics waves: Pixel Shader (PS), Geometry Shader (GS) and Hull Shader (HS).
+Rendering modes (launch behavior):
+ΓÇó Normal - Geometry Engine (GE) sends info to wave launch hardware to initialize VGPRs for each element
+(primitive) launched; GE fetches index and vertex buffer data and loads to VGPRs
+ΓÇó Mesh shader - turns GS-launch into a CS-style launch, and wave launch hardware does unrolling into
+elements and generates element indices on the fly. The mesh shader program determines how to use this
+index value.
+"RDNA4" Instruction Set Architecture
+2.2. Shader Types
+10 of 697
+
+--- RDNA4 PAGE 21 ---
+The amplification shader decides how many mesh shader groups to launch. The mesh shader processes vertices and then
+primitives.
+2.3. Work-groups
+A work-group is a collection of waves that can share data through LDS and can synchronize at a barrier. A
+barrier is a synchronization primitive that makes each wave reach a given point in the shader before any wave proceeds.
+Waves in a work-group are all issued to the same WGP but can run on any of the 4 SIMD32s and can share data
+through LDS. The WGP supports up to 32 work-groups with a maximum of 1024 work-items per work-group.
+Waves in a work-group may share an allocation of LDS space up to 64kB. Work-groups consisting of a single
+wave do not count against the limit of 32. They do not allocate a barrier resource, and barrier ops are treated as
+S_NOP.
+Each work-group or wave can operate in one of two modes, selectable per draw/dispatch at wave-create time:
+CU mode
+In this mode, the LDS is effectively split into a separate upper and lower LDS, each serving two SIMD32s.
+Waves are allocated LDS space within the half of LDS which is associated with the SIMD the wave is running
+on. For work-groups, all waves are assigned to the pair of SIMD32s. This mode may provide faster operation
+since both halves run in parallel, but limits data sharing (upper waves cannot read data in the lower half of
+LDS and vice versa). When in CU mode, all waves in the work-group are resident within the same CU.
+"RDNA4" Instruction Set Architecture
+2.3. Work-groups
+11 of 697
+
+--- RDNA4 PAGE 22 ---
+WGP mode
+In this mode, the LDS is one large contiguous memory that waves on the WGP allocate from, up to the same
+maximum allocation size. In WGP mode, waves of a work-group may be distributed across both CUΓÇÖs (all 4
+SIMD32s) in the WGP. DS_PARAM_LOAD and DS_DIRECT_LOAD are not supported in WGP mode.
+The WGP (and LDS) can simultaneously have some waves running in WGP mode and other waves in CU mode
+running. LDS performance may degrade when wave reference data on the "opposite side" from the SIMD
+theyΓÇÖre on.
+2.4. Shader Padding Requirement
+Due to aggressive instruction prefetching used in RDNA4 devices, the user must pad all shaders with 64 extra
+DWORDs (256 bytes) of data past the end of the shader. It is recommended to use the S_CODE_END instruction
+as padding to make it easier to identify the end of a shader when debugging. This ensures that if the instruction
+prefetch hardware goes beyond the end of the shader, it may not reach into uninitialized memory (or
+unmapped memory pages).
+2.5. Whole Quad Mode
+Whole Quad Mode (WQM) is a method of operating where if any thread in a set of 4 threads is enabled, then all
+4 act as if they were enabled. This mode is useful for operations which rely on all threads in a quad to be
+enabled to calculate data which relies on knowing the values in neighboring pixels. SAMPLE level-of-detail
+calculation is a common example of this.
+Whole Quad Mode can be applied explicitly using S_WQM_B32 or S_WQM_B64 to modify the EXEC mask to
+enable groups of 4 lanes.
+Whole Quad Mode is temporarily applied for these cases:
+ΓÇó V_INTERP_* instructions: uses data from 3 lanes in a quad
+ΓÇó DS_PARAM_LOAD, DS_DIRECT_LOAD: loads data into 3 lanes per quad
+ΓÇó SAMPLE: operations which use neighboring pixel data to calculate a level-of-detail
+"RDNA4" Instruction Set Architecture
+2.4. Shader Padding Requirement
+12 of 697
+
+--- RDNA4 PAGE 23 ---
+Chapter 3. Wave State
+This chapter describes the state variables visible to the shader program. Each wave has a private copy of this
+state unless otherwise specified.
+3.1. State Overview
+The table below shows the hardware states readable or writable by a shader program. The registers below are
+unique to each wave except for TBA and TMA which are shared.
+Table 4. Commonly used Shader Wave State
+Abbrev.
+Name
+Size
+(bits)
+Description
+PC
+Program Counter
+48
+Points to the memory address of the next shader instruction
+to execute. Read/write only via scalar control flow
+instructions and indirectly using branch. The 2 LSBΓÇÖs are
+forced to zero.
+V0-V255
+VGPR
+32
+Vector general-purpose register. (32 bits per work-item x (32
+or 64) work-items per wave).
+S0-S105
+SGPR
+32
+Scalar general-purpose register. All waves are allocated 106
+SGPRs + 16 TTMPs.
+LDS
+Local Data Share
+64kB
+Local data share is a scratch RAM with built-in arithmetic
+capabilities that allows data to be shared between threads in
+a work-group.
+EXEC
+Execute Mask
+64
+A bit mask with one bit per thread, that is applied to vector
+instructions and controls which threads execute and which
+ignore the instruction.
+EXECZ
+EXEC is zero
+1
+A single bit flag indicating that the EXEC mask is all zeros.
+For wave32 it considers only EXEC[31:0].
+VCC
+Vector Condition Code
+64
+A bit mask with one bit per thread; it holds the result of a
+vector compare operation or integer carry-out. Physically
+VCC is stored in specific SGPRs.
+VCCZ
+VCC is zero
+1
+A single-bit flag indicating that the VCC mask is all zeros. For
+wave32 it considers only VCC[31:0].
+SCC
+Scalar Condition Code
+1
+Result from a scalar ALU comparison instruction, carry-out
+or other uses.
+SCRATCH_BASE
+Scratch memory address
+48
+The base address of scratch memory for this wave. Used by
+Flat and Scratch instructions. Read-only by user shader;
+writable by trap handler.
+M0
+Misc Reg
+32
+A temporary register that has various uses, including GPR
+indexing and bounds checking.
+STATUS
+Status
+32
+Shader status bits (read-only).
+STATE_PRIV
+Privileged State
+32
+Shader state bits writable only by trap handler.
+MODE
+Mode
+32
+Writable shader mode bits.
+TRAP_CTRL
+Exception Mask
+32
+Mask of which exceptions cause a trap. Writable only by trap
+handler; user shader can read.
+EXCP_FLAG_PRIV
+Privileged Exception Flags
+32
+Mask of exceptions that have occurred. Writable only by trap
+handler; user shader can read.
+"RDNA4" Instruction Set Architecture
+3.1. State Overview
+13 of 697
+
+--- RDNA4 PAGE 24 ---
+Abbrev.
+Name
+Size
+(bits)
+Description
+EXCP_FLAG_USER
+User-clearable Exception
+Flags
+32
+Mask of exceptions that have occurred. Writable by user
+shader.
+TBA
+Trap Base Address
+48
+Holds the program address of the trap handler. Per-VMID
+register. Bit [63] indicates if the trap handler is present (1) or
+not (0) and is not considered part of the address (bit[62] is
+replicated into address bit[63] to form a 64-bit address).
+Accessed via S_SENDMSG_RTN.
+TMA
+Trap Memory Address
+48
+Temporary register for shader operations. For example, can
+hold a pointer to data memory used by the trap handler.
+TTMP0-TTMP15
+Trap Temporary SGPRs
+32
+16 SGPRs available only to the Trap Handler for temporary
+storage.
+LOADcnt
+Vector memory load
+instruction count
+6
+Counts the number of VMEM load (and atomic with return
+value) instructions issued but not yet completed.
+STOREcnt
+Vector memory store
+instruction count
+6
+Counts the number of VMEM store (and atomic without
+return) instructions issued but not yet completed.
+DScnt
+LDS instruction count
+6
+Counts the number of LDS instructions issued but not yet
+completed.
+KMcnt
+Constant and Message count 5
+Counts the number of constant-fetch (scalar memory read),
+and message instructions issued but not yet completed.
+SAMPLEcnt
+Vector memory sample
+instruction count
+6
+Counts the number of VMEM sample/gather/msaa-load/get-
+lod instructions (VSAMPLE encoding) issued but not yet
+completed.
+BVHcnt
+Vector memory BVH
+instruction count
+3
+Counts the number of VMEM BVH instructions issued but
+not yet completed.
+EXPcnt
+Export Count
+3
+Counts the number of Export instructions issued but not yet
+completed. Also counts parameter loads outstanding.
+3.2. Control State: PC and EXEC
+3.2.1. Program Counter (PC)
+The Program Counter is a DWORD-aligned byte address that points to the next instruction to execute. When a
+wave is created the PC is initialized to the first instruction in the program. The address is DWORD-aligned so the
+two LSBs are forced to zero.
+There are a few instructions that interact directly with the PC: S_GETPC_B64, S_SETPC_B64, S_CALL_B64,
+S_RFE_B64, and S_SWAPPC_B64. These transfer the PC to and from an even-aligned SGPR pair (zero-
+extended).
+Branches jump to (PC_of_the_instruction_after_the_branch + offset*4). Branches, GET_PC and SWAP_PC are PC-
+relative to the next instruction, not the current one. S_TRAP, on the other hand, saves the PC of the S_TRAP
+instruction itself.
+During wave debugging the program counter may be read. The PC points to the next instruction to issue. All
+prior instructions have been issued but may or may not have completed execution.
+"RDNA4" Instruction Set Architecture
+3.2. Control State: PC and EXEC
+14 of 697
+
+--- RDNA4 PAGE 25 ---
+3.2.2. EXECute Mask
+The Execute mask (64-bit) controls which threads in the vector are executed. Each bit indicates how one thread
+behaves for vector instructions: 1 = execute, 0 = do not execute. EXEC can be read and written via scalar
+instructions, and can also be written as a result of a vector-alu compare. EXEC affects: vector-alu, vector-
+memory, LDS , and export instructions. It does not affect scalar execution or branches.
+Wave64 uses all 64 bits of the exec mask. Wave32 waves use only bits 31:0 and hardware does not act upon the
+upper bits.
+There is a summary bit (EXECZ) that indicates that the entire execute mask is zero. It can be used as a condition
+for branches to skip code when EXEC is zero. For wave32, this reflects the state of EXEC[31:0].
+3.2.2.1. Instruction Skipping: EXEC==0
+The shader hardware may skip vector instructions when EXEC==0.
+Instructions that are skipped result in the same wave state as if they had executed with EXEC==0: no wave state
+changes.
+Instructions that may be skipped are:
+ΓÇó VALU - skip if EXEC == 0
+ΓùªNot skipped if the instruction writes SGPRs/VCC
+ΓùªDoes not skip WMMA or SWMMAC ops
+ΓùªThis skipping is timing-dependent and might not occur depending on timing after a V_CMPX.
+ΓÇó These are not skipped regardless of EXEC mask value , and are issued only once in wave64 mode
+ΓùªV_NOP, V_PIPEFLUSH, V_READLANE, V_READFIRSTLANE, V_WRITELANE
+ΓùªGLOBAL_INV, GLOBAL_WB, GLOBAL_WBINV
+ΓÇó These are not skipped and are issued twice in wave64 mode regardless of EXEC mask value
+ΓùªV_CMP that writes SGPR or VCC (not V_CMPX - may skip one pass but not both)
+ΓùªAny VALU that writes an SGPR
+ΓÇó Export Request - skip unless: Done==1 or if export target is POS0
+ΓùªSkipped if the wave was created with SKIP_EXPORT=1
+ΓÇó DS_param_load / DS_direct_load: are skipped when EXEC==0 and EXPcnt==0
+ΓÇó LDS, Memory - typically do not skip
+ΓùªVMEM can be skipped only if: EXEC == 0 and LOADcnt / STOREcnt / BVHcnt / SAMPLEcnt == 0
+Γû¬FLAT also requires that DScnt==0 to be skipped.
+Γû¬otherwise for wave64 one pass can be skipped if EXEC==0 for that half, but not both halves.
+ΓùªLDS can be skipped only if: DScnt==0 and EXEC==0
+3.3. Storage State: SGPR, VGPR, LDS
+"RDNA4" Instruction Set Architecture
+3.3. Storage State: SGPR, VGPR, LDS
+15 of 697
+
+--- RDNA4 PAGE 26 ---
+3.3.1. SGPRs
+3.3.1.1. SGPR Allocation and storage
+Every wave is allocated a fixed number of SGPRs:
+ΓÇó 106 normal SGPRs
+ΓÇó VCC_HI and VCC_LO (stored in SGPRs 106 and 107)
+ΓÇó 16 Trap-temporary SGPRs, meant for use by the trap handler
+3.3.1.1.1. VCC
+The Vector Condition Code (VCC) is a named SGPR-pair that can be written by V_CMP and integer vector
+ADD/SUB instructions. VCC is implicitly read by V_ADD_CI, V_SUB_CI, V_CNDMASK and V_DIV_FMAS. VCC
+is subject to the same dependency checks as any other SGPR.
+3.3.1.2. SGPR Alignment
+There are a few cases where even-aligned SGPRs are required:
+1. any time 64-bit data is used
+a. this includes moves to/from 64-bit registers, including PC
+2. Scalar memory loads when the address-base comes from an SGPR-pair
+When a 64-bit SGPR data value is used as a source to a VALU op, it must be even aligned regardless of size. In
+contrast, when a 32-bit SGPR data value is used as a source to a VALU op, it can be arbitrarily aligned
+regardless of wave size.
+Quad-alignment of SGPRs is required for operations on more than 64-bits, and for the data SGPR when a scalar
+memory operation (read, write or atomic) operates on more than 2 DWORDs.
+When a 64-bit quantity is stored in SGPRs, the LSBΓÇÖs are in SGPR[n], and the MSBΓÇÖs are in SGPR[n+1].
+When an SGPR is used as a carry-in, carry-out or mask value to a VALU op, it must be even-aligned in wave64
+shaders but may be arbitrarily aligned in wave32 shaders.
+It is illegal to use mis-aligned source or destination SGPRs for data larger than 32 bits and results are
+unpredictable.
+3.3.1.3. SGPR Out of Range Behavior
+Scalar sources and dests use a 7-bit encoding:
+Scalar 0-105=SGPR; 106,107=VCC, 108-123=TTMP0-15, and 124-127={NULL, M0, EXEC_LO, EXEC_HI}.
+It is illegal to use GPR indexing or a multi-DWORD operand to cross SGPR regions. The regions are:
+ΓÇó SGPRs 0 - 107 (includes VCC)
+ΓÇó Trap Temp SGPRs
+"RDNA4" Instruction Set Architecture
+3.3. Storage State: SGPR, VGPR, LDS
+16 of 697
+
+--- RDNA4 PAGE 27 ---
+ΓÇó All other SGPR & Scalar-source addresses must not be indexed and no single operand can reference
+multiple register ranges.
+General Rules:
+ΓÇó Out of range source SGPRs return zero (NULL, M0 or EXEC where not allowed)
+ΓÇó Writes to an out of range SGPR are ignored
+TTMP0-15 can only be written while in the trap handler (STATUS.PRIV=1) but can be read by the userΓÇÖs shader
+(STATUS.PRIV=0). Writes to TTMPs while outside the trap handler are ignored. SALU instructions that try but
+fail to write a TTMP also do not update SCC.
+ΓÇó SALU: Above rules apply.
+ΓùªWREXEC and SAVEEXEC write the EXEC mask even when the SDST is out-of-range
+ΓÇó VALU: Above rules apply.
+ΓÇó VMEM: S#, T#, V# must be contained within one region.
+ΓùªT# (128b), V# or S#: no possible range violation exists (forced alignment puts all in one range).
+ΓùªT# (256b) starting at 104 and extending into TTMPs; or starting at TTMP12 and going past TTMP15 is a
+violation. If this occurs, force to use S0.
+ΓÇó SMEM ops return data starting in SGPRs/VCC and extending into TTMPs, or starting in TTMPs and
+extending outside TTMPs becomes out of range.
+ΓùªNo data gets written to dest-SGPRs that are out-of-range
+ΓùªAddr and write-data are aligned and so cannot go out of range, except:
+Γû¬Referencing M0, NULL, or EXEC* returns zero, and SMEM loads cannot load into these registers.
+ΓÇó S_MOVREL:
+ΓùªIndexing is allowed only within SGPRs and TTMPs, and must not cross between the two. Indexing must
+stay within the "base" range (the operand type where index==0).
+The ranges are: [ SGPRs 0-105 and VCC_LO, VCC_HI ], [ Trap Temps 0-15 ], [ all other values ]
+ΓùªIndexing must not reach M0, exec or inline constants, the rule is:
+Γû¬Base is SGPR: addr > VCC_HI (or if 64-bit operand, addr > VCC_LO)
+Γû¬Base is TTMP: addr > TTMP15 (or if B64 if addr > TTMP14)
+ΓùªIf the source is out of range, S0 is used.
+If the dest is out of range, nothing is written.
+3.3.2. VGPRs
+3.3.2.1. VGPR Allocation and Alignment
+VGPRs are allocated in blocks of 16 for wave32 or 8 for wave64, and a shader may have up to 256 VGPRs. In
+other words, VGPRs are allocated in units of (16*32 or 8*64 = 512 DWORDs). A wave may not be created with zero
+VGPRs. Devices that have 1536 VGPRs per SIMD allocate in blocks of 24 for wave32 and 12 for wave64.
+A wave may voluntarily deallocate all of its VGPRs via S_SENDMSG. Once this is done, the wave may not
+reallocate them and the only valid action is to terminate the wave. This can be useful if a wave has issued stores
+to memory and is waiting for the write-confirms before terminating. Releasing the VGPRs while waiting may
+allow a new wave to allocate them and start earlier.
+"RDNA4" Instruction Set Architecture
+3.3. Storage State: SGPR, VGPR, LDS
+17 of 697
+
+--- RDNA4 PAGE 28 ---
+3.3.2.2. VGPR Out of Range Behavior
+Given an instruction operand that uses one or more DWORDs of VGPR data: "V"
+Vs = the first VGPR DWORD (start) 
+Ve = the last VGPR DWORD (end)
+For a 32-bit operand, Vs==Ve; for a 64-bit operand Ve=Vs+1, etc.
+Operand is out of range if:
+ΓÇó Vs < 0 || Vs >= VGPR_SIZE
+ΓÇó Ve < 0 || Ve >= VGPR_SIZE
+V_MOVREL indexed operand out of range if either:
+ΓÇó Index > 255
+ΓÇó (Vs + M0) >= VGPR_SIZE
+ΓÇó (Ve + M0) >= VGPR_SIZE
+Out of range consequences:
+ΓÇó If a dest VGPR is out of range, the instruction is ignored (treat as NOP). VMEM instructions (including LDS)
+issue the instruction as if EXEC==0 to keep LOADcnt/STOREcnt/ΓÇª correct.
+ΓÇó V_SWAP & V_SWAPREL : since both arguments are destinations, if either is out of range, discard the
+instruction.
+ΓùªVALU instructions with multiple destination (e.g. VGPR and SGPR): nothing is written to any GPR
+ΓÇó If a source VGPR is out of range in a VMEM or Export instruction: VGPR0 is used for the out of range VGPR
+ΓùªMemory instructions that use a group of consecutive VGPRs that are out of range use VGPR0 for the
+individual out of range VGPRs.
+ΓÇó If a source VGPR in a VALU instruction is out of range: act as if the instructionΓÇÖs source field is set to
+VGPR0. Operands > 32 bits use consecutive VGPRs: V0, V1, V2, ΓÇª
+ΓùªVOPD has different rules: the source address forced to (VGPRaddr % 4).
+Instructions with multiple destinations (e.g. V_ADD_CO): if any destination is out of range, no results are
+written.
+3.3.3. Dynamic VGPR Allocation & Deallocation
+Compute Shaders may be launched in a mode where they can dynamically allocate and deallocate VGPRs;
+dynamic VGPRs is not supported for graphics-shaders. Waves must be launched in "dynamic VGPR" mode to be
+granted this ability; without it instructions requesting to alter the VGPR allocation size are ignored.
+Dynamic VGPRs are supported only for wave32, not wave64.
+Dynamic-VGPR workgroups take over a WGP (no mixing of dynamic and non-dynamic VGPR waves on a WGP):
+if any workgroup is using dynamic VGPRs, only dynamic VGPR enabled workgroups or waves may be running
+on that WGP. DVGPR workgroups take over a WGP when the workgroup is launched in WGP-mode, and take
+over a CU when launched in CU-mode.
+VGPRs are allocated/deallocated in blocks of 16 or 32 VGPRs (configurable) and are added to or removed from
+the highest numbered VGPRs, keeping the range of available logical VGPRs contiguous starting from VGPR0.
+"RDNA4" Instruction Set Architecture
+3.3. Storage State: SGPR, VGPR, LDS
+18 of 697
+
+--- RDNA4 PAGE 29 ---
+Waves may allocate up to a maximum of 8 blocks of VGPRs and have a minimum of one block.
+Block Size
+The VGPR block size is configurable to be 16-VGPRs with a maximum allocation of 128 VGPRs per wave, or
+32-VGPRs with a maximum allocation of 256 VGPRs per wave. This block-size is a chip-wide config; it
+cannot be modified per draw or dispatch. "Blocks" are also called "segments" in some contexts. Waves using
+block-size of 16-VGPRs must not access VGPRs above 127 - results are unpredictable.
+Waves in dynamic VGPR mode are initialized with one VGPR-block allocated.
+3.3.3.1. Instruction
+S_ALLOC_VGPR  <NumVgprs>   // Number of VGPRs wave now wants to own. Either inline-constant or SGPR
+┬á                          // NumVgprs is rounded up to the nearest BlockSize.
+S_ALLOC_VGPR attempts to allocate (when: NumVgprs > currentVgprs) or deallocate (when: NumVgprs <
+currentVgprs). Allocation requests can fail and return SCC=1 for success, SCC=0 for failure. Allocations do not
+partially succeed - itΓÇÖs all or nothing. If an allocation fails, the shader may retry again until it succeeds.
+Deallocations do not fail, as do S_ALLOC_VGPR that do not change the allocation size. Only bits [8:0] of
+NumVgprs are considered.
+Allocations requesting more than the maximum number of VGPRs automatically fail and return SCC=0.
+A wave may deallocate down to zero VGPRs. Deallocating down to zero VGPRs is not the same as "S_SENDMSG
+DEALLOC_VGPRS", and this latter message must not be issued while using dynamic VGPRs.
+VGPR out of bounds: the same out-of-bounds rules apply as when not using dynamic VGPRs.
+A single-state (chip-wide) config register defines the maximum number of waves per SIMD that can be present
+when using dynamic VGPRs: SQ_DYN_VGPR. Each of those wave-slots up to the maximum has 1 block of
+VGPRs reserved whether or not that wave-slot is in use, but wave-slots past the maximum have no VGPRs
+allocated. With blockSize=16 this means every wave-slot has 16 VGPRs regardless if there is a wave using it or not, and
+the remaining VGPRs are available for allocation.
+3.3.3.2. Deadlock Avoidance
+Dynamically allocating VGPRs can lead to deadlock when all VGPRs have been allocated but every wave needs
+to allocate more VGPRs to make progress. Hardware mitigates this with a mode that reserves just enough
+VGPRs that at least one wave can reach the maximum VGPR allocation at all times. This does not prevent deadlock
+when multiple waves require the maximum allocation to progress.
+3.3.3.3. Context Save & Restore
+Dynamic VGPRs are supported with Compute Wave Save Restore (CWSR). Waves must save off all VGPRs to
+memory and on restore, using S_ALLOC_VGPR to first allocate VGPRs before restoring them from memory.
+Waves are re-launched on restore in dynamic-vgpr-mode.
+"RDNA4" Instruction Set Architecture
+3.3. Storage State: SGPR, VGPR, LDS
+19 of 697
+
+--- RDNA4 PAGE 30 ---
+3.3.4. Memory Alignment and Out-of-Range Behavior
+This section defines the behavior when a source or destination GPR or memory address is outside the legal
+range for a wave. Except where noted, these rules apply to LDS, buffer, global, flat and scratch memory
+accesses.
+Memory, LDS: Loads and Atomics with return:
+ΓÇó If any source VGPR or SGPR is out-of-range, the data value is undefined.
+ΓÇó If any destination VGPR is out-of-range, the operation is nullified by issuing the instruction as if the EXEC
+mask were cleared to 0.
+ΓùªThis out-of-range test checks all VGPRs that could be returned (e.g. VDST to VDST+3 for a
+BUFFER_LOAD_B128)
+ΓùªThis check also includes the extra PRT (partially resident texture) VGPR and nullifies the fetch if this
+VGPR would be out of range no matter whether the texture system actually returns this value or not.
+ΓùªAtomic operations with out-of-range destination VGPRs are nullified: issued, but with EXEC mask of
+zero.
+ΓÇó Image loads and stores consider DMASK bits when making an out-of-bounds determination.
+ΓÇó Note: VDST is only checked for lds/mem-atomic that actually return a value.
+VMEM memory alignment rules are defined using the config register: SH_MEM_CONFIG.alignment_mode.
+This setting also affects LDS, Flat/Scratch/Global operations.
+DWORD
+Automatic alignment to multiple of the smaller of element size or a DWORD.
+UNALIGNED
+No alignment requirements, except for atomics.
+Formatted ops such as BUFFER_LOAD_FORMAT_* must be aligned as follows:
+ΓÇó 1-byte formats require 1-byte alignment
+ΓÇó 2-byte formats require 2-byte alignment
+ΓÇó 4-byte and larger formats require 4-byte alignment
+Atomics must be aligned to the data size, or they trigger a MEMVIOL.
+3.3.5. Local Data Share (LDS)
+LDS is a scratch-pad memory allocated to waves or workgroups (in which case it is sometimes referred to as
+"shared memory"). Waves may be allocated LDS memory, and waves in a work-group all share the same LDS
+memory allocation. All accesses to LDS are restricted to the space allocated to that wave/work-group.
+A wave may have 0 - 64kbyte of LDS space allocated, and it is allocated in blocks of 1024 bytes.
+Internally LDS is composed of two blocks of memory of 64kB each. Each one of these two blocks is affiliated
+with one CU or the other: byte addresses 0-65535 with CU0, 65536-131071 with CU1. Allocations of LDS space to
+a wave or work-group do not wrap around: the allocation starting address is less than the ending address.
+In CU mode, a waveΓÇÖs entire LDS allocation resides in the same "side" of LDS as the wave is loaded. No access is
+allowed to cross over or wrap around to the other side.
+In WGP mode, a waveΓÇÖs LDS allocation may be entirely in either the CU0 or CU1 part of LDS, or it may straddle
+"RDNA4" Instruction Set Architecture
+3.3. Storage State: SGPR, VGPR, LDS
+20 of 697
+
+--- RDNA4 PAGE 31 ---
+the boundary and be partially in each CU. The location of the LDS storage is unrelated to which CU the wave is
+on.
+Pixel parameters are loaded into the same CU side as the wave resides and do not cross over into the other side
+of LDS storage. Pixel shaders are run only in CU mode. Pixel shader may request additional LDS space in addition
+to what is required for vertex parameters.
+3.3.5.1. LDS Alignment and Out-of-Range
+Any DS_LOAD or DS_STORE of any size can be byte aligned if the alignment mode is set to "unaligned". For all
+other alignment modes, LDS forces alignment by zeroing out address least significant bits.
+ΓÇó 32-bit Atomics must be aligned to a 4-byte address; 64-bit atomics to an 8-byte address, otherwise they
+return MEMVIOL.
+ΓÇó LDS operations report MEMVIOL if the LDS-address is out of range
+Out Of Range
+ΓÇó If the LDS-ADDRESS is out of range (addr < 0 or >= LDS_size):
+ΓùªLoads return the value zero. For multi-DWORD loads, this is checked per DWORD and when any
+portion of a DWORD is out of range, it returns zero.
+ΓùªAny portion of a store operation that is in range is written to LDS, and stored bytes out of range are
+discarded
+ΓùªFor both loads and stores the out of bounds check is performed at byte granularity for UNALIGNED
+mode, and DWORD granularity for DWORD alignment mode.
+ΓÇó If any source-VGPR is out of range, the value from VGPR0 is used to supply the LDS address or data.
+ΓÇó If the dest-VGPR is out of range, nullify the instruction (issue with EXEC=0)
+"Native" Alignment in LDS is:
+B8: byte aligned
+B16 or D16: 2 byte aligned
+B32: 4 byte aligned
+B64: 8 byte aligned
+B128 and B96: 16 byte aligned
+If the alignment mode is set to "unaligned", the LDS disables its auto-alignment and doesnΓÇÖt report error for
+misaligned loads & stores
+┬á       if (sh_alignment_mode == unaligned)     align = 0xffff
+┬á       else if (B32)                           align = 0xfffC
+┬á       else if (B64)                           align = 0xfff8
+┬á       else if (B96 or B128)                   align = 0xfff0
+┬á       LDSaddr = (addr + offset) & align
+3.3.6. Scratch (Private) Memory
+Waves may be allocated a block of global memory at wave-launch time that can be used for thread-private data.
+"RDNA4" Instruction Set Architecture
+3.3. Storage State: SGPR, VGPR, LDS
+21 of 697
+
+--- RDNA4 PAGE 32 ---
+This memory is private to each thread (although this is not enforced) and memory swizzling is optimized for
+the case when each thread has the same index into its scratch space.
+Scratch memory is allocated with 64-DWORD granularity and may be [0 - (16M-64)] DWORDs per wave.
+3.4. Wave State Registers
+The following registers are accessed infrequently, and are only readable/writable via S_GETREG_B32 and
+S_SETREG instructions. Some of these registers are read-only, some are writable and others are writable only
+when in the trap handler ("PRIV").
+Index
+Writable?
+Register
+1
+Yes
+MODE
+Wave mode bits
+2
+No
+STATUS
+Wave status bits
+4
+PRIV
+STATE_PRIV
+wave state bits writable by the trap handler (PRIV=1)
+10
+No
+PERF_SNAPSHOT_DATA
+Data captured during performance snapshot
+11
+No
+PERF_SNAPSHOT_PC_LO
+PC[31:0] of performance snapshot
+12
+No
+PERF_SNAPSHOT_PC_HI
+PC[39:32] of performance snapshot
+15
+No
+PERF_SNAPSHOT_DATA1
+Data captured during performance snapshot
+16
+No
+PERF_SNAPSHOT_DATA2
+Data captured during performance snapshot
+17
+PRIV
+EXCP_FLAG_PRIV
+Exception flags writable only by trap handler
+18
+Yes
+EXCP_FLAG_USER
+Exception flags writable by user
+19
+PRIV
+TRAP_CTRL
+Trap exception enables; writable only by trap handler
+20
+PRIV
+SCRATCH_BASE_LO
+user-read only; writable only by trap handler
+21
+PRIV
+SCRATCH_BASE_HI
+user-read only; writable only by trap handler
+23
+No
+HW_ID1
+read only. debug only - not predictable values
+24
+No
+HW_ID2
+read only. debug only - not predictable values
+29
+No
+SHADER_CYCLES_LO
+Get the current shader clock counter value
+30
+No
+SHADER_CYCLES_HI
+Get the current shader clock counter value
+28
+No
+IB_STS2
+3.4.1. STATUS register
+Status register fields can be read but not written to by the shader. These bits are initialized at wave-creation
+time or updated during execution.
+Table 5. Status Register Fields
+Field
+Bit
+Pos
+Description
+PRIV
+5
+Privileged mode. Indicates that the wave is in the trap handler. Gives write access to TTMP
+registers.
+TRAP_EN
+6
+Indicates that a trap handler is present. When set to zero, traps are not taken.
+EXPORT_RDY
+8
+Pixel shaders only: This status bit indicates that export buffer space has been allocated.
+The shader stalls any export instruction until this bit becomes "1". It gets set to 1 when
+export buffer space has been allocated. Shader hardware checks this bit before executing any
+EXPORT instruction to Position, Z or MRT targets, and put the wave into a waiting state if
+the alloc has not yet been received. The alloc arrives eventually (unless SKIP_EXPORT is
+set) as a message and the shader then continues with the export.
+"RDNA4" Instruction Set Architecture
+3.4. Wave State Registers
+22 of 697
+
+--- RDNA4 PAGE 33 ---
+Field
+Bit
+Pos
+Description
+EXECZ
+9
+Exec Mask is Zero.
+VCCZ
+10
+Vector Condition Code is Zero.
+IN_WG
+11
+Wave is a member of a work-group of more than one wave.
+TRAP
+14
+Wave is flagged to enter the trap handler as soon as possible.
+TRAP_BARRIER_
+COMPLETE
+15
+Indicates that the trap-barrier has completed but wave has not yet waited on that barrier
+VALID
+16
+Wave is valid (has been created and not yet ended)
+SKIP_EXPORT
+18
+Pixel and Vertex Shaders only:
+"1" means this shader is not allocated export buffer space, so export instructions are
+ignored (treated as NOPs). For pixel shaders, this is set to 1 when both the
+COL0_EXPORT_FORMAT and Z_EXPORT_FORMAT are set to ZERO. If SKIP_EXPORT==1,
+Must_export must be zero and vice versa.
+FATAL_HALT
+23
+Indicates that the wave has halted due to a fatal error:
+ΓÇó illegal instruction
+The difference between halt and fatal_halt is that fatal_halt stops waves even when
+PRIV=1.
+NO_VGPRS
+24
+Indicates that this wave has released all of its VGPRs.
+LDS_PARAM_RDY
+25
+Pixel shaders only: indicates that LDS has been written with vertex attribute data and the
+shader may now execute DS_PARAM_LOAD instructions. If the wave attempts to issue
+DS_PARAM_LOAD before this bit is set, it stalls until the bit is set.
+MUST_GS_ALLOC
+26
+Indicates that the GS shader must issue a GS_ALLOC_REQ message before terminating.
+Sending this message clears this bit.
+MUST_EXPORT
+27
+Pixel Shaders: this wave must export color ("export-done") before it terminates.
+Set to 1 for PS waves unless "skip_export==1". Cleared when PS exports data with exportΓÇÖs
+Done bit set to 1.
+Is set to zero for other wave types.
+IDLE
+28
+Wave is idle (has no outstanding instructions). Used via register-read to determine if a
+wave is valid, halted and idle - able to read other wave state.
+WAVE64
+29
+Wave is 64 (0 = wave32)
+DYN_VGPR_EN
+30
+Indicates that the wave is running using Dynamic VGPRs.
+3.4.2. STATE_PRIV register
+STATE_PRIV register fields can be read by the user shader and written while in the trap handler (PRIV=1).
+These bits are initialized at wave-creation time or updated during execution.
+Table 6. STATE_PRIV Register Fields
+Field
+Bit
+Pos
+Description
+WG_RR_EN
+0
+Workgroup Round-robin arbitration requested.
+SLEEP_WAKEUP
+1
+The wave has one credit to skip the next S_SLEEP instruction due to previously receiving
+a S_WAKEUP
+BARRIER_COMPLETE
+2
+has the barrier completed but wave has not yet waited on that barrier
+SCC
+9
+Scalar condition code. Used as a carry-out bit. For a comparison instruction, this bit
+indicates failure or success. For logical operations, this is 1 if the result is non-zero.
+"RDNA4" Instruction Set Architecture
+3.4. Wave State Registers
+23 of 697
+
+--- RDNA4 PAGE 34 ---
+Field
+Bit
+Pos
+Description
+SYS_PRIO
+11:10
+Wave priority set at wave creation time. See S_SETPRIO instruction for details. 0 is
+lowest, 3 is highest priority.
+USER_PRIO
+13:12
+WaveΓÇÖs priority set by shader program itself. See S_SETPRIO instruction for details.
+HALT
+14
+Wave is halted or scheduled to halt.
+HALT can be set by the host via wave-control messages, or by the shader. The HALT bit
+is ignored while in the trap handler (PRIV = 1). HALT is also ignored if a host-initiated
+trap is received (request to enter the trap handler).
+SCRATCH_EN
+18
+Indicate that the wave has scratch memory allocated. This bit gets set to 1 if the wave has
+SCRATCH_BASE initialized; otherwise is zero.
+3.4.3. MODE register
+Mode register fields can be read from, and written to, by the shader through scalar instructions.
+Table 7. Mode Register Fields
+Field
+Bit
+Pos
+Description
+FP_ROUND
+3:0
+Controls round modes for math operations
+[1:0] Single precision round mode
+[3:2] Double precision and half precision (FP16) round mode
+Round Modes: 0=nearest even, 1= +infinity, 2= -infinity, 3= toward zero
+Round mode affects float ops in VALU, but not LDS or memory.
+FP_DENORM
+7:4
+Controls whether floating point denormals are flushed or not.
+[5:4] Single precision denormal mode
+[7:6] Double precision and FP16 denormal mode 
+Denormal modes: 2 bits = { allow_output_denorms, allow_input_denorms }
+┬á┬á┬á0 = flush input and output denorms
+┬á┬á┬á1 = allow input denorms, flush output denorms
+┬á┬á┬á2 = flush input denorms, allow output denorms
+┬á┬á┬á3 = allow input and output denorms
+Denorm mode affects float ops in: VALU, LDS-atomics (DS ops, not flat).
+Flat (including those serviced by LDS) and memory atomics ignore this mode and do not
+flush denorms.
+FP16_OVFL
+23
+If set, an overflowed FP16 VALU result is clamped to +/- MAX_FP16 regardless of round
+mode, while still preserving true INF values. (Inputs that are infinity may result in infinity,
+as does divide-by-zero).
+SCALAR_PREFETCH_EN 24
+1 = enable scalar prefetch instructions (both instruction & data); 0 = ignore them
+(S_NOP).
+DISABLE_PERF
+27
+1 = temporarily disable performance counting for this wave.
+3.4.4. M0 : Miscellaneous Register
+There is one 32-bit M0 register per wave and is it used for:
+Table 8. M0 Register Fields
+Operation
+M0 Contents
+Notes
+S/V_MOVREL
+GPR index
+See S_MOVREL and V_MOVREL instructions
+LDS ADDTID
+{ 16ΓÇÖh0, lds_offset[15:0] }
+offset is in bytes, must be 4-byte aligned
+"RDNA4" Instruction Set Architecture
+3.4. Wave State Registers
+24 of 697
+
+--- RDNA4 PAGE 35 ---
+Operation
+M0 Contents
+Notes
+DS_PARAM_LOAD
+{ 1ΓÇÖb0, new_prim_mask[15:1],
+parameter_offset[15:0] }
+Offset is in bytes and offset[6:0] must be zero.
+Wave32: new_prim_mask is {8ΓÇÖb0, mask[7:1] }
+DS_DIRECT_LOAD
+{ 13ΓÇÖb0, DataType[2:0],
+LDS_address[15:0] }
+address is in bytes
+EXPORT
+Row number for mesh shader POS
+& Param exports
+See Export chapter
+S_SENDMSG / _RTN
+varies
+sendmsg data. See [SendMessageTypes]
+Various
+Temporary data[31:0]
+can be used as general temporary data storage
+M0 can only be written by the scalar ALU.
+3.4.5. NULL
+NULL is a scalar source and destination. Reading NULL returns zero, writing to NULL has no effect (write data
+is discarded).
+NULL may be used anywhere scalar sources can normally be used:
+ΓÇó When NULL is used as the destination of an SALU instruction, the instruction executes: SDST is not written
+but SCC is updated (if the instruction normally updates SCC).
+Instructions like S_SWAP_PC with NULL as a DEST still execute, loading zero into the PC and not writing
+any other result.
+ΓÇó NULL may not be used as an S#, V# or T#.
+3.4.6. SCC: Scalar Condition Code
+Many scalar ALU instructions set the Scalar Condition Code (SCC) bit, indicating the result of the operation.
+Compare operations: 1 = true
+Arithmetic operations: 1 = carry out
+Bit/logical operations: 1 = result was not zero
+Move: does not alter SCC
+The SCC can be used as the carry-in for extended-precision integer arithmetic, as well as the selector for
+conditional moves and branches.
+3.4.7. Vector Compares: VCC and VCCZ
+Vector ALU comparison instructions (V_CMP) compare two values and return a bit-mask of the result, where
+each bit represents one lane (work-item) where: 1= pass, 0 = fail. This result mask is the Vector Condition Code
+(VCC). VCC is also set for selected integer ALU operations (carry-out).
+These instructions write this mask either to VCC, an SGPR or to EXEC, but do not write to both EXEC and
+SGPRs. Wave64 writes 64-bits of VCC, EXEC or an aligned pair of SGPRs; Wave32 writes only the low 32 bits of
+VCC, EXEC or a single SGPR.
+"RDNA4" Instruction Set Architecture
+3.4. Wave State Registers
+25 of 697
+
+--- RDNA4 PAGE 36 ---
+Whenever any instruction writes a value to VCC, the hardware automatically updates a "VCC summary" bit
+called VCCZ. This bit indicates whether or not the entire VCC mask is zero for the current wave-size. Wave32
+ignores VCC[63:32] and only bits[31:0] contribute to VCCZ. This is useful for early-exit branch tests. VCC is also set
+for certain integer ALU operations (carry-out).
+The EXEC mask determines which threads execute an instruction. The VCC indicates which executing threads
+passed the conditional test, or which threads generated a carry-out from an integer add or subtract.
+S_MOV_B64     EXEC, 0x00000001  // set just one thread active; others are inactive
+V_CMP_EQ_B32  VCC, V0, V0    // compare (V0 == V0) and write result to VCC (all bits in VCC are updated)
+∩üÜ
+VCC physically resides in the SGPR register file in a specific pair of SGPRs, so when an
+instruction sources VCC, that counts against the limit on the total number of SGPRs that can
+be sourced for a given instruction.
+Wave32 waves may use any SGPR for mask/carry/borrow operations, but may not use VCC_HI or EXEC_HI.
+3.4.8. SCRATCH_BASE
+SCRATCH_BASE is a 64-bit register that holds a pointer to the base of scratch memory for this wave. For waves
+that have scratch space allocated, wave-launch hardware initializes the SCRATCH_BASE register with the
+scratch base address unique to this wave. This register is read-only, except while in the trap handler where it is
+writable. The value is a byte address and must be 256byte aligned. If the wave has no scratch space allocated,
+then reading SCRATCH_BASE returns zero.
+3.4.9. Hardware Internal Registers
+These registers are read-only and can be accessed by the S_GETREG_B32 instruction. They return information
+about hardware allocation and status. These registers are read-only unless otherwise specified.
+HW_ID1
+Field
+Bits
+Description
+WAVE_ID
+4:0
+Wave id within the SIMD.
+SIMD_ID
+9:8
+SIMD_ID within the WGP: [0] = CU within WGP, [1] = SIMD within CU.
+WGP_ID
+13:10
+Physical WGP ID.
+SA_ID
+16
+Shader Array ID
+HW_ID2
+Field
+Bits
+Description
+QUEUE_ID
+3:0
+Queue_ID (also encodes shader stage)
+PIPE_ID
+5:4
+Pipeline ID
+ME_ID
+9:8
+MicroEngine ID: 0 = graphics, 1 & 2 = ACE compute
+STATE_ID
+14:12
+State context ID
+WG_ID
+20:16
+Work-group ID (0-31) within the WGP.
+VM_ID
+27:24
+Virtual Memory ID
+"RDNA4" Instruction Set Architecture
+3.4. Wave State Registers
+26 of 697
+

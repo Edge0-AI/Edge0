@@ -1,0 +1,846 @@
+
+--- PAGE 399 ---
+16.10. VOP3P Instructions
+V_PK_MAD_I16
+0
+Multiply two packed signed 16-bit integer inputs component-wise, add a packed signed 16-bit integer value
+from a third input component-wise, and store the result into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].i16 = S0[15 : 0].i16 * S1[15 : 0].i16 + S2[15 : 0].i16;
+tmp[31 : 16].i16 = S0[31 : 16].i16 * S1[31 : 16].i16 + S2[31 : 16].i16;
+D0.b32 = tmp
+V_PK_MUL_LO_U16
+1
+Multiply two packed unsigned 16-bit integer inputs component-wise and store the low bits of each resulting
+component into a vector register.
+tmp[31 : 16].u16 = S0[31 : 16].u16 * S1[31 : 16].u16;
+tmp[15 : 0].u16 = S0[15 : 0].u16 * S1[15 : 0].u16;
+D0.b32 = tmp.b32
+V_PK_ADD_I16
+2
+Add two packed signed 16-bit integer inputs component-wise and store the result into a vector register. No
+carry-in or carry-out support.
+declare tmp : 32'B;
+tmp[15 : 0].i16 = S0[15 : 0].i16 + S1[15 : 0].i16;
+tmp[31 : 16].i16 = S0[31 : 16].i16 + S1[31 : 16].i16;
+D0.b32 = tmp
+V_PK_SUB_I16
+3
+Subtract the second packed signed 16-bit integer input from the first input component-wise and store the result
+into a vector register. No carry-in or carry-out support.
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+389 of 697
+
+--- PAGE 400 ---
+declare tmp : 32'B;
+tmp[15 : 0].i16 = S0[15 : 0].i16 - S1[15 : 0].i16;
+tmp[31 : 16].i16 = S0[31 : 16].i16 - S1[31 : 16].i16;
+D0.b32 = tmp
+V_PK_LSHLREV_B16
+4
+Given a packed shift count in the first vector input, calculate the component-wise logical shift left of the second
+packed vector input and store the result into a vector register.
+tmp[31 : 16].u16 = (S1[31 : 16].u16 << S0.u32[19 : 16].u32);
+tmp[15 : 0].u16 = (S1[15 : 0].u16 << S0.u32[3 : 0].u32);
+D0.b32 = tmp.b32
+V_PK_LSHRREV_B16
+5
+Given a packed shift count in the first vector input, calculate the component-wise logical shift right of the
+second packed vector input and store the result into a vector register.
+tmp[31 : 16].u16 = (S1[31 : 16].u16 >> S0.u32[19 : 16].u32);
+tmp[15 : 0].u16 = (S1[15 : 0].u16 >> S0.u32[3 : 0].u32);
+D0.b32 = tmp.b32
+V_PK_ASHRREV_I16
+6
+Given a packed shift count in the first vector input, calculate the component-wise arithmetic shift right
+(preserving sign bit) of the second packed vector input and store the result into a vector register.
+tmp[31 : 16].i16 = (S1[31 : 16].i16 >> S0.u32[19 : 16].u32);
+tmp[15 : 0].i16 = (S1[15 : 0].i16 >> S0.u32[3 : 0].u32);
+D0.b32 = tmp.b32
+V_PK_MAX_I16
+7
+Select the component-wise maximum of two packed signed 16-bit integer inputs and store the selected values
+into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].i16 = S0[15 : 0].i16 >= S1[15 : 0].i16 ? S0[15 : 0].i16 : S1[15 : 0].i16;
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+390 of 697
+
+--- PAGE 401 ---
+tmp[31 : 16].i16 = S0[31 : 16].i16 >= S1[31 : 16].i16 ? S0[31 : 16].i16 : S1[31 : 16].i16;
+D0.b32 = tmp
+V_PK_MIN_I16
+8
+Select the component-wise minimum of two packed signed 16-bit integer inputs and store the selected values
+into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].i16 = S0[15 : 0].i16 < S1[15 : 0].i16 ? S0[15 : 0].i16 : S1[15 : 0].i16;
+tmp[31 : 16].i16 = S0[31 : 16].i16 < S1[31 : 16].i16 ? S0[31 : 16].i16 : S1[31 : 16].i16;
+D0.b32 = tmp
+V_PK_MAD_U16
+9
+Multiply two packed unsigned 16-bit integer inputs component-wise, add a packed unsigned 16-bit integer
+value from a third input component-wise, and store the result into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].u16 = S0[15 : 0].u16 * S1[15 : 0].u16 + S2[15 : 0].u16;
+tmp[31 : 16].u16 = S0[31 : 16].u16 * S1[31 : 16].u16 + S2[31 : 16].u16;
+D0.b32 = tmp
+V_PK_ADD_U16
+10
+Add two packed unsigned 16-bit integer inputs component-wise and store the result into a vector register. No
+carry-in or carry-out support.
+declare tmp : 32'B;
+tmp[15 : 0].u16 = S0[15 : 0].u16 + S1[15 : 0].u16;
+tmp[31 : 16].u16 = S0[31 : 16].u16 + S1[31 : 16].u16;
+D0.b32 = tmp
+V_PK_SUB_U16
+11
+Subtract the second packed unsigned 16-bit integer input from the first input component-wise and store the
+result into a vector register. No carry-in or carry-out support.
+declare tmp : 32'B;
+tmp[15 : 0].u16 = S0[15 : 0].u16 - S1[15 : 0].u16;
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+391 of 697
+
+--- PAGE 402 ---
+tmp[31 : 16].u16 = S0[31 : 16].u16 - S1[31 : 16].u16;
+D0.b32 = tmp
+V_PK_MAX_U16
+12
+Select the component-wise maximum of two packed unsigned 16-bit integer inputs and store the selected
+values into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].u16 = S0[15 : 0].u16 >= S1[15 : 0].u16 ? S0[15 : 0].u16 : S1[15 : 0].u16;
+tmp[31 : 16].u16 = S0[31 : 16].u16 >= S1[31 : 16].u16 ? S0[31 : 16].u16 : S1[31 : 16].u16;
+D0.b32 = tmp
+V_PK_MIN_U16
+13
+Select the component-wise minimum of two packed unsigned 16-bit integer inputs and store the selected
+values into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].u16 = S0[15 : 0].u16 < S1[15 : 0].u16 ? S0[15 : 0].u16 : S1[15 : 0].u16;
+tmp[31 : 16].u16 = S0[31 : 16].u16 < S1[31 : 16].u16 ? S0[31 : 16].u16 : S1[31 : 16].u16;
+D0.b32 = tmp
+V_PK_FMA_F16
+14
+Multiply two packed half-precision float inputs component-wise and add a third input component-wise using
+fused multiply add, and store the result into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].f16 = fma(S0[15 : 0].f16, S1[15 : 0].f16, S2[15 : 0].f16);
+tmp[31 : 16].f16 = fma(S0[31 : 16].f16, S1[31 : 16].f16, S2[31 : 16].f16);
+D0.b32 = tmp
+V_PK_ADD_F16
+15
+Add two packed half-precision float inputs component-wise and store the result into a vector register. No carry-
+in or carry-out support.
+declare tmp : 32'B;
+tmp[15 : 0].f16 = S0[15 : 0].f16 + S1[15 : 0].f16;
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+392 of 697
+
+--- PAGE 403 ---
+tmp[31 : 16].f16 = S0[31 : 16].f16 + S1[31 : 16].f16;
+D0.b32 = tmp
+V_PK_MUL_F16
+16
+Multiply two packed half-precision float inputs component-wise and store the result into a vector register.
+declare tmp : 32'B;
+tmp[15 : 0].f16 = S0[15 : 0].f16 * S1[15 : 0].f16;
+tmp[31 : 16].f16 = S0[31 : 16].f16 * S1[31 : 16].f16;
+D0.b32 = tmp
+V_DOT2_F32_F16
+19
+Compute the dot product of two packed 2-D half-precision float inputs in the single-precision float domain, add
+a single-precision float value from the third input and store the result into a vector register.
+tmp = S2.f32;
+tmp += f16_to_f32(S0[15 : 0].f16) * f16_to_f32(S1[15 : 0].f16);
+tmp += f16_to_f32(S0[31 : 16].f16) * f16_to_f32(S1[31 : 16].f16);
+D0.f32 = tmp
+V_DOT4_I32_IU8
+22
+Compute the dot product of two packed 4-D unsigned 8-bit integer inputs in the signed 32-bit integer domain,
+add a signed 32-bit integer value from the third input and store the result into a vector register.
+The NEG modifier is used to specify whether each input is signed or unsigned: 0=unsigned input, 1=signed
+input.
+declare A : 32'I[4];
+declare B : 32'I[4];
+// Figure out whether inputs are signed/unsigned.
+for i in 0 : 3 do
+    A8 = S0[i * 8 + 7 : i * 8];
+    B8 = S1[i * 8 + 7 : i * 8];
+    A[i] = NEG[0].u1 ? 32'I(signext(A8.i8)) : 32'I(32'U(A8.u8));
+    B[i] = NEG[1].u1 ? 32'I(signext(B8.i8)) : 32'I(32'U(B8.u8))
+endfor;
+C = S2.i32;
+// Signed multiplier/adder. Extend unsigned inputs with leading 0.
+tmp = C.i32;
+tmp += A[0] * B[0];
+tmp += A[1] * B[1];
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+393 of 697
+
+--- PAGE 404 ---
+tmp += A[2] * B[2];
+tmp += A[3] * B[3];
+D0.i32 = tmp
+Notes
+This opcode does not depend on the inference or deep learning features being enabled.
+V_DOT4_U32_U8
+23
+Compute the dot product of two packed 4-D unsigned 8-bit integer inputs in the unsigned 32-bit integer
+domain, add an unsigned 32-bit integer value from the third input and store the result into a vector register.
+tmp = S2.u32;
+tmp += u8_to_u32(S0[7 : 0].u8) * u8_to_u32(S1[7 : 0].u8);
+tmp += u8_to_u32(S0[15 : 8].u8) * u8_to_u32(S1[15 : 8].u8);
+tmp += u8_to_u32(S0[23 : 16].u8) * u8_to_u32(S1[23 : 16].u8);
+tmp += u8_to_u32(S0[31 : 24].u8) * u8_to_u32(S1[31 : 24].u8);
+D0.u32 = tmp
+Notes
+This opcode does not depend on the inference or deep learning features being enabled.
+V_DOT8_I32_IU4
+24
+Compute the dot product of two packed 8-D unsigned 4-bit integer inputs in the signed 32-bit integer domain,
+add a signed 32-bit integer value from the third input and store the result into a vector register.
+The NEG modifier is used to specify whether each input is signed or unsigned: 0=unsigned input, 1=signed
+input.
+declare A : 32'I[8];
+declare B : 32'I[8];
+// Figure out whether inputs are signed/unsigned.
+for i in 0 : 7 do
+    A4 = S0[i * 4 + 3 : i * 4];
+    B4 = S1[i * 4 + 3 : i * 4];
+    A[i] = NEG[0].u1 ? 32'I(signext(A4.i4)) : 32'I(32'U(A4.u4));
+    B[i] = NEG[1].u1 ? 32'I(signext(B4.i4)) : 32'I(32'U(B4.u4))
+endfor;
+C = S2.i32;
+// Signed multiplier/adder. Extend unsigned inputs with leading 0.
+tmp = C.i32;
+tmp += A[0] * B[0];
+tmp += A[1] * B[1];
+tmp += A[2] * B[2];
+tmp += A[3] * B[3];
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+394 of 697
+
+--- PAGE 405 ---
+tmp += A[4] * B[4];
+tmp += A[5] * B[5];
+tmp += A[6] * B[6];
+tmp += A[7] * B[7];
+D0.i32 = tmp
+V_DOT8_U32_U4
+25
+Compute the dot product of two packed 8-D unsigned 4-bit integer inputs in the unsigned 32-bit integer
+domain, add an unsigned 32-bit integer value from the third input and store the result into a vector register.
+tmp = S2.u32;
+tmp += u4_to_u32(S0[3 : 0].u4) * u4_to_u32(S1[3 : 0].u4);
+tmp += u4_to_u32(S0[7 : 4].u4) * u4_to_u32(S1[7 : 4].u4);
+tmp += u4_to_u32(S0[11 : 8].u4) * u4_to_u32(S1[11 : 8].u4);
+tmp += u4_to_u32(S0[15 : 12].u4) * u4_to_u32(S1[15 : 12].u4);
+tmp += u4_to_u32(S0[19 : 16].u4) * u4_to_u32(S1[19 : 16].u4);
+tmp += u4_to_u32(S0[23 : 20].u4) * u4_to_u32(S1[23 : 20].u4);
+tmp += u4_to_u32(S0[27 : 24].u4) * u4_to_u32(S1[27 : 24].u4);
+tmp += u4_to_u32(S0[31 : 28].u4) * u4_to_u32(S1[31 : 28].u4);
+D0.u32 = tmp
+V_DOT2_F32_BF16
+26
+Compute the dot product of two packed 2-D BF16 float inputs in the single-precision float domain, add a single-
+precision float value from the third input and store the result into a vector register.
+tmp = S2.f32;
+tmp += bf16_to_f32(S0[15 : 0].bf16) * bf16_to_f32(S1[15 : 0].bf16);
+tmp += bf16_to_f32(S0[31 : 16].bf16) * bf16_to_f32(S1[31 : 16].bf16);
+D0.f32 = tmp
+V_PK_MIN_NUM_F16
+27
+Select the component-wise IEEE minimumNumber() of two half-precision float inputs and store the result into
+a vector register.
+A numeric argument is favoured over NaN when determining which argument to return.
+declare tmp : 32'B;
+tmp[15 : 0].f16 = v_min_num_f16(S0[15 : 0].f16, S1[15 : 0].f16);
+tmp[31 : 16].f16 = v_min_num_f16(S0[31 : 16].f16, S1[31 : 16].f16);
+D0.b32 = tmp
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+395 of 697
+
+--- PAGE 406 ---
+V_PK_MAX_NUM_F16
+28
+Select the component-wise IEEE maximumNumber() of two half-precision float inputs and store the result into
+a vector register.
+A numeric argument is favoured over NaN when determining which argument to return.
+declare tmp : 32'B;
+tmp[15 : 0].f16 = v_max_num_f16(S0[15 : 0].f16, S1[15 : 0].f16);
+tmp[31 : 16].f16 = v_max_num_f16(S0[31 : 16].f16, S1[31 : 16].f16);
+D0.b32 = tmp
+V_PK_MINIMUM_F16
+29
+Select the component-wise IEEE minimum() of two half-precision float inputs and store the result into a vector
+register.
+A signaling NaN in either argument is propagated to the result.
+declare tmp : 32'B;
+tmp[15 : 0].f16 = v_minimum_f16(S0[15 : 0].f16, S1[15 : 0].f16);
+tmp[31 : 16].f16 = v_minimum_f16(S0[31 : 16].f16, S1[31 : 16].f16);
+D0.b32 = tmp
+V_PK_MAXIMUM_F16
+30
+Select the component-wise IEEE maximum() of two half-precision float inputs and store the result into a vector
+register.
+A signaling NaN in either argument is propagated to the result.
+declare tmp : 32'B;
+tmp[15 : 0].f16 = v_maximum_f16(S0[15 : 0].f16, S1[15 : 0].f16);
+tmp[31 : 16].f16 = v_maximum_f16(S0[31 : 16].f16, S1[31 : 16].f16);
+D0.b32 = tmp
+V_FMA_MIX_F32
+32
+Multiply two inputs and add a third input using fused multiply add where the inputs are a mix of half-precision
+float and single-precision float values. Store the result into a vector register.
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+396 of 697
+
+--- PAGE 407 ---
+Size and location of the three inputs are controlled by { OPSEL_HI[i], OPSEL[i] }: 0=src[31:0], 1=src[31:0],
+2=src[15:0], 3=src[31:16]. For MIX opcodes the NEG_HI instruction field acts as an absolute-value modifier
+for the three inputs.
+declare in : 32'F[3];
+declare S : 32'B[3];
+for i in 0 : 2 do
+    if !OPSEL_HI.u3[i] then
+        in[i] = S[i].f32
+    elsif OPSEL.u3[i] then
+        in[i] = f16_to_f32(S[i][31 : 16].f16)
+    else
+        in[i] = f16_to_f32(S[i][15 : 0].f16)
+    endif
+endfor;
+D0[31 : 0].f32 = fma(in[0], in[1], in[2])
+V_FMA_MIXLO_F16
+33
+Multiply two inputs and add a third input using fused multiply add where the inputs are a mix of half-precision
+float and single-precision float values. Convert the result to a half-precision float. Store the result into the low
+bits of a vector register.
+Size and location of the three inputs are controlled by { OPSEL_HI[i], OPSEL[i] }: 0=src[31:0], 1=src[31:0],
+2=src[15:0], 3=src[31:16]. For MIX opcodes the NEG_HI instruction field acts as an absolute-value modifier
+for the three inputs.
+declare in : 32'F[3];
+declare S : 32'B[3];
+for i in 0 : 2 do
+    if !OPSEL_HI.u3[i] then
+        in[i] = S[i].f32
+    elsif OPSEL.u3[i] then
+        in[i] = f16_to_f32(S[i][31 : 16].f16)
+    else
+        in[i] = f16_to_f32(S[i][15 : 0].f16)
+    endif
+endfor;
+D0[15 : 0].f16 = f32_to_f16(fma(in[0], in[1], in[2]))
+V_FMA_MIXHI_F16
+34
+Multiply two inputs and add a third input using fused multiply add where the inputs are a mix of half-precision
+float and single-precision float values. Convert the result to a half-precision float. Store the result into the high
+bits of a vector register.
+Size and location of the three inputs are controlled by { OPSEL_HI[i], OPSEL[i] }: 0=src[31:0], 1=src[31:0],
+2=src[15:0], 3=src[31:16]. For MIX opcodes the NEG_HI instruction field acts as an absolute-value modifier
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+397 of 697
+
+--- PAGE 408 ---
+for the three inputs.
+declare in : 32'F[3];
+declare S : 32'B[3];
+for i in 0 : 2 do
+    if !OPSEL_HI.u3[i] then
+        in[i] = S[i].f32
+    elsif OPSEL.u3[i] then
+        in[i] = f16_to_f32(S[i][31 : 16].f16)
+    else
+        in[i] = f16_to_f32(S[i][15 : 0].f16)
+    endif
+endfor;
+D0[31 : 16].f16 = f32_to_f16(fma(in[0], in[1], in[2]))
+V_DOT4_F32_FP8_BF8
+36
+Compute the dot product of a packed 4-D FP8 float input and a packed 4-D BF8 float input in the single-
+precision float domain, add a single-precision float value from the third input and store the result into a vector
+register.
+tmp = S2.f32;
+tmp += 32'F(S0[7 : 0].fp8) * 32'F(S1[7 : 0].bf8);
+tmp += 32'F(S0[15 : 8].fp8) * 32'F(S1[15 : 8].bf8);
+tmp += 32'F(S0[23 : 16].fp8) * 32'F(S1[23 : 16].bf8);
+tmp += 32'F(S0[31 : 24].fp8) * 32'F(S1[31 : 24].bf8);
+D0.f32 = tmp
+Notes
+V_DOT4_F32_BF8_FP8
+37
+Compute the dot product of a packed 4-D BF8 float input and a packed 4-D FP8 float input in the single-
+precision float domain, add a single-precision float value from the third input and store the result into a vector
+register.
+tmp = S2.f32;
+tmp += 32'F(S0[7 : 0].bf8) * 32'F(S1[7 : 0].fp8);
+tmp += 32'F(S0[15 : 8].bf8) * 32'F(S1[15 : 8].fp8);
+tmp += 32'F(S0[23 : 16].bf8) * 32'F(S1[23 : 16].fp8);
+tmp += 32'F(S0[31 : 24].bf8) * 32'F(S1[31 : 24].fp8);
+D0.f32 = tmp
+Notes
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+398 of 697
+
+--- PAGE 409 ---
+V_DOT4_F32_FP8_FP8
+38
+Compute the dot product of two packed 4-D FP8 float inputs in the single-precision float domain, add a single-
+precision float value from the third input and store the result into a vector register.
+tmp = S2.f32;
+tmp += 32'F(S0[7 : 0].fp8) * 32'F(S1[7 : 0].fp8);
+tmp += 32'F(S0[15 : 8].fp8) * 32'F(S1[15 : 8].fp8);
+tmp += 32'F(S0[23 : 16].fp8) * 32'F(S1[23 : 16].fp8);
+tmp += 32'F(S0[31 : 24].fp8) * 32'F(S1[31 : 24].fp8);
+D0.f32 = tmp
+Notes
+V_DOT4_F32_BF8_BF8
+39
+Compute the dot product of two packed 4-D BF8 float inputs in the single-precision float domain, add a single-
+precision float value from the third input and store the result into a vector register.
+tmp = S2.f32;
+tmp += 32'F(S0[7 : 0].bf8) * 32'F(S1[7 : 0].bf8);
+tmp += 32'F(S0[15 : 8].bf8) * 32'F(S1[15 : 8].bf8);
+tmp += 32'F(S0[23 : 16].bf8) * 32'F(S1[23 : 16].bf8);
+tmp += 32'F(S0[31 : 24].bf8) * 32'F(S1[31 : 24].bf8);
+D0.f32 = tmp
+Notes
+V_WMMA_F32_16X16X16_F16
+64
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are half-precision float format. Matrices C and D are single-precision float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.f16(16x16) * S1.f16(16x16) + S2.f32(16x16)";
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+399 of 697
+
+--- PAGE 410 ---
+EXEC = saved_exec
+V_WMMA_F32_16X16X16_BF16
+65
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are BF16 float format. Matrices C and D are single-precision float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.bf16(16x16) * S1.bf16(16x16) + S2.f32(16x16)";
+EXEC = saved_exec
+V_WMMA_F16_16X16X16_F16
+66
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are half-precision float format. Matrices C and D are half-precision float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f16(16x16) = S0.f16(16x16) * S1.f16(16x16) + S2.f16(16x16)";
+EXEC = saved_exec
+V_WMMA_BF16_16X16X16_BF16
+67
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+400 of 697
+
+--- PAGE 411 ---
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are BF16 float format. Matrices C and D are BF16 float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.bf16(16x16) = S0.bf16(16x16) * S1.bf16(16x16) + S2.bf16(16x16)";
+EXEC = saved_exec
+V_WMMA_I32_16X16X16_IU8
+68
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are unsigned 8-bit integer format. Matrices C and D are signed 32-bit integer format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.i32(16x16) = S0.iu8(16x16) * S1.iu8(16x16) + S2.i32(16x16)";
+EXEC = saved_exec
+V_WMMA_I32_16X16X16_IU4
+69
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+401 of 697
+
+--- PAGE 412 ---
+performance.
+Matrices A and B are unsigned 4-bit integer format. Matrices C and D are signed 32-bit integer format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.i32(16x16) = S0.iu4(16x16) * S1.iu4(16x16) + S2.i32(16x16)";
+EXEC = saved_exec
+V_WMMA_F32_16X16X16_FP8_FP8
+70
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are FP8 float format. Matrices C and D are single-precision float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.fp8(16x16) * S1.fp8(16x16) + S2.f32(16x16)";
+EXEC = saved_exec
+V_WMMA_F32_16X16X16_FP8_BF8
+71
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is FP8 float format. Matrix B is BF8 float format. Matrices C and D are single-precision float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.fp8(16x16) * S1.bf8(16x16) + S2.f32(16x16)";
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+402 of 697
+
+--- PAGE 413 ---
+EXEC = saved_exec
+V_WMMA_F32_16X16X16_BF8_FP8
+72
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is BF8 float format. Matrix B is FP8 float format. Matrices C and D are single-precision float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.bf8(16x16) * S1.fp8(16x16) + S2.f32(16x16)";
+EXEC = saved_exec
+V_WMMA_F32_16X16X16_BF8_BF8
+73
+Multiply the 16x16 matrix in the first input by the 16x16 matrix in the second input and add the 16x16 matrix in
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x16) * B (16x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are BF8 float format. Matrices C and D are single-precision float format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.bf8(16x16) * S1.bf8(16x16) + S2.f32(16x16)";
+EXEC = saved_exec
+V_WMMA_I32_16X16X32_IU4
+74
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and add the 16x16 matrix in
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+403 of 697
+
+--- PAGE 414 ---
+the third input using fused multiply add. Store the resulting matrix into vector registers.
+D = A (16x32) * B (32x16) + C (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrices A and B are unsigned 4-bit integer format. Matrices C and D are signed 32-bit integer format.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.i32(16x16) = S0.iu4(16x32) * S1.iu4(32x16) + S2.i32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_F32_16X16X32_F16
+80
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in half-precision float format, consuming half the physical storage of a dense
+matrix with same dimensions. Matrix B is a dense matrix in half-precision float format. Matrix D is single-
+precision float format and is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.f16(16x16) * S1.f16(32x16, index set from S2) + D0.f32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_F32_16X16X32_BF16
+81
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+404 of 697
+
+--- PAGE 415 ---
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in BF16 float format, consuming half the physical storage of a dense matrix with
+same dimensions. Matrix B is a dense matrix in BF16 float format. Matrix D is single-precision float format and
+is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.bf16(16x16) * S1.bf16(32x16, index set from S2) + D0.f32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_F16_16X16X32_F16
+82
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in half-precision float format, consuming half the physical storage of a dense
+matrix with same dimensions. Matrix B is a dense matrix in half-precision float format. Matrix D is half-
+precision float format and is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f16(16x16) = S0.f16(16x16) * S1.f16(32x16, index set from S2) + D0.f16(16x16)";
+EXEC = saved_exec
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+405 of 697
+
+--- PAGE 416 ---
+V_SWMMAC_BF16_16X16X32_BF16
+83
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in BF16 float format, consuming half the physical storage of a dense matrix with
+same dimensions. Matrix B is a dense matrix in BF16 float format. Matrix D is BF16 float format and is both the
+output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.bf16(16x16) = S0.bf16(16x16) * S1.bf16(32x16, index set from S2) + D0.bf16(16x16)";
+EXEC = saved_exec
+V_SWMMAC_I32_16X16X32_IU8
+84
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in unsigned 8-bit integer format, consuming half the physical storage of a dense
+matrix with same dimensions. Matrix B is a dense matrix in unsigned 8-bit integer format. Matrix D is signed
+32-bit integer format and is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.i32(16x16) = S0.iu8(16x16) * S1.iu8(32x16, index set from S2) + D0.i32(16x16)";
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+406 of 697
+
+--- PAGE 417 ---
+EXEC = saved_exec
+V_SWMMAC_I32_16X16X32_IU4
+85
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in unsigned 4-bit integer format, consuming half the physical storage of a dense
+matrix with same dimensions. Matrix B is a dense matrix in unsigned 4-bit integer format. Matrix D is signed
+32-bit integer format and is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.i32(16x16) = S0.iu4(16x16) * S1.iu4(32x16, index set from S2) + D0.i32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_I32_16X16X64_IU4
+86
+Multiply the 16x64 matrix in the first input by the 64x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x64) * B (64x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in unsigned 4-bit integer format, consuming half the physical storage of a dense
+matrix with same dimensions. Matrix B is a dense matrix in unsigned 4-bit integer format. Matrix D is signed
+32-bit integer format and is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+407 of 697
+
+--- PAGE 418 ---
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.i32(16x16) = S0.iu4(16x32) * S1.iu4(64x16, index set from S2) + D0.i32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_F32_16X16X32_FP8_FP8
+87
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in FP8 float format, consuming half the physical storage of a dense matrix with
+same dimensions. Matrix B is a dense matrix in FP8 float format. Matrix D is single-precision float format and
+is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.fp8(16x16) * S1.fp8(32x16, index set from S2) + D0.f32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_F32_16X16X32_FP8_BF8
+88
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+408 of 697
+
+--- PAGE 419 ---
+Matrix A is a sparse matrix in FP8 float format, consuming half the physical storage of a dense matrix with
+same dimensions. Matrix B is a dense matrix in BF8 float format. Matrix D is single-precision float format and
+is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.fp8(16x16) * S1.bf8(32x16, index set from S2) + D0.f32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_F32_16X16X32_BF8_FP8
+89
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in BF8 float format, consuming half the physical storage of a dense matrix with
+same dimensions. Matrix B is a dense matrix in FP8 float format. Matrix D is single-precision float format and
+is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.bf8(16x16) * S1.fp8(32x16, index set from S2) + D0.f32(16x16)";
+EXEC = saved_exec
+V_SWMMAC_F32_16X16X32_BF8_BF8
+90
+Multiply the 16x32 matrix in the first input by the 32x16 matrix in the second input and accumulate the result
+into the 16x16 matrix in the destination registers using fused multiply add. Sparse indexes for the first matrix
+are given in the third input.
+D = A (sparse 16x32) * B (32x16) + D (16x16)
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+409 of 697
+
+--- PAGE 420 ---
+Each operand contains a single matrix whose elements are distributed across all lanes of the wave. A single
+matrix multiply is computed and the row-column dot products are distributed across the vector ALU for higher
+performance.
+Matrix A is a sparse matrix in BF8 float format, consuming half the physical storage of a dense matrix with
+same dimensions. Matrix B is a dense matrix in BF8 float format. Matrix D is single-precision float format and
+is both the output and the accumulate input.
+2 out of every 4 elements on the K axis of matrix A are zero. The sparse indexes are used to determine which 2
+elements are zero.
+saved_exec = EXEC;
+EXEC = 64'B(-1);
+eval "D0.f32(16x16) = S0.bf8(16x16) * S1.bf8(32x16, index set from S2) + D0.f32(16x16)";
+EXEC = saved_exec
+"RDNA4" Instruction Set Architecture
+16.10. VOP3P Instructions
+410 of 697
+
+--- PAGE 421 ---
+16.11. VOPD Instructions
+The VOPD encoded describes two VALU opcodes that are executed in parallel.
+For instruction definitions, refer to the VOP1, VOP2 and VOP3 sections.
+16.11.1. VOPD X-Instructions
+V_DUAL_FMAC_F32
+0
+Multiply two floating point inputs and accumulate the result into the destination register using fused multiply
+add.
+D0.f32 = fma(S0.f32, S1.f32, D0.f32)
+V_DUAL_FMAAK_F32
+1
+Multiply two single-precision float inputs and add a literal constant using fused multiply add, and store the
+result into a vector register.
+D0.f32 = fma(S0.f32, S1.f32, SIMM32.f32)
+Notes
+This opcode cannot use the VOP3 encoding and cannot use input/output modifiers.
+V_DUAL_FMAMK_F32
+2
+Multiply a single-precision float input with a literal constant and add a second single-precision float input using
+fused multiply add, and store the result into a vector register.
+D0.f32 = fma(S0.f32, SIMM32.f32, S1.f32)
+Notes
+This opcode cannot use the VOP3 encoding and cannot use input/output modifiers.
+"RDNA4" Instruction Set Architecture
+16.11. VOPD Instructions
+411 of 697

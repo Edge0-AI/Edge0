@@ -8,6 +8,7 @@ export type EngStatus = {
   running: boolean; tier?: string; base_url?: string; bound?: string; port?: number;
   pool_mb?: number; uptime_s?: number; log?: string; version?: string | null;
   phys_mem_gb?: number; pool_telemetry?: string | null; pid?: number; job?: boolean;
+  model?: string; plan?: GgufPlan | null;
 };
 export type FileProg = { path: string; done: number; total: number; state: string };
 export type TaskView = {
@@ -137,4 +138,42 @@ export type DoctorCheck = { id: string; verdict: string; detail: string; code?: 
 
 export function installedTiers(): string[] {
   return Object.keys(shellStore.installed);
+}
+
+// —— local GGUF models (MoE families). Facts and the expert-offload plan come from
+//    windows/tools/gguf_tool.py; the shell only transports them. ——
+export type GgufPlan = {
+  fits: boolean | null; mode: string; n_cpu_moe: number; cpu_moe: boolean; args: string[];
+  gpu_gib_est: number; cpu_gib_est: number; kv_gib_est: number; budget_gib: number; notes: string[];
+};
+export type GgufDevice = { id: string; desc: string; total_gb: number; free_gb: number };
+export type GgufInfo = {
+  ok: boolean; path: string; shards: string[]; name: string; architecture: string; is_moe: boolean;
+  layers: number; experts: number; experts_used: number; context_length: number | null;
+  embedding_length: number | null; quant: string | null; file_bytes: number; tensor_bytes: number;
+  expert_bytes: number; has_chat_template: boolean; kv_bytes_per_token: number; ctx: number;
+  family: { id: string; label: string; archs: string[] } | null; warnings: string[];
+  plan?: GgufPlan; gpu: GgufDevice | null;
+};
+export type GgufScanRow = {
+  ok: boolean; path: string; name?: string; shards?: string[]; architecture?: string; is_moe?: boolean;
+  experts?: number; family?: string | null; family_label?: string | null; quant?: string | null;
+  file_bytes?: number; error?: string;
+};
+export const ggufScan = (dir: string | null): Promise<{ ok: boolean; models: GgufScanRow[] }> =>
+  invoke("gguf_scan", { dir });
+export const ggufInspect = (path: string, ctx: number): Promise<GgufInfo> => invoke("gguf_inspect", { path, ctx });
+
+/** Load a local GGUF through the shared engine (explicit user action; the shell refuses a plan that does not fit). */
+export async function loadGguf(path: string, ctx: number): Promise<EngStatus> {
+  engineStore.loadingTier = "local-gguf";
+  engineStore.sig.emit();
+  try {
+    const s = await invoke<EngStatus>("gguf_load", { path, ctx });
+    engineStore.status = s;
+    return s;
+  } finally {
+    engineStore.loadingTier = null;
+    engineStore.sig.emit();
+  }
 }
