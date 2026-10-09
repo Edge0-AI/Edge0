@@ -326,8 +326,9 @@ auto-adapting to iOS / macOS / Android / Windows / Python — arrives in
   macOS, Android, Windows and Python. It builds on the platform
   engines already open-sourced in this repo (`ios/` · `macos/` ·
   `android/` · `windows/`).
-- **CUDA backend** for the Python framework — reserved slot at
-  `python/src/edge0/backends/cuda/`, core code needs zero changes.
+- **CUDA backend optimization** for the Python framework — build on the
+  Torch reference backend at `python/src/edge0/backends/cuda/`; see
+  [NVIDIA / CUDA](docs/nvidia.md) for the current implementation and limitations.
 
 **Models & algorithms**
 
