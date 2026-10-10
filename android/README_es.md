@@ -113,7 +113,7 @@ adb shell am instrument -w -e class dev.edge0.runtime.app.LlamaRuntimeTest \
 Cobertura: smoke de 8B/35B, cambio en el proceso 35B↔8B, fidelidad de la reutilización de
 prefijos, cuadrantes de thinking activado/desactivado × system prompt (puerta 8B + prueba
 de fuga con 35B desactivado) y retención de identidad en el renderizado multiturno.
-Pruebas de lógica del lado del host: `./gradlew :app:testDebugUnitTest` (26 pruebas, sin
+Pruebas de lógica del lado del host: `./gradlew :app:testDebugUnitTest` (32 pruebas, sin
 necesidad de dispositivo).
 
 ---
