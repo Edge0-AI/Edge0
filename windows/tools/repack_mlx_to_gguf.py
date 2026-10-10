@@ -33,6 +33,8 @@ Usage: --dir models/edge0-35b --out models/edge0-35b-gguf [--dry|--selftest] [--
 """
 import argparse, json, os, re, struct, sys, time, hashlib
 import numpy as np
+if hasattr(sys.stdout, "reconfigure"):                      # issue #128: Windows ANSI-codepage stdout hardening
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 
 T_F32, T_F16, T_Q4_1 = 0, 1, 3                       # measured against fork ggml.h
 KV = dict(u32=4, i32=5, f32=6, bool=7, str=8, arr=9, u64=10, f64=12)
@@ -272,7 +274,7 @@ def run(args):
             agg.setdefault((k, idx.t[n][3], idx.t[n][4]), 0)
             agg[(k, idx.t[n][3], idx.t[n][4])] += 1
         for (k, dt, shp), c in sorted(agg.items(), key=lambda x: str(x[0])):
-            print(f"[{k:6s}] src {dt:4s} {str(list(shp)):22s} ×{c}")
+            print(f"[{k:6s}] src {dt:4s} {str(list(shp)):22s} x{c}")
         for n, why in skipped:
             print(f"[skip] {n}")
         print(f"plan={len(plan)} skip={len(skipped)}")
@@ -342,7 +344,7 @@ def run(args):
                 q8 = W[sl].view(np.uint8).reshape(sl.stop - sl.start, words * 4)
                 w.write(deq_mlx_side(q8, S[sl], Bs[sl]).astype(np.float32, copy=False).tobytes())
         w.align_pad()
-        print(f"  [{kind:6s}] {name:64s} →{str(dims):20s} {w._f.tell()/1e9:6.2f}GB {time.time()-t0:5.0f}s", flush=True)
+        print(f"  [{kind:6s}] {name:64s} ->{str(dims):20s} {w._f.tell()/1e9:6.2f}GB {time.time()-t0:5.0f}s", flush=True)
 
     audit.update(fp16_gate=dict(_gate), n_tensors=len(regs), elapsed_s=round(time.time() - t0, 1),
                  exempt_groups=len(audit_exempt), exempt_list=sorted(set(map(tuple, audit_exempt)))[:500]
@@ -359,8 +361,8 @@ def run(args):
     json.dump(dict(audit=audit, verdict=tag, gates=ng, gguf_size=os.path.getsize(gp)),
               open(os.path.join(args.out, f"{stem}-r1-audit.json"), "w"), ensure_ascii=False, indent=1)
     print(f"\nGGUF {gp}  {os.path.getsize(gp)/1e9:.2f}GB  tensors={len(regs)}  {time.time()-t0:.0f}s")
-    print(f"parity gates {ng} (mismatches outside exemptions: {nb}) · fp16 gate elems={_gate['elems']:,} "
-          f"benign={_gate['breach_benign']:,} malignant-exempt={_gate['breach']:,} ⇒ {tag}")
+    print(f"parity gates {ng} (mismatches outside exemptions: {nb}) - fp16 gate elems={_gate['elems']:,} "
+          f"benign={_gate['breach_benign']:,} malignant-exempt={_gate['breach']:,} => {tag}")
     return 0 if verdict == "GREEN" else 1
 
 
@@ -401,7 +403,7 @@ def selftest(args):
     d0, m0 = float(blocks["d"][2, 0]), float(blocks["m"][2, 0])
     for e in (0, 5, 16, 21, 31):
         assert abs(float(Bq[2, e]) - (code(2, e) * d0 + m0)) < 1e-9, f"element {e} nibble-order pin failed"
-    print("selftest pack/deq sha equality PASS · extreme codes 0/15 + cross-word nibble order PASS")
+    print("selftest pack/deq sha equality PASS - extreme codes 0/15 + cross-word nibble order PASS")
 
     p = os.path.join(args.out or ".", "_selftest.gguf")
     os.makedirs(p and (args.out or "."), exist_ok=True)
