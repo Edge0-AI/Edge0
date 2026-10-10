@@ -45,6 +45,9 @@ dev = [
 fetch = [
     "huggingface_hub>=0.23",
 ]
+cuda = [
+    "torch>=2.14",
+]
 
 [project.scripts]
 edge0 = "edge0.cli:main"

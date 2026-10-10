@@ -28,9 +28,9 @@ All commands below run from this directory (`python/`).
 
 | component | requirement |
 |---|---|
-| OS / hardware | macOS on Apple Silicon (M1/M2/M3/M4) — the MLX backend is Apple-Silicon-only; a CUDA backend is on the roadmap |
+| OS / hardware | Default MLX backend: macOS on Apple Silicon. Optional Torch CUDA reference backend: NVIDIA GPU; see [CUDA setup](../docs/nvidia.md). |
 | Python | 3.10+ (3.12 recommended) |
-| MLX | `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see `pyproject.toml`) |
+| MLX backend | `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see `pyproject.toml`) |
 | Memory | ~2.9 GB peak active (edge0-35b), ~1.0 GB (edge0-8b), short contexts |
 | Disk | ~23 GB (edge0-35b) / ~4.2 GB (edge0-8b); expert weights are mmapped and read on demand, not loaded into RAM up front |
 
@@ -43,6 +43,8 @@ All commands below run from this directory (`python/`).
 ```bash
 python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
 ```
+
+For the optional CUDA backend, follow the [NVIDIA installation instructions](../docs/nvidia.md).
 
 ### Models
 
@@ -164,8 +166,8 @@ above the base). Max 100:
 - **Backend isolation** — all MLX code lives under
   `src/edge0/backends/mlx/`; the core logic (model specs, prerouter,
   streaming expert pool, server) depends only on the backend facade
-  (`backends/base.py`), so a new backend implements the same facade
-  (`backends/cuda/` is a reserved slot) with zero changes to core code.
+  (`backends/base.py`). The default MLX implementation and the optional
+  Torch CUDA reference implementation expose the shared backend interface.
 - **Adapters as safetensors** — LoRA and prerouter weights are
   `.safetensors` files with provenance metadata (source, version, owner
   layers), resolved from the model directory or the gitignored `artifacts/`
@@ -178,7 +180,8 @@ above the base). Max 100:
 
 ```
 src/edge0/
-├── backends/mlx/                  # MLX backend (isolation boundary; cuda/ reserved)
+├── backends/mlx/                  # Default MLX backend
+├── backends/cuda/                 # Optional Torch CUDA reference backend
 ├── engine/  models/  moe/  prerouter/  streaming/
 ├── adapters/  attention/  server/
 └── cli.py  registry.py  sampling.py  config.py

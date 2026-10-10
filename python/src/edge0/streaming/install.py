@@ -18,6 +18,16 @@ from edge0.streaming.mmap import SafetensorsMmap
 from edge0.streaming.options import LayerOptions
 
 
+def _swap_submodule(block, name: str, value) -> None:
+    """``setattr`` that also works on torch modules, which refuse to put a
+    non-Module where a child module is registered."""
+    try:
+        setattr(block, name, value)
+    except TypeError:
+        delattr(block, name)
+        object.__setattr__(block, name, value)
+
+
 def install_streaming_experts(
     model,
     shards: list[SafetensorsMmap],
@@ -26,6 +36,7 @@ def install_streaming_experts(
     num_layers: int | None = None,
     shared_cache: SharedExpertCache | None = None,
     prefetch_buffer: PrefetchBuffer | None = None,
+    wrap=None,
 ) -> list[StreamingSwitchGLU]:
     """Replace every routed-expert block in ``model`` with its streaming
     twin and return the twins in layer order.
@@ -35,13 +46,19 @@ def install_streaming_experts(
     resolving.  The original blocks are kept on the objects as
     ``_edge0_resident`` (used by the bit-parity tests); nothing else in the
     base model is touched.
+
+    ``wrap(twin)`` adapts the twin to the block's own calling convention
+    before it is swapped in. The vendored MLX blocks call
+    ``switch_mlp(x, inds)`` / ``experts(x, idx)`` and weight the per-expert
+    outputs themselves, which is the twin's native interface, so the
+    default is no wrapping.
     """
     if num_layers is None:
         n = 0
         while True:
             try:
                 spec.block_of(model, n)
-            except AttributeError:
+            except (AttributeError, IndexError):  # past the last layer
                 break
             n += 1
         if n == 0:
@@ -65,18 +82,19 @@ def install_streaming_experts(
         twin = StreamingSwitchGLU(
             shards, i, spec, options=opts,
             shared_cache=cache, prefetch_buffer=buf)
-        # keep the resident block reachable (bit-parity tests, debugging)
-        block._edge0_resident = block
+        # keep the resident block reachable (bit-parity tests, debugging);
+        # a plain attribute, not a child module -- as a child it would make
+        # the block its own descendant (torch's state_dict recurses forever)
+        object.__setattr__(block, "_edge0_resident", block)
         # swap the twin into the block, following the family convention:
         # qwen-style blocks call ``switch_mlp(x, inds)``; ling-style blocks
         # hold ``experts = SwitchGLU(...)`` and call ``experts(x, idx)``.
         # The original submodule is stashed for parity tests.
-        if hasattr(block, "switch_mlp"):
-            block._edge0_resident_switch = block.switch_mlp
-            block.switch_mlp = twin
-        else:
-            block._edge0_resident_switch = block.experts
-            block.experts = twin
+        name = "switch_mlp" if hasattr(block, "switch_mlp") else "experts"
+        # object.__setattr__: keep the stash out of torch's child registry
+        object.__setattr__(block, "_edge0_resident_switch",
+                           getattr(block, name))
+        _swap_submodule(block, name, wrap(twin) if wrap else twin)
         if opts.top_k is not None:
             res = getattr(block, "_edge0_resident", block)
             if hasattr(res, "top_k"):

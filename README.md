@@ -84,11 +84,11 @@ are co-located with each checkpoint and load automatically, so
 - **Backend isolation (Python framework)**: within the Python framework,
   all MLX code lives under `python/src/edge0/backends/mlx/`; the core
   logic (model specs, prerouter, streaming expert pool, server) depends
-  only on the backend facade (`backends/base.py`), so a new backend
-  implements the same facade (`backends/cuda/` is a reserved slot) with
-  zero changes to core code. The iOS / macOS / Android engines ship
-  platform-native stacks today — bringing every platform under one
-  access layer is exactly what the unified inference framework
+  only on the backend facade (`backends/base.py`), implemented by the
+  MLX backend and the optional Torch backend (`backends/cuda/`), so a new
+  backend needs zero changes to core code. The iOS / macOS / Android
+  engines ship platform-native stacks today — bringing every platform
+  under one access layer is exactly what the unified inference framework
   (see [Roadmap](#roadmap)) will deliver;
 - **Adapters as safetensors**: LoRA and prerouter weights are
   `.safetensors` files with provenance metadata (source, version, owner
@@ -144,13 +144,17 @@ python examples/bench.py edge0-8b     # via $EDGE0_8B_MODEL
 #### Requirements
 
 - **OS / hardware**: the MLX backend runs on macOS with Apple Silicon
-  (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
-  platforms are supported by the Python framework yet.
+  (M1/M2/M3/M4). The Torch backend supports CPU and Apple MPS. NVIDIA
+  CUDA results documented here were measured on a DGX Spark (GB10).
+  Choose a PyTorch wheel compatible with your OS, GPU, and CUDA
+  driver (see [PyTorch's install selector](https://pytorch.org/get-started/locally/)).
 - **Python**: 3.10+ (3.12 recommended).
-- **MLX**: `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see
+- **MLX backend**: `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see
   `python/pyproject.toml`). Garbled, mixed-language output on Apple A18 /
   A18 Pro means an older `mlx`: `pip install 'mlx==0.30.6'
   'mlx-metal==0.30.6'` ([#8](https://github.com/Edge0-AI/Edge0/issues/8)).
+- **CUDA backend**: install the PyTorch wheel for your system, then install
+  Edge0 with its optional `cuda` extra (which declares `torch>=2.14`).
 - **Memory**: ~2.9 GB peak active memory for `edge0-35b`, ~1.0 GB for
   `edge0-8b` (short contexts; see [Benchmark](#benchmark)). Add
   headroom for the OS, tokenizer, and long-context KV growth.
@@ -164,6 +168,18 @@ python examples/bench.py edge0-8b     # via $EDGE0_8B_MODEL
 cd python
 # Python >= 3.10; the MLX backend requires macOS with Apple Silicon
 python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+```
+
+#### NVIDIA / CUDA backend (optional)
+
+Install the PyTorch wheel that matches your operating system, NVIDIA GPU,
+and CUDA driver using [PyTorch's install selector](https://pytorch.org/get-started/locally/).
+The CUDA backend was validated with PyTorch 2.14 and CUDA 13.0 on an NVIDIA
+GB10. Then install Edge0 with the optional extra and select the backend:
+
+```bash
+.venv/bin/pip install -e '.[cuda,dev,fetch]'
+EDGE0_BACKEND=cuda .venv/bin/edge0 serve edge0-35b
 ```
 
 #### 2) Download a model
@@ -279,6 +295,7 @@ runs this exact path).
 - [Architecture](docs/architecture.md)
 - [Attention](docs/attention.md) / [MoE](docs/moe.md) / [SSD streaming](docs/streaming.md) / [prerouter](docs/prerouter.md)
 - [Adding a model](docs/adding-a-model.md)
+- [NVIDIA / CUDA support: investigation status](docs/nvidia.md)
 - [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
 - Technical report: [The Other Half of the Memory Wall](https://arxiv.org/abs/2609.18063) ([PDF](paper/main.pdf))
 
@@ -309,8 +326,9 @@ auto-adapting to iOS / macOS / Android / Windows / Python — arrives in
   macOS, Android, Windows and Python. It builds on the platform
   engines already open-sourced in this repo (`ios/` · `macos/` ·
   `android/` · `windows/`).
-- **CUDA backend** for the Python framework — reserved slot at
-  `python/src/edge0/backends/cuda/`, core code needs zero changes.
+- **CUDA backend optimization** for the Python framework — build on the
+  Torch reference backend at `python/src/edge0/backends/cuda/`; see
+  [NVIDIA / CUDA](docs/nvidia.md) for the current implementation and limitations.
 
 **Models & algorithms**
 
