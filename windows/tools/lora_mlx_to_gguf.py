@@ -22,6 +22,8 @@ Basis (verified against fork @7ab4ee7):
 """
 import argparse, os, re, struct, sys
 import numpy as np
+if hasattr(sys.stdout, "reconfigure"):                      # issue #128: Windows ANSI-codepage stdout hardening
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from repack_mlx_to_gguf import StIndex, GgufWriter, KV, T_F16, bf16_to_f32
 from repack_r3 import ssm_ba_perm
@@ -72,6 +74,8 @@ def main():
     ap.add_argument("--alpha", type=float, default=32.0)   # = alpha baked in the source artifact; plain --lora (default scale 1.0) then reproduces the same expression
     ap.add_argument("--only", default=None, help="generate only families whose base name matches this regex (single-variable experiments)")
     ap.add_argument("--out-suffix", default="-gguf", help="infix in the output name")
+    ap.add_argument("--base", default=None,
+                    help="base GGUF for the cross-check gate (default: the conventional <dir>-gguf/edge0-<tier>.gguf sibling)")
     a = ap.parse_args()
     stem = os.path.basename(a.dir.rstrip("\\/"))
     is8 = "8b" in stem
@@ -153,16 +157,21 @@ def main():
         w.write(np.ascontiguousarray(A, np.float16).tobytes()); w.align_pad()
         w.write(np.ascontiguousarray(B, np.float16).tobytes()); w.align_pad()
     w.close(); idx.close()
-    print(f"adapter: {out}  tensors={2*len(entries)}  pairs={len(entries)} (incl. ssm_ba merge ×{comp} compensation)")
-    verify_against_base(out, "edge0-8b" if is8 else "edge0-35b")
+    print(f"adapter: {out}  tensors={2*len(entries)}  pairs={len(entries)} (incl. ssm_ba merge x{comp} compensation)")
+    base_stem = "edge0-8b" if is8 else "edge0-35b"
+    base = a.base or os.path.join(os.path.dirname(os.path.normpath(a.dir)), f"{stem}-gguf", f"{base_stem}.gguf")
+    verify_against_base(out, base)
 
 
-def verify_against_base(adapter_path, base_stem):
+def verify_against_base(adapter_path, base_path):
     """Cross-check gate: right after writing, verify (1) adapter names ⊆ base names
     (2) the upstream shape three-law (llama-adapter.cpp:358-371: a.ne0=base.ne0 ∧
     b.ne1=base.ne1 ∧ a.ne1=b.ne0; token_embd flip is a special case).
     Any miss/shape violation = hard throw, preventing the 'loads without error but
-    never enters the graph' failure mode from recurring."""
+    never enters the graph' failure mode from recurring.
+    The base GGUF path arrives as an argument (converter passes its own --out;
+    issue #128: it used to be hardcoded to <repo>/models/... and missed the app's
+    ~/.edge0/models layout on end-user machines)."""
     # gguf-py comes from the pinned vendored upstream (monorepo layout or bootstrap depot);
     # standalone checkouts fall back to an installed `gguf` package on sys.path.
     _here = os.path.dirname(os.path.abspath(__file__))
@@ -173,9 +182,12 @@ def verify_against_base(adapter_path, base_stem):
         if os.path.isdir(_p):
             sys.path.insert(0, _p)
             break
-    from gguf import GGUFReader
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    base_path = os.path.join(root, "models", f"{base_stem}-gguf", f"{base_stem}.gguf")
+    try:
+        from gguf import GGUFReader
+    except ImportError:
+        raise SystemExit("E-DEP: cross-check gate needs gguf-py (vendored llama.cpp/gguf-py on the search path, or: pip install gguf)")
+    if not os.path.isfile(base_path):
+        raise SystemExit(f"E-BASE-MISSING: base GGUF not found at {base_path} — pass --base <path> (the converter derives it from --out)")
     bt = {str(t.name): [int(x) for x in t.shape]
           for t in GGUFReader(base_path).tensors}
     ad = GGUFReader(adapter_path)

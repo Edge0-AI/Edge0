@@ -78,10 +78,11 @@ pub fn run(state: &engine::EngineState) -> Value {
         check("memory", "fail", format!("{mem} GB: below the 8b floor"), Some("E-MEM-LOAD"), None)
     });
 
-    // engine binary presence + version probe
+    // engine binary presence + version probe (always-measure: doctor reports live facts,
+    // and a cached negative from before the binary landed must not haunt it — issue #128)
     let exe = paths::bin_dir().join("llama-server.exe");
     checks.push(if exe.exists() {
-        match engine::server_version() {
+        match engine::server_version_probe() {
             Some(v) => check("engine", "pass", v, None, None),
             None => check("engine", "warn", format!("{} exists but version probe failed", exe.display()), None, None),
         }

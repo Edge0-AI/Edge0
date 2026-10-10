@@ -22,6 +22,18 @@ Usage: python tools/convert_mlx_to_gguf.py --dir models/edge0-8b [--out models/e
 """
 import argparse, hashlib, json, os, re, subprocess, sys, time
 
+# Dependency preflight + stdout hardening (issue #128): fail with a clear E-DEP line
+# instead of a bare ModuleNotFoundError traceback, and force UTF-8 on stdout so the
+# DONE/progress lines never crash under a redirected/ANSI-codepage stdout
+# (the app pipes us; cp1252-family consoles used to end a *successful* conversion in
+# a UnicodeEncodeError on the final line).
+try:
+    import numpy  # noqa: F401  (the whole chain needs it; report the miss here, with guidance)
+except ImportError:
+    sys.exit("E-DEP: the on-device converter needs python 3.10+ with numpy; fix: pip install numpy")
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 CONVERTER_REV = subprocess.run(["git", "-C", os.path.dirname(TOOLS), "rev-parse", "--short", "HEAD"],
                                capture_output=True, text=True).stdout.strip() or "unknown"
@@ -97,8 +109,6 @@ def main():
     m = re.match(r"edge0[-_](35b|8b)", stem)
     assert m, f"cannot detect tier from directory name: {stem}"
     tier = m.group(1)
-    if a.out and os.path.normpath(a.out) != os.path.normpath(d + "-gguf"):
-        print("WARNING: --out deviates from the <dir>-gguf convention ⇒ the lora cross-check gate still reads the base from the conventional path (use the default layout on-device)", flush=True)
     os.makedirs(out, exist_ok=True)
     log = open(os.path.join(out, "convert.log"), "ab")
     arts = {"gguf": os.path.join(out, f"edge0-{tier}.gguf"),
@@ -112,7 +122,7 @@ def main():
             old = json.load(open(manifest_p, encoding="utf8"))
             ok = all(os.path.isfile(p) and sha256(p) == old["artifacts"][k] for k, p in arts.items())
             if ok:
-                print("manifest hit and all artifact shas match ⇒ already converted, skipping (idempotent).", flush=True)
+                print("manifest hit and all artifact shas match => already converted, skipping (idempotent).", flush=True)
                 return 0
         except Exception:
             pass
@@ -137,7 +147,10 @@ def main():
                  "r3-8b", log)
         n_min = 500
     # ---- step 2: adapter ----
-    run_step([sys.executable, os.path.join(TOOLS, "lora_mlx_to_gguf.py"), "--dir", d], "lora", log)
+    # --base pins the cross-check gate to the base GGUF THIS run produced (issue #128:
+    # the gate used to hardcode <repo>/windows/models/... and missed the app's ~/.edge0 layout).
+    run_step([sys.executable, os.path.join(TOOLS, "lora_mlx_to_gguf.py"), "--dir", d,
+              "--base", arts["gguf"]], "lora", log)
     assert os.path.isfile(src_lora), f"adapter not produced: {src_lora}"
     if os.path.abspath(src_lora) != os.path.abspath(arts["lora"]):
         import shutil; shutil.copyfile(src_lora, arts["lora"])
@@ -163,10 +176,10 @@ def main():
         det = {k: (k in ref_base and ref_base[k][1] == man["artifacts"][k]) for k in arts}
         man["determinism_vs"] = {"baselines": {k: ref_base[k][0] for k in ref_base}, **det}
         assert all(det.get(k) for k in arts), f"determinism mismatch (artifact sha differs from baseline): {det}"
-        print(f"[determinism] vs baselines: ALL MATCH ✔", flush=True)
+        print(f"[determinism] vs baselines: ALL MATCH OK", flush=True)
     json.dump(man, open(manifest_p, "w", encoding="utf8"), ensure_ascii=False, indent=1)
     print(f"DONE {tier}: gguf={man['sizes']['gguf']/2**30:.2f}GiB lora={man['sizes']['lora']/2**20:.1f}MiB "
-          f"took {man['elapsed_s']}s → {manifest_p}", flush=True)
+          f"took {man['elapsed_s']}s -> {manifest_p}", flush=True)
 
 
 if __name__ == "__main__":

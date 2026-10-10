@@ -1,6 +1,6 @@
 // tests/doctor.rs — doctor check contract + model_delete protection lines (isolated home;
 // tests serialized via a process lock to avoid env races).
-use edge0_app_lib::{doctor, paths};
+use edge0_app_lib::{doctor, engine, paths};
 use serde_json::json;
 use std::sync::Once;
 
@@ -43,6 +43,38 @@ fn doctor_contract_shape() {
     assert_eq!(m8["verdict"], "fail", "registered but files missing = red INVALID flag");
     assert_eq!(m8["code"], "E-MODEL-INVALID");
     assert_eq!(find("model-35b").unwrap()["verdict"], "warn", "not installed = warn, not fail");
+}
+
+#[test]
+fn engine_probe_recovers_when_binary_lands_late() {
+    // Issue #128 fresh-install sequence: an early failed probe must NOT poison the
+    // session cache, and a version line written to STDERR (fork logging behavior)
+    // must still be captured. Serialized on LOCK; own bin dir; env restored.
+    let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let h = iso_home();
+    let fake = h.join("bin-late");
+    std::fs::create_dir_all(&fake).unwrap();
+    std::env::set_var("EDGE0_BIN_DIR", &fake);
+    // leg 1: exe absent ⇒ probe fails, nothing may be cached
+    assert!(engine::server_version_probe().is_none(), "early probe (no binary) must fail cleanly");
+    // leg 2: binary lands afterwards; emits its version line to stderr only.
+    // POSIX shebang stand-in — not spawnable on Windows, so the body is unix-gated
+    // (same exemption style as the mklink leg above; Windows coverage via manual runs).
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let exe = fake.join("llama-server.exe");
+        std::fs::write(&exe, "#!/bin/sh\necho 'load_backend: cpu' 1>&2\necho 'version: 0.0.0-itest (build 1, commit deadbeef)' 1>&2\n").unwrap();
+        std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let v = engine::server_version_probe().expect("late binary must probe OK (stderr capture)");
+        assert!(v.contains("0.0.0-itest"), "{v}");
+        // leg 3: doctor surfaces the recovered value as engine=pass
+        let r = doctor::run(&std::sync::Mutex::new(None));
+        let eng = r["checks"].as_array().unwrap().iter()
+            .find(|c| c["id"] == "engine").cloned().unwrap();
+        assert_eq!(eng["verdict"], "pass", "{:?}", eng["detail"]);
+    }
+    std::env::set_var("EDGE0_BIN_DIR", &h); // restore the E-ENGINE-MISSING anchor
 }
 
 #[test]
