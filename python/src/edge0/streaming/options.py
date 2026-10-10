@@ -90,6 +90,13 @@ class LayerOptions:
     #: a step otherwise degrades into "cold pages x per-fault latency", with
     #: those faults serializing on the VM map lock.  Retains no MLX arrays,
     #: so it does not displace the page cache.
+    #: Only consulted by ``prefetch()`` (for missing experts) and
+    #: ``stage_experts()`` (on staged layers). Does not enable either path
+    #: or affect plain on-demand / whole-layer loading. Direct
+    #: ``prefetch(experts)`` calls can still consult it when automatic
+    #: history prefetch and staging are disabled. ``prefetch_from_prefill()``
+    #: requires an expert set captured while staging was enabled; with
+    #: staging disabled from initialization, that helper is a no-op.
     warm_willneed: bool = False
 
     # ---- presets ----------------------------------------------------------
