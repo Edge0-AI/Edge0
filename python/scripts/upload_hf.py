@@ -76,6 +76,20 @@ REPOS = {
 }
 
 
+def files_to_upload(local_dir: str) -> list[str]:
+    """Every regular file in ``local_dir`` worth uploading, sorted.
+
+    Excludes dotfiles and ``.bak_vision`` backups left by
+    scripts/strip_vision_weights.py; everything else, including
+    README.md, is uploaded.
+    """
+    names = sorted(
+        f for f in os.listdir(local_dir)
+        if not f.startswith(".") and ".bak_vision" not in f
+    )
+    return [n for n in names if os.path.isfile(os.path.join(local_dir, n))]
+
+
 def main():
     tier = sys.argv[1] if len(sys.argv) > 1 else "edge0-8b"
     env_name, repo_id = REPOS[tier]
@@ -89,12 +103,7 @@ def main():
         raise SystemExit(f"checkpoint directory not found: {local_dir}")
     api = HfApi()
     print(f"uploading {local_dir} -> {repo_id} via {os.environ['HF_ENDPOINT']} (no xet)", flush=True)
-    names = sorted(
-        f for f in os.listdir(local_dir)
-        if not f.startswith(".") and ".bak_vision" not in f and f != "README.md"
-    )
-    # README usually already uploaded; skip leftovers handled below
-    files = [n for n in names if os.path.isfile(os.path.join(local_dir, n))]
+    files = files_to_upload(local_dir)
     for i, name in enumerate(files):
         path = os.path.join(local_dir, name)
         print(f"[{i+1}/{len(files)}] {name} ({os.path.getsize(path)} bytes)", flush=True)
