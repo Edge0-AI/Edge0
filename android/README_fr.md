@@ -119,7 +119,7 @@ Couverture : smoke 8B/35B, commutation 35B↔8B dans le même processus,
 fidélité de la réutilisation de préfixe, quadrants thinking activé/désactivé ×
 prompt système (porte 8B + sonde de fuite 35B désactivée), et rétention
 d'identité à travers le rendu multi-tours. Tests logiques côté hôte :
-`./gradlew :app:testDebugUnitTest` (26 tests, aucun appareil requis).
+`./gradlew :app:testDebugUnitTest` (32 tests, aucun appareil requis).
 
 ---
 

@@ -105,7 +105,7 @@ adb shell am instrument -w -e class dev.edge0.runtime.app.LlamaRuntimeTest \
 
 覆盖范围：8B/35B 冒烟、35B↔8B 进程内切换、前缀复用保真度、thinking
 开/关 × 系统提示词四象限（8B 开启 + 35B 关闭泄漏探测），以及多轮渲染下的
-身份保持。宿主侧逻辑测试：`./gradlew :app:testDebugUnitTest`（26 个测试，
+身份保持。宿主侧逻辑测试：`./gradlew :app:testDebugUnitTest`（32 个测试，
 无需设备）。
 
 ---
