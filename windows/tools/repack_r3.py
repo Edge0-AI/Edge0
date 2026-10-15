@@ -24,6 +24,8 @@ reversible; Q4_1 sampled pack two-sided sha. Output: <stem>.gguf.
 """
 import argparse, json, math, os, re, struct, sys, time
 import numpy as np
+if hasattr(sys.stdout, "reconfigure"):                      # issue #128: Windows ANSI-codepage stdout hardening
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from repack_mlx_to_gguf import (StIndex, GgufWriter, KV, T_F32, T_F16, T_Q4_1, ALIGN, QK41,
                                 DT_Q41, mlx_q_bytes, pack_q41_rows, deq_mlx_side, deq_gguf_side,
@@ -280,7 +282,7 @@ def main():
     v = "GREEN" if not bad and not audit["errors"] and n_done == len(table) else "RED"
     json.dump(dict(verdict=f"R3-artifact {v}", audit=audit, size=os.path.getsize(gp)),
               open(os.path.join(a.out, f"{stem}-audit.json"), "w"), ensure_ascii=False, indent=1)
-    print(f"\nGGUF {gp} {os.path.getsize(gp)/1e9:.2f}GB tensors={n_done}/{len(table)} ⇒ R3-artifact {v}"
+    print(f"\nGGUF {gp} {os.path.getsize(gp)/1e9:.2f}GB tensors={n_done}/{len(table)} => R3-artifact {v}"
           f" (errors={audit['errors']})")
     return 0 if v == "GREEN" else 1
 

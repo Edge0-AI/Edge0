@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouter } from "@tanstack/react-router";
-import { BookOpen, Home, Menu, Plus, Server, Settings, Sparkles, X } from "lucide-react";
+import { BookOpen, Home, Menu, Plus, Server, Settings, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -127,9 +127,12 @@ export function AppShell() {
       >
         <div className="flex items-center justify-between px-4 pb-2 pt-4">
           <div className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-fg text-surface shadow-sm">
-              <Sparkles size={16} aria-hidden />
-            </span>
+            <img
+              src="/edge0_logo.png"
+              alt=""
+              aria-hidden
+              className="size-8 rounded-xl shadow-sm object-cover"
+            />
             <div>
               <span className="block text-sm font-bold tracking-tight">{t("app.name")}</span>
               <span className="block text-[10px] font-medium uppercase tracking-[0.16em] text-muted">{t("app.localLabel")}</span>

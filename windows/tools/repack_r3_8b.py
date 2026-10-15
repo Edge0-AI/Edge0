@@ -34,6 +34,8 @@ identity / sentinel sha / kv_b transform reversibility spot-check / exp dual-pat
 """
 import argparse, json, math, os, re, struct, sys, time
 import numpy as np
+if hasattr(sys.stdout, "reconfigure"):                      # issue #128: Windows ANSI-codepage stdout hardening
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from repack_mlx_to_gguf import (StIndex, GgufWriter, KV, T_F32, T_F16, T_Q4_1, QK41, DT_Q41,
                                 mlx_q_bytes, pack_q41_rows, deq_mlx_side, deq_gguf_side, sha16)

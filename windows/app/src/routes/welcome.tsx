@@ -2,7 +2,7 @@
 // installed; completes the loop within three clicks). "Download & enable" = one explicit
 // intent: create the task + arm the one-shot token (auto-load on completion lives in the
 // AppShell chain).
-import { Sparkles, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 
 import { downloadStore, shellStore, startDownload } from "../api/client";
@@ -56,9 +56,12 @@ export function WelcomeCard() {
   return (
     <div className="e0-chat-empty px-6" data-testid="welcome-card">
       <div className="e0-chat-column mx-auto space-y-5 text-center">
-        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-fg text-surface shadow-sm">
-          <Sparkles size={20} aria-hidden />
-        </span>
+        <img
+          src="/edge0_logo.png"
+          alt=""
+          aria-hidden
+          className="mx-auto size-12 rounded-2xl shadow-sm object-cover"
+        />
         <div>
           <h2 className="text-3xl font-semibold tracking-tight">{t("welcome.title")}</h2>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted">

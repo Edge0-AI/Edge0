@@ -14,3 +14,5 @@ local.properties
 /build-dl
 # model sources and converted gguf (self-service downloads)
 /models
+# kotlin compiler session dir (build output, like .gradle)
+/.kotlin

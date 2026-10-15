@@ -83,7 +83,7 @@ adb shell am instrument -w -e class dev.edge0.runtime.app.LlamaRuntimeTest \
 # expected: OK (8 tests), ~7 min on the reference device
 ```
 
-カバレッジ: 8B/35B スモーク、35B↔8B のプロセス内切り替え、プレフィックス再利用の忠実性、thinking オン/オフ × システムプロンプトの四象限(8B ゲート + 35B オフ時のリークプローブ)、マルチターンレンダリングを通じたアイデンティティの保持。ホスト側のロジックテスト: `./gradlew :app:testDebugUnitTest`(26 テスト、デバイス不要)。
+カバレッジ: 8B/35B スモーク、35B↔8B のプロセス内切り替え、プレフィックス再利用の忠実性、thinking オン/オフ × システムプロンプトの四象限(8B ゲート + 35B オフ時のリークプローブ)、マルチターンレンダリングを通じたアイデンティティの保持。ホスト側のロジックテスト: `./gradlew :app:testDebugUnitTest`(32 テスト、デバイス不要)。
 
 ---
 

@@ -228,24 +228,38 @@ pub fn status(state: &EngineState) -> Value {
     }
 }
 
-/// Engine binary version: the actual `llama-server --version` line, cached in a
-/// OnceLock; the UI shows the measured value and falls back to null rather than guessing.
+/// Engine binary version: the actual `llama-server --version` line.
+/// A *successful* probe is cached for the session; failures are never cached
+/// (issue #128: the old OnceLock<Option> shape let one early miss — e.g. a status
+/// poll before the engine had landed — poison a whole fresh-install session with
+/// "exists but version probe failed"). Capture is stdout+stderr with a tolerant
+/// `version:` line match: the fork logs its banner to the log stream, and the old
+/// stdout-only / stderr-discarded / strict-prefix probe never saw it.
+static VER_CACHE: OnceLock<String> = OnceLock::new();
+
 pub fn server_version() -> Option<String> {
-    static VER: OnceLock<Option<String>> = OnceLock::new();
-    VER.get_or_init(|| {
-        let exe = paths::bin_dir().join("llama-server.exe");
-        let mut cmd = Command::new(&exe);
-        crate::no_window(&mut cmd)
-            .arg("--version")
-            .current_dir(paths::bin_dir())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null());
-        cmd.spawn()
-            .and_then(|c| c.wait_with_output())
-            .ok()
-            .map(|o| String::from_utf8_lossy(&o.stdout).lines().find(|l| l.starts_with("version:")).map(|l| l.trim().to_string()).unwrap_or_default())
-            .filter(|s| !s.is_empty())
-    }).clone()
+    VER_CACHE.get().cloned().or_else(server_version_probe)
+}
+
+/// Always-measure probe (doctor uses this: a manual check must read live facts,
+/// never a stale negative). Only a success writes the cache.
+pub fn server_version_probe() -> Option<String> {
+    let exe = paths::bin_dir().join("llama-server.exe");
+    let mut cmd = Command::new(&exe);
+    crate::no_window(&mut cmd)
+        .arg("--version")
+        .current_dir(paths::bin_dir())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let out = cmd.spawn().and_then(|c| c.wait_with_output()).ok()?;
+    let text = format!("{}\n{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
+    let line = text.lines().map(str::trim_start)
+        .find(|l| l.starts_with("version:"))
+        .or_else(|| text.lines().find(|l| l.contains("version:")))?
+        .trim().to_string();
+    if line.is_empty() { return None; }
+    let _ = VER_CACHE.set(line.clone());
+    Some(line)
 }
 
 /// Read the POOL2 init telemetry line from a log (used by doctor; a missing line =

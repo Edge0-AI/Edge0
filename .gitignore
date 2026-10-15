@@ -31,3 +31,7 @@ artifacts/
 # Bench / runtime logs
 *.log
 python/scripts/alignment_results.json
+
+# Local-only alignment tooling: MLX reference-output exporter for the
+# device-side `e0cli aligncheck` gate (kept out of tree for now).
+/scripts/export_reference_outputs.py

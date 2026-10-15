@@ -21,6 +21,9 @@ from edge0.engine.base import Edge0Engine
 class ChatMessage:
     role: str
     content: str
+    tool_calls: list[dict] | None = None
+    tool_call_id: str | None = None
+    name: str | None = None
 
 
 @dataclass
@@ -34,18 +37,50 @@ class ChatRequest:
     seed: int | None = None
     stream: bool = False
     enable_thinking: bool | None = None
+    tools: list[dict] | None = None
+    tool_choice: Any = None
     raw: dict[str, Any] = field(default_factory=dict)
+
+
+def _template_tool_calls(calls) -> list[dict] | None:
+    if calls is None:
+        return None
+    if not isinstance(calls, list):
+        raise ValueError("tool_calls must be a list of function calls")
+    normalized = []
+    for call in calls:
+        if not isinstance(call, dict) or not isinstance(call.get("function"), dict):
+            raise ValueError("tool_calls entries must contain a function object")
+        function = call["function"]
+        arguments = function.get("arguments", {})
+        # OpenAI messages serialize arguments; checkpoint templates iterate them.
+        if isinstance(arguments, str):
+            try:
+                arguments = json.loads(arguments)
+            except ValueError as exc:
+                raise ValueError(
+                    "tool_calls function arguments must be a JSON object") from exc
+        if not isinstance(arguments, dict):
+            raise ValueError("tool_calls function arguments must be a JSON object")
+        normalized.append({**call, "function": {**function, "arguments": arguments}})
+    return normalized
 
 
 def parse_chat_request(payload: dict) -> ChatRequest:
     msgs = []
     for m in payload.get("messages", []):
         role = str(m.get("role", "user"))
-        content = m.get("content", "")
+        content = m.get("content") or ""  # tool-call-only assistant turns
+        # send content: null, not an omitted key
         if isinstance(content, list):  # multi-part content: join text parts
             content = "".join(
                 p.get("text", "") for p in content if isinstance(p, dict))
-        msgs.append(ChatMessage(role=role, content=str(content)))
+        msgs.append(ChatMessage(
+            role=role, content=str(content),
+            tool_calls=_template_tool_calls(m.get("tool_calls")),
+            tool_call_id=m.get("tool_call_id"),
+            name=m.get("name"),
+        ))
     return ChatRequest(
         model=str(payload.get("model", "")),
         messages=msgs,
@@ -56,6 +91,8 @@ def parse_chat_request(payload: dict) -> ChatRequest:
         seed=payload.get("seed"),
         stream=bool(payload.get("stream", False)),
         enable_thinking=payload.get("enable_thinking"),
+        tools=payload.get("tools"),
+        tool_choice=payload.get("tool_choice"),
         raw=payload,
     )
 
@@ -67,6 +104,16 @@ class ChatSession:
         self.engine = engine
         self.req = req
         self._tok = engine._tok
+
+    def _tools(self) -> list[dict] | None:
+        """Tool definitions to forward to the chat template, or None if
+        the request has none or explicitly disabled calling
+        (``tool_choice: "none"``). Forcing a specific function or
+        ``tool_choice: "required"`` would need constrained decoding,
+        which isn't implemented; both currently behave like "auto"."""
+        if not self.req.tools or self.req.tool_choice == "none":
+            return None
+        return self.req.tools
 
     def prompt_ids(self) -> list[int]:
         tok = self._tok
@@ -82,7 +129,8 @@ class ChatSession:
             if think is None:
                 think = getattr(self.engine, "think", False)
             return encode(
-                [m.__dict__ for m in self.req.messages], think=bool(think))
+                [m.__dict__ for m in self.req.messages], think=bool(think),
+                tools=self._tools())
         if hasattr(tok, "apply_chat_template"):
             # The qwen35 template supports ``enable_thinking``: False
             # renders the canonical no-think prompt — an EMPTY think
@@ -101,7 +149,7 @@ class ChatSession:
             try:
                 text = tok.apply_chat_template(
                     msgs, tokenize=False, add_generation_prompt=True,
-                    enable_thinking=bool(think))
+                    enable_thinking=bool(think), tools=self._tools())
             except TypeError:
                 # tokenizer template without the kwarg: plain render
                 try:

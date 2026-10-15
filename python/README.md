@@ -31,7 +31,7 @@ All commands below run from this directory (`python/`).
 | OS / hardware | Default MLX backend: macOS on Apple Silicon. Optional Torch CUDA reference backend: NVIDIA GPU; see [CUDA setup](../docs/nvidia.md). |
 | Python | 3.10+ (3.12 recommended) |
 | MLX backend | `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see `pyproject.toml`) |
-| Memory | ~2.9 GB peak active (edge0-35b), ~1.0 GB (edge0-8b), short contexts |
+| Memory | ~2.9 GB MLX allocator peak (edge0-35b), ~1.0 GB (edge0-8b), short contexts; this is `mlx.core.get_peak_memory()`, not process RSS |
 | Disk | ~23 GB (edge0-35b) / ~4.2 GB (edge0-8b); expert weights are mmapped and read on demand, not loaded into RAM up front |
 
 > Garbled, mixed-language output on Apple A18 / A18 Pro means an older
@@ -112,13 +112,15 @@ exact path).
 Measured with `examples/bench.py` (3.3k-token prompt prefill → 10 sampled
 warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
 
-| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak active memory | Test machine |
+| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak MLX allocator memory | Test machine |
 |---|---|---|---|---|
 | `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
 | `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
 
 *Cold = first request after process start (expert weights fault in from
-SSD); warm = subsequent requests (page cache resident).*
+SSD); warm = subsequent requests (page cache resident). Peak MLX
+allocator memory is `mlx.core.get_peak_memory()` after decode — not
+process RSS.*
 
 ```bash
 python examples/bench.py edge0-8b     # via $EDGE0_8B_MODEL

@@ -1,0 +1,8 @@
+# Frontend + Rust build output materialized by `yarn install` / `tauri dev`
+# (never committed). Mirrors windows/.gitignore.
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+app/src-tauri/gen/
+target/
+work/

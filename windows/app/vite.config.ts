@@ -6,7 +6,15 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
-  server: { port: 1420, strictPort: true, host: "127.0.0.1" },
+  server: {
+    port: 1420,
+    strictPort: true,
+    host: "127.0.0.1",
+    // Windows: chokidar takes down the dev server with EBUSY when cargo links
+    // while Defender locks fresh artifacts. The tauri CLI watches src-tauri on
+    // its own; vite should not. (Same exclusion as create-tauri-app's template.)
+    watch: { ignored: ["**/src-tauri/**"] },
+  },
   envPrefix: ["VITE_", "TAURI_"],
   build: { target: "es2022", sourcemap: false },
 });

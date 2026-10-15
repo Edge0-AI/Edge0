@@ -18,6 +18,8 @@ import pathlib
 import re
 import subprocess
 
+import pytest
+
 # Repo root (this file lives at <root>/python/tests/): the hygiene guards
 # scan the whole multi-platform repo, not just the Python subproject.
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -147,3 +149,14 @@ def test_notice_link_resolves():
     assert m, "README should link the NOTICE file"
     target = ROOT / m.group(1)
     assert target.is_file(), f"README NOTICE link target missing: {target}"
+
+
+@pytest.mark.parametrize("readme", ["README.md", "python/README.md"])
+def test_readme_names_peak_memory_as_mlx_allocator(readme):
+    """Readers mistook "peak active memory" for process RSS (#106)."""
+    text = (ROOT / readme).read_text(encoding="utf-8")
+    assert "Peak MLX allocator memory" in text
+    assert "mlx.core.get_peak_memory()" in text
+    assert "not process RSS" in text
+    assert "peak active" not in text.lower(), (
+        f"{readme} still labels the allocator peak as 'peak active'")

@@ -111,7 +111,7 @@ adb shell am instrument -w -e class dev.edge0.runtime.app.LlamaRuntimeTest \
 Coverage: 8B/35B smoke, 35B↔8B in-process switching, prefix-reuse fidelity,
 thinking on/off × system-prompt quadrants (8B gate + 35B off leak probe), and
 identity retention across multi-turn rendering. Host-side logic tests:
-`./gradlew :app:testDebugUnitTest` (26 tests, no device needed).
+`./gradlew :app:testDebugUnitTest` (32 tests, no device needed).
 
 ---
 
