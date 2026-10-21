@@ -15,6 +15,38 @@ numbers are welcome here — **every reporter is credited by handle**.
    BENCH_LONG=1 .venv/bin/python examples/bench.py edge0-8b
    ```
 
+   To print the discussion's ready-to-paste submission block:
+
+   ```bash
+   .venv/bin/python examples/bench.py edge0-8b --submission \
+     --reporter @your-handle --storage "internal SSD" --on-battery no
+   ```
+
+   `--submission` selects the standard long prompt automatically and retains
+   the benchmark's two timed runs, per-run warmup, sampling, mean decode rate,
+   and maximum MLX allocator peak. Prefill is the mean of the two per-run
+   rates. It rejects `BENCH_PROMPT` rather than silently submitting a custom
+   workload. The default invocation and return fields remain unchanged.
+
+   Add `--json` to emit one JSON object on stdout, with Python runtime and
+   benchmark progress redirected to stderr:
+
+   ```bash
+   .venv/bin/python examples/bench.py edge0-8b --submission --json \
+     --reporter @your-handle --notes "quiet system" > submission.json
+   ```
+
+   `--json` requires `--submission`. Hardware model, chip, system RAM, macOS
+   and installed MLX version are detected when available. Unknown text fields
+   remain empty and unknown RAM is JSON `null`; storage and power state are
+   supplied by the reporter, not guessed. `--notes` accepts measurement context.
+   Non-default token/warmup counts and sampling environment overrides are
+   recorded in the notes; use the defaults for community comparisons.
+
+   `peak_active_gib` here is `mlx.core.get_peak_memory()`, **not** process RSS
+   or a Windows process working-set peak. JSON uses the existing submission
+   block fields; this command does not append to or change `results.csv`.
+
 2. Post your numbers in the pinned
    [Hardware Benchmarks discussion](https://github.com/Edge0-AI/Edge0/discussions/142),
    using the submission block there.
