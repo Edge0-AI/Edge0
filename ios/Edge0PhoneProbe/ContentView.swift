@@ -124,7 +124,10 @@ private final class ChatViewModel: ObservableObject {
     }
 
     func isInstalled(_ model: LocalModel) -> Bool {
-        let url = resolveModelURL(model)
+        modelIsComplete(model, at: resolveModelURL(model))
+    }
+
+    private func modelIsComplete(_ model: LocalModel, at url: URL) -> Bool {
         switch model {
         case .edge8:
             return FileManager.default.fileExists(
@@ -267,7 +270,17 @@ private final class ChatViewModel: ObservableObject {
         Task { await runtime.reset() }
     }
 
+    /// Sideload releases ship without weights. File Sharing exposes Documents, so a
+    /// copied model there wins; a model baked into the bundle remains the fallback.
     private func resolveModelURL(_ model: LocalModel) -> URL {
+        if let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let nested = documents
+                .appendingPathComponent("Models", isDirectory: true)
+                .appendingPathComponent(model.folderName, isDirectory: true)
+            if modelIsComplete(model, at: nested) { return nested }
+            let direct = documents.appendingPathComponent(model.folderName, isDirectory: true)
+            if modelIsComplete(model, at: direct) { return direct }
+        }
         let models = Bundle.main.resourceURL?
             .appendingPathComponent("Models", isDirectory: true)
             ?? Bundle.main.bundleURL.appendingPathComponent("Models", isDirectory: true)
