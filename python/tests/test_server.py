@@ -412,6 +412,46 @@ def test_chat_once_response_shape():
     assert out["usage"]["completion_tokens"] == 3
 
 
+class CappedEngine(FakeEngine):
+    """FakeEngine whose generate() honours ``max_new_tokens`` like the real
+    engine: it returns at most that many tokens (the reply is cut off)."""
+
+    def generate(self, ids, gen_config=None, on_token=None, **kw):
+        toks = [11, 12, 13][:gen_config.max_new_tokens]
+        self.generated.append((list(ids), gen_config))
+        if on_token is not None:
+            for t in toks:
+                on_token(t)
+        return toks
+
+
+@pytest.mark.parametrize("max_tokens, finish_reason", [
+    (2, "length"),   # cut off at the cap
+    (3, "length"),   # exactly at the cap: generate() never saw EOS
+    (8, "stop"),     # EOS before the cap
+])
+def test_chat_once_finish_reason_length_when_capped(max_tokens, finish_reason):
+    srv = QueueServer(CappedEngine())
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "hi"}],
+        "max_tokens": max_tokens,
+    })
+    assert out["choices"][0]["finish_reason"] == finish_reason
+    assert out["usage"]["completion_tokens"] == min(max_tokens, 3)
+
+
+def test_chat_stream_finish_reason_length_when_capped():
+    srv = QueueServer(CappedEngine())
+    body = b"".join(_chat_stream(srv, {
+        "messages": [{"role": "user", "content": "hi"}],
+        "stream": True, "max_completion_tokens": 2,
+    }))
+    events = [e for e in body.decode("utf-8").split("\n\n") if e]
+    chunks = [json.loads(e[6:]) for e in events[:-1]]  # drop [DONE]
+    assert chunks[-1]["choices"][0]["finish_reason"] == "length"
+    assert chunks[-1]["usage"]["completion_tokens"] == 2
+
+
 # ---- tool calls (#115) -----------------------------------------------------
 
 

@@ -212,8 +212,13 @@ class ChatSession:
             "completion_tokens": len(tokens),
             "total_tokens": len(ids) + len(tokens),
         }
+        # ``generate`` stops at EOS (which it does not return) or after
+        # ``max_new_tokens`` tokens, so reaching the cap means the reply was
+        # cut off: OpenAI reports that as ``"length"``.
+        finish_reason = ("length" if len(tokens) >= gen.max_new_tokens
+                         else "stop")
         meta = {"wall_s": round(time.perf_counter() - t0, 3)}
-        return tokens, {"usage": usage, **meta}
+        return tokens, {"usage": usage, "finish_reason": finish_reason, **meta}
 
 
 class QueueServer:

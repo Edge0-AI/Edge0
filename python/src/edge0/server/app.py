@@ -83,7 +83,8 @@ def _chat_once(server: QueueServer, payload: dict):
         "choices": [{
             "index": 0,
             "message": message,
-            "finish_reason": "tool_calls" if tool_calls else "stop",
+            "finish_reason": ("tool_calls" if tool_calls
+                              else meta["finish_reason"]),
         }],
         "usage": meta["usage"],
     }
@@ -158,7 +159,7 @@ def _chat_stream(server: QueueServer, payload: dict):
     def produce():
         try:
             tokens, meta = server.chat(req, on_token=on_token)
-            finish_reason = "stop"
+            finish_reason = meta["finish_reason"]
             delta = {}
             if buffering:
                 text = decode_tokens(server.engine, tokens)
