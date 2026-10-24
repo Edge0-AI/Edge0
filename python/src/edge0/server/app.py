@@ -339,8 +339,17 @@ class _StdlibHandler(BaseHTTPRequestHandler):
         if path not in ("/v1/chat/completions", "/v1/completions"):
             self._json(404, {"error": {"message": f"no route {path}"}})
             return
-        length = int(self.headers.get("Content-Length", 0))
-        payload = json.loads(self.rfile.read(length) or b"{}")
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError as exc:
+            # JSONDecodeError and UnicodeDecodeError are ValueErrors; answer
+            # them like any other malformed request instead of dropping the
+            # connection with no response.
+            self._json(400, {"error": {
+                "message": f"request body is not valid JSON: {exc}",
+                "type": "invalid_request"}})
+            return
         if path == "/v1/chat/completions":
             try:
                 parse_chat_request(payload)
