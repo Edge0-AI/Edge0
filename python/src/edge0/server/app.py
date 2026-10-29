@@ -267,9 +267,22 @@ def create_app(server: QueueServer):
     def models():
         return handlers["GET /v1/models"]()
 
+    def read_payload():
+        # Match the stdlib transport: an empty body reads as {}, and a body
+        # that is not valid JSON is a 400 instead of silently becoming {}.
+        if not request.get_data():
+            return {}, None
+        payload = request.get_json(force=True, silent=True)
+        if payload is None:
+            body, status = _error(400, "request body is not valid JSON")
+            return None, (jsonify(body), status)
+        return payload, None
+
     @app.post("/v1/chat/completions")
     def chat():
-        payload = request.get_json(force=True, silent=True) or {}
+        payload, bad = read_payload()
+        if bad is not None:
+            return bad
         out = handlers["POST /v1/chat/completions"](payload)
         if isinstance(out, Response):
             return out
@@ -280,7 +293,9 @@ def create_app(server: QueueServer):
 
     @app.post("/v1/completions")
     def completions():
-        payload = request.get_json(force=True, silent=True) or {}
+        payload, bad = read_payload()
+        if bad is not None:
+            return bad
         out = handlers["POST /v1/completions"](payload)
         if isinstance(out, tuple):
             body, status = out
