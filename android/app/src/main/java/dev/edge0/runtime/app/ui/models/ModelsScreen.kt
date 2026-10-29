@@ -1,6 +1,6 @@
 // ui/models/ModelsScreen.kt - model management: scans files/models, shows
 // size/integrity/load state, load|unload buttons (disabled while generating), a disk
-// headroom bar (warn under 1.2x requirement) and an import-instructions card.
+// headroom bar (warn under 1.2x requirement), and Import (system document picker).
 package dev.edge0.runtime.app.ui.models
 
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +16,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Warning
@@ -56,17 +59,29 @@ private fun fmtGiB(b: Long): String = "%.2f GiB".format(b / 1073741824.0)
 
 @Composable
 fun ModelsScreen(onBack: () -> Unit) {
-    val app = LocalContext.current.applicationContext as Edge0App
+    val context = LocalContext.current
+    val app = context.applicationContext as Edge0App
     val container = app.container
     val scope = rememberCoroutineScope()
     var entries by remember { mutableStateOf<List<ModelEntry>>(emptyList()) }
     var avail by remember { mutableStateOf(-1L) }
     var note by remember { mutableStateOf<String?>(null) }
     val genState by container.runtime.state.collectAsStateWithLifecycle()
+    val importing by container.imports.running.collectAsStateWithLifecycle()
+    val progress by container.imports.progress.collectAsStateWithLifecycle()
+    val importStatus by container.imports.status.collectAsStateWithLifecycle()
+    val importError by container.imports.error.collectAsStateWithLifecycle()
     var refreshTick by remember { mutableStateOf(0) }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris: List<Uri> ->
+        container.imports.start(context, uris) { container.runtime.activeModelDir }
+    }
 
-    LaunchedEffect(refreshTick) {
+    LaunchedEffect(refreshTick, importing) {
+        if (importing) return@LaunchedEffect
         withContext(Dispatchers.IO) {
+            container.imports.deleteStalePartials()
             entries = ModelInventory.scanRoots(container.modelRoots)
             avail = ModelInventory.volumeAvailBytes(app.filesDir)
         }
@@ -78,9 +93,48 @@ fun ModelsScreen(onBack: () -> Unit) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") }
             Text("Models", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.weight(1f))
-            OutlinedButton(onClick = { refreshTick++ }, modifier = Modifier.padding(end = 12.dp)) {
-                Text("Refresh")
+            OutlinedButton(
+                onClick = { importLauncher.launch(arrayOf("*/*")) },
+                enabled = !importing,
+            ) { Text("Import") }
+            OutlinedButton(
+                onClick = { refreshTick++ },
+                enabled = !importing,
+                modifier = Modifier.padding(start = 8.dp, end = 12.dp),
+            ) { Text("Refresh") }
+        }
+        progress?.let { p ->
+            Surface(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)) {
+                Column(Modifier.padding(12.dp)) {
+                    val total = p.total
+                    val amount = if (total != null && total > 0)
+                        "${fmtGiB(p.copied)} / ${fmtGiB(total)}"
+                    else fmtGiB(p.copied)
+                    Text("Copying ${p.name} · $amount", style = MaterialTheme.typography.bodySmall)
+                    if (total != null && total > 0) {
+                        LinearProgressIndicator(
+                            progress = { (p.copied.toFloat() / total).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        )
+                    }
+                }
             }
+        }
+        importStatus?.let {
+            Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                 style = MaterialTheme.typography.bodySmall,
+                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+        }
+        importError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error,
+                 style = MaterialTheme.typography.bodySmall,
+                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
         }
         // disk headroom bar (available vs required x 1.2)
         if (avail >= 0) {
@@ -106,8 +160,8 @@ fun ModelsScreen(onBack: () -> Unit) {
                  style = MaterialTheme.typography.bodySmall,
                  modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
         }
-        if (entries.isEmpty()) {
-            Text("No models found. Import via adb to:",
+        if (entries.isEmpty() && !importing) {
+            Text("No models yet. Tap Import and choose a .gguf file.",
                  modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             Surface(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                     shape = RoundedCornerShape(10.dp),
@@ -118,8 +172,8 @@ fun ModelsScreen(onBack: () -> Unit) {
                         fontSize = 11.sp * LocalFontScale.current),
                      modifier = Modifier.padding(12.dp))
             }
-            Text("Tap Refresh (top right) after importing. Note: uninstalling the app wipes its data " +
-                 "(Android policy); re-import assets with the command above if they disappear.",
+            Text("The copy can take several minutes for a multi-gigabyte model. Uninstalling the app wipes its data " +
+                 "(Android policy); import the files again if they disappear.",
                  style = MaterialTheme.typography.bodySmall,
                  color = MaterialTheme.colorScheme.onSurfaceVariant,
                  modifier = Modifier.padding(16.dp))
