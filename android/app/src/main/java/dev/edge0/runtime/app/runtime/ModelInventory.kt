@@ -41,11 +41,12 @@ object ModelInventory {
 
     /** Import instructions shown on the models screen. */
     fun importTemplate(pkg: String): String = listOf(
-        "Place model files flat under files/models/ of this app.",
-        "Option 1 - in-app: use the picker to copy from device storage.",
-        "Option 2 - adb (debug builds):",
+        "Tap Import and choose a .gguf file. The app copies it into private storage.",
+        "This works on a release install. USB debugging is not required.",
+        "8B also needs lora_edge0_8b-gguf.gguf beside it. Import that file the same way.",
+        "Expected names: edge0-8b.gguf, lora_edge0_8b-gguf.gguf, edge0-35b.gguf.",
+        "A debug build can instead be staged over USB:",
         "  adb push <file> /data/local/tmp/",
         "  adb shell run-as $pkg cp /data/local/tmp/<file> files/models/<file>",
-        "Expected names: edge0-8b.gguf (plus lora_edge0_8b-gguf.gguf), edge0-35b.gguf.",
     ).joinToString("\n")
 }

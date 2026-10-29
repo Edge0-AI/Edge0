@@ -12,6 +12,7 @@ import dev.edge0.runtime.app.data.ChatRepository
 import dev.edge0.runtime.app.data.RoomChatRepository
 import dev.edge0.runtime.app.data.SettingsStore
 import dev.edge0.runtime.app.runtime.LlamaRuntime
+import dev.edge0.runtime.app.runtime.ModelImportSession
 import dev.edge0.runtime.app.runtime.Runtime
 import dev.edge0.runtime.app.runtime.ThermalSource
 import java.io.File
@@ -32,6 +33,7 @@ class AppContainer(private val app: Application) {
      *  reliable channel) plus external files/models; both roots are scanned. */
     val modelRoots: List<File?>
         get() = listOf(File(app.filesDir, "models"), app.getExternalFilesDir("models"))
+    val imports = ModelImportSession(File(app.filesDir, "models"))
 }
 
 class Edge0App : Application() {
