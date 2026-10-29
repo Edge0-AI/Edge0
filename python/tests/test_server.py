@@ -749,6 +749,66 @@ def test_http_rejects_invalid_tool_arguments_before_generation(stream, transport
     assert engine.generated == []
 
 
+def _post_stdlib(server, path, body: bytes):
+    handler = type("Edge0Handler", (_StdlibHandler,), {"server_q": server})
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        req = urlrequest.Request(
+            f"http://127.0.0.1:{httpd.server_address[1]}{path}",
+            data=body, headers={"Content-Type": "application/json"})
+        with pytest.raises(HTTPError) as exc:
+            urlrequest.urlopen(req, timeout=10)
+        with exc.value as response:
+            return response.code, json.loads(response.read())
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5)
+
+
+@pytest.mark.parametrize("transport", ["stdlib", "flask"])
+@pytest.mark.parametrize("path", ["/v1/chat/completions", "/v1/completions"])
+@pytest.mark.parametrize("body", [b"{not json", b"\xff\xfe"])
+def test_http_answers_a_malformed_body_with_400(path, body, transport):
+    engine = FakeEngine()
+    server = QueueServer(engine)
+    if transport == "flask":
+        if not _HAS_FLASK:
+            pytest.skip("flask is not installed")
+        response = create_app(server).test_client().post(
+            path, data=body, content_type="application/json")
+        code, error = response.status_code, response.get_json()
+    else:
+        code, error = _post_stdlib(server, path, body)
+    assert code == 400
+    assert error["error"]["type"] == "invalid_request"
+    assert engine.generated == []
+
+
+@pytest.mark.parametrize("transport", ["stdlib", "flask"])
+@pytest.mark.parametrize("payload", [
+    [1, 2], "hello", {"messages": "hi"}, {"messages": ["hi"]},
+    {"messages": [None]},
+])
+def test_http_rejects_a_body_that_is_not_a_chat_request(payload, transport):
+    engine = FakeEngine()
+    server = QueueServer(engine)
+    if transport == "flask":
+        if not _HAS_FLASK:
+            pytest.skip("flask is not installed")
+        response = create_app(server).test_client().post(
+            "/v1/chat/completions", json=payload)
+        code, error = response.status_code, response.get_json()
+    else:
+        code, error = _post_stdlib(
+            server, "/v1/chat/completions", json.dumps(payload).encode())
+    assert code == 400
+    assert error["error"]["type"] == "invalid_request"
+    assert engine.generated == []
+
+
 def test_stdlib_http_end_to_end():
     eng = FakeEngine()
     srv = QueueServer(eng, model_name="fake")
