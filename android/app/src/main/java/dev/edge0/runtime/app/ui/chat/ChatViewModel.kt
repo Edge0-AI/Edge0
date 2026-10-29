@@ -92,7 +92,7 @@ class ChatViewModel(
 
             if (runtime.activeModelDir == null) {
                 if (settings.activeModelDir.isBlank()) {
-                    banner.value = "No model loaded: import one into the app (adb push) via Models, then load it"
+                    banner.value = "No model loaded: open Models, import a .gguf, then load it"
                     return@launch
                 }
                 try {
