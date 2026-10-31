@@ -162,3 +162,19 @@ def test_ling_argument_coercion_numbers_and_json():
     _, calls = parse_ling_tool_calls(text)
     args = json.loads(calls[0]["function"]["arguments"])
     assert args == {"value": 21.5, "enabled": True, "label": "living room"}
+
+
+@pytest.mark.parametrize("raw", ["NaN", "Infinity", "-Infinity"])
+@pytest.mark.parametrize("dialect", ["ling", "qwen"])
+def test_non_json_number_words_stay_strings(raw, dialect):
+    if dialect == "ling":
+        text = (f"<tool_call>search<arg_key>query</arg_key>"
+                f"<arg_value>{raw}</arg_value></tool_call>")
+        _, calls = parse_ling_tool_calls(text)
+    else:
+        text = ("<tool_call>\n<function=search>\n<parameter=query>\n"
+                f"{raw}\n</parameter>\n</function>\n</tool_call>")
+        _, calls = parse_qwen_tool_calls(text)
+    arguments = calls[0]["function"]["arguments"]
+    # Strict JSON, as an OpenAI client's JSON.parse would read it.
+    assert json.loads(arguments, parse_constant=pytest.fail) == {"query": raw}
