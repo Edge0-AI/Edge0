@@ -36,11 +36,20 @@ _QWEN_PARAM = re.compile(
 def _coerce(raw: str):
     """A bare arg value is a string unless it parses as JSON (numbers,
     booleans, null, objects, arrays) -- mirrors the template's own
-    ``v if v is string else v|tojson`` split, in reverse."""
+    ``v if v is string else v|tojson`` split, in reverse.
+
+    ``NaN``, ``Infinity`` and ``-Infinity`` stay strings: ``json.loads``
+    accepts them, but ``tojson`` never writes them and ``json.dumps``
+    would turn them back into tokens that are not valid JSON in
+    ``function.arguments``."""
     try:
-        return json.loads(raw)
+        return json.loads(raw, parse_constant=_reject_constant)
     except (json.JSONDecodeError, ValueError):
         return raw
+
+
+def _reject_constant(name: str):
+    raise ValueError(f"{name} is not valid JSON")
 
 
 def _tool_call_id() -> str:
