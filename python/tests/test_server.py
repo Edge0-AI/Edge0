@@ -9,6 +9,7 @@ streaming), and the /v1/completions rejection path.
 from __future__ import annotations
 
 import json
+import socket
 import threading
 import time
 from http.server import ThreadingHTTPServer
@@ -24,6 +25,7 @@ from edge0.server.app import (
     _HAS_FLASK,
     _chat_once,
     _chat_stream,
+    _peer_closed,
     _StdlibHandler,
     build_app_handlers,
     create_app,
@@ -721,6 +723,176 @@ def test_chat_stream_yields_before_generation_finishes():
     finally:
         eng.resume.set()
     assert b"data: [DONE]\n\n" in body
+
+
+# ---- client disconnects ---------------------------------------------------
+
+
+class StoppableEngine(FakeEngine):
+    """Generates until the cap or until told to stop, like the real loop."""
+
+    def __init__(self, tok=None):
+        super().__init__(tok)
+        self.running = threading.Event()
+        self.stopped = threading.Event()
+        self.stop_requested_on_entry = []
+
+    def generate(self, ids, gen_config=None, on_token=None, should_stop=None,
+                 **kw):
+        self.generated.append((list(ids), gen_config))
+        self.stop_requested_on_entry.append(should_stop())
+        self.running.set()
+        toks = []
+        for _ in range(gen_config.max_new_tokens):
+            if should_stop():
+                self.stopped.set()
+                break
+            toks.append(11)
+            if on_token is not None:
+                on_token(11)
+            time.sleep(0.005)
+        return toks
+
+
+class StoppableToolEngine(StoppableEngine):
+    """Has a tool-call parser, so a request with tools buffers its reply."""
+
+    def parse_tool_calls(self, text: str):
+        return text, []
+
+
+_CHAT = {"model": "fake", "messages": [{"role": "user", "content": "hi"}]}
+_DROPPED_REQUESTS = {
+    "stream": (StoppableEngine, {**_CHAT, "stream": True}),
+    "stream_with_tools": (StoppableToolEngine,
+                          {**_CHAT, "stream": True, "tools": _TOOLS}),
+    "non_stream": (StoppableEngine, _CHAT),
+}
+
+
+def _serve(srv, transport):
+    """Serve ``srv`` on a real socket; returns (port, shutdown)."""
+    if transport == "flask":
+        if not _HAS_FLASK:
+            pytest.skip("flask is not installed")
+        from werkzeug.serving import make_server
+        httpd = make_server("127.0.0.1", 0, create_app(srv), threaded=True)
+        port = httpd.server_port
+    else:
+        handler = type("Edge0Handler", (_StdlibHandler,), {"server_q": srv})
+        httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        port = httpd.server_address[1]
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+
+    def shutdown():
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5)
+
+    return port, shutdown
+
+
+def _send_chat(port, payload):
+    body = json.dumps(payload).encode("utf-8")
+    conn = socket.create_connection(("127.0.0.1", port), timeout=5)
+    conn.sendall(
+        b"POST /v1/chat/completions HTTP/1.1\r\n"
+        b"Host: 127.0.0.1\r\n"
+        b"Content-Type: application/json\r\n"
+        b"Content-Length: " + str(len(body)).encode("ascii") + b"\r\n\r\n"
+        + body)
+    return conn
+
+
+def _hang_up(conn):
+    """Close cleanly: reading what arrived first makes this a FIN, not an RST,
+    so the server gets no write error until it next writes."""
+    conn.setblocking(False)
+    try:
+        while conn.recv(65536):
+            pass
+    except BlockingIOError:
+        pass
+    conn.close()
+
+
+def test_peer_closed():
+    server_end, client_end = socket.socketpair()
+    try:
+        assert not _peer_closed(server_end)
+        client_end.sendall(b"x")
+        assert not _peer_closed(server_end)
+        assert server_end.recv(1) == b"x"  # the peek did not consume it
+        client_end.close()
+        assert _peer_closed(server_end)
+    finally:
+        server_end.close()
+        client_end.close()
+    assert _peer_closed(server_end)  # our own end closed
+
+
+def test_chat_stream_close_stops_generation_and_frees_the_engine():
+    eng = StoppableEngine()
+    srv = QueueServer(eng)
+    stream = _chat_stream(srv, {**_CHAT, "stream": True})
+    assert next(stream).startswith(b"data: ")
+    assert not eng.stopped.is_set()
+    stream.close()
+    assert eng.stopped.wait(timeout=5)
+    assert srv._lock.acquire(timeout=5)
+    srv._lock.release()
+
+
+@pytest.mark.parametrize("transport", ["stdlib", "flask"])
+@pytest.mark.parametrize("kind", list(_DROPPED_REQUESTS))
+def test_http_hang_up_stops_generation(transport, kind):
+    engine_cls, payload = _DROPPED_REQUESTS[kind]
+    eng = engine_cls()
+    port, shutdown = _serve(QueueServer(eng, model_name="fake"), transport)
+    try:
+        conn = _send_chat(port, payload)
+        assert eng.running.wait(timeout=5)
+        assert not eng.stopped.is_set()
+        _hang_up(conn)
+        assert eng.stopped.wait(timeout=5)
+    finally:
+        shutdown()
+
+
+@pytest.mark.parametrize("transport", ["stdlib", "flask"])
+@pytest.mark.parametrize("kind", list(_DROPPED_REQUESTS))
+def test_http_hang_up_while_queued_never_starts_generating(transport, kind):
+    engine_cls, payload = _DROPPED_REQUESTS[kind]
+    eng = engine_cls()
+    srv = QueueServer(eng, model_name="fake")
+    port, shutdown = _serve(srv, transport)
+    srv._lock.acquire()
+    try:
+        _hang_up(_send_chat(port, payload))
+        srv._lock.release()
+        assert eng.running.wait(timeout=5)
+        assert eng.stop_requested_on_entry == [True]
+    finally:
+        shutdown()
+
+
+@pytest.mark.parametrize("transport", ["stdlib", "flask"])
+def test_http_request_queued_behind_a_hang_up_is_served(transport):
+    eng = StoppableEngine()
+    port, shutdown = _serve(QueueServer(eng, model_name="fake"), transport)
+    try:
+        dropped = _send_chat(port, {**_CHAT, "stream": True})
+        assert eng.running.wait(timeout=5)
+        queued = _send_chat(port, {**_CHAT, "max_tokens": 2})
+        _hang_up(dropped)
+        queued.settimeout(5)
+        assert queued.recv(12).startswith(b"HTTP/1.")
+        assert eng.stopped.is_set()
+        assert len(eng.generated) == 2
+        queued.close()
+    finally:
+        shutdown()
 
 
 # ---- stdlib HTTP transport ------------------------------------------------

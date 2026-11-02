@@ -11,8 +11,11 @@ from __future__ import annotations
 
 import json
 import queue
+import select
+import socket
 import threading
 import time
+from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
@@ -29,6 +32,20 @@ except ImportError:  # pragma: no cover
 
 def _error(status: int, msg: str) -> tuple:
     return {"error": {"message": msg, "type": "invalid_request"}}, status
+
+
+def _peer_closed(sock) -> bool:
+    """Whether the client has hung up, checked without writing to it.
+
+    A failed write comes too late: nothing is written while a request is
+    queued, during prefill, for a whole reply when tool calls are buffered,
+    or at all before a non-streaming reply is ready.  A client that half-closes
+    after sending its request also reads as gone."""
+    try:
+        readable, _, _ = select.select([sock], [], [], 0)
+        return bool(readable) and sock.recv(1, socket.MSG_PEEK) == b""
+    except (OSError, ValueError):  # reset, or closed already (fileno is -1)
+        return True
 
 
 def _split_think(text: str, think: bool):
@@ -60,9 +77,9 @@ def _extract_tool_calls(server: QueueServer, req, content: str):
     return content, (calls or None)
 
 
-def _chat_once(server: QueueServer, payload: dict):
+def _chat_once(server: QueueServer, payload: dict, client_gone=None):
     req = parse_chat_request(payload)
-    tokens, meta = server.chat(req)
+    tokens, meta = server.chat(req, should_stop=client_gone)
     text = decode_tokens(server.engine, tokens)
     think = bool(req.enable_thinking if req.enable_thinking is not None
                  else getattr(server.engine, "think", False))
@@ -114,10 +131,11 @@ def _incremental_suffix(prev: str, text: str) -> str:
     return safe[i:]
 
 
-def _chat_stream(server: QueueServer, payload: dict):
+def _chat_stream(server: QueueServer, payload: dict, client_gone=None):
     req = parse_chat_request(payload)
     events = queue.Queue()
     finished = object()
+    closed = threading.Event()
     request_id = f"chatcmpl-{int(time.time() * 1000)}"
     created = int(time.time())
     # Tool-call XML (<tool_call>...</tool_call>) must not leak into content
@@ -145,6 +163,9 @@ def _chat_stream(server: QueueServer, payload: dict):
                          "finish_reason": None}],
         }).encode("utf-8"))
 
+    def should_stop() -> bool:
+        return closed.is_set() or (client_gone is not None and client_gone())
+
     def on_token(tid: int):
         if buffering:
             return
@@ -158,7 +179,8 @@ def _chat_stream(server: QueueServer, payload: dict):
 
     def produce():
         try:
-            tokens, meta = server.chat(req, on_token=on_token)
+            tokens, meta = server.chat(req, on_token=on_token,
+                                       should_stop=should_stop)
             finish_reason = meta["finish_reason"]
             delta = {}
             if buffering:
@@ -205,17 +227,22 @@ def _chat_stream(server: QueueServer, payload: dict):
             events.put(finished)
 
     threading.Thread(target=produce, daemon=True).start()
-    while True:
-        event = events.get()
-        if event is finished:
-            return
-        yield event
+    try:
+        while True:
+            event = events.get()
+            if event is finished:
+                return
+            yield event
+    finally:
+        # Dropped by the transport after a failed write.  This is the only
+        # signal when a WSGI server does not expose its socket.
+        closed.set()
 
 
 def build_app_handlers(server: QueueServer):
     """Return a handler dispatch dict shared by both transports."""
 
-    def handle_chat(payload: dict):
+    def handle_chat(payload: dict, client_gone=None):
         # Validate before sending streaming response headers.
         try:
             parse_chat_request(payload)
@@ -224,15 +251,15 @@ def build_app_handlers(server: QueueServer):
         if payload.get("stream"):
             if _HAS_FLASK:
                 return Response(
-                    _chat_stream(server, payload),
+                    _chat_stream(server, payload, client_gone),
                     mimetype="text/event-stream",
                     headers={
                         "Cache-Control": "no-cache",
                         "X-Accel-Buffering": "no",
                     },
                 )
-            return _chat_stream(server, payload)
-        return _chat_once(server, payload)
+            return _chat_stream(server, payload, client_gone)
+        return _chat_once(server, payload, client_gone)
 
     handlers = {
         "GET /healthz": lambda: {"status": "ok", "model": server.model_name},
@@ -283,7 +310,9 @@ def create_app(server: QueueServer):
         payload, bad = read_payload()
         if bad is not None:
             return bad
-        out = handlers["POST /v1/chat/completions"](payload)
+        sock = request.environ.get("werkzeug.socket")
+        client_gone = partial(_peer_closed, sock) if sock is not None else None
+        out = handlers["POST /v1/chat/completions"](payload, client_gone)
         if isinstance(out, Response):
             return out
         if isinstance(out, tuple):
@@ -372,10 +401,14 @@ class _StdlibHandler(BaseHTTPRequestHandler):
                 self._json(400, {"error": {"message": str(exc),
                                           "type": "invalid_request"}})
                 return
-        if path == "/v1/chat/completions" and payload.get("stream"):
-            self._sse(_chat_stream(self.server_q, payload))
-            return
-        out = handlers[("POST " + path)](payload)
+        if path == "/v1/chat/completions":
+            client_gone = partial(_peer_closed, self.connection)
+            if payload.get("stream"):
+                self._sse(_chat_stream(self.server_q, payload, client_gone))
+                return
+            out = handlers[("POST " + path)](payload, client_gone)
+        else:
+            out = handlers[("POST " + path)](payload)
         if isinstance(out, tuple):
             body, status = out
             self._json(status, body)
