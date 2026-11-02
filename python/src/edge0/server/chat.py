@@ -76,6 +76,10 @@ def parse_chat_request(payload: dict) -> ChatRequest:
     msgs = []
     for m in messages:
         role = str(m.get("role", "user"))
+        if role == "developer":
+            # OpenAI's newer name for system instructions, sent by current
+            # SDKs; neither checkpoint template has a developer role.
+            role = "system"
         content = m.get("content") or ""  # tool-call-only assistant turns
         # send content: null, not an omitted key
         if isinstance(content, list):  # multi-part content: join text parts

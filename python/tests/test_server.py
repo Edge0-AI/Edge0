@@ -537,6 +537,24 @@ def test_tool_call_roundtrip_renders_real_template(real_template_engine, stream)
     assert result["choices"][0]["message"]["content"] == "The result is 4."
 
 
+def test_parse_maps_developer_role_to_system():
+    req = _req(messages=[{"role": "developer", "content": "Be brief."},
+                         {"role": "user", "content": "hi"}])
+    assert [m.role for m in req.messages] == ["system", "user"]
+
+
+def test_developer_instructions_reach_real_template(real_template_engine):
+    # Current OpenAI SDKs send instructions as ``developer``; neither
+    # checkpoint template knows that role (Qwen raises, Ling drops it).
+    engine = real_template_engine
+    engine._tok.output = "ok"
+    _chat_once(QueueServer(engine), {"messages": [
+        {"role": "developer", "content": "Always answer in French."},
+        {"role": "user", "content": "hello"},
+    ]})
+    assert "Always answer in French." in engine._tok.encoded_text
+
+
 def test_chat_once_ignores_tool_call_text_without_tools_field():
     """No ``tools`` in the request -> the raw <tool_call> XML the fake
     generation returns is left as plain content, exactly today's
