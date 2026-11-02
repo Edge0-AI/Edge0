@@ -67,8 +67,14 @@ def _template_tool_calls(calls) -> list[dict] | None:
 
 
 def parse_chat_request(payload: dict) -> ChatRequest:
+    if not isinstance(payload, dict):
+        raise ValueError("request body must be a JSON object")
+    messages = payload.get("messages", [])
+    if not isinstance(messages, list) or not all(
+            isinstance(m, dict) for m in messages):
+        raise ValueError("messages must be a list of message objects")
     msgs = []
-    for m in payload.get("messages", []):
+    for m in messages:
         role = str(m.get("role", "user"))
         content = m.get("content") or ""  # tool-call-only assistant turns
         # send content: null, not an omitted key
