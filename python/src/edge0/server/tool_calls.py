@@ -52,6 +52,33 @@ def _reject_constant(name: str):
     raise ValueError(f"{name} is not valid JSON")
 
 
+def _string_parameters(tools, name: str) -> set[str]:
+    """Names of ``name``'s parameters that the request's ``tools`` declare
+    as plain strings (``"type": "string"``).
+
+    Both chat templates write a string argument bare (``v if v is string
+    else v|tojson``), so ``12345``, ``true`` or ``null`` in a string
+    parameter look exactly like JSON. Without the schema, ``_coerce``
+    turns a zip code or an id into a number; with it, the value stays the
+    string the template rendered."""
+    if not isinstance(tools, list):
+        return set()
+    for tool in tools:
+        if not isinstance(tool, dict):
+            continue
+        function = tool.get("function")
+        if not isinstance(function, dict) or function.get("name") != name:
+            continue
+        parameters = function.get("parameters")
+        properties = (parameters.get("properties")
+                      if isinstance(parameters, dict) else None)
+        if not isinstance(properties, dict):
+            return set()
+        return {key for key, schema in properties.items()
+                if isinstance(schema, dict) and schema.get("type") == "string"}
+    return set()
+
+
 def _tool_call_id() -> str:
     return f"call_{uuid.uuid4().hex[:24]}"
 
@@ -64,7 +91,8 @@ def _to_openai(name: str, args: dict) -> dict:
     }
 
 
-def _split(text: str, parse_block) -> tuple[str | None, list[dict]]:
+def _split(text: str, parse_block,
+           tools=None) -> tuple[str | None, list[dict]]:
     """Shared block extraction: find every ``<tool_call>...</tool_call>``,
     remove it from the content, and parse its body with ``parse_block``.
     Blocks ``parse_block`` cannot make sense of are left in ``content``
@@ -76,7 +104,11 @@ def _split(text: str, parse_block) -> tuple[str | None, list[dict]]:
         parsed = parse_block(m.group(1))
         if parsed is None:
             continue
-        calls.append(_to_openai(*parsed))
+        name, raw_args = parsed
+        strings = _string_parameters(tools, name.strip())
+        args = {key: raw if key in strings else _coerce(raw)
+                for key, raw in raw_args.items()}
+        calls.append(_to_openai(name, args))
         leftover_spans.append((pos, m.start()))
         pos = m.end()
     leftover_spans.append((pos, len(text)))
@@ -95,7 +127,7 @@ def _parse_arguments(text: str, pattern) -> dict | None:
         key = match.group(1).strip()
         if not key:
             return None
-        args[key] = _coerce(match.group(2))
+        args[key] = match.group(2)
         pos = match.end()
     if text[pos:].strip():
         return None
@@ -115,12 +147,14 @@ def _parse_ling_block(body: str):
     return name, args
 
 
-def parse_ling_tool_calls(text: str) -> tuple[str | None, list[dict]]:
+def parse_ling_tool_calls(text: str,
+                          tools=None) -> tuple[str | None, list[dict]]:
     """Split ``text`` into (remaining content, OpenAI tool_calls) for the
     edge0-8b (Ling) XML dialect. Returns ``(text.strip(), [])`` when no
     ``<tool_call>`` block is present -- same stripping convention as
-    ``app._split_think``."""
-    return _split(text, _parse_ling_block)
+    ``app._split_think``. ``tools`` is the request's tool list; parameters
+    it declares as strings are not coerced from JSON."""
+    return _split(text, _parse_ling_block, tools)
 
 
 def _parse_qwen_block(body: str):
@@ -137,9 +171,11 @@ def _parse_qwen_block(body: str):
     return name, args
 
 
-def parse_qwen_tool_calls(text: str) -> tuple[str | None, list[dict]]:
+def parse_qwen_tool_calls(text: str,
+                          tools=None) -> tuple[str | None, list[dict]]:
     """Split ``text`` into (remaining content, OpenAI tool_calls) for the
     edge0-35b (Qwen3.5) XML dialect. Returns ``(text.strip(), [])`` when
     no ``<tool_call>`` block is present -- same stripping convention as
-    ``app._split_think``."""
-    return _split(text, _parse_qwen_block)
+    ``app._split_think``. ``tools`` is the request's tool list; parameters
+    it declares as strings are not coerced from JSON."""
+    return _split(text, _parse_qwen_block, tools)

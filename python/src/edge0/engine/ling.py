@@ -374,9 +374,9 @@ class Ling8BEngine(Edge0Engine):
         # default; the template text is already complete.
         return self._tok.encode(text, add_special_tokens=False)
 
-    def parse_tool_calls(self, text: str):
+    def parse_tool_calls(self, text: str, tools=None):
         """Split generated ``text`` into (content, OpenAI tool_calls) per
         this checkpoint's chat template ``<tool_call>name<arg_key>...``
         dialect (see edge0.server.tool_calls)."""
         from edge0.server.tool_calls import parse_ling_tool_calls
-        return parse_ling_tool_calls(text)
+        return parse_ling_tool_calls(text, tools)
