@@ -70,7 +70,8 @@ class Edge0Engine:
 
     # ---- shared loops -----------------------------------------------------
 
-    def prefill(self, token_ids, chunk_size=None, on_progress=None):
+    def prefill(self, token_ids, chunk_size=None, on_progress=None,
+                should_stop=None):
         if chunk_size is None:
             chunk_size = self.prefill_chunk
         total = len(token_ids)
@@ -84,6 +85,10 @@ class Edge0Engine:
                 done += len(chunk)
                 if on_progress is not None:
                     on_progress(done, total)
+                # Checked after the chunk so _prefill_end always sees at least
+                # one forward, as it would for a shorter prompt.
+                if should_stop is not None and should_stop():
+                    break
         finally:
             self._prefill_active = False
         self._prefill_end()
@@ -100,14 +105,23 @@ class Edge0Engine:
         return logits
 
     def generate(self, token_ids, gen_config: GenerationConfig | None = None,
-                 max_new_tokens: int | None = None, on_token=None) -> list[int]:
-        """Prefill ``token_ids`` then sample until EOS or the cap."""
+                 max_new_tokens: int | None = None, on_token=None,
+                 should_stop=None) -> list[int]:
+        """Prefill ``token_ids`` then sample until EOS, the cap or
+        ``should_stop()``.
+
+        ``should_stop`` is polled between prefill chunks and at token
+        boundaries, where the cap also ends a generation, so a stopped
+        engine is in a state the next request's ``reset()`` already handles.
+        """
         if gen_config is None:
             gen_config = getattr(self.cfg, "gen", GenerationConfig())
         if max_new_tokens is None:
             max_new_tokens = gen_config.max_new_tokens
+        if should_stop is not None and should_stop():
+            return []
         if len(token_ids) > 1:
-            self.prefill(token_ids)
+            self.prefill(token_ids, should_stop=should_stop)
         elif len(token_ids) == 1:
             self._last_logits = self._forward(token_ids)
             self.pos += 1
@@ -116,6 +130,8 @@ class Edge0Engine:
         logits = self.next_logits()
         first_token = True
         for _ in range(max_new_tokens):
+            if should_stop is not None and should_stop():
+                break
             if logits is None:
                 raise RuntimeError("no logits available before first step")
             if first_token and gen_config.first_token_greedy:

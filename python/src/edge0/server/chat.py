@@ -3,7 +3,8 @@
 The engine is exclusive to one request at a time (a single MLX process
 can stream one generation well; concurrent requests would thrash the
 expert cache).  Requests queue on a lock: each generation streams
-token-by-token over SSE, and the queue drains in FIFO order.
+token-by-token over SSE, and the queue drains in FIFO order.  A client that
+hangs up gives up its turn: its generation ends at the next token boundary.
 """
 
 from __future__ import annotations
@@ -206,7 +207,7 @@ class ChatSession:
                 kw[k] = v
         return GenerationConfig(**{**base.__dict__, **kw})
 
-    def run(self, on_token=None) -> tuple[list[int], dict]:
+    def run(self, on_token=None, should_stop=None) -> tuple[list[int], dict]:
         t0 = time.perf_counter()
         # Per-request clean
         # per-request state.  A previous degenerate/truncated turn leaves
@@ -216,7 +217,7 @@ class ChatSession:
         ids = self.prompt_ids()
         gen = self.gen_config()
         tokens = self.engine.generate(
-            ids, gen_config=gen, on_token=on_token)
+            ids, gen_config=gen, on_token=on_token, should_stop=should_stop)
         usage = {
             "prompt_tokens": len(ids),
             "completion_tokens": len(tokens),
@@ -244,10 +245,10 @@ class QueueServer:
         return {"status": "ok", "model": self.model_name,
                 "pos": self.engine.pos}
 
-    def chat(self, req: ChatRequest, on_token=None) -> dict:
+    def chat(self, req: ChatRequest, on_token=None, should_stop=None) -> dict:
         with self._lock:
             sess = ChatSession(self.engine, req)
-            return sess.run(on_token=on_token)
+            return sess.run(on_token=on_token, should_stop=should_stop)
 
 
 def sse_format(data: dict) -> str:
