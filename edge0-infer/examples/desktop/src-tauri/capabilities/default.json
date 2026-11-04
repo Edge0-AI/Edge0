@@ -1,0 +1,5 @@
+{
+  "identifier": "main",
+  "windows": ["main"],
+  "permissions": ["core:default", { "identifier": "http:default", "allow": [{ "url": "http://127.0.0.1:*" }] }]
+}

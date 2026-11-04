@@ -1,0 +1,29 @@
+# OS and editors
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Dependencies and runtime output
+node_modules/
+.venv/
+__pycache__/
+
+# Personal machine-specific notes, maintained by each person
+*.local.md
+
+# Build output
+/build/
+
+# Example App toolchains
+.gradle/
+.cxx/
+.kotlin/
+.build/
+DerivedData/
+/examples/**/build/
+/examples/**/target/
+/examples/**/dist/
+local.properties
+*.xcuserstate

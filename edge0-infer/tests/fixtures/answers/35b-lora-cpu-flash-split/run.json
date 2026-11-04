@@ -1,0 +1,17 @@
+{
+ "cases": {
+  "chat-intro": {
+   "observation_bitwise_equal": true,
+   "seconds": 10.2
+  },
+  "long-mixed": {
+   "observation_bitwise_equal": true,
+   "seconds": 37.2
+  },
+  "plain-mixed": {
+   "observation_bitwise_equal": true,
+   "seconds": 7.6
+  }
+ },
+ "exported_at": "2026-10-21T09:34:32+00:00"
+}

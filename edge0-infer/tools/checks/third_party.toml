@@ -1,0 +1,30 @@
+# Adding a dependency requires maintainer approval.
+[libraries.ggml]
+checker = "check_ggml_origin.py"
+
+[libraries."cpp-httplib"]
+upstream = "https://github.com/yhirose/cpp-httplib"
+version = "v0.60.1"
+license = "MIT"
+headers = ['httplib.h']
+allowed_prefixes = ["tools/cli/serve", "tests/unit/cli/"]
+[libraries."cpp-httplib".files."httplib.h"]
+url = "https://raw.githubusercontent.com/yhirose/cpp-httplib/v0.60.1/httplib.h"
+sha256 = "e932d7771bdb93150868987e30112d9a31e24bef592d6d7a07e973d5845cf8d6"
+[libraries."cpp-httplib".files."LICENSE"]
+url = "https://raw.githubusercontent.com/yhirose/cpp-httplib/v0.60.1/LICENSE"
+sha256 = "4b45cbe16d7b71b89ae6127e26e0d90a029198ca5e958ad8e3d0b8bbed364d8b"
+
+[libraries."nlohmann-json"]
+upstream = "https://github.com/nlohmann/json"
+version = "v3.12.0"
+license = "MIT"
+headers = ['nlohmann/json.hpp']
+allowed_prefixes = ["tools/cli/serve", "tests/unit/cli/"]
+[libraries."nlohmann-json".files."nlohmann/json.hpp"]
+url = "https://github.com/nlohmann/json/releases/download/v3.12.0/json.hpp"
+sha256 = "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63"
+[libraries."nlohmann-json".files."LICENSE.MIT"]
+url = "https://raw.githubusercontent.com/nlohmann/json/v3.12.0/LICENSE.MIT"
+sha256 = "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+

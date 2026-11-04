@@ -1,0 +1,7 @@
+# local	upstream	commit	upstream_blob	mode	local_blob
+src/app/text/unicode-data.h	src/unicode-data.h	7ab4ee7baad2d920464cbacfad4f4b07cf111fd2	f6973ebd2e3506e7ace1dd8cfe7d252ce6d25c3d	verbatim	f6973ebd2e3506e7ace1dd8cfe7d252ce6d25c3d
+src/app/text/unicode-data.cpp	src/unicode-data.cpp	7ab4ee7baad2d920464cbacfad4f4b07cf111fd2	04dcd7fcfbcea90a4b23a2e62855b4ccbbb3521c	include-only	64aa3a5718cea6634df2c822dcae9e5e13cac4dd
+src/app/text/unicode.h	src/unicode.h	7ab4ee7baad2d920464cbacfad4f4b07cf111fd2	600ab9216b94dfac172ed771b3e9c1bdb42f5a2c	adapted	-
+src/app/text/unicode.cpp	src/unicode.cpp	7ab4ee7baad2d920464cbacfad4f4b07cf111fd2	93996f9dd542ed2b2e671de51ed98c243d65dabe	adapted	-
+src/app/text/bpe.h	src/llama-vocab.cpp	7ab4ee7baad2d920464cbacfad4f4b07cf111fd2	e038637ce7076f3f2ff90fd071eebf0f96c3a5e6	adapted	-
+src/app/text/bpe.cpp	src/llama-vocab.cpp	7ab4ee7baad2d920464cbacfad4f4b07cf111fd2	e038637ce7076f3f2ff90fd071eebf0f96c3a5e6	adapted	-

@@ -1,0 +1,80 @@
+/* Tokens from the approved Edge0 Chat UI prototype. */
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --fs-xs: 11px; --fs-sm: 12px; --fs-md: 13.5px; --fs-base: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 28px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
+  --dur: 140ms;
+}
+[data-theme="light"] {
+  --bg: #f4f4f2; --sidebar: #ececea; --surface: #ffffff; --surface-2: #f7f7f5; --surface-3: #efefec;
+  --text: #1b1c1e; --text-2: #55585e; --text-3: #8b8e94;
+  --border: #e3e3df; --border-strong: #d2d2cd;
+  --accent: #2f6feb; --accent-hover: #2a62d1; --accent-soft: #e8effd; --accent-ink: #ffffff;
+  --ok: #16834f; --ok-soft: #e4f3ea; --warn: #a76400; --warn-soft: #fbf0dc; --err: #c4352f; --err-soft: #fbe8e6;
+  --seg-1: #2f6feb; --seg-2: #7b61ff; --seg-3: #16a3a3; --seg-4: #e8933a; --seg-5: #b4b7bd; --seg-6: #d9b44a;
+  --shadow-sm: 0 1px 2px rgba(20,22,26,.06); --shadow-md: 0 8px 28px rgba(20,22,26,.08);
+}
+[data-theme="dark"] {
+  --bg: #121315; --sidebar: #17181b; --surface: #1c1d21; --surface-2: #212226; --surface-3: #2a2b30;
+  --text: #ececee; --text-2: #a8abb2; --text-3: #75787f;
+  --border: #2c2d32; --border-strong: #3a3b41;
+  --accent: #6b9bff; --accent-hover: #87adff; --accent-soft: #1f2a42; --accent-ink: #0f1115;
+  --ok: #4fcf8e; --ok-soft: #173225; --warn: #eab155; --warn-soft: #3a2c14; --err: #ff8078; --err-soft: #3c1d1b;
+  --seg-1: #6b9bff; --seg-2: #a08cff; --seg-3: #3cc6c6; --seg-4: #f0a75b; --seg-5: #5d6067; --seg-6: #c9a640;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3); --shadow-md: 0 10px 30px rgba(0,0,0,.35);
+}
+
+:root { --switch-thumb: #ffffff; --native-shadow: rgba(0,0,0,.25); }
+
+/* Component dimensions shared by layout and text. */
+:root {
+  --r-circle: 50%;
+  --size--06-em: .06em;
+  --size--07-em: .07em;
+  --size--88-em: .88em;
+  --size--92-em: .92em;
+  --size-1: 1px;
+  --size-10: 10px;
+  --size-11: 11px;
+  --size-12: 12px;
+  --size-12-5: 12.5px;
+  --size-1240: 1240px;
+  --size-13: 13px;
+  --size-14: 14px;
+  --size-16: 16px;
+  --size-160: 160px;
+  --size-18: 18px;
+  --size-2: 2px;
+  --size-210: 210px;
+  --size-22: 22px;
+  --size-24: 24px;
+  --size-252: 252px;
+  --size-28: 28px;
+  --size-3: 3px;
+  --size-30: 30px;
+  --size-300: 300px;
+  --size-32: 32px;
+  --size-38: 38px;
+  --size-4: 4px;
+  --size-40: 40px;
+  --size-44: 44px;
+  --size-5: 5px;
+  --size-52: 52px;
+  --size-6: 6px;
+  --size-600: 600px;
+  --size-7: 7px;
+  --size-720: 720px;
+  --size-760: 760px;
+  --size-8: 8px;
+  --size-80: 80px;
+  --size-800: 800px;
+  --size-84: 84px;
+  --size-9: 9px;
+  --size-980: 980px;
+  --size-minus--01-em: -.01em;
+  --size-minus--02-em: -.02em;
+  --size-minus-3: -3px;
+  --size-minus-5: -5px;
+}

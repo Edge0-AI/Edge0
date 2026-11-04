@@ -1,0 +1,3 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <instrumentation android:name="dev.edge0.chat.DeviceChecks" android:targetPackage="${applicationId}" android:label="Edge0 device checks" />
+</manifest>

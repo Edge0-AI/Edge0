@@ -1,0 +1,9 @@
+清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。
+At the library, a small team studies how a local language model processes a paragraph. They keep the original input, count each token, and compare the intermediate results before drawing conclusions. Every experiment uses the same settings and a fresh output directory.
+下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。
+The final note describes the method, the observed results, and the remaining questions. A second run should reproduce the first run exactly. This makes the record useful for the next person who investigates the model.
+第二次阅读时，请核对相同的记录是否仍然表达同样的信息：
+清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。
+At the library, a small team studies how a local language model processes a paragraph. They keep the original input, count each token, and compare the intermediate results before drawing conclusions. Every experiment uses the same settings and a fresh output directory.
+下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。
+The final note describes the method, the observed results, and the remaining questions. A second run should reproduce the first run exactly. This makes the record useful for the next person who investigates the model.

@@ -1,0 +1,15 @@
+[project]
+name = "moe-assets"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["numpy>=2.2.6"]
+
+[dependency-groups]
+dev = ["pytest>=8", "jinja2>=3"]
+
+[tool.pytest.ini_options]
+markers = [
+    "l1: unit tests without real model weights",
+    "l2: tiny-model integration tests",
+    "l3: tests using the registered real source assets",
+]

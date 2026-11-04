@@ -1,0 +1,4 @@
+# Normalize line endings: store text with LF in the repository and check out LF
+# everywhere, so fixtures and answers stay byte-identical across platforms
+# (Windows checkouts must not introduce CRLF).
+* text=auto eol=lf

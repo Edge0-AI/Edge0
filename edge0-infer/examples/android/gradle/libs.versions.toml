@@ -1,0 +1,17 @@
+[versions]
+agp = "9.5.0"
+kotlin = "2.4.21"
+compose = "2026.09.00"
+[libraries]
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+material3 = { module = "androidx.compose.material3:material3" }
+activity-compose = { module = "androidx.activity:activity-compose", version = "1.13.0" }
+viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version = "2.11.0" }
+markdown = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version = "0.46.0" }
+junit = { module = "junit:junit", version = "4.13.2" }
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

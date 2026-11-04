@@ -1,0 +1,24 @@
+[package]
+name = "edge0-chat-desktop"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+
+[lib]
+name = "edge0_chat_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+tauri = { version = "=2.12.5", features = [] }
+tauri-plugin-http = { version = "=2.8.3", default-features = false }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+
+[build-dependencies]
+tauri-build = { version = "=2.7.4", features = [] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "=0.2.191"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_Console", "Win32_Security", "Win32_UI_WindowsAndMessaging"] }

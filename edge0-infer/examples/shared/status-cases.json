@@ -1,0 +1,458 @@
+[
+  {
+    "name": "count_zero",
+    "kind": "count",
+    "input": {
+      "value": 0
+    },
+    "expected": "0"
+  },
+  {
+    "name": "count_small",
+    "kind": "count",
+    "input": {
+      "value": 999
+    },
+    "expected": "999"
+  },
+  {
+    "name": "count_thousands",
+    "kind": "count",
+    "input": {
+      "value": 3084
+    },
+    "expected": "3,084"
+  },
+  {
+    "name": "count_millions",
+    "kind": "count",
+    "input": {
+      "value": 1920345
+    },
+    "expected": "1,920,345"
+  },
+  {
+    "name": "count_missing",
+    "kind": "count",
+    "input": {},
+    "expected": null
+  },
+  {
+    "name": "bytes_zero",
+    "kind": "bytes",
+    "input": {
+      "value": 0
+    },
+    "expected": "0 MB"
+  },
+  {
+    "name": "bytes_mb_round_down",
+    "kind": "bytes",
+    "input": {
+      "value": 2176
+    },
+    "expected": "0 MB"
+  },
+  {
+    "name": "bytes_mb_half_up",
+    "kind": "bytes",
+    "input": {
+      "value": 7500000
+    },
+    "expected": "8 MB"
+  },
+  {
+    "name": "bytes_mb_just_below_gb_threshold",
+    "kind": "bytes",
+    "input": {
+      "value": 9999999
+    },
+    "expected": "10 MB"
+  },
+  {
+    "name": "bytes_gb_threshold",
+    "kind": "bytes",
+    "input": {
+      "value": 10000000
+    },
+    "expected": "0.01 GB"
+  },
+  {
+    "name": "bytes_gb_half_up",
+    "kind": "bytes",
+    "input": {
+      "value": 3175000000
+    },
+    "expected": "3.18 GB"
+  },
+  {
+    "name": "bytes_gb_round_down",
+    "kind": "bytes",
+    "input": {
+      "value": 3174999999
+    },
+    "expected": "3.17 GB"
+  },
+  {
+    "name": "bytes_gb_whole",
+    "kind": "bytes",
+    "input": {
+      "value": 16000000000
+    },
+    "expected": "16.00 GB"
+  },
+  {
+    "name": "bytes_gb_binary_16gib",
+    "kind": "bytes",
+    "input": {
+      "value": 17179869184
+    },
+    "expected": "17.18 GB"
+  },
+  {
+    "name": "bytes_gb_no_grouping",
+    "kind": "bytes",
+    "input": {
+      "value": 1234567890123
+    },
+    "expected": "1234.57 GB"
+  },
+  {
+    "name": "bytes_missing",
+    "kind": "bytes",
+    "input": {},
+    "expected": null
+  },
+  {
+    "name": "rate_one_decimal",
+    "kind": "rate",
+    "input": {
+      "value": 24.83
+    },
+    "expected": "24.8 tok/s"
+  },
+  {
+    "name": "rate_half_up",
+    "kind": "rate",
+    "input": {
+      "value": 12.25
+    },
+    "expected": "12.3 tok/s"
+  },
+  {
+    "name": "rate_integer",
+    "kind": "rate",
+    "input": {
+      "value": 498
+    },
+    "expected": "498.0 tok/s"
+  },
+  {
+    "name": "rate_small",
+    "kind": "rate",
+    "input": {
+      "value": 0.04
+    },
+    "expected": "0.0 tok/s"
+  },
+  {
+    "name": "rate_large",
+    "kind": "rate",
+    "input": {
+      "value": 2131.8318240510644
+    },
+    "expected": "2131.8 tok/s"
+  },
+  {
+    "name": "rate_missing",
+    "kind": "rate",
+    "input": {},
+    "expected": null
+  },
+  {
+    "name": "percent_reuse",
+    "kind": "percent",
+    "input": {
+      "numerator": 48900,
+      "denominator": 61400
+    },
+    "expected": "79.6%"
+  },
+  {
+    "name": "percent_half_up",
+    "kind": "percent",
+    "input": {
+      "numerator": 1,
+      "denominator": 8
+    },
+    "expected": "12.5%"
+  },
+  {
+    "name": "percent_half_up_inexact_in_binary",
+    "kind": "percent",
+    "input": {
+      "numerator": 23,
+      "denominator": 80
+    },
+    "expected": "28.8%"
+  },
+  {
+    "name": "percent_zero",
+    "kind": "percent",
+    "input": {
+      "numerator": 0,
+      "denominator": 365
+    },
+    "expected": "0.0%"
+  },
+  {
+    "name": "percent_full",
+    "kind": "percent",
+    "input": {
+      "numerator": 365,
+      "denominator": 365
+    },
+    "expected": "100.0%"
+  },
+  {
+    "name": "percent_zero_denominator",
+    "kind": "percent",
+    "input": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "expected": null
+  },
+  {
+    "name": "percent_missing_numerator",
+    "kind": "percent",
+    "input": {
+      "denominator": 10
+    },
+    "expected": null
+  },
+  {
+    "name": "duration_zero",
+    "kind": "duration",
+    "input": {
+      "value": 0
+    },
+    "expected": "0.0 s"
+  },
+  {
+    "name": "duration_subsecond",
+    "kind": "duration",
+    "input": {
+      "value": 0.006098042
+    },
+    "expected": "0.0 s"
+  },
+  {
+    "name": "duration_seconds",
+    "kind": "duration",
+    "input": {
+      "value": 3.47
+    },
+    "expected": "3.5 s"
+  },
+  {
+    "name": "duration_half_up",
+    "kind": "duration",
+    "input": {
+      "value": 2.25
+    },
+    "expected": "2.3 s"
+  },
+  {
+    "name": "duration_just_below_minute",
+    "kind": "duration",
+    "input": {
+      "value": 59.94
+    },
+    "expected": "59.9 s"
+  },
+  {
+    "name": "duration_rounds_to_minute",
+    "kind": "duration",
+    "input": {
+      "value": 59.96
+    },
+    "expected": "1 min 0 s"
+  },
+  {
+    "name": "duration_minutes",
+    "kind": "duration",
+    "input": {
+      "value": 404.4
+    },
+    "expected": "6 min 44 s"
+  },
+  {
+    "name": "duration_minutes_half_up",
+    "kind": "duration",
+    "input": {
+      "value": 404.5
+    },
+    "expected": "6 min 45 s"
+  },
+  {
+    "name": "duration_just_below_hour",
+    "kind": "duration",
+    "input": {
+      "value": 3599.4
+    },
+    "expected": "59 min 59 s"
+  },
+  {
+    "name": "duration_hour",
+    "kind": "duration",
+    "input": {
+      "value": 3600
+    },
+    "expected": "1 h 0 min"
+  },
+  {
+    "name": "duration_hours",
+    "kind": "duration",
+    "input": {
+      "value": 8040.0
+    },
+    "expected": "2 h 14 min"
+  },
+  {
+    "name": "duration_many_hours",
+    "kind": "duration",
+    "input": {
+      "value": 90061
+    },
+    "expected": "25 h 1 min"
+  },
+  {
+    "name": "duration_missing",
+    "kind": "duration",
+    "input": {},
+    "expected": null
+  },
+  {
+    "name": "devices_all_system",
+    "kind": "device_memory",
+    "input": {
+      "by_device": {
+        "Metal": {
+          "current_bytes": 2940000000,
+          "peak_bytes": 2940000000,
+          "memory": "system"
+        },
+        "CPU": {
+          "current_bytes": 140000000,
+          "peak_bytes": 140000000,
+          "memory": "system"
+        },
+        "host": {
+          "current_bytes": 100000000,
+          "peak_bytes": 100000000,
+          "memory": "system"
+        }
+      }
+    },
+    "expected": {
+      "system": "3.18 GB",
+      "dedicated": null
+    }
+  },
+  {
+    "name": "devices_with_dedicated",
+    "kind": "device_memory",
+    "input": {
+      "by_device": {
+        "Vulkan0": {
+          "current_bytes": 11804000000,
+          "peak_bytes": 11804000000,
+          "memory": "dedicated"
+        },
+        "CPU": {
+          "current_bytes": 150000000,
+          "peak_bytes": 150000000,
+          "memory": "system"
+        },
+        "host": {
+          "current_bytes": 90000000,
+          "peak_bytes": 90000000,
+          "memory": "system"
+        }
+      }
+    },
+    "expected": {
+      "system": "0.24 GB",
+      "dedicated": "11.80 GB"
+    }
+  },
+  {
+    "name": "devices_two_dedicated",
+    "kind": "device_memory",
+    "input": {
+      "by_device": {
+        "Vulkan0": {
+          "current_bytes": 6000000000,
+          "peak_bytes": 6000000000,
+          "memory": "dedicated"
+        },
+        "Vulkan1": {
+          "current_bytes": 5000000000,
+          "peak_bytes": 5000000000,
+          "memory": "dedicated"
+        },
+        "host": {
+          "current_bytes": 8000000,
+          "peak_bytes": 8000000,
+          "memory": "system"
+        }
+      }
+    },
+    "expected": {
+      "system": "8 MB",
+      "dedicated": "11.00 GB"
+    }
+  },
+  {
+    "name": "devices_dedicated_zero",
+    "kind": "device_memory",
+    "input": {
+      "by_device": {
+        "Vulkan0": {
+          "current_bytes": 0,
+          "peak_bytes": 0,
+          "memory": "dedicated"
+        },
+        "CPU": {
+          "current_bytes": 38998368,
+          "peak_bytes": 38998368,
+          "memory": "system"
+        },
+        "host": {
+          "current_bytes": 7838656,
+          "peak_bytes": 7838656,
+          "memory": "system"
+        }
+      }
+    },
+    "expected": {
+      "system": "0.05 GB",
+      "dedicated": "0 MB"
+    }
+  },
+  {
+    "name": "devices_empty",
+    "kind": "device_memory",
+    "input": {
+      "by_device": {}
+    },
+    "expected": null
+  },
+  {
+    "name": "devices_missing",
+    "kind": "device_memory",
+    "input": {},
+    "expected": null
+  }
+]

@@ -1,0 +1,92 @@
+[
+  {
+    "name": "inline",
+    "input": "Use $x_i * y$ here.",
+    "expected": "Use `$x_i * y$` here."
+  },
+  {
+    "name": "block",
+    "input": "$$\nx_1 + y\n$$",
+    "expected": "```text\n$$\nx_1 + y\n$$\n```"
+  },
+  {
+    "name": "parentheses",
+    "input": "Value \\(x_i\\).",
+    "expected": "Value `\\(x_i\\)`."
+  },
+  {
+    "name": "brackets",
+    "input": "\\[x^2\\]",
+    "expected": "```text\n\\[x^2\\]\n```"
+  },
+  {
+    "name": "fenced_code",
+    "input": "```python\nprice = \"$x$\"\n```",
+    "expected": "```python\nprice = \"$x$\"\n```"
+  },
+  {
+    "name": "inline_code",
+    "input": "`$x$` and $y$",
+    "expected": "`$x$` and `$y$`"
+  },
+  {
+    "name": "money",
+    "input": "costs $5 and $10",
+    "expected": "costs $5 and $10"
+  },
+  {
+    "name": "unclosed",
+    "input": "Use $x + y",
+    "expected": "Use $x + y"
+  },
+  {
+    "name": "escaped",
+    "input": "Literal \\$x and $y$",
+    "expected": "Literal \\$x and `$y$`"
+  },
+  {
+    "name": "tilde_fenced_code",
+    "input": "~~~text\n$x_i$\n~~~",
+    "expected": "~~~text\n$x_i$\n~~~"
+  },
+  {
+    "name": "streaming_fenced_code",
+    "input": "```text\n$x_i$",
+    "expected": "```text\n$x_i$"
+  },
+  {
+    "name": "streaming_tilde_fence",
+    "input": "~~~text\n$x_i$",
+    "expected": "~~~text\n$x_i$"
+  },
+  {
+    "name": "inline_formula_backticks",
+    "input": "$x `` y$",
+    "expected": "```$x `` y$```"
+  },
+  {
+    "name": "block_formula_backticks",
+    "input": "$$\nx ``` y\n$$",
+    "expected": "````text\n$$\nx ``` y\n$$\n````"
+  },
+  {
+    "name": "fence_marker_inside_code_line",
+    "input": "```text\nliteral ``` then $x$\n```",
+    "expected": "```text\nliteral ``` then $x$\n```"
+  },
+  {
+    "name": "numeric_formula",
+    "input": "Value $5_x * y$ and costs $5 and $10.",
+    "expected": "Value `$5_x * y$` and costs $5 and $10."
+  },
+  {
+    "name": "block_formula_in_paragraph",
+    "input": "Before $$x_i$$ after",
+    "expected": "Before \n```text\n$$x_i$$\n```\n after"
+  },
+  {
+    "name": "bracket_formula_in_paragraph",
+    "input": "Before \\[x^2\\] after",
+    "expected": "Before \n```text\n\\[x^2\\]\n```\n after"
+  }
+]

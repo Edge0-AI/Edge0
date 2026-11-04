@@ -1,0 +1,5 @@
+add_library(moe_exec STATIC)
+target_sources(moe_exec PRIVATE runtime.cpp execution.cpp mixed.cpp)
+target_include_directories(moe_exec PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(moe_exec PUBLIC moe_platform PRIVATE ggml)
+moe_warnings(moe_exec)

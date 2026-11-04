@@ -1,0 +1,12 @@
+[modules]
+platform = []
+exec = ["platform"]
+weights = ["exec", "platform"]
+session = ["exec"]
+"models/api" = ["model", "session", "weights", "exec"]
+"models/edge0_35b" = ["model", "models/api", "session", "weights", "exec"]
+model = ["weights", "exec"]
+app = ["model", "models/api", "models/edge0_35b", "session", "platform", "exec"]
+
+[registration]
+files = ["src/app/adapters.cpp"]

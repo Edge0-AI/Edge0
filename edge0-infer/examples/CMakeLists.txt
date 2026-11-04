@@ -1,0 +1,3 @@
+add_executable(moe_example_native_chat native_chat.cpp)
+target_link_libraries(moe_example_native_chat PRIVATE edge0::edge0)
+moe_warnings(moe_example_native_chat)

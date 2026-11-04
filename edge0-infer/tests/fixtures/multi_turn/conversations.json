@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Chinese",
+    "messages": [
+      "请记住我的名字叫小林，用一句话确认。",
+      "我叫什么名字？",
+      "请把我的名字放进一句简短问候。"
+    ]
+  },
+  {
+    "name": "English",
+    "messages": [
+      "Remember that my favorite animal is a fox. Confirm in one short sentence.",
+      "What is my favorite animal?",
+      "Write one short sentence about that animal."
+    ]
+  },
+  {
+    "name": "Code",
+    "messages": [
+      "Write a Python function add(a, b) that returns their sum. Keep it brief.",
+      "What does add(2, 3) return?",
+      "Show one assert statement testing that result."
+    ]
+  }
+]

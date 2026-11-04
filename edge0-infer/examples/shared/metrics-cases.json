@@ -1,0 +1,157 @@
+[
+  {
+    "name": "complete",
+    "input": {
+      "generated_count": 32,
+      "first_token_seconds": 2.5,
+      "decode_tokens_per_second": 12.25,
+      "memory_peak_bytes": 123500000,
+      "input_tokens": 120,
+      "reused_tokens": 20
+    },
+    "expected": "32 tokens \u00b7 TTFT 2.50 s \u00b7 prefill 40.0 tok/s \u00b7 decode 12.3 tok/s \u00b7 peak 124 MB"
+  },
+  {
+    "name": "missing_generated_count",
+    "input": {
+      "first_token_seconds": 2.5,
+      "decode_tokens_per_second": 12.25,
+      "memory_peak_bytes": 123500000,
+      "input_tokens": 120,
+      "reused_tokens": 20
+    },
+    "expected": "TTFT 2.50 s \u00b7 prefill 40.0 tok/s \u00b7 decode 12.3 tok/s \u00b7 peak 124 MB"
+  },
+  {
+    "name": "missing_first_token_seconds",
+    "input": {
+      "generated_count": 32,
+      "decode_tokens_per_second": 12.25,
+      "memory_peak_bytes": 123500000,
+      "input_tokens": 120,
+      "reused_tokens": 20
+    },
+    "expected": "32 tokens \u00b7 decode 12.3 tok/s \u00b7 peak 124 MB"
+  },
+  {
+    "name": "missing_input_tokens",
+    "input": {
+      "generated_count": 32,
+      "first_token_seconds": 2.5,
+      "decode_tokens_per_second": 12.25,
+      "memory_peak_bytes": 123500000,
+      "reused_tokens": 20
+    },
+    "expected": "32 tokens \u00b7 TTFT 2.50 s \u00b7 decode 12.3 tok/s \u00b7 peak 124 MB"
+  },
+  {
+    "name": "missing_decode_tokens_per_second",
+    "input": {
+      "generated_count": 32,
+      "first_token_seconds": 2.5,
+      "memory_peak_bytes": 123500000,
+      "input_tokens": 120,
+      "reused_tokens": 20
+    },
+    "expected": "32 tokens \u00b7 TTFT 2.50 s \u00b7 prefill 40.0 tok/s \u00b7 peak 124 MB"
+  },
+  {
+    "name": "missing_memory_peak_bytes",
+    "input": {
+      "generated_count": 32,
+      "first_token_seconds": 2.5,
+      "decode_tokens_per_second": 12.25,
+      "input_tokens": 120,
+      "reused_tokens": 20
+    },
+    "expected": "32 tokens \u00b7 TTFT 2.50 s \u00b7 prefill 40.0 tok/s \u00b7 decode 12.3 tok/s"
+  },
+  {
+    "name": "no_computation",
+    "input": {
+      "generated_count": 32,
+      "first_token_seconds": 2.5,
+      "decode_tokens_per_second": 12.25,
+      "memory_peak_bytes": 123500000,
+      "input_tokens": 20,
+      "reused_tokens": 20
+    },
+    "expected": "32 tokens \u00b7 TTFT 2.50 s \u00b7 decode 12.3 tok/s \u00b7 peak 124 MB"
+  },
+  {
+    "name": "absent",
+    "input": {},
+    "expected": ""
+  },
+  {
+    "name": "zero_time",
+    "input": {
+      "generated_count": 0,
+      "first_token_seconds": 0,
+      "input_tokens": 25,
+      "reused_tokens": 20
+    },
+    "expected": "0 tokens \u00b7 TTFT 0.00 s"
+  },
+  {
+    "name": "rounding_down",
+    "input": {
+      "first_token_seconds": 1.234,
+      "decode_tokens_per_second": 2.34,
+      "memory_peak_bytes": 1499999
+    },
+    "expected": "TTFT 1.23 s \u00b7 decode 2.3 tok/s \u00b7 peak 1 MB"
+  },
+  {
+    "name": "rounding_up",
+    "input": {
+      "first_token_seconds": 1.125,
+      "decode_tokens_per_second": 2.25,
+      "memory_peak_bytes": 1500000
+    },
+    "expected": "TTFT 1.13 s \u00b7 decode 2.3 tok/s \u00b7 peak 2 MB"
+  },
+  {
+    "name": "decimal_half_boundary",
+    "input": {
+      "first_token_seconds": 1.005,
+      "decode_tokens_per_second": 1.15
+    },
+    "expected": "TTFT 1.01 s \u00b7 decode 1.2 tok/s"
+  },
+  {
+    "name": "large_decimal_half_boundary",
+    "input": {
+      "first_token_seconds": 1234.565
+    },
+    "expected": "TTFT 1234.57 s"
+  },
+  {
+    "name": "missing_reused_tokens",
+    "input": {
+      "generated_count": 32,
+      "input_tokens": 100,
+      "first_token_seconds": 2.5
+    },
+    "expected": "32 tokens \u00b7 TTFT 2.50 s"
+  },
+  {
+    "name": "long_generation_short_input",
+    "input": {
+      "generated_count": 512,
+      "input_tokens": 19,
+      "reused_tokens": 0,
+      "first_token_seconds": 2.13
+    },
+    "expected": "512 tokens \u00b7 TTFT 2.13 s \u00b7 prefill 8.9 tok/s"
+  },
+  {
+    "name": "reused_exceeds_input",
+    "input": {
+      "input_tokens": 19,
+      "reused_tokens": 20,
+      "first_token_seconds": 2.13
+    },
+    "expected": "TTFT 2.13 s"
+  }
+]

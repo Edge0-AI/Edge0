@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(edge0_android_example LANGUAGES C CXX)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_subdirectory(../../../../../.. edge0)
+add_library(edge0_jni SHARED edge0_jni.cpp)
+target_link_libraries(edge0_jni PRIVATE edge0::edge0 android log)

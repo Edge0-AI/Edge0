@@ -1,0 +1,6 @@
+add_library(moe_model STATIC)
+target_sources(moe_model PRIVATE sha256.cpp asset_index.cpp adapter.cpp json.cpp)
+target_include_directories(moe_model PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(moe_model PUBLIC moe_weights moe_exec ggml)
+moe_warnings(moe_model)
+target_sources(moe_model PRIVATE loading.cpp mixed_loading.cpp)

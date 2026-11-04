@@ -1,0 +1,17 @@
+{
+  "commit": "c7ee73d5dfb3729de452bdb1fec7df7aebe42806",
+  "modifications": {
+    "M1": "convert_mlx_to_gguf.py: CONVERTER_REV is the pinned upstream revision instead of a git lookup",
+    "M2": "convert_mlx_to_gguf.py: only the 35b tier is accepted; the 8b converter is not imported",
+    "M3": "lora_mlx_to_gguf.py: verify_against_base reads GGUF files with tools/assets/format_gguf.py instead of the upstream gguf Python package",
+    "M4": "repack_r3.py: tokenizer.ggml.pre is qwen35 instead of qwen2, matching the pre-tokenizer of the shipped tokenizer.json"
+  },
+  "path": "windows/tools",
+  "repository": "https://github.com/Edge0-AI/Edge0",
+  "upstream_sha256": {
+    "convert_mlx_to_gguf.py": "538ec28cf7ae0cf60fc47592770098b78c32276ed0c880d9de02a8eb55b02817",
+    "lora_mlx_to_gguf.py": "77666eae35f3333d87dd05a118590c5d4aa354686314c4024a381302bc1f3e89",
+    "repack_mlx_to_gguf.py": "eebfc64ef94395c03e1b20eb0aed1f642cfa8aff414e3bcdee3e8411e12616c3",
+    "repack_r3.py": "26be3d41a75ef2472d321f2021bafecda58dec71dd954a2f8532f15e14f93ba2"
+  }
+}

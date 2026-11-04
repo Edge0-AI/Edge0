@@ -1,5 +1,0 @@
-if(MLX_BUILD_CPU AND NOT WIN32)
-  target_sources(mlx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ring.cpp)
-else()
-  target_sources(mlx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/no_ring.cpp)
-endif()

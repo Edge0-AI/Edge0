@@ -1,0 +1,6 @@
+ 2.5 /opt/apps/Example Helper.app/Contents/MacOS/Example Helper
+ 7.0 worker
+ 0.3 /usr/bin/idle
+ 1.0 fourth
+ 0.1 fifth
+ 0.0 sixth

@@ -1,0 +1,150 @@
+[
+  {
+    "name": "new_conversation",
+    "input": {
+      "context_length": 16384
+    },
+    "expected": {
+      "text": "0 / 16,384 tokens",
+      "ring_percent": 0
+    }
+  },
+  {
+    "name": "typical",
+    "input": {
+      "input_tokens": 1104,
+      "generated_tokens": 378,
+      "context_length": 16384
+    },
+    "expected": {
+      "text": "1,482 / 16,384 tokens",
+      "ring_percent": 9
+    }
+  },
+  {
+    "name": "ring_half_up",
+    "input": {
+      "input_tokens": 100,
+      "generated_tokens": 0,
+      "context_length": 200
+    },
+    "expected": {
+      "text": "100 / 200 tokens",
+      "ring_percent": 50
+    }
+  },
+  {
+    "name": "ring_half_up_inexact_in_binary",
+    "input": {
+      "input_tokens": 23,
+      "generated_tokens": 0,
+      "context_length": 40
+    },
+    "expected": {
+      "text": "23 / 40 tokens",
+      "ring_percent": 58
+    }
+  },
+  {
+    "name": "ring_small_rounds_up",
+    "input": {
+      "input_tokens": 7,
+      "generated_tokens": 0,
+      "context_length": 1000
+    },
+    "expected": {
+      "text": "7 / 1,000 tokens",
+      "ring_percent": 1
+    }
+  },
+  {
+    "name": "ring_rounds_down",
+    "input": {
+      "input_tokens": 4,
+      "generated_tokens": 0,
+      "context_length": 1000
+    },
+    "expected": {
+      "text": "4 / 1,000 tokens",
+      "ring_percent": 0
+    }
+  },
+  {
+    "name": "full",
+    "input": {
+      "input_tokens": 16000,
+      "generated_tokens": 384,
+      "context_length": 16384
+    },
+    "expected": {
+      "text": "16,384 / 16,384 tokens",
+      "ring_percent": 100
+    }
+  },
+  {
+    "name": "over_capacity",
+    "input": {
+      "input_tokens": 16384,
+      "generated_tokens": 616,
+      "context_length": 16384
+    },
+    "expected": {
+      "text": "17,000 / 16,384 tokens",
+      "ring_percent": 100
+    }
+  },
+  {
+    "name": "capacity_missing",
+    "input": {
+      "input_tokens": 1104,
+      "generated_tokens": 378
+    },
+    "expected": {
+      "text": "1,482 tokens",
+      "ring_percent": null
+    }
+  },
+  {
+    "name": "capacity_zero",
+    "input": {
+      "input_tokens": 10,
+      "generated_tokens": 2,
+      "context_length": 0
+    },
+    "expected": {
+      "text": "12 tokens",
+      "ring_percent": null
+    }
+  },
+  {
+    "name": "capacity_missing_new_conversation",
+    "input": {},
+    "expected": {
+      "text": "0 tokens",
+      "ring_percent": null
+    }
+  },
+  {
+    "name": "generated_missing",
+    "input": {
+      "input_tokens": 612,
+      "context_length": 16384
+    },
+    "expected": {
+      "text": "612 / 16,384 tokens",
+      "ring_percent": 4
+    }
+  },
+  {
+    "name": "large_rounds_to_full",
+    "input": {
+      "input_tokens": 250000,
+      "generated_tokens": 12000,
+      "context_length": 262144
+    },
+    "expected": {
+      "text": "262,000 / 262,144 tokens",
+      "ring_percent": 100
+    }
+  }
+]

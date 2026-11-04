@@ -1,0 +1,321 @@
+{
+ "cells": [
+  {
+   "index": 1,
+   "memory": {
+    "ledger_peak_bytes": 3822436416,
+    "physical_peak_bytes": 3685109384,
+    "rss_peak_bytes": 3532439552
+   },
+   "metrics": {
+    "decode_tokens_per_second": 22.32422408252462,
+    "first_token_seconds": 5.861345291,
+    "prefill_tokens_per_second": 526.1590721733169
+   },
+   "reason": "",
+   "side": "predicted",
+   "snapshot_after": null,
+   "snapshot_before": null,
+   "status": "ok"
+  },
+  {
+   "index": 2,
+   "memory": {
+    "ledger_peak_bytes": 3683951520,
+    "physical_peak_bytes": 3515452848,
+    "rss_peak_bytes": 3406938112
+   },
+   "metrics": {
+    "decode_tokens_per_second": 14.421381718082724,
+    "first_token_seconds": 5.8714255,
+    "prefill_tokens_per_second": 525.2557492213773
+   },
+   "reason": "",
+   "side": "actual",
+   "snapshot_after": null,
+   "snapshot_before": null,
+   "status": "ok"
+  },
+  {
+   "index": 5,
+   "memory": {
+    "ledger_peak_bytes": 3822436416,
+    "physical_peak_bytes": 3684503152,
+    "rss_peak_bytes": 3475816448
+   },
+   "metrics": {
+    "decode_tokens_per_second": 23.575083868985608,
+    "first_token_seconds": 5.874126292,
+    "prefill_tokens_per_second": 525.0142483657721
+   },
+   "reason": "",
+   "side": "predicted",
+   "snapshot_after": null,
+   "snapshot_before": null,
+   "status": "ok"
+  },
+  {
+   "index": 6,
+   "memory": {
+    "ledger_peak_bytes": 3683951520,
+    "physical_peak_bytes": 3515371000,
+    "rss_peak_bytes": 3399073792
+   },
+   "metrics": {
+    "decode_tokens_per_second": 14.569373748581855,
+    "first_token_seconds": 5.838853958,
+    "prefill_tokens_per_second": 528.1858430068307
+   },
+   "reason": "",
+   "side": "actual",
+   "snapshot_after": null,
+   "snapshot_before": null,
+   "status": "ok"
+  },
+  {
+   "index": 9,
+   "memory": {
+    "ledger_peak_bytes": 3822436416,
+    "physical_peak_bytes": 3684404872,
+    "rss_peak_bytes": 3425665024
+   },
+   "metrics": {
+    "decode_tokens_per_second": 22.984664623948117,
+    "first_token_seconds": 5.802292334,
+    "prefill_tokens_per_second": 531.5140676260867
+   },
+   "reason": "",
+   "side": "predicted",
+   "snapshot_after": null,
+   "snapshot_before": null,
+   "status": "ok"
+  },
+  {
+   "index": 10,
+   "memory": {
+    "ledger_peak_bytes": 3683951520,
+    "physical_peak_bytes": 3515829752,
+    "rss_peak_bytes": 3422797824
+   },
+   "metrics": {
+    "decode_tokens_per_second": 14.816659396717156,
+    "first_token_seconds": 5.883034416,
+    "prefill_tokens_per_second": 524.2192688202692
+   },
+   "reason": "",
+   "side": "actual",
+   "snapshot_after": null,
+   "snapshot_before": null,
+   "status": "ok"
+  }
+ ],
+ "decision": null,
+ "fixed_threshold": 0.05,
+ "format": "moe-perf-report/1",
+ "identity": {
+  "binary_sha256": "7924ae63f1d09aa4489cf9a2ab4c569e4b2266ad6b23882ba62f5e4c49eb0c1b",
+  "build_consistency": {
+   "matches": true,
+   "note": ""
+  },
+  "device": {
+   "chip": "Apple M5",
+   "memory_bytes": 17179869184,
+   "model": "Mac17,3",
+   "os_version": "26.5.1",
+   "platform": "macos"
+  },
+  "engine": {
+   "ggml_origin": "7ab4ee7baad2d920464cbacfad4f4b07cf111fd2",
+   "ggml_version": "0.24.0",
+   "source_commit": "d1462bda84d7ab3825f6af2544965c3c7718e243",
+   "source_modified": "yes",
+   "source_reason": "",
+   "version": "0.1.0"
+  },
+  "model": {
+   "adapter": "edge0_35b",
+   "assets": [
+    {
+     "bytes": 21749830528,
+     "filename": "base.gguf",
+     "role": "base",
+     "sha256": "ffaf355b0ca34f38bce31abd9955d4c09d108fbacfc350cbe7dd62fa4c0f97f9"
+    },
+    {
+     "bytes": 7764,
+     "filename": "chat_template.jinja",
+     "role": "chat_template",
+     "sha256": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259"
+    },
+    {
+     "bytes": 202,
+     "filename": "generation_config.json",
+     "role": "generation_config",
+     "sha256": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e"
+    },
+    {
+     "bytes": 42433536,
+     "filename": "lora.gguf",
+     "role": "lora",
+     "sha256": "caa1df4a9393ec69d31a70d9eefee46276fd8744d3f8871515d9be6a2ce8e38e"
+    },
+    {
+     "bytes": 57,
+     "filename": "model.json",
+     "role": "model",
+     "sha256": "87884a4aed02c6db1b8ca810fc2bc808733f5fc19997ba6ca6f15e4ac9ff254e"
+    },
+    {
+     "bytes": 138419360,
+     "filename": "prerouter.gguf",
+     "role": "prerouter",
+     "sha256": "7d2cb29d9989407e780e0ca4c25c72e9e69dd8ea11c12609975316fae57f9912"
+    },
+    {
+     "bytes": 13267,
+     "filename": "provenance.json",
+     "role": "provenance",
+     "sha256": "7b9c1144928a9fb73da47859d4beb416ace9fa1d11b479dcc07ccefe183cdb26"
+    },
+    {
+     "bytes": 19989343,
+     "filename": "tokenizer.json",
+     "role": "tokenizer",
+     "sha256": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"
+    }
+   ],
+   "assets_verified": false
+  },
+  "tools_sha256": {
+   "abba.py": "028aa08d7fc082cc7c320376a3a84c8909510fc87fb5818f229bb09bf404bf57",
+   "hosts.py": "662e7f2e5d4d9c82eabd82604e110cd93c8801fa14ecdc90da0fb14d463ade96",
+   "pressure.py": "596332178ef1acc05544114f1dee52bf948a5284ae40995167efa0a468f831df",
+   "report.py": "07b4d77cd21f64533a35ea9d3e18761f41d675886d55eebcdfaee7223631874c",
+   "sweep.py": "86dd506f8883b46c5d488ffdb25e383ceac5e0a33abd89b09195c1724785a2d0"
+  },
+  "workspace": {
+   "changed_count": 52,
+   "changed_paths": [],
+   "commit": "d1462bda84d7ab3825f6af2544965c3c7718e243",
+   "modified": true
+  }
+ },
+ "noise": null,
+ "pairs": [],
+ "protocol": {
+  "backend": "metal",
+  "cooldown_seconds": 30,
+  "kind": "sweep",
+  "ntok": 100,
+  "order": [
+   "predicted",
+   "actual",
+   "ctx16384",
+   "direct"
+  ],
+  "outlier_rule": "relative distance from the configuration median above 10%",
+  "prompt": {
+   "file": "tests/fixtures/bench/library-report-prompt.txt",
+   "input_count": 3084,
+   "sha256": "c5af85bd377dbe4639e903920b73d338416e1f7fc8448819ac32b77a32cb0579"
+  },
+  "runs": 1,
+  "runs_per_configuration": 3,
+  "warmup": 10
+ },
+ "sides": {
+  "actual": {
+   "command": [
+    "build/mac-metal/bin/edge0-infer",
+    "bench",
+    "--model",
+    "$MOE_ASSETS_35B",
+    "--device",
+    "metal",
+    "--user-file",
+    "tests/fixtures/bench/library-report-prompt.txt",
+    "--warmup",
+    "10",
+    "--ntok",
+    "100",
+    "--runs",
+    "1",
+    "--model-option",
+    "routing=actual"
+   ],
+   "configuration": {
+    "context": 4096,
+    "device": "MTL0",
+    "directory": "$MOE_ASSETS_35B",
+    "model_options": {
+     "expert_read": "cached",
+     "expert_slots": "4",
+     "experts": "slots",
+     "lora": "on",
+     "prefill_ahead_min_tokens": "3000",
+     "prefill_read": "auto",
+     "routing": "actual"
+    },
+    "prefill_chunk": 4096,
+    "sources": {
+     "context": "request",
+     "device": "platform",
+     "expert_read": "model",
+     "expert_slots": "model",
+     "experts": "model",
+     "lora": "model",
+     "prefill_ahead_min_tokens": "model",
+     "prefill_chunk": "platform",
+     "prefill_read": "model",
+     "routing": "request"
+    }
+   }
+  },
+  "predicted": {
+   "command": [
+    "build/mac-metal/bin/edge0-infer",
+    "bench",
+    "--model",
+    "$MOE_ASSETS_35B",
+    "--device",
+    "metal",
+    "--user-file",
+    "tests/fixtures/bench/library-report-prompt.txt",
+    "--warmup",
+    "10",
+    "--ntok",
+    "100",
+    "--runs",
+    "1"
+   ],
+   "configuration": {
+    "context": 4096,
+    "device": "MTL0",
+    "directory": "$MOE_ASSETS_35B",
+    "model_options": {
+     "expert_read": "cached",
+     "expert_slots": "4",
+     "experts": "slots",
+     "lora": "on",
+     "prefill_ahead_min_tokens": "3000",
+     "prefill_read": "auto",
+     "routing": "predicted"
+    },
+    "prefill_chunk": 4096,
+    "sources": {
+     "context": "request",
+     "device": "platform",
+     "expert_read": "model",
+     "expert_slots": "model",
+     "experts": "model",
+     "lora": "model",
+     "prefill_ahead_min_tokens": "model",
+     "prefill_chunk": "platform",
+     "prefill_read": "model",
+     "routing": "model"
+    }
+   }
+  }
+ }
+}
