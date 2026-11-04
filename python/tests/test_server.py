@@ -143,9 +143,9 @@ class ToolCallEngine(FakeEngine):
     def __init__(self, tok=None):
         super().__init__(tok=tok or ToolCallTok())
 
-    def parse_tool_calls(self, text: str):
+    def parse_tool_calls(self, text: str, tools=None):
         from edge0.server.tool_calls import parse_ling_tool_calls
-        return parse_ling_tool_calls(text)
+        return parse_ling_tool_calls(text, tools)
 
 
 _TOOLS = [{
@@ -583,6 +583,22 @@ def test_chat_once_parses_tool_calls_when_requested():
     assert json.loads(fn["arguments"]) == {"expression": "2 + 2"}
     assert calls[0]["type"] == "function"
     assert calls[0]["id"].startswith("call_")
+
+
+def test_chat_once_keeps_string_typed_arguments_as_strings():
+    """The request's tools reach the parser: a string parameter whose
+    value looks like a number stays a string in function.arguments."""
+    class DigitsTok(ToolCallTok):
+        _PIECES = {**ToolCallTok._PIECES,
+                   12: "<arg_key>expression</arg_key>\n<arg_value>42</arg_value>\n"}
+
+    srv = QueueServer(ToolCallEngine(tok=DigitsTok()))
+    out = _chat_once(srv, {
+        "messages": [{"role": "user", "content": "compute 42"}],
+        "tools": _TOOLS, "tool_choice": "auto",
+    })
+    fn = out["choices"][0]["message"]["tool_calls"][0]["function"]
+    assert json.loads(fn["arguments"]) == {"expression": "42"}
 
 
 def test_chat_once_tool_choice_none_suppresses_parsing():

@@ -178,3 +178,54 @@ def test_non_json_number_words_stay_strings(raw, dialect):
     arguments = calls[0]["function"]["arguments"]
     # Strict JSON, as an OpenAI client's JSON.parse would read it.
     assert json.loads(arguments, parse_constant=pytest.fail) == {"query": raw}
+
+
+_LOOKUP_TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "lookup",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "zip": {"type": "string"},
+                "flag": {"type": "string"},
+                "limit": {"type": "integer"},
+            },
+        },
+    },
+}]
+
+
+@pytest.mark.parametrize("dialect", ["ling", "qwen"])
+def test_string_parameters_declared_in_tools_are_not_coerced(dialect):
+    """Both templates write a string argument bare, so a string parameter
+    whose value looks like JSON (a zip code, "true") has to be read with
+    the request's schema, or it comes back as a number or a bool."""
+    values = {"zip": "10001", "flag": "true", "limit": "5"}
+    if dialect == "ling":
+        text = "<tool_call>lookup" + "".join(
+            f"<arg_key>{k}</arg_key>\n<arg_value>{v}</arg_value>"
+            for k, v in values.items()) + "</tool_call>"
+        _, calls = parse_ling_tool_calls(text, _LOOKUP_TOOLS)
+    else:
+        text = "<tool_call>\n<function=lookup>\n" + "".join(
+            f"<parameter={k}>\n{v}\n</parameter>\n"
+            for k, v in values.items()) + "</function>\n</tool_call>"
+        _, calls = parse_qwen_tool_calls(text, _LOOKUP_TOOLS)
+    args = json.loads(calls[0]["function"]["arguments"])
+    assert args == {"zip": "10001", "flag": "true", "limit": 5}
+
+
+@pytest.mark.parametrize("tools", [
+    None,
+    [],
+    [{"type": "function", "function": {"name": "other", "parameters": {
+        "type": "object", "properties": {"zip": {"type": "string"}}}}}],
+    [{"type": "function", "function": {"name": "lookup"}}],
+    ["not a tool"],
+])
+def test_coercion_unchanged_without_a_string_schema_for_the_call(tools):
+    text = ("<tool_call>lookup<arg_key>zip</arg_key>\n"
+            "<arg_value>10001</arg_value></tool_call>")
+    _, calls = parse_ling_tool_calls(text, tools)
+    assert json.loads(calls[0]["function"]["arguments"]) == {"zip": 10001}

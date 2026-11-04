@@ -56,7 +56,7 @@ def _extract_tool_calls(server: QueueServer, req, content: str):
     parse = getattr(server.engine, "parse_tool_calls", None)
     if not callable(parse):
         return content, None
-    content, calls = parse(content)
+    content, calls = parse(content, tools=req.tools)
     return content, (calls or None)
 
 
