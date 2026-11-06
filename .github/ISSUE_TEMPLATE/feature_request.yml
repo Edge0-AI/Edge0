@@ -6,18 +6,17 @@ body:
     attributes:
       value: |
         Before filing, please check the [roadmap in the README](https://github.com/Edge0-AI/Edge0#roadmap)
-        and existing issues — several popular asks are already tracked (CUDA backend #107/#20/#19,
-        non-macOS support #18, tool/function calling #115/#119).
+        and existing issues — several popular asks may already be tracked.
 
   - type: dropdown
     id: area
     attributes:
       label: Area
       options:
-        - New backend (CUDA / other accelerator)
+        - New backend (GPU / NPU / other accelerator)
         - New platform support
         - Server / OpenAI-compatible API
-        - CLI / Python API
+        - CLI / native C++ API
         - Quantization / adapters (LoRA / prerouter)
         - Documentation
         - Other
@@ -28,7 +27,7 @@ body:
     id: problem
     attributes:
       label: What problem are you trying to solve?
-      description: Describe the use case and who it helps. "I have an NVIDIA GPU and want to run edge0-8b for ..."
+      description: Describe the use case and who it helps. "I have an NVIDIA GPU and want to run edge0-35b for ..."
     validations:
       required: true
 
@@ -36,7 +35,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: What would you like to see? If you're willing to contribute it, say so — we love PRs (see docs/adding-a-model.md for model work).
+      description: What would you like to see? If you're willing to contribute it, say so — we love PRs (see edge0-infer/tools/assets/README.md#adding-a-model for model work).
     validations:
       required: false
 

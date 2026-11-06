@@ -5,16 +5,12 @@ inference framework, and contributions of all kinds are welcome — bug reports,
 performance measurements, documentation fixes, new model support, and new
 platform/backend work.
 
-This is a multi-platform monorepo. Please read the section for the part you're
-touching.
-
 ## Ways to contribute
 
 - **Report a bug / performance issue / request a feature or model** — open an
   issue using one of the [issue forms](.github/ISSUE_TEMPLATE/). The forms ask
-  for the platform, chip, memory, and (for the Python runtime) the `mlx`
-  version — these fields resolve the large majority of reports, so please fill
-  them in.
+  for the platform, backend, chip and memory — these fields resolve the large
+  majority of reports, so please fill them in.
 - **Ask a question or share results** — please use
   [GitHub Discussions](https://github.com/Edge0-AI/Edge0/discussions) rather
   than an issue.
@@ -22,87 +18,53 @@ touching.
 
 ## Repository layout
 
-| Path | What | Stack |
-|---|---|---|
-| [`python/`](python/) | Reference framework + CLI + OpenAI-compatible server | Python + MLX (Apple Silicon) |
-| [`macos/`](macos/) | Desktop app / CLI / daemon | Rust |
-| [`ios/`](ios/) | iPhone on-device app | Swift + MLX Swift |
-| [`android/`](android/) | On-device app + native engine | Kotlin + native |
-| [`windows/`](windows/) | Desktop app + native engine | C++ + Vulkan |
-| [`docs/`](docs/) | Architecture & design docs | — |
+| Path | What |
+|---|---|
+| [`edge0-infer/`](edge0-infer/) | The inference engine (C++, GGML), its CLI and OpenAI-compatible server, the model asset tools, and the chat app examples for desktop, Android and iOS |
+| [`docs/`](docs/) | Model design docs: MoE routing, the prerouter, and the model tiers |
+| [`paper/`](paper/) | The technical report |
 
-Each platform directory has its own README with build and test instructions.
-The sections below focus on the **Python framework**, which is the easiest place
-to start.
+`edge0-infer/` is developed in a separate repository and synced here. Open
+issues and pull requests for it in this repository as usual: an accepted change
+is applied there first and arrives here with the next sync.
 
-## Development setup (Python framework)
+## Development setup
 
-Requires macOS on Apple Silicon (the MLX backend has no wheels on other
-platforms yet — a CUDA backend slot is reserved under
-`python/src/edge0/backends/cuda/`).
-
-```bash
-cd python
-python3.12 -m venv .venv
-.venv/bin/pip install -e '.[dev,fetch]'
-```
-
-> **Do not bump `mlx` past the pinned `0.30.6`.** `0.30.4` and older mis-gate
-> the NAX matmul kernels on Apple A18 / A18 Pro (silently wrong numbers →
-> garbled output, [#8](https://github.com/Edge0-AI/Edge0/issues/8)), and
-> `mlx>=0.31.2` breaks the streaming pool threads. `mlx-lm` stays `0.31.0`.
-> See the note in [`python/pyproject.toml`](python/pyproject.toml). Only touch
-> these pins in a PR that is specifically about the upgrade.
+Build the engine and get the model assets as described in
+[Getting started](edge0-infer/docs/getting-started.md). It covers macOS, iOS,
+Android and Windows.
 
 ## Running the tests
 
-```bash
-cd python
-pytest -m 'not slow'              # unit tests (no real weights) — what CI runs
-pytest tests/test_repo_hygiene.py # repo hygiene (pure Python, runs anywhere)
+The tests are CTest tests with a level label from `L0` (static checks) to `L4`
+(acceptance on a device). From `edge0-infer/`:
 
-# Real-weight tests (need a downloaded checkpoint; skipped if absent):
-EDGE0_8B_MODEL=/path/to/edge0-8b pytest -m slow -q
-.venv/bin/python scripts/e2e_smoke.py \
-  --qwen-dir /path/to/edge0-35b --ling-dir /path/to/edge0-8b
+```bash
+cmake --preset cpu && cmake --build --preset cpu
+ctest --preset cpu -L "L0|L1"     # no model assets needed
 ```
 
-## What CI checks (and how to pass it)
-
-Every PR runs two jobs ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
-
-1. **Unit tests (macOS + MLX)** — `pytest -m 'not slow'`.
-2. **Repo hygiene (Linux, pure Python)** — `tests/test_repo_hygiene.py`, which
-   enforces the "no dependency on the author's machine" rules across the
-   *entire* repo:
-   - **No hardcoded local paths** — nothing that points at a specific machine's
-     filesystem (absolute home directories, network mounts, cluster node names,
-     etc.). Use env vars, fixtures, or relative paths.
-   - **Backend boundary** — `import mlx` / `from mlx ...` may appear **only**
-     under `python/src/edge0/backends/mlx/`. Framework code must go through the
-     `edge0.backends` facade (`core` / `nn` / `io` / `quant`). This keeps the
-     core backend-agnostic so other backends can plug in.
-   - **No secrets** — no API keys or private keys in the tree.
-   - **Docs links resolve** — e.g. the README `NOTICE` link must point to a real
-     file.
-
-You can run both locally before pushing (see above).
+[Testing](edge0-infer/docs/testing.md) describes every level, what each needs
+(the tiny test fixtures, the real assets, a device) and the full regression
+commands.
 
 ## Adding a new model
 
-edge0 is designed to take new MoE checkpoints through a documented path. Start
-with [`docs/adding-a-model.md`](docs/adding-a-model.md): implement the
-three-part adapter contract (`Config` / `build_model` / `build_engine`),
-register it, and map the checkpoint's `model_type` via `TYPE_ALIASES`. Please
-include a short note on the architecture (layers / experts / routing width /
-attention type) in your PR.
+A model has two parts in `edge0-infer/`: its asset tools in
+`edge0-infer/tools/assets/<model>/` (see
+[Adding a model](edge0-infer/tools/assets/README.md#adding-a-model)) and its
+computation in `edge0-infer/src/models/<model>/` (see
+[Architecture](edge0-infer/docs/architecture.md)). Please include a short note
+on the architecture (layers / experts / routing width / attention type) in your
+PR.
 
 ## Pull request workflow
 
 1. **Fork** the repo and create a feature branch off `main`
    (e.g. `fix/streaming-oob`, `docs/clarify-memory`, `feat/tool-calling`).
 2. Make your change; **add or update tests** for new behavior.
-3. Run `pytest -m 'not slow'` and `pytest tests/test_repo_hygiene.py` locally.
+3. Run the tests for the levels your change touches (at least `L0` and `L1`)
+   locally.
 4. Open a PR against `Edge0-AI/Edge0:main` and fill in the
    [PR template](.github/PULL_REQUEST_TEMPLATE.md). Link the issue it closes
    (`Fixes #NN`).

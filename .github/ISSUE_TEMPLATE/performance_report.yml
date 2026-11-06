@@ -6,9 +6,9 @@ body:
     attributes:
       value: |
         Use this for "slower than the README numbers" or "high memory / OOM" reports
-        (e.g. #17, #110). The documented benchmarks were measured on a **Mac mini M4 Pro, 24 GB**.
-        Low-memory machines (8–16 GB) can be dramatically slower because expert pages are
-        continuously evicted and re-read from SSD — please include your total RAM.
+        (e.g. #17, #110). The reference figures and the devices they were measured on are in
+        [Benchmarking](https://github.com/Edge0-AI/Edge0/blob/main/edge0-infer/docs/benchmarking.md#reference-figures).
+        Throughput depends on memory and storage speed — please include your total RAM and storage type.
 
   - type: dropdown
     id: tier
@@ -16,7 +16,6 @@ body:
       label: Model tier
       options:
         - edge0-35b
-        - edge0-8b
     validations:
       required: true
 
@@ -65,8 +64,8 @@ body:
     id: memory
     attributes:
       label: Observed peak memory
-      description: Note whether this is MLX allocator peak or process RSS (they differ — see #106).
-      placeholder: 4.2 GB (process RSS)
+      description: Name the metric (macOS / iOS phys_footprint, Android RSS, Windows working set); they are not comparable.
+      placeholder: 3.4 GiB (phys_footprint)
     validations:
       required: false
 
@@ -74,8 +73,8 @@ body:
     id: flags
     attributes:
       label: Flags / settings tried
-      description: e.g. --prefill-ondemand, full_layer_prefill, warm_willneed, context length, max_tokens.
-      placeholder: Tried warm_willneed and full_layer_prefill=False, no change.
+      description: e.g. --device, --prefill-device, --threads, --model-option expert_slots=8, routing, context length.
+      placeholder: Tried --model-option expert_slots=8, no change.
     validations:
       required: false
 
@@ -83,7 +82,7 @@ body:
     id: command
     attributes:
       label: Exact command used to measure
-      description: Ideally the output of examples/bench.py so numbers are comparable.
+      description: Ideally the `edge0-infer bench` summary so numbers are comparable.
       render: shell
     validations:
       required: true

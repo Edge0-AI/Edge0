@@ -1,2 +1,0 @@
-date,tier,runtime,device,chip,ram_gb,os,storage,mlx_version,decode_tok_s,prefill_tok_s,peak_active_gib,on_battery,reporter,notes
-2026-10-15,edge0-8b,python-mlx,MacBook Pro,Apple M5,16,macOS 26.3.2,internal SSD,0.30.6,11.8,314,3.19,no,@shuk777,"decode 13.5 short / 11.8 long; prefill 231 cold / 314 warm (BENCH_LONG)"
