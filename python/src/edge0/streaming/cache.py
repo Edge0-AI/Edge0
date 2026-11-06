@@ -35,6 +35,9 @@ class SharedExpertCache:
     def put(self, key, bundle):
         with self._lock:
             self._cache[key] = bundle
+            # Assigning to a held key keeps its old slot; a put means "just
+            # used", the same as a get, so it moves to the newest end too.
+            self._cache.move_to_end(key)
             if self.slots > 0 and len(self._cache) > self.slots:
                 self._cache.popitem(last=False)
 
