@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from edge0.cli import TIER_ENV, _build_parser, _engine_kwargs
+from edge0.cli import TIER_ENV, _build_parser, _engine_kwargs, _resolve_model
 
 
 @pytest.mark.parametrize("cmd", ["demo", "chat", "serve"])
@@ -33,6 +33,32 @@ def test_serve_keeps_its_own_flags():
     args = _build_parser().parse_args(
         ["serve", "edge0-8b", "--host", "0.0.0.0", "--port", "9"])
     assert (args.host, args.port) == ("0.0.0.0", 9)
+
+
+@pytest.mark.parametrize("cmd", ["demo", "chat", "serve"])
+def test_tier_name_keeps_an_explicit_model_dir(cmd, monkeypatch):
+    monkeypatch.delenv(TIER_ENV["edge0-8b"], raising=False)
+    args = _build_parser().parse_args(
+        [cmd, "edge0-8b", "--model-dir", "/ckpt"])
+    assert _resolve_model(args) == ("/ckpt", "edge0-8b")
+
+
+def test_explicit_model_dir_wins_over_the_tier_env(monkeypatch):
+    monkeypatch.setenv(TIER_ENV["edge0-8b"], "/from-env")
+    args = _build_parser().parse_args(
+        ["serve", "edge0-8b", "--model-dir", "/ckpt"])
+    assert _resolve_model(args) == ("/ckpt", "edge0-8b")
+    args = _build_parser().parse_args(["serve", "edge0-8b"])
+    assert _resolve_model(args) == ("/from-env", "edge0-8b")
+
+
+@pytest.mark.parametrize("cmd", ["demo", "chat", "serve"])
+def test_checkpoint_path_keeps_an_explicit_name(cmd):
+    args = _build_parser().parse_args(
+        [cmd, "/ckpt", "--name", "edge0-35b"])
+    assert _resolve_model(args) == ("/ckpt", "edge0-35b")
+    args = _build_parser().parse_args([cmd, "/ckpt"])
+    assert _resolve_model(args) == ("/ckpt", None)
 
 
 @pytest.mark.parametrize("cmd", ["demo", "chat", "serve"])

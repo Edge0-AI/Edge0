@@ -80,16 +80,19 @@ def _resolve_model(args) -> tuple[str | None, str | None]:
     ``EDGE0_<TIER>_MODEL`` environment variable) or a checkpoint path
     (tier auto-detected from the checkpoint's ``config.json``).
 
-    Returns ``(model_dir, name)``; either may stay None to keep the
-    ``--model-dir`` / ``--name`` behaviour.
+    Returns ``(model_dir, name)``. The positional fills only the half it
+    names: an explicit ``--model-dir`` still locates a tier's checkpoint
+    (ahead of the environment variable), and an explicit ``--name`` still
+    forces the tier of a checkpoint path. Either may stay None.
     """
     model = getattr(args, "model", None)
     if not model:
         return args.model_dir, args.name
     if model in MODEL_REGISTRY:
         env = os.environ.get(TIER_ENV.get(model, ""))
-        return env, model
-    return model, None  # a path: tier auto-detected by the registry
+        return args.model_dir or env, model
+    # a path: tier auto-detected by the registry unless --name forces it
+    return model, args.name
 
 
 def _missing_model_help(name) -> str:
