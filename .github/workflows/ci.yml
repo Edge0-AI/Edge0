@@ -8,7 +8,10 @@ on:
 jobs:
   test-macos:
     name: Unit tests (macOS + MLX)
-    runs-on: macos-14
+    # MLX needs Apple Silicon, so this has to be an arm64 runner:
+    # macos-15 and later are arm64, macos-13 is Intel.  macos-14 is
+    # retired, and its jobs are cancelled before a runner is assigned.
+    runs-on: macos-15
     defaults:
       run:
         working-directory: python
