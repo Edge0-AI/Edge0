@@ -1,0 +1,91 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - verify_edge0.py
+      - python/**
+      - .github/workflows/verify.yml
+  pull_request:
+    paths:
+      - verify_edge0.py
+      - python/**
+      - .github/workflows/verify.yml
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Also download a tier and run the real-generation check
+        type: choice
+        default: none
+        options:
+          - none
+          - edge0-8b
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify_edge0 (macOS arm64 + MLX)
+    # MLX only runs on Apple Silicon, so the engine checks need an arm64
+    # runner: macos-15 and later are arm64, macos-13 is Intel.  macos-14 is
+    # retired, and its jobs are cancelled before a runner is ever assigned.
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: python/pyproject.toml
+
+      - name: Install (MLX backend + dev/fetch extras)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev,fetch]'
+
+      # Checks 1-4 always run.  5-7 (routing math, prerouter head, streaming
+      # exact-vs-staged) run because this runner has MLX.  Real generation
+      # needs a checkpoint, so it is accepted as a skip here; the dispatch
+      # input below turns it into a required check.
+      - name: Verify checkout, routing config and engine math
+        run: |
+          set -o pipefail
+          python ../verify_edge0.py --max-new 8 --allow-missing-weights | tee verify.log
+
+      - name: Restore the optional tier
+        if: github.event_name == 'workflow_dispatch' && inputs.tier != 'none'
+        uses: actions/cache@v4
+        with:
+          path: python/models
+          key: edge0-models-${{ inputs.tier }}
+
+      - name: Download the optional tier
+        if: github.event_name == 'workflow_dispatch' && inputs.tier != 'none'
+        run: python scripts/fetch_models.py --tier "${{ inputs.tier }}" --target-dir models
+
+      # edge0-35b is ~23 GB and does not fit a hosted runner's disk, which is
+      # why the dispatch input offers edge0-8b only.  The grep makes a failed
+      # download fail the job instead of silently skipping generation.
+      - name: Verify real generation
+        if: github.event_name == 'workflow_dispatch' && inputs.tier != 'none'
+        env:
+          EDGE0_8B_MODEL: ${{ github.workspace }}/python/models/edge0-8b
+        run: |
+          set -o pipefail
+          python ../verify_edge0.py --max-new 8 --allow-missing-weights | tee -a verify.log
+          grep -qF "[PASS] edge0-8b generate" verify.log
+
+      - name: Publish the report
+        if: always()
+        run: cat verify.log >> "$GITHUB_STEP_SUMMARY" || true
