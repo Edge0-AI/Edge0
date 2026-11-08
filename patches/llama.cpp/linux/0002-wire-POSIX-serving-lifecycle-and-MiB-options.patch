@@ -1,0 +1,207 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Edge0 contributors <build@edge0.invalid>
+Date: Wed, 4 Nov 2026 03:30:00 +0000
+Subject: [PATCH] linux: wire POSIX serving lifecycle and MiB options
+
+Keep platform logic in the staged serving units. Expose strict CLI budget
+and cache capacities, stop advisory readers before model teardown, and
+register clean model mmap regions for cooperative RSS reclamation. Disable
+eager mmap population while a budget is enabled. Reuse the pinned MIT
+JSON parser and the existing CPU expert-base resolver surface.
+---
+ common/arg.cpp                  | 21 +++++++++++++++++++++
+ common/common.h                 |  2 ++
+ src/CMakeLists.txt              |  5 +++++
+ src/llama-mmap.cpp              | 27 +++++++++++++++++++++++++--
+ tools/server/server-context.cpp | 19 ++++++++++++++++---
+ 5 files changed, 69 insertions(+), 5 deletions(-)
+
+diff --git a/common/arg.cpp b/common/arg.cpp
+index 996ea75fe..5bce29bee 100644
+--- a/common/arg.cpp
++++ b/common/arg.cpp
+@@ -2780,6 +2780,27 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
+             llm_add_n_cpu_ffn_overrides(value, LLM_FFN_DENSE_REGEX, params.tensor_buft_overrides);
+         }
+     ).set_env("LLAMA_ARG_N_CPU_FFN"));
++    // edge0 private surfaces #6/#8: strict MiB CLI channels, environment fallback in serving units.
++    add_opt(common_arg(
++        {"--mem-budget-mb"}, "N",
++        "edge0: cooperative process RSS budget in MiB (0: E0_MEM_BUDGET_MB fallback); logs enforcement failures",
++        [](common_params & params, const std::string & value) {
++            if (value.empty() || value.find_first_not_of("0123456789") != std::string::npos) {
++                throw std::invalid_argument("memory budget must be a nonnegative decimal integer");
++            }
++            params.mem_budget_mb = std::stoi(value);
++        }
++    ).set_examples({LLAMA_EXAMPLE_SERVER}));
++    add_opt(common_arg(
++        {"--pool-mb"}, "N",
++        "edge0: immutable expert cache capacity in MiB (0: E0_POOL_MB fallback; full cache uses model mmap)",
++        [](common_params & params, const std::string & value) {
++            if (value.empty() || value.find_first_not_of("0123456789") != std::string::npos) {
++                throw std::invalid_argument("pool capacity must be a nonnegative decimal integer");
++            }
++            params.pool_mb = std::stoi(value);
++        }
++    ).set_examples({LLAMA_EXAMPLE_SERVER}));
+     GGML_ASSERT(params.n_gpu_layers < 0); // string_format would need to be extended for a default >= 0
+     add_opt(common_arg(
+         {"-ngl", "--gpu-layers", "--n-gpu-layers"}, "N",
+diff --git a/common/common.h b/common/common.h
+index 63d0badd0..a1a1e4a7c 100644
+--- a/common/common.h
++++ b/common/common.h
+@@ -471,6 +471,8 @@ struct common_params {
+     std::vector<ggml_backend_dev_t> devices; // devices to use for offloading
+ 
+     int32_t n_gpu_layers       = -1;    // number of layers to store in VRAM, -1 is auto, <= -2 is all
++    int32_t mem_budget_mb      = 0;     // edge0 private surface #6: cooperative Linux RSS budget
++    int32_t pool_mb            = 0;     // edge0 private surface #8: immutable expert cache
+     int32_t main_gpu           = 0;     // the GPU that is used for scratch and small tensors
+     float   tensor_split[128]  = {0};   // how split tensors should be distributed across GPUs
+     bool    fit_params         = true;  // whether to fit unset model/context parameters to free device memory
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 39451bc9b..af33bf5a0 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -72,6 +72,11 @@ target_include_directories(llama PUBLIC ../include)
+ target_compile_features   (llama PRIVATE cxx_std_17) # don't bump
+ 
+ target_link_libraries(llama PUBLIC ggml)
++# edge0 private surfaces #3/#7: reuse pinned MIT JSON and CPU resolver declarations.
++if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/edge0/prefetch.h")
++    target_link_libraries(llama PRIVATE vendor::nlohmann ggml-cpu)
++    target_include_directories(llama PRIVATE ../ggml/src)
++endif()
+ 
+ if (BUILD_SHARED_LIBS)
+     set_target_properties(llama PROPERTIES POSITION_INDEPENDENT_CODE ON)
+diff --git a/src/llama-mmap.cpp b/src/llama-mmap.cpp
+index 715a6e354..1c87e7641 100644
+--- a/src/llama-mmap.cpp
++++ b/src/llama-mmap.cpp
+@@ -1,5 +1,11 @@
+ #include "llama-mmap.h"
+ 
++// edge0 private surface #5: Linux clean-model mapping lifecycle.
++#if defined(__linux__) && __has_include("edge0/mem_budget.h")
++#include "edge0/mem_budget.h"
++#define EDGE0_LINUX_BUDGET
++#endif
++
+ #include "llama-impl.h"
+ 
+ #include "ggml.h"
+@@ -470,6 +476,10 @@ struct llama_mmap::impl {
+         size = file->size();
+         int fd = file->file_id();
+         int flags = MAP_SHARED;
++#ifdef EDGE0_LINUX_BUDGET
++        // Avoid eagerly faulting the entire model before the RSS monitor can trim it.
++        if (edge0_mem_budget_enabled()) { prefetch = 0; }
++#endif
+         if (numa) { prefetch = 0; }
+ #ifdef __linux__
+         if (posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL)) {
+@@ -513,6 +523,9 @@ struct llama_mmap::impl {
+         }
+ 
+         mapped_fragments.emplace_back(0, file->size());
++#ifdef EDGE0_LINUX_BUDGET
++        edge0_mem_budget_mapped(addr, file->size());
++#endif
+     }
+ 
+     static void align_range(size_t * first, size_t * last, size_t page_size) {
+@@ -542,7 +555,12 @@ struct llama_mmap::impl {
+ 
+         void * next_page_start = (uint8_t *) addr + first;
+ 
+-        if (munmap(next_page_start, len)) {
++#ifdef EDGE0_LINUX_BUDGET
++        const int unmap_result = edge0_mem_budget_munmap(next_page_start, len);
++#else
++        const int unmap_result = munmap(next_page_start, len);
++#endif
++        if (unmap_result) {
+             LLAMA_LOG_WARN("warning: munmap failed: %s\n", strerror(errno));
+         }
+ 
+@@ -565,7 +583,12 @@ struct llama_mmap::impl {
+ 
+     ~impl() {
+         for (const auto & frag : mapped_fragments) {
+-            if (munmap((char *) addr + frag.first, frag.second - frag.first)) {
++#ifdef EDGE0_LINUX_BUDGET
++            const int unmap_result = edge0_mem_budget_munmap((char *) addr + frag.first, frag.second - frag.first);
++#else
++            const int unmap_result = munmap((char *) addr + frag.first, frag.second - frag.first);
++#endif
++            if (unmap_result) {
+                 LLAMA_LOG_WARN("warning: munmap failed: %s\n", strerror(errno));
+             }
+         }
+diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
+index 9b02d350e..5d73c0028 100644
+--- a/tools/server/server-context.cpp
++++ b/tools/server/server-context.cpp
+@@ -945,6 +945,10 @@ private:
+     int64_t t_last_load_progress_ms = 0;
+ 
+     void destroy() {
++#if __has_include("src/edge0/prefetch.h")
++        // edge0 private surface #4: stop readers before freeing context/model mappings.
++        edge0_pref_shutdown();
++#endif
+         spec.reset();
+         spec_init.reset();
+ 
+@@ -952,6 +956,9 @@ private:
+         model_dft = nullptr;
+ 
+         llama_init.reset();
++#if __has_include("src/edge0/mem_budget.h")
++        edge0_mem_budget_shutdown();
++#endif
+ 
+         ctx_tgt = nullptr;
+         model_tgt = nullptr;
+@@ -1106,8 +1113,8 @@ private:
+         }
+ 
+ #if __has_include("src/edge0/mem_budget.h")
+-        // edge0 private surface #5: zero selects the environment budget channel.
+-        edge0_apply_mem_budget(0);
++        // edge0 private surfaces #5/#6: apply before mapping model pages; a budget that cannot apply stops the load.
++        if (!edge0_apply_mem_budget(params_base.mem_budget_mb)) { return false; }
+ #endif
+ 
+         llama_init = common_init_from_params(params_base);
+@@ -1127,9 +1134,12 @@ private:
+ 
+ #if __has_include("src/edge0/prefetch.h")
+         // edge0 private surface #4: match the serving API and supply the model path.
+-        edge0_pref_init(model_tgt, ctx_tgt, 0, params_base.model.path.c_str());
++        edge0_pref_init(model_tgt, ctx_tgt, params_base.pool_mb, params_base.model.path.c_str());
+ #endif
+ 
++#if __has_include("src/edge0/mem_budget.h")
++        edge0_mem_budget_check();
++#endif
+         vocab = llama_model_get_vocab(model_tgt);
+ 
+         n_ctx = llama_n_ctx(ctx_tgt);
+@@ -3708,6 +3718,9 @@ private:
+         // edge0 private surface #4: returns immediately when dormant.
+         if (ret == 0) {
+             edge0_pref_on_step(ctx_tgt, (int64_t) batch_view.n_tokens - 1);
++#if __has_include("src/edge0/mem_budget.h")
++            edge0_mem_budget_check();
++#endif
+         }
+ #endif
+ 
+-- 
+2.39.5
+

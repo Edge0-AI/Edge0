@@ -60,6 +60,7 @@ One repo, one recipe, per-platform runtimes:
 | **iOS** app | [`ios/`](ios/README.md) | Swift + MLX Swift | ✅ Open-sourced (2026-09-30) |
 | **Android** app & engine | [`android/`](android/README.md) | Kotlin + native engine | ✅ Open-sourced (2026-09-30) |
 | **Windows** app & engine | [`windows/`](windows/README.md) | C++ + Vulkan | ✅ Open-sourced (2026-09-30) |
+| **Linux x86-64** native engine | [`linux/`](linux/README.md) | C++ + POSIX, pinned llama.cpp | Experimental: CPU/AVX2 tested on 8B/35B; quiet-host speed check pending |
 
 ### Models
 

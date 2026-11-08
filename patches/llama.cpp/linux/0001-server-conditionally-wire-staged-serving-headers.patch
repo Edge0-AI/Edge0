@@ -1,0 +1,88 @@
+From 273c9ce024b13d0a4c2a9ca7914696f3467cfc47 Mon Sep 17 00:00:00 2001
+From: Edge0 contributors <build@edge0.invalid>
+Date: Wed, 4 Nov 2026 03:10:00 +0000
+Subject: [PATCH] linux: conditionally wire staged serving headers
+
+Keep the common hooks buildable without Windows serving code. Include the
+platform headers when staged, so their declarations remain the API source
+of truth. Pass the model path and environment-fallback arguments expected
+by the existing serving API. POSIX implementations are supplied separately.
+---
+ tools/server/server-context.cpp | 38 ++++++++++++++++-----------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+diff --git a/tools/server/server-context.cpp b/tools/server/server-context.cpp
+index d7c94b502..9b02d350e 100644
+--- a/tools/server/server-context.cpp
++++ b/tools/server/server-context.cpp
+@@ -1,19 +1,13 @@
+ #include "server-context.h"
+ 
+-// edge0 W4 prerouter advisory (impl: serve/prefetch.cc; DECISIONS 28-B)
+-#include <cstdint>
+-struct llama_model;
+-struct llama_context;
+-bool edge0_pref_init(struct llama_model * model, struct llama_context * ctx);
+-void edge0_pref_on_step(struct llama_context * ctx, int64_t last_row);
+-bool edge0_apply_mem_budget(void);   // serve/mem_budget.cc: E0_MEM_BUDGET_MB working-set hard cap
+-
+-
+-// edge0 W4 prerouter advisory (DECISIONS 28-B; implementation in serve/prefetch.cc, compiled into the llama target)
+-struct llama_model;
+-struct llama_context;
+-bool edge0_pref_init(llama_model * model, llama_context * ctx);
+-void edge0_pref_on_step(llama_context * ctx, int64_t last_row);
++// edge0 private surfaces #4/#5: Linux serving units are staged by vendor-build.sh.
++// Header guards let the common-band engine build before optional units are supplied.
++#if __has_include("src/edge0/prefetch.h")
++#include "src/edge0/prefetch.h"
++#endif
++#if __has_include("src/edge0/mem_budget.h")
++#include "src/edge0/mem_budget.h"
++#endif
+ #include "server-chat.h"
+ #include "server-common.h"
+ #include "server-http.h"
+@@ -1111,8 +1105,10 @@ private:
+             params_base.load_progress_callback_user_data = &load_progress_text;
+         }
+ 
+-        // edge0: P-tier memory budget (E0_MEM_BUDGET_MB unset = no-op; must take effect before the model loads)
+-        edge0_apply_mem_budget();
++#if __has_include("src/edge0/mem_budget.h")
++        // edge0 private surface #5: zero selects the environment budget channel.
++        edge0_apply_mem_budget(0);
++#endif
+ 
+         llama_init = common_init_from_params(params_base);
+ 
+@@ -1129,8 +1125,10 @@ private:
+             return false;
+         }
+ 
+-        // edge0 W4: prerouter advisory init (E0_PREROUTER unset => sleeps immediately)
+-        edge0_pref_init(model_tgt, ctx_tgt);
++#if __has_include("src/edge0/prefetch.h")
++        // edge0 private surface #4: match the serving API and supply the model path.
++        edge0_pref_init(model_tgt, ctx_tgt, 0, params_base.model.path.c_str());
++#endif
+ 
+         vocab = llama_model_get_vocab(model_tgt);
+ 
+@@ -3706,10 +3704,12 @@ private:
+             }
+         });
+ 
+-        // edge0 W4: prerouter advisory accounting/prefetch (returns immediately when dormant)
++#if __has_include("src/edge0/prefetch.h")
++        // edge0 private surface #4: returns immediately when dormant.
+         if (ret == 0) {
+             edge0_pref_on_step(ctx_tgt, (int64_t) batch_view.n_tokens - 1);
+         }
++#endif
+ 
+         if (ret != 0) {
+             {
+-- 
+2.39.5
+

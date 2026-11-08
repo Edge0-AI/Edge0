@@ -2,7 +2,7 @@
 
 **Topology discipline**: this directory + `vendor/llama.cpp` (the single pristine source of truth)
 are the entire formal surface of the llama engine supply. The product trees (`windows/`,
-`android/`) may only depend on the repo's `vendor/` + `patches/` + `wt/`. The shared vendor tree
+`android/`, `linux/`) may only depend on the repo's `vendor/` + `patches/` + `wt/`. The shared vendor tree
 is a detached checkout of upstream and is **never patched in place** (the build scripts refuse a
 dirty or moved tree).
 
@@ -12,11 +12,11 @@ dirty or moved tree).
   at the pin. Shared tree stays detached, and is **never patched in place** (the build scripts refuse
   a dirty or moved tree).
 - **Consumption model = worktree isolation**: each platform replays its own bands with `git am`
-  inside its own worktree (`wt/win` / `wt/and`) and builds its own artifacts there; the shared
+  inside its own worktree (`wt/win` / `wt/and` / `wt/linux`) and builds its own artifacts there; the shared
   tree and the bands never contaminate each other, and builds can run in parallel.
 - **Surface rule (unchanged)**: patches only touch hook points, and every hook is annotated
   `edge0 private surface #N`. Platform-owned logic lives in glob-injected files
-  (Windows: `windows/serve/*`, Android: `android/engine` pieces wired via `build_vendor_libs.sh`),
+  (Windows: `windows/serve/*`, Linux: `linux/serve/*`, Android: `android/engine` pieces wired via `build_vendor_libs.sh`),
   not in patch caps.
 
 ## Band structure & assembly formula
@@ -25,13 +25,14 @@ dirty or moved tree).
 |---|---|---|---|
 | Windows | `common/*` → `windows/*` | 6+2=8 | `df9d12dcb59aa3314f3356c2cdb777ee4ca4919c` |
 | Android | `common/*` → `android/*` | 6+14=20 | `e974be50ba5c184bf0ba9a4a26adbbae4235c2ab` |
+| Linux | `common/*` → `linux/*` | 6+2=8 | `267ccf731074e37c311d8ae859cf262f905ba5ac` |
 
 Verify with `git rev-parse HEAD^{tree}` on the worktree **after replay and before copying in the
-own-owned files**. The bands share no files (windows band = `common/arg.cpp` + server params;
-android band = `ggml-cpu/moe_pool` + `src/edge0` hooks + bench debug gates), so switching bands
-is safe: `git am --abort; git reset --hard 7ab4ee7`, then replay.
+own-owned files**. Platform bands are alternatives; never stack them together. Switching
+platforms requires `git am --abort` if a replay is in progress, then
+`git reset --hard 7ab4ee7` and replay of common plus the selected platform band.
 
-## common band (6 patches, hook surface shared by both platforms)
+## common band (6 patches, hook surface shared by all platforms)
 
 | File | Surface | Hook |
 |---|---|---|
@@ -66,6 +67,29 @@ IQP pooled gate (arm64 never enables IQP anyway = double insurance), qwen3next l
 0014 = consolidation: registers the moe_pool row resolver into the #7 surface (`ggml_edge0_set_mmid_resolver`
 at `g_ready=1`), replacing the direct row rewrite at `src0_cur`; zero disturbance while the pool
 is not ready.
+
+## linux band (2 patches)
+
+0001 = server hook compatibility for the Linux assembly. Includes the staged
+`src/edge0/{mem_budget,prefetch}.h` headers when present, uses their current signatures,
+and passes the model path plus zero for the environment-fallback channels. When the
+Linux serving units are absent, these optional calls are excluded so the common-band
+engine can still link. This patch supplies no memory-budget or prefetch implementation.
+
+0002 = Linux serving lifecycle and CLI channels (#4/#5/#6/#7/#8). Adds strict
+`--mem-budget-mb` and `--pool-mb` MiB options, stops advisory workers before model
+teardown, and tracks clean read-only model mappings through partial/full unmaps.
+Budgeted mappings skip eager population; a cooperative RSS monitor reclaims file
+pages and reports enforcement failures. Linux does not claim a hard kernel RSS cap.
+The staged serving code validates model/sidecar dimensions, runs advisory heads,
+issues POSIX page advice only with `E0_PREFETCH=1`, and optionally supplies a bounded
+immutable expert cache through the existing CPU resolver. Mutable or repacked
+tensors keep their backend layout. JSON parsing reuses the pinned MIT vendor header.
+
+`linux/scripts/vendor-build.sh` stages only `linux/serve/*` into `src/edge0`, builds
+Release/AVX2 by default, and selects GPU backends only with `--cuda` or `--vulkan`.
+`--assemble-only` skips CMake; `--configure-only` checks configuration without compiling.
+The script disables embedded UI downloads; the server's HTTP API remains available.
 
 ## Refreshing the upstream pin (rebase recipe)
 
