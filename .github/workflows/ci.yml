@@ -12,7 +12,7 @@ concurrency:
 jobs:
   edge0-infer:
     name: edge0-infer L0/L1 (macOS, cpu preset)
-    runs-on: macos-14
+    runs-on: macos-latest
     timeout-minutes: 45
     defaults:
       run:
