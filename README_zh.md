@@ -272,4 +272,4 @@ Bug 与功能建议请直接提
 
 ## License
 
-Apache-2.0，含 vendored 第三方代码（详见 [NOTICE](NOTICE)）。
+Apache-2.0；内置的第三方组件保留各自的许可证（详见 [NOTICE](NOTICE)）。

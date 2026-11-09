@@ -1,5 +1,4 @@
-"""check_docs: root-style links, machine-local paths, model names in framework
-headings and change references in component status lines are rejected, clean docs pass."""
+"""check_docs: broken links, root-style links and machine-local paths are rejected, clean docs pass."""
 from pathlib import Path
 import subprocess
 import sys
@@ -34,14 +33,11 @@ class DocsTests(unittest.TestCase):
         code, out = self.run_check({"a.md": "[b](b.md)\n", "b.md": "text\n"})
         self.assertEqual(code, 0, out)
 
-    def test_archive_link_to_retired_plan_is_fine(self):
-        link = "[plan](../../../../docs-internal/plan/m1.md#x)\n"
-        code, out = self.run_check({"openspec/changes/archive/c/tasks.md": link})
+    def test_missing_file_and_anchor(self):
+        self.expect_error({"a.md": "[b](c.md)\n"}, "missing-file a.md:1")
+        self.expect_error({"a.md": "[b](b.md#nope)\n", "b.md": "# Title\n"}, "missing-anchor a.md:1")
+        code, out = self.run_check({"a.md": "[b](b.md#title)\n", "b.md": "# Title\n"})
         self.assertEqual(code, 0, out)
-        # Outside the archive the same link is still an error, and so is any other missing target.
-        self.expect_error({"openspec/changes/c/tasks.md": link}, "missing-file openspec/changes/c/tasks.md:1")
-        self.expect_error({"openspec/changes/archive/c/tasks.md": "[x](../../../../docs-internal/plan/m2.md)\n"},
-                          "missing-file openspec/changes/archive/c/tasks.md:1")
 
     def test_root_style_link(self):
         self.expect_error({"a.md": "[b](/b.md)\n", "b.md": "text\n"}, "absolute-link a.md:1")
@@ -72,48 +68,6 @@ class DocsTests(unittest.TestCase):
 
     def test_variables_are_fine(self):
         code, out = self.run_check({"a.md": "`$MOE_TINY/x` and `$TMPDIR/uv-cache`\n"})
-        self.assertEqual(code, 0, out)
-
-    def test_evidence_size_limit(self):
-        small = {"a.md": "ok\n", "openspec/changes/demo/evidence/run.log": "x" * 1000}
-        code, out = self.run_check(small)
-        self.assertEqual(code, 0, out)
-        big = {"a.md": "ok\n", "openspec/changes/archive/2026-01-01-demo/evidence/run.log": "x" * (300 * 1024)}
-        self.expect_error(big, "evidence-too-large openspec/changes/archive/2026-01-01-demo/evidence/run.log")
-
-    def test_model_heading_in_framework_doc(self):
-        for name in ["docs-internal/adr/0001-x.md", "docs-internal/architecture/c4_model/03-component/a.md", "docs-internal/interfaces/modules/b.md"]:
-            for heading in ["## Example: 35B one turn", "### Qwen3 template", "# DeltaNet state"]:
-                with self.subTest(name=name, heading=heading):
-                    self.expect_error({name: heading + "\n"}, f"model-heading {name}:1")
-
-    def test_model_heading_outside_scope_or_in_body_is_fine(self):
-        files = {
-            "docs-internal/architecture/c4_model/03-component/details/models/edge0-35b.md": "# 35B model page\n",
-            "docs-internal/interfaces/reference/x.md": "## Qwen notes\n",
-            "docs-internal/adr/evidence/x.md": "## 35B measurement\n",
-            "docs-internal/interfaces/modules/b.md": "## General\n\nThe 35B model and MLA are named in prose only.\n"
-                                           + FENCE + "\n# 8B in a code block\n" + FENCE + "\n",
-            "docs-internal/requirements/a.md": "## 8B target\n",
-        }
-        code, out = self.run_check(files)
-        self.assertEqual(code, 0, out)
-
-    def test_change_reference_in_component_status_line(self):
-        status = "\u72b6\u6001\uff1a"
-        name = "docs-internal/architecture/c4_model/03-component/a.md"
-        for line in [status + "partly done (\u2465, \u246b)", status + "see m1-multi-turn"]:
-            with self.subTest(line=line):
-                self.expect_error({name: "# A\n\n" + line + "\n"}, f"status-change-ref {name}:3")
-
-    def test_status_line_without_change_reference_is_fine(self):
-        status = "\u72b6\u6001\uff1a"
-        files = {
-            "docs-internal/architecture/c4_model/03-component/a.md": status + "partly done; see the interface page.\n\nBody may name \u2465.\n",
-            "docs-internal/architecture/c4_model/03-component/details/models/m.md": status + "done in \u2465.\n",
-            "docs-internal/interfaces/modules/b.md": status + "done in \u2465.\n",
-        }
-        code, out = self.run_check(files)
         self.assertEqual(code, 0, out)
 
     def test_ignored_files_are_not_scanned(self):

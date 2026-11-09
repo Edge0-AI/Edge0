@@ -280,4 +280,4 @@ For bugs and feature requests, please use
 
 ## License
 
-Apache-2.0, including vendored third-party code (see [NOTICE](NOTICE)).
+Apache-2.0; bundled third-party components keep their own licenses (see [NOTICE](NOTICE)).

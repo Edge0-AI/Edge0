@@ -1,6 +1,7 @@
 """Exercise provenance against real temporary Git trees."""
 from pathlib import Path
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -67,15 +68,16 @@ class OriginTests(unittest.TestCase):
 
     def test_tracked_subdirectory_of_a_larger_repository(self):
         # Published inside another repository: the engine is a subdirectory of that work tree.
-        outer = Path(self.temp.name + "-outer")
-        self.addCleanup(lambda: subprocess.run(["rm", "-rf", str(outer)]))
-        outer.mkdir()
+        # TemporaryDirectory also removes the read-only files Git writes, which Windows refuses to delete.
+        outer_temp = tempfile.TemporaryDirectory()
+        self.addCleanup(outer_temp.cleanup)
+        outer = Path(outer_temp.name)
         subprocess.check_output(["git", "init", "-q"], cwd=outer)
         subprocess.check_output(["git", "config", "core.fileMode", "true"], cwd=outer)
         os.rename(self.root / ".git", self.root / ".git-unused")
         engine = outer / "engine"
-        subprocess.check_output(["cp", "-Rp", str(self.root), str(engine)])
-        subprocess.check_output(["rm", "-rf", str(engine / ".git-unused")])
+        # copy2 (the default) keeps permission bits and timestamps.
+        shutil.copytree(self.root, engine, symlinks=True, ignore=shutil.ignore_patterns(".git-unused"))
         subprocess.check_output(["git", "add", "."], cwd=outer)
         self.root = engine
         self.run_check(0)

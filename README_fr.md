@@ -298,4 +298,4 @@ Pour les bugs et les demandes de fonctionnalités, merci d'utiliser
 
 ## Licence
 
-Apache-2.0, y compris le code tiers intégré (voir [NOTICE](NOTICE)).
+Apache-2.0 ; les composants tiers intégrés conservent leur propre licence (voir [NOTICE](NOTICE)).

@@ -292,5 +292,5 @@ Para bugs y solicitudes de funcionalidades, usa
 
 ## Licencia
 
-Apache-2.0, incluido el código de terceros incorporado (consulta
-[NOTICE](NOTICE)).
+Apache-2.0; los componentes de terceros incluidos conservan sus propias licencias
+(consulta [NOTICE](NOTICE)).

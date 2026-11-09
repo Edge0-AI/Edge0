@@ -48,7 +48,7 @@ body:
     id: decode_observed
     attributes:
       label: Observed decode speed (tok/s)
-      placeholder: "0.6 tok/s (doc says ~15)"
+      placeholder: "3 tok/s (Benchmarking lists 7.3 to 8.2 for Windows CPU)"
     validations:
       required: false
 

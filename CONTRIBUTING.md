@@ -61,7 +61,7 @@ PR.
 ## Pull request workflow
 
 1. **Fork** the repo and create a feature branch off `main`
-   (e.g. `fix/streaming-oob`, `docs/clarify-memory`, `feat/tool-calling`).
+   (e.g. `fix/expert-slot-oob`, `docs/clarify-memory`, `feat/tool-calling`).
 2. Make your change; **add or update tests** for new behavior.
 3. Run the tests for the levels your change touches (at least `L0` and `L1`)
    locally.
@@ -73,8 +73,8 @@ PR.
 ### Commit / PR style
 
 This repo uses conventional-commit-style prefixes, e.g.
-`fix(streaming): ...`, `feat(server): ...`, `docs(readme): ...`,
-`perf(streaming): ...`, `chore: ...`. Please follow the same convention.
+`fix(experts): ...`, `feat(server): ...`, `docs(readme): ...`,
+`perf(decode): ...`, `chore: ...`. Please follow the same convention.
 
 ## Reporting security issues
 
