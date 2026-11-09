@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  edge0-infer:
+    name: edge0-infer L0/L1 (macOS, cpu preset)
+    runs-on: macos-14
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: edge0-infer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install ninja uv
+      - name: Python environment for the tests
+        run: uv sync --project tools/assets
+      - name: Configure
+        run: cmake --preset cpu
+      - name: Build
+        run: cmake --build --preset cpu
+      - name: Test (L0, L1)
+        run: ctest --preset cpu --no-tests=error --output-on-failure -L "L0|L1"
