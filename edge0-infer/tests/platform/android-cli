@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+"""Execute the reference CLI remotely while preserving streams and exit status."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from android_cli import main
+raise SystemExit(main())

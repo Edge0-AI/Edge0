@@ -1,0 +1,134 @@
+[
+  {
+    "name": "apple_nominal",
+    "input": {
+      "state": "nominal"
+    },
+    "expected": {
+      "label": "Normal",
+      "description": "No heat slowdown",
+      "tone": "ok"
+    }
+  },
+  {
+    "name": "apple_fair",
+    "input": {
+      "state": "fair"
+    },
+    "expected": {
+      "label": "Warm",
+      "description": "Little or no slowdown",
+      "tone": "warn"
+    }
+  },
+  {
+    "name": "apple_serious",
+    "input": {
+      "state": "serious"
+    },
+    "expected": {
+      "label": "Throttled",
+      "description": "Running slower to cool down",
+      "tone": "warn"
+    }
+  },
+  {
+    "name": "apple_critical",
+    "input": {
+      "state": "critical"
+    },
+    "expected": {
+      "label": "Too hot",
+      "description": "Heavily slowed; let it cool",
+      "tone": "error"
+    }
+  },
+  {
+    "name": "android_none",
+    "input": {
+      "state": "none"
+    },
+    "expected": {
+      "label": "Normal",
+      "description": "No heat slowdown",
+      "tone": "ok"
+    }
+  },
+  {
+    "name": "android_light",
+    "input": {
+      "state": "light"
+    },
+    "expected": {
+      "label": "Warm",
+      "description": "Little or no slowdown",
+      "tone": "warn"
+    }
+  },
+  {
+    "name": "android_moderate",
+    "input": {
+      "state": "moderate"
+    },
+    "expected": {
+      "label": "Throttled",
+      "description": "Running slower to cool down",
+      "tone": "warn"
+    }
+  },
+  {
+    "name": "android_severe",
+    "input": {
+      "state": "severe"
+    },
+    "expected": {
+      "label": "Throttled",
+      "description": "Running slower to cool down",
+      "tone": "warn"
+    }
+  },
+  {
+    "name": "android_critical",
+    "input": {
+      "state": "critical"
+    },
+    "expected": {
+      "label": "Too hot",
+      "description": "Heavily slowed; let it cool",
+      "tone": "error"
+    }
+  },
+  {
+    "name": "android_emergency",
+    "input": {
+      "state": "emergency"
+    },
+    "expected": {
+      "label": "Shutting down",
+      "description": "System is about to shut parts down",
+      "tone": "error"
+    }
+  },
+  {
+    "name": "android_shutdown",
+    "input": {
+      "state": "shutdown"
+    },
+    "expected": {
+      "label": "Shutting down",
+      "description": "System is about to shut parts down",
+      "tone": "error"
+    }
+  },
+  {
+    "name": "unrecognized",
+    "input": {
+      "state": "hot"
+    },
+    "expected": {
+      "label": "hot",
+      "description": "Unrecognized state",
+      "tone": "warn"
+    }
+  }
+]

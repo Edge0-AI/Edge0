@@ -1,0 +1,9 @@
+{
+  "system_prompt": "You're edge0, an on-device AI assistant.",
+  "suggestions": [
+    "What is artificial intelligence?",
+    "How do LLMs understand context?",
+    "Tell me about renewable energy",
+    "Write a short poem about autumn"
+  ]
+}

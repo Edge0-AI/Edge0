@@ -1,0 +1,2117 @@
+[
+  {
+    "id": "manual-000",
+    "source": "manual",
+    "text": "你好，世界！Hello"
+  },
+  {
+    "id": "manual-001",
+    "source": "manual",
+    "text": ""
+  },
+  {
+    "id": "manual-002",
+    "source": "manual",
+    "text": "hello"
+  },
+  {
+    "id": "manual-003",
+    "source": "manual",
+    "text": "Hello world!"
+  },
+  {
+    "id": "manual-004",
+    "source": "manual",
+    "text": " hello"
+  },
+  {
+    "id": "manual-005",
+    "source": "manual",
+    "text": "hello "
+  },
+  {
+    "id": "manual-006",
+    "source": "manual",
+    "text": "  hello  "
+  },
+  {
+    "id": "manual-007",
+    "source": "manual",
+    "text": " "
+  },
+  {
+    "id": "manual-008",
+    "source": "manual",
+    "text": "  "
+  },
+  {
+    "id": "manual-009",
+    "source": "manual",
+    "text": "\t"
+  },
+  {
+    "id": "manual-010",
+    "source": "manual",
+    "text": "\n"
+  },
+  {
+    "id": "manual-011",
+    "source": "manual",
+    "text": "\r\n"
+  },
+  {
+    "id": "manual-012",
+    "source": "manual",
+    "text": "\n\n"
+  },
+  {
+    "id": "manual-013",
+    "source": "manual",
+    "text": "\t \r\n"
+  },
+  {
+    "id": "manual-014",
+    "source": "manual",
+    "text": "a\nb"
+  },
+  {
+    "id": "manual-015",
+    "source": "manual",
+    "text": "a\tb"
+  },
+  {
+    "id": "manual-016",
+    "source": "manual",
+    "text": "0123456789"
+  },
+  {
+    "id": "manual-017",
+    "source": "manual",
+    "text": "1234567890123456789012345"
+  },
+  {
+    "id": "manual-018",
+    "source": "manual",
+    "text": "1.234e-10"
+  },
+  {
+    "id": "manual-019",
+    "source": "manual",
+    "text": "-42 +17"
+  },
+  {
+    "id": "manual-020",
+    "source": "manual",
+    "text": "don't"
+  },
+  {
+    "id": "manual-021",
+    "source": "manual",
+    "text": "I'M"
+  },
+  {
+    "id": "manual-022",
+    "source": "manual",
+    "text": "we'll"
+  },
+  {
+    "id": "manual-023",
+    "source": "manual",
+    "text": "you'LL"
+  },
+  {
+    "id": "manual-024",
+    "source": "manual",
+    "text": "they're"
+  },
+  {
+    "id": "manual-025",
+    "source": "manual",
+    "text": "she's"
+  },
+  {
+    "id": "manual-026",
+    "source": "manual",
+    "text": "it's"
+  },
+  {
+    "id": "manual-027",
+    "source": "manual",
+    "text": "I'D"
+  },
+  {
+    "id": "manual-028",
+    "source": "manual",
+    "text": "you've"
+  },
+  {
+    "id": "manual-029",
+    "source": "manual",
+    "text": "CAN'T"
+  },
+  {
+    "id": "manual-030",
+    "source": "manual",
+    "text": "全角，标点。！？"
+  },
+  {
+    "id": "manual-031",
+    "source": "manual",
+    "text": "　你好　"
+  },
+  {
+    "id": "manual-032",
+    "source": "manual",
+    "text": "中文English123"
+  },
+  {
+    "id": "manual-033",
+    "source": "manual",
+    "text": "日本語のテスト"
+  },
+  {
+    "id": "manual-034",
+    "source": "manual",
+    "text": "한국어 테스트"
+  },
+  {
+    "id": "manual-035",
+    "source": "manual",
+    "text": "مرحبا بالعالم"
+  },
+  {
+    "id": "manual-036",
+    "source": "manual",
+    "text": "ภาษาไทย"
+  },
+  {
+    "id": "manual-037",
+    "source": "manual",
+    "text": "हिन्दी भाषा"
+  },
+  {
+    "id": "manual-038",
+    "source": "manual",
+    "text": "Русский текст"
+  },
+  {
+    "id": "manual-039",
+    "source": "manual",
+    "text": "Ελληνικά"
+  },
+  {
+    "id": "manual-040",
+    "source": "manual",
+    "text": "עברית"
+  },
+  {
+    "id": "manual-041",
+    "source": "manual",
+    "text": "Türkçe"
+  },
+  {
+    "id": "manual-042",
+    "source": "manual",
+    "text": "café"
+  },
+  {
+    "id": "manual-043",
+    "source": "manual",
+    "text": "café"
+  },
+  {
+    "id": "manual-044",
+    "source": "manual",
+    "text": "é"
+  },
+  {
+    "id": "manual-045",
+    "source": "manual",
+    "text": "é"
+  },
+  {
+    "id": "manual-046",
+    "source": "manual",
+    "text": "Å"
+  },
+  {
+    "id": "manual-047",
+    "source": "manual",
+    "text": "Å"
+  },
+  {
+    "id": "manual-048",
+    "source": "manual",
+    "text": "ñ"
+  },
+  {
+    "id": "manual-049",
+    "source": "manual",
+    "text": "ñ"
+  },
+  {
+    "id": "manual-050",
+    "source": "manual",
+    "text": "ö"
+  },
+  {
+    "id": "manual-051",
+    "source": "manual",
+    "text": "ö"
+  },
+  {
+    "id": "manual-052",
+    "source": "manual",
+    "text": "ü"
+  },
+  {
+    "id": "manual-053",
+    "source": "manual",
+    "text": "ü"
+  },
+  {
+    "id": "manual-054",
+    "source": "manual",
+    "text": "à"
+  },
+  {
+    "id": "manual-055",
+    "source": "manual",
+    "text": "à"
+  },
+  {
+    "id": "manual-056",
+    "source": "manual",
+    "text": "ê"
+  },
+  {
+    "id": "manual-057",
+    "source": "manual",
+    "text": "ê"
+  },
+  {
+    "id": "manual-058",
+    "source": "manual",
+    "text": "ç"
+  },
+  {
+    "id": "manual-059",
+    "source": "manual",
+    "text": "ç"
+  },
+  {
+    "id": "manual-060",
+    "source": "manual",
+    "text": "ą"
+  },
+  {
+    "id": "manual-061",
+    "source": "manual",
+    "text": "ą"
+  },
+  {
+    "id": "manual-062",
+    "source": "manual",
+    "text": "á̀"
+  },
+  {
+    "id": "manual-063",
+    "source": "manual",
+    "text": "́a"
+  },
+  {
+    "id": "manual-064",
+    "source": "manual",
+    "text": "áb"
+  },
+  {
+    "id": "manual-065",
+    "source": "manual",
+    "text": "äb"
+  },
+  {
+    "id": "manual-066",
+    "source": "manual",
+    "text": "éclair"
+  },
+  {
+    "id": "manual-067",
+    "source": "manual",
+    "text": "किताब"
+  },
+  {
+    "id": "manual-068",
+    "source": "manual",
+    "text": "की"
+  },
+  {
+    "id": "manual-069",
+    "source": "manual",
+    "text": "क्ष"
+  },
+  {
+    "id": "manual-070",
+    "source": "manual",
+    "text": "ภาษาไทยก้า"
+  },
+  {
+    "id": "manual-071",
+    "source": "manual",
+    "text": "ก้"
+  },
+  {
+    "id": "manual-072",
+    "source": "manual",
+    "text": "ำ"
+  },
+  {
+    "id": "manual-073",
+    "source": "manual",
+    "text": "한글"
+  },
+  {
+    "id": "manual-074",
+    "source": "manual",
+    "text": "한글"
+  },
+  {
+    "id": "manual-075",
+    "source": "manual",
+    "text": "가"
+  },
+  {
+    "id": "manual-076",
+    "source": "manual",
+    "text": "가"
+  },
+  {
+    "id": "manual-077",
+    "source": "manual",
+    "text": "😀"
+  },
+  {
+    "id": "manual-078",
+    "source": "manual",
+    "text": "👩‍💻"
+  },
+  {
+    "id": "manual-079",
+    "source": "manual",
+    "text": "👨‍👩‍👧‍👦"
+  },
+  {
+    "id": "manual-080",
+    "source": "manual",
+    "text": "🏳️‍🌈"
+  },
+  {
+    "id": "manual-081",
+    "source": "manual",
+    "text": "🇨🇳🇺🇸"
+  },
+  {
+    "id": "manual-082",
+    "source": "manual",
+    "text": "👍🏽"
+  },
+  {
+    "id": "manual-083",
+    "source": "manual",
+    "text": "❤️"
+  },
+  {
+    "id": "manual-084",
+    "source": "manual",
+    "text": "a😀b"
+  },
+  {
+    "id": "manual-085",
+    "source": "manual",
+    "text": "<|im_start|>"
+  },
+  {
+    "id": "manual-086",
+    "source": "manual",
+    "text": "<|im_end|>"
+  },
+  {
+    "id": "manual-087",
+    "source": "manual",
+    "text": "<think>"
+  },
+  {
+    "id": "manual-088",
+    "source": "manual",
+    "text": "</think>"
+  },
+  {
+    "id": "manual-089",
+    "source": "manual",
+    "text": "<|endoftext|>"
+  },
+  {
+    "id": "manual-090",
+    "source": "manual",
+    "text": "<|fim_pad|>"
+  },
+  {
+    "id": "manual-091",
+    "source": "manual",
+    "text": "<|repo_name|>"
+  },
+  {
+    "id": "manual-092",
+    "source": "manual",
+    "text": "<|file_sep|>"
+  },
+  {
+    "id": "manual-093",
+    "source": "manual",
+    "text": "<|im_start"
+  },
+  {
+    "id": "manual-094",
+    "source": "manual",
+    "text": "|>"
+  },
+  {
+    "id": "manual-095",
+    "source": "manual",
+    "text": "<|"
+  },
+  {
+    "id": "manual-096",
+    "source": "manual",
+    "text": "<<think>>"
+  },
+  {
+    "id": "manual-097",
+    "source": "manual",
+    "text": "a<|im_end|>b"
+  },
+  {
+    "id": "manual-098",
+    "source": "manual",
+    "text": "<|im_start|>user\nhello<|im_end|>"
+  },
+  {
+    "id": "manual-099",
+    "source": "manual",
+    "text": "\u0000"
+  },
+  {
+    "id": "manual-100",
+    "source": "manual",
+    "text": "a\u0000b"
+  },
+  {
+    "id": "manual-101",
+    "source": "manual",
+    "text": "\u0001\u0002\u0007"
+  },
+  {
+    "id": "manual-102",
+    "source": "manual",
+    "text": ""
+  },
+  {
+    "id": "manual-103",
+    "source": "manual",
+    "text": ""
+  },
+  {
+    "id": "manual-104",
+    "source": "manual",
+    "text": " "
+  },
+  {
+    "id": "manual-105",
+    "source": "manual",
+    "text": "   "
+  },
+  {
+    "id": "manual-106",
+    "source": "manual",
+    "text": "  "
+  },
+  {
+    "id": "manual-107",
+    "source": "manual",
+    "text": "  "
+  },
+  {
+    "id": "manual-108",
+    "source": "manual",
+    "text": "﻿"
+  },
+  {
+    "id": "manual-109",
+    "source": "manual",
+    "text": "�"
+  },
+  {
+    "id": "manual-110",
+    "source": "manual",
+    "text": "a...b?!"
+  },
+  {
+    "id": "manual-111",
+    "source": "manual",
+    "text": "\\n\\t"
+  },
+  {
+    "id": "manual-112",
+    "source": "manual",
+    "text": "https://example.com/a?x=1"
+  },
+  {
+    "id": "manual-113",
+    "source": "manual",
+    "text": "x = y + 1;"
+  },
+  {
+    "id": "manual-114",
+    "source": "manual",
+    "text": "a\r\nb\r"
+  },
+  {
+    "id": "manual-115",
+    "source": "manual",
+    "text": "a\n\n  b"
+  },
+  {
+    "id": "manual-116",
+    "source": "manual",
+    "text": "१२३४"
+  },
+  {
+    "id": "manual-117",
+    "source": "manual",
+    "text": "١٢٣٤"
+  },
+  {
+    "id": "manual-118",
+    "source": "manual",
+    "text": "𝕬𝔅"
+  },
+  {
+    "id": "manual-119",
+    "source": "manual",
+    "text": "𠮷野家"
+  },
+  {
+    "id": "manual-120",
+    "source": "manual",
+    "text": "<|im_start|>user\n用一句话介绍你自己。<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+  },
+  {
+    "id": "manual-121",
+    "source": "manual",
+    "text": "春天的河流很安静。The river is calm in spring."
+  },
+  {
+    "id": "manual-122",
+    "source": "manual",
+    "text": "清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local language model processes a paragraph. They keep the original input, count each token, and compare the intermediate results before drawing conclusions. Every experiment uses the same settings and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe final note describes the method, the observed results, and the remaining questions. A second run should reproduce the first run exactly. This makes the record useful for the next person who investigates the model.\n第二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local language model processes a paragraph. They keep the original input, count each token, and compare the intermediate results before drawing conclusions. Every experiment uses the same settings and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe final note describes the method, the observed results, and the remaining questions. A second run should reproduce the first run exactly. This makes the record useful for the next person who investigates the model."
+  },
+  {
+    "id": "random-000",
+    "source": "seed-351003-codepoints",
+    "text": "very experiment uses the same settings"
+  },
+  {
+    "id": "random-001",
+    "source": "seed-351003-codepoints",
+    "text": "ions"
+  },
+  {
+    "id": "random-002",
+    "source": "seed-351003-codepoints",
+    "text": "very experiment uses the same settin"
+  },
+  {
+    "id": "random-003",
+    "source": "seed-351003-codepoints",
+    "text": "çe\ncafé\ncafé\né\né\nÅ\nÅ\nñ\nñ\nö\nö\nü\nü\nà\nà\nê\nê\nç\nç\ną\ną\ná̀\ńa\náb\näb\néclair\nकिताब\nक"
+  },
+  {
+    "id": "random-004",
+    "source": "seed-351003-codepoints",
+    "text": "he method, the observed results, a"
+  },
+  {
+    "id": "random-005",
+    "source": "seed-351003-codepoints",
+    "text": "ent uses the same settings and a fresh output directory.\n下午，大家检查记录中的数字，"
+  },
+  {
+    "id": "random-006",
+    "source": "seed-351003-codepoints",
+    "text": "方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe fina"
+  },
+  {
+    "id": "random-007",
+    "source": "seed-351003-codepoints",
+    "text": "录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the lib"
+  },
+  {
+    "id": "random-008",
+    "source": "seed-351003-codepoints",
+    "text": "tput directory.\n下午，大家检查记"
+  },
+  {
+    "id": "random-009",
+    "source": "seed-351003-codepoints",
+    "text": "seful for the next person who investigates the model.\n第二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图"
+  },
+  {
+    "id": "random-010",
+    "source": "seed-351003-codepoints",
+    "text": "绍你自己。<|im_end|>\n<"
+  },
+  {
+    "id": "random-011",
+    "source": "seed-351003-codepoints",
+    "text": "eproduce the firs"
+  },
+  {
+    "id": "random-012",
+    "source": "seed-351003-codepoints",
+    "text": "，就回到原始材料核对，不把猜测写"
+  },
+  {
+    "id": "random-013",
+    "source": "seed-351003-codepoints",
+    "text": "ld!\n hello\nhello \n  hello  \n \n  \n\t\n\n\n\r\n\n\n\n\n\t \r\n\na\nb\na\tb\n0123456789\n12345678901"
+  },
+  {
+    "id": "random-014",
+    "source": "seed-351003-codepoints",
+    "text": " useful for the next person who invest"
+  },
+  {
+    "id": "random-015",
+    "source": "seed-351003-codepoints",
+    "text": "nclusions. Every experiment uses the same set"
+  },
+  {
+    "id": "random-016",
+    "source": "seed-351003-codepoints",
+    "text": "a paragraph. They keep the original input, co"
+  },
+  {
+    "id": "random-017",
+    "source": "seed-351003-codepoints",
+    "text": "s"
+  },
+  {
+    "id": "random-018",
+    "source": "seed-351003-codepoints",
+    "text": " for the next person who investigates the model."
+  },
+  {
+    "id": "random-019",
+    "source": "seed-351003-codepoints",
+    "text": "家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nTh"
+  },
+  {
+    "id": "random-020",
+    "source": "seed-351003-codepoints",
+    "text": "river is calm in spring.\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方"
+  },
+  {
+    "id": "random-021",
+    "source": "seed-351003-codepoints",
+    "text": "ta"
+  },
+  {
+    "id": "random-022",
+    "source": "seed-351003-codepoints",
+    "text": "sions. Every experiment"
+  },
+  {
+    "id": "random-023",
+    "source": "seed-351003-codepoints",
+    "text": " before drawing "
+  },
+  {
+    "id": "random-024",
+    "source": "seed-351003-codepoints",
+    "text": "en, and compare the"
+  },
+  {
+    "id": "random-025",
+    "source": "seed-351003-codepoints",
+    "text": "emaining question"
+  },
+  {
+    "id": "random-026",
+    "source": "seed-351003-codepoints",
+    "text": "ürkçe\ncafé\ncafé\n"
+  },
+  {
+    "id": "random-027",
+    "source": "seed-351003-codepoints",
+    "text": " next person who investigates the model.\n第二次阅读时，请核对相同的记录是否仍然"
+  },
+  {
+    "id": "random-028",
+    "source": "seed-351003-codepoints",
+    "text": "<|im_start|>\n<|im_end|>\n<think>\n</think>\n<|endoftext|>\n<|fim_pad|>\n<|repo_n"
+  },
+  {
+    "id": "random-029",
+    "source": "seed-351003-codepoints",
+    "text": "ved results, and the remaining questions. A second ru"
+  },
+  {
+    "id": "random-030",
+    "source": "seed-351003-codepoints",
+    "text": "\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入"
+  },
+  {
+    "id": "random-031",
+    "source": "seed-351003-codepoints",
+    "text": "|>\n<think>\n</think>\n<|endoftext|>\n<|fim_pad|>\n<|repo_name|>\n<|file_sep|>\n<|im_start\n|>\n<|\n<<thi"
+  },
+  {
+    "id": "random-032",
+    "source": "seed-351003-codepoints",
+    "text": " paragraph. They keep the original input, count each token, and compa"
+  },
+  {
+    "id": "random-033",
+    "source": "seed-351003-codepoints",
+    "text": "ut, count each token, and compare the intermediate results before drawi"
+  },
+  {
+    "id": "random-034",
+    "source": "seed-351003-codepoints",
+    "text": "e describes the method, the observed results, "
+  },
+  {
+    "id": "random-035",
+    "source": "seed-351003-codepoints",
+    "text": "e\nCAN'T\n全角，标点。！？\n　你好　\n中文English123\n日本語のテスト\n한국어 테스트\nمرحبا بالعالم\nภาษาไทย\nहिन्द"
+  },
+  {
+    "id": "random-036",
+    "source": "seed-351003-codepoints",
+    "text": "ry, a small team studies how a local language "
+  },
+  {
+    "id": "random-037",
+    "source": "seed-351003-codepoints",
+    "text": ">"
+  },
+  {
+    "id": "random-038",
+    "source": "seed-351003-codepoints",
+    "text": "useful for the next person who investigates the model.\n第二次阅读时，"
+  },
+  {
+    "id": "random-039",
+    "source": "seed-351003-codepoints",
+    "text": "ch token, and compare "
+  },
+  {
+    "id": "random-040",
+    "source": "seed-351003-codepoints",
+    "text": "\n  \n﻿\n�\na.."
+  },
+  {
+    "id": "random-041",
+    "source": "seed-351003-codepoints",
+    "text": " river is calm in spring.\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录"
+  },
+  {
+    "id": "random-042",
+    "source": "seed-351003-codepoints",
+    "text": "rt|>\n<|im_end|>\n<think>\n</think>\n<|endoftext|>\n<|fi"
+  },
+  {
+    "id": "random-043",
+    "source": "seed-351003-codepoints",
+    "text": " directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就"
+  },
+  {
+    "id": "random-044",
+    "source": "seed-351003-codepoints",
+    "text": "是否仍然表达同样的信息：\n清晨，我们沿着河边的小"
+  },
+  {
+    "id": "random-045",
+    "source": "seed-351003-codepoints",
+    "text": "istant\n<think>\n\n</think>\n\n\n春天的河流很安静。The river is calm in spring.\n清晨，我"
+  },
+  {
+    "id": "random-046",
+    "source": "seed-351003-codepoints",
+    "text": "。\nAt the library, a small team studies ho"
+  },
+  {
+    "id": "random-047",
+    "source": "seed-351003-codepoints",
+    "text": "讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe final note describes the method, the observed "
+  },
+  {
+    "id": "random-048",
+    "source": "seed-351003-codepoints",
+    "text": "e the intermediate results before drawing conclusions. Every experiment uses the same s"
+  },
+  {
+    "id": "random-049",
+    "source": "seed-351003-codepoints",
+    "text": "猜测写成事实。\nThe fin"
+  },
+  {
+    "id": "random-050",
+    "source": "seed-351003-codepoints",
+    "text": "udies how a local language model processes a paragraph. They ke"
+  },
+  {
+    "id": "random-051",
+    "source": "seed-351003-codepoints",
+    "text": "t run exactly. This makes the record useful for the next person who investigates "
+  },
+  {
+    "id": "random-052",
+    "source": "seed-351003-codepoints",
+    "text": "面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nA"
+  },
+  {
+    "id": "random-053",
+    "source": "seed-351003-codepoints",
+    "text": "ns. A second run should reproduce the first run exactly. T"
+  },
+  {
+    "id": "random-054",
+    "source": "seed-351003-codepoints",
+    "text": "大家检查记录中的数字，讨论哪些差异来自计算方式"
+  },
+  {
+    "id": "random-055",
+    "source": "seed-351003-codepoints",
+    "text": "graph. They keep the original input, count each token, and compare the intermed"
+  },
+  {
+    "id": "random-056",
+    "source": "seed-351003-codepoints",
+    "text": "ond run should"
+  },
+  {
+    "id": "random-057",
+    "source": "seed-351003-codepoints",
+    "text": "究小组准备比较两种计算方法，先写清"
+  },
+  {
+    "id": "random-058",
+    "source": "seed-351003-codepoints",
+    "text": "<|endoftext|>\n<|fim_p"
+  },
+  {
+    "id": "random-059",
+    "source": "seed-351003-codepoints",
+    "text": "ful for t"
+  },
+  {
+    "id": "random-060",
+    "source": "seed-351003-codepoints",
+    "text": "ctly. This m"
+  },
+  {
+    "id": "random-061",
+    "source": "seed-351003-codepoints",
+    "text": "ions. Every experiment uses the same settings and a fresh output directory.\n下"
+  },
+  {
+    "id": "random-062",
+    "source": "seed-351003-codepoints",
+    "text": "究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化"
+  },
+  {
+    "id": "random-063",
+    "source": "seed-351003-codepoints",
+    "text": "书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies "
+  },
+  {
+    "id": "random-064",
+    "source": "seed-351003-codepoints",
+    "text": "es the record useful for the next p"
+  },
+  {
+    "id": "random-065",
+    "source": "seed-351003-codepoints",
+    "text": "or the next person who investigates the mode"
+  },
+  {
+    "id": "random-066",
+    "source": "seed-351003-codepoints",
+    "text": "usions. Every experiment uses the same settings and a fresh output directory.\n"
+  },
+  {
+    "id": "random-067",
+    "source": "seed-351003-codepoints",
+    "text": "termediate r"
+  },
+  {
+    "id": "random-068",
+    "source": "seed-351003-codepoints",
+    "text": "化。\nAt the library, a smal"
+  },
+  {
+    "id": "random-069",
+    "source": "seed-351003-codepoints",
+    "text": "ore drawing conclusions. Every experiment uses the same settings "
+  },
+  {
+    "id": "random-070",
+    "source": "seed-351003-codepoints",
+    "text": "erson who investigate"
+  },
+  {
+    "id": "random-071",
+    "source": "seed-351003-codepoints",
+    "text": ", the observed results, and the remaining questions"
+  },
+  {
+    "id": "random-072",
+    "source": "seed-351003-codepoints",
+    "text": "utput directory.\n下午，大家检查记录"
+  },
+  {
+    "id": "random-073",
+    "source": "seed-351003-codepoints",
+    "text": "दी भाषा\nР"
+  },
+  {
+    "id": "random-074",
+    "source": "seed-351003-codepoints",
+    "text": "。\nThe final n"
+  },
+  {
+    "id": "random-075",
+    "source": "seed-351003-codepoints",
+    "text": " library, a small team studies how a local language model processes a par"
+  },
+  {
+    "id": "random-076",
+    "source": "seed-351003-codepoints",
+    "text": "e model.\n第二次阅读时，请核对相同的记录是否仍然表达同样的"
+  },
+  {
+    "id": "random-077",
+    "source": "seed-351003-codepoints",
+    "text": " results before drawing conclusions. Every experiment uses the same settings and a fresh "
+  },
+  {
+    "id": "random-078",
+    "source": "seed-351003-codepoints",
+    "text": "ults before drawing conclusions. Every experiment uses the same settings and a fre"
+  },
+  {
+    "id": "random-079",
+    "source": "seed-351003-codepoints",
+    "text": "ory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe final note describ"
+  },
+  {
+    "id": "random-080",
+    "source": "seed-351003-codepoints",
+    "text": "keep the original input, count each to"
+  },
+  {
+    "id": "random-081",
+    "source": "seed-351003-codepoints",
+    "text": "eam studies how a local language model p"
+  },
+  {
+    "id": "random-082",
+    "source": "seed-351003-codepoints",
+    "text": "小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a "
+  },
+  {
+    "id": "random-083",
+    "source": "seed-351003-codepoints",
+    "text": "onclusions. Every expe"
+  },
+  {
+    "id": "random-084",
+    "source": "seed-351003-codepoints",
+    "text": "and co"
+  },
+  {
+    "id": "random-085",
+    "source": "seed-351003-codepoints",
+    "text": "awing conclusions. Every experim"
+  },
+  {
+    "id": "random-086",
+    "source": "seed-351003-codepoints",
+    "text": "esh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe "
+  },
+  {
+    "id": "random-087",
+    "source": "seed-351003-codepoints",
+    "text": "_start|>assistant\n<think>\n\n</think>\n\n\n春天的河流很安静。The rive"
+  },
+  {
+    "id": "random-088",
+    "source": "seed-351003-codepoints",
+    "text": "diate results before drawing conclusions. Every experiment uses the same settings and a fresh outpu"
+  },
+  {
+    "id": "random-089",
+    "source": "seed-351003-codepoints",
+    "text": "put dir"
+  },
+  {
+    "id": "random-090",
+    "source": "seed-351003-codepoints",
+    "text": "\nç\nç\ną\ną\ná̀\ńa\náb\näb\néclair\nकिताब\nकी\nक्ष\nภาษาไทยก"
+  },
+  {
+    "id": "random-091",
+    "source": "seed-351003-codepoints",
+    "text": " record useful for the next person who investigates the model."
+  },
+  {
+    "id": "random-092",
+    "source": "seed-351003-codepoints",
+    "text": "unt each token"
+  },
+  {
+    "id": "random-093",
+    "source": "seed-351003-codepoints",
+    "text": "reproduce the first run exactly. This makes the record useful for the next person who inv"
+  },
+  {
+    "id": "random-094",
+    "source": "seed-351003-codepoints",
+    "text": "nguage model processes a paragraph. They keep the original input, count each to"
+  },
+  {
+    "id": "random-095",
+    "source": "seed-351003-codepoints",
+    "text": "\n\n\n\n\n\t \r\n\na\nb\na\tb\n0123456789\n1234567890123456789012345\n1.234e-10\n-"
+  },
+  {
+    "id": "random-096",
+    "source": "seed-351003-codepoints",
+    "text": "̂\nç\nç\ną\ną\ná̀\ńa\náb\näb\néclair\nकिताब\nकी\nक्ष\nภาษาไทยก้า\nก้\nำ\n한글\n한글\n가\n가\n😀\n👩‍💻\n👨‍👩‍👧‍👦\n🏳️‍🌈"
+  },
+  {
+    "id": "random-097",
+    "source": "seed-351003-codepoints",
+    "text": "'LL\nthey're\nshe's\n"
+  },
+  {
+    "id": "random-098",
+    "source": "seed-351003-codepoints",
+    "text": "how a local language model process"
+  },
+  {
+    "id": "random-099",
+    "source": "seed-351003-codepoints",
+    "text": "thod, the ob"
+  },
+  {
+    "id": "random-100",
+    "source": "seed-351003-codepoints",
+    "text": "At the library, a small team studies how a local language model processes a "
+  },
+  {
+    "id": "random-101",
+    "source": "seed-351003-codepoints",
+    "text": "，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a s"
+  },
+  {
+    "id": "random-102",
+    "source": "seed-351003-codepoints",
+    "text": "The final note describes the method, the observed results, and the remaining questions. A se"
+  },
+  {
+    "id": "random-103",
+    "source": "seed-351003-codepoints",
+    "text": "his makes the record useful for the next person who investigates the model.清晨，我们沿着河边的小路走到"
+  },
+  {
+    "id": "random-104",
+    "source": "seed-351003-codepoints",
+    "text": "̨\ná̀\ńa\náb\näb\néclair\nकिताब\nकी\nक्ष\nภาษาไทยก้า\nก้\nำ\n한글\n한글\n가\n가\n😀\n"
+  },
+  {
+    "id": "random-105",
+    "source": "seed-351003-codepoints",
+    "text": " who investigates the model.\n第二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们"
+  },
+  {
+    "id": "random-106",
+    "source": "seed-351003-codepoints",
+    "text": "请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面"
+  },
+  {
+    "id": "random-107",
+    "source": "seed-351003-codepoints",
+    "text": "hello<|im_end|>\n\u0000\na\u0000b\n\u0001\u0002\u0007\n\n\n \n   \n  \n  \n﻿\n�\na...b?!\n\\n\\t\nhttps://exa"
+  },
+  {
+    "id": "random-108",
+    "source": "seed-351003-codepoints",
+    "text": "Every experiment uses the same settings and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，"
+  },
+  {
+    "id": "random-109",
+    "source": "seed-351003-codepoints",
+    "text": "rved results, and the remaining questions. A second run should reprodu"
+  },
+  {
+    "id": "random-110",
+    "source": "seed-351003-codepoints",
+    "text": "on who investigates the model.\n第二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的"
+  },
+  {
+    "id": "random-111",
+    "source": "seed-351003-codepoints",
+    "text": "hould reproduce the fir"
+  },
+  {
+    "id": "random-112",
+    "source": "seed-351003-codepoints",
+    "text": "回到原始材料核对，不把猜测写成事实。\nThe final note describes the m"
+  },
+  {
+    "id": "random-113",
+    "source": "seed-351003-codepoints",
+    "text": "ext "
+  },
+  {
+    "id": "random-114",
+    "source": "seed-351003-codepoints",
+    "text": "e remaining questions. A second run should reproduce the first run exactly. This makes the record us"
+  },
+  {
+    "id": "random-115",
+    "source": "seed-351003-codepoints",
+    "text": "esh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始"
+  },
+  {
+    "id": "random-116",
+    "source": "seed-351003-codepoints",
+    "text": "i"
+  },
+  {
+    "id": "random-117",
+    "source": "seed-351003-codepoints",
+    "text": "im_start|>user\nhello<|im_end|>\n\u0000\na\u0000b\n\u0001\u0002\u0007\n\n\n \n   \n  \n  \n﻿\n�\na...b?!\n\\n\\t\nhttps://example.com/a?x="
+  },
+  {
+    "id": "random-118",
+    "source": "seed-351003-codepoints",
+    "text": "‍👦\n🏳️‍🌈\n🇨🇳🇺🇸\n👍🏽\n❤️\na😀b\n<|im_start|>\n<|im_end|>\n<think>\n</think>\n<|endoftext|>\n<|fim_p"
+  },
+  {
+    "id": "random-119",
+    "source": "seed-351003-codepoints",
+    "text": "think>\n<|endoftext|>\n<|fim_pad|>\n<|repo_name|>\n<|file_sep|>\n<|im_start\n|>\n<|\n<<think>>\na<"
+  },
+  {
+    "id": "random-120",
+    "source": "seed-351003-codepoints",
+    "text": "iment uses the same settings and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自"
+  },
+  {
+    "id": "random-121",
+    "source": "seed-351003-codepoints",
+    "text": "，讨论哪些差异来自计算方式，哪些来自数据。"
+  },
+  {
+    "id": "random-122",
+    "source": "seed-351003-codepoints",
+    "text": "conclusions. Every experimen"
+  },
+  {
+    "id": "random-123",
+    "source": "seed-351003-codepoints",
+    "text": "rmediate results befor"
+  },
+  {
+    "id": "random-124",
+    "source": "seed-351003-codepoints",
+    "text": "。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe fin"
+  },
+  {
+    "id": "random-125",
+    "source": "seed-351003-codepoints",
+    "text": "的变化。\nAt the library, a small team studies how a"
+  },
+  {
+    "id": "random-126",
+    "source": "seed-351003-codepoints",
+    "text": "air\nकिताब\nकी\nक्ष\nภาษาไทยก้า\nก้\nำ\n한글\n한글\n가\n가\n😀\n👩‍💻\n👨‍👩‍👧‍👦\n🏳️‍🌈\n🇨🇳🇺🇸\n👍🏽\n❤"
+  },
+  {
+    "id": "random-127",
+    "source": "seed-351003-codepoints",
+    "text": "差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\n"
+  },
+  {
+    "id": "random-128",
+    "source": "seed-351003-codepoints",
+    "text": "rawing conclusions. Every experiment uses the same settings and a fresh output di"
+  },
+  {
+    "id": "random-129",
+    "source": "seed-351003-codepoints",
+    "text": "e'll\nyou'LL\nthey're\nshe's\nit's\nI'D\nyou've\nCAN'T\n全角，标点。！？\n　你"
+  },
+  {
+    "id": "random-130",
+    "source": "seed-351003-codepoints",
+    "text": "ngs and a fresh "
+  },
+  {
+    "id": "random-131",
+    "source": "seed-351003-codepoints",
+    "text": "ा\nРусский текст\nΕλληνικά\nעברית\nTürkçe\ncafé\ncafé\n"
+  },
+  {
+    "id": "random-132",
+    "source": "seed-351003-codepoints",
+    "text": "efore drawing conclusions. Every experiment uses the same settin"
+  },
+  {
+    "id": "random-133",
+    "source": "seed-351003-codepoints",
+    "text": "ed results, and the remaining questions. A second run should reproduce the first run exactly. Th"
+  },
+  {
+    "id": "random-134",
+    "source": "seed-351003-codepoints",
+    "text": "ults before drawing conclusions. Every experiment uses the same settings and a fresh o"
+  },
+  {
+    "id": "random-135",
+    "source": "seed-351003-codepoints",
+    "text": "自己。<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n\n春天的河流很"
+  },
+  {
+    "id": "random-136",
+    "source": "seed-351003-codepoints",
+    "text": " makes the record useful for the "
+  },
+  {
+    "id": "random-137",
+    "source": "seed-351003-codepoints",
+    "text": "h output directory.\n下午，大家检查记录中的数字，讨论哪些差异"
+  },
+  {
+    "id": "random-138",
+    "source": "seed-351003-codepoints",
+    "text": "duce the first run ex"
+  },
+  {
+    "id": "random-139",
+    "source": "seed-351003-codepoints",
+    "text": "́\né\né\nÅ\nÅ\nñ\nñ\nö\nö\nü\nü\nà\nà\nê\nê\nç\nç\ną\ną\ná̀\ńa\ná"
+  },
+  {
+    "id": "random-140",
+    "source": "seed-351003-codepoints",
+    "text": "\nü\nü\nà\nà\nê\nê\nç\nç\ną\ną\ná̀\ńa\náb\näb\néclair\nकिताब\nकी\nक्ष\nภาษาไทยก้า\nก้\nำ\n한글\n한"
+  },
+  {
+    "id": "random-141",
+    "source": "seed-351003-codepoints",
+    "text": "the original input, count each token, and co"
+  },
+  {
+    "id": "random-142",
+    "source": "seed-351003-codepoints",
+    "text": " and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实"
+  },
+  {
+    "id": "random-143",
+    "source": "seed-351003-codepoints",
+    "text": "he model.\n第二次阅读时，请核对相同"
+  },
+  {
+    "id": "random-144",
+    "source": "seed-351003-codepoints",
+    "text": "el.\n第二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路"
+  },
+  {
+    "id": "random-145",
+    "source": "seed-351003-codepoints",
+    "text": "al language model processes a paragr"
+  },
+  {
+    "id": "random-146",
+    "source": "seed-351003-codepoints",
+    "text": "ults before drawing conclusions. Every experimen"
+  },
+  {
+    "id": "random-147",
+    "source": "seed-351003-codepoints",
+    "text": " and compare the intermediate results before draw"
+  },
+  {
+    "id": "random-148",
+    "source": "seed-351003-codepoints",
+    "text": "rd useful for the next person who investigates the model."
+  },
+  {
+    "id": "random-149",
+    "source": "seed-351003-codepoints",
+    "text": "describes the method, the observed results, and the remainin"
+  },
+  {
+    "id": "random-150",
+    "source": "seed-351003-codepoints",
+    "text": "实。\nThe final note describes the method, the observed results, and the remaining questions. A se"
+  },
+  {
+    "id": "random-151",
+    "source": "seed-351003-codepoints",
+    "text": "art\n|>\n<|\n<<think>>\na<|im_end|>b\n<|im_start|>user\nhell"
+  },
+  {
+    "id": "random-152",
+    "source": "seed-351003-codepoints",
+    "text": "成事实。\nThe final note describes the method, the observed results, and the remaining"
+  },
+  {
+    "id": "random-153",
+    "source": "seed-351003-codepoints",
+    "text": "s makes the record useful for the next person who investigates the model."
+  },
+  {
+    "id": "random-154",
+    "source": "seed-351003-codepoints",
+    "text": "ate results before drawing conclusions. Every experiment uses th"
+  },
+  {
+    "id": "random-155",
+    "source": "seed-351003-codepoints",
+    "text": "brary, a small team studies how a local language model processes a paragraph. They keep the orig"
+  },
+  {
+    "id": "random-156",
+    "source": "seed-351003-codepoints",
+    "text": "ory.\n下午，大家检查记录中的数字，讨论哪些差异来"
+  },
+  {
+    "id": "random-157",
+    "source": "seed-351003-codepoints",
+    "text": "ults before drawing con"
+  },
+  {
+    "id": "random-158",
+    "source": "seed-351003-codepoints",
+    "text": "究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local language m"
+  },
+  {
+    "id": "random-159",
+    "source": "seed-351003-codepoints",
+    "text": "到图书馆，观察水面的倒影和街角的树。研"
+  },
+  {
+    "id": "random-160",
+    "source": "seed-351003-codepoints",
+    "text": " the original input, coun"
+  },
+  {
+    "id": "random-161",
+    "source": "seed-351003-codepoints",
+    "text": "estions. A second run should reproduce the first run exactly. This makes the record useful"
+  },
+  {
+    "id": "random-162",
+    "source": "seed-351003-codepoints",
+    "text": "ompare the intermediate results before drawing"
+  },
+  {
+    "id": "random-163",
+    "source": "seed-351003-codepoints",
+    "text": "本語のテスト\n한국어 "
+  },
+  {
+    "id": "random-164",
+    "source": "seed-351003-codepoints",
+    "text": "二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果"
+  },
+  {
+    "id": "random-165",
+    "source": "seed-351003-codepoints",
+    "text": "el processes a paragraph. They keep "
+  },
+  {
+    "id": "random-166",
+    "source": "seed-351003-codepoints",
+    "text": "xample.com"
+  },
+  {
+    "id": "random-167",
+    "source": "seed-351003-codepoints",
+    "text": "先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local languag"
+  },
+  {
+    "id": "random-168",
+    "source": "seed-351003-codepoints",
+    "text": "graph. They keep the original input, count each token, and compare the i"
+  },
+  {
+    "id": "random-169",
+    "source": "seed-351003-codepoints",
+    "text": " paragrap"
+  },
+  {
+    "id": "random-170",
+    "source": "seed-351003-codepoints",
+    "text": " for the next person wh"
+  },
+  {
+    "id": "random-171",
+    "source": "seed-351003-codepoints",
+    "text": "核对，不把猜测写成事实。\nThe final note describes the method, the observed results, an"
+  },
+  {
+    "id": "random-172",
+    "source": "seed-351003-codepoints",
+    "text": "\n\n\r\n\n\n\n\n\t \r\n\na\nb\na\tb\n0123456789\n1234567890123456789012"
+  },
+  {
+    "id": "random-173",
+    "source": "seed-351003-codepoints",
+    "text": "l team studies ho"
+  },
+  {
+    "id": "random-174",
+    "source": "seed-351003-codepoints",
+    "text": "This makes the record useful for the next person who "
+  },
+  {
+    "id": "random-175",
+    "source": "seed-351003-codepoints",
+    "text": " the first run exactly. This makes the record "
+  },
+  {
+    "id": "random-176",
+    "source": "seed-351003-codepoints",
+    "text": "l team studies how a local language model processes a paragraph. They keep the original"
+  },
+  {
+    "id": "random-177",
+    "source": "seed-351003-codepoints",
+    "text": "\n第二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\n"
+  },
+  {
+    "id": "random-178",
+    "source": "seed-351003-codepoints",
+    "text": "'t\nI'M\nwe'll\nyou'LL\nthey're\nshe's\nit's\nI'D\nyou've\nCAN'T\n全角，标点。"
+  },
+  {
+    "id": "random-179",
+    "source": "seed-351003-codepoints",
+    "text": "'s\nit's\nI'D\nyou've\nCAN'T\n全角，标点。！？\n　你好　\n中文English123\n日本語のテスト\n한국어 테스트\nمرحبا ب"
+  },
+  {
+    "id": "random-180",
+    "source": "seed-351003-codepoints",
+    "text": "한글\n가\n가\n😀\n👩‍💻\n👨‍👩‍👧‍👦\n🏳️‍🌈\n🇨🇳🇺🇸\n👍🏽\n❤️\na😀b\n<|im_start|>\n<|im_end|>\n<think>\n</thi"
+  },
+  {
+    "id": "random-181",
+    "source": "seed-351003-codepoints",
+    "text": "글\n가\n가\n😀\n👩‍💻\n👨‍👩‍👧‍👦\n🏳️‍🌈\n🇨🇳🇺🇸\n👍🏽\n❤️\na😀b\n<|im_start|>\n<|im_end|>\n<think>\n</th"
+  },
+  {
+    "id": "random-182",
+    "source": "seed-351003-codepoints",
+    "text": ", a smal"
+  },
+  {
+    "id": "random-183",
+    "source": "seed-351003-codepoints",
+    "text": "useful for the next person who investigates the model.清晨，我们沿着河边的小路走到图书馆，观察水面的倒影"
+  },
+  {
+    "id": "random-184",
+    "source": "seed-351003-codepoints",
+    "text": "tory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定"
+  },
+  {
+    "id": "random-185",
+    "source": "seed-351003-codepoints",
+    "text": ">\n<|file_sep|>\n<|im_start\n|>\n<|\n<<think>>\na<|im_en"
+  },
+  {
+    "id": "random-186",
+    "source": "seed-351003-codepoints",
+    "text": "ir\nकिताब\nकी\nक्ष\nภาษาไทยก้า\nก้\nำ\n한글\n한글\n"
+  },
+  {
+    "id": "random-187",
+    "source": "seed-351003-codepoints",
+    "text": "note describes the method, the observed results, and the remaining questions. A second r"
+  },
+  {
+    "id": "random-188",
+    "source": "seed-351003-codepoints",
+    "text": "馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies ho"
+  },
+  {
+    "id": "random-189",
+    "source": "seed-351003-codepoints",
+    "text": "\nhello \n  hello  \n \n  \n\t\n\n\n\r\n\n\n\n\n\t \r\n\na\nb\na\tb\n0123456789\n1234567890123456789012345\n1.234e-"
+  },
+  {
+    "id": "random-190",
+    "source": "seed-351003-codepoints",
+    "text": "e library, a small team studie"
+  },
+  {
+    "id": "random-191",
+    "source": "seed-351003-codepoints",
+    "text": "stions. A second run should reproduce the fir"
+  },
+  {
+    "id": "random-192",
+    "source": "seed-351003-codepoints",
+    "text": " how a loca"
+  },
+  {
+    "id": "random-193",
+    "source": "seed-351003-codepoints",
+    "text": "한국어 테스트\nمرحبا بالعالم\nภาษาไทย\nहिन्दी भाषा\nРусский текст\nΕλληνικά\nעברית\nTürkç"
+  },
+  {
+    "id": "random-194",
+    "source": "seed-351003-codepoints",
+    "text": " record useful for the next person who investigates the model."
+  },
+  {
+    "id": "random-195",
+    "source": "seed-351003-codepoints",
+    "text": "🌈\n🇨🇳🇺🇸\n👍🏽\n❤️\na😀b\n<|im_star"
+  },
+  {
+    "id": "random-196",
+    "source": "seed-351003-codepoints",
+    "text": "s before drawing conclusions. Every experiment uses the s"
+  },
+  {
+    "id": "random-197",
+    "source": "seed-351003-codepoints",
+    "text": "resh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些"
+  },
+  {
+    "id": "random-198",
+    "source": "seed-351003-codepoints",
+    "text": "g questions. A second run should reproduce the first run exactly. This mak"
+  },
+  {
+    "id": "random-199",
+    "source": "seed-351003-codepoints",
+    "text": "tly. This makes the record useful for the next "
+  },
+  {
+    "id": "random-200",
+    "source": "seed-351003-codepoints",
+    "text": "example.com/a?x=1\nx = y + 1"
+  },
+  {
+    "id": "random-201",
+    "source": "seed-351003-codepoints",
+    "text": " \n﻿\n�\na...b?!\n\\n\\t\nhttps://example.com/a?x=1\nx = y + 1"
+  },
+  {
+    "id": "random-202",
+    "source": "seed-351003-codepoints",
+    "text": " token, and compare the inter"
+  },
+  {
+    "id": "random-203",
+    "source": "seed-351003-codepoints",
+    "text": " person who investigates the model.\n第二次阅读时，请核对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，"
+  },
+  {
+    "id": "random-204",
+    "source": "seed-351003-codepoints",
+    "text": "rmediate results before drawing "
+  },
+  {
+    "id": "random-205",
+    "source": "seed-351003-codepoints",
+    "text": "econd run should reproduce the first run exactly. This makes the record useful for the next per"
+  },
+  {
+    "id": "random-206",
+    "source": "seed-351003-codepoints",
+    "text": "and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe f"
+  },
+  {
+    "id": "random-207",
+    "source": "seed-351003-codepoints",
+    "text": "he model.\n第二次阅读时"
+  },
+  {
+    "id": "random-208",
+    "source": "seed-351003-codepoints",
+    "text": " results before drawing conclusions. Every exp"
+  },
+  {
+    "id": "random-209",
+    "source": "seed-351003-codepoints",
+    "text": "输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local language model processes a"
+  },
+  {
+    "id": "random-210",
+    "source": "seed-351003-codepoints",
+    "text": "ond run should reproduce the first run exactly. This makes the record usef"
+  },
+  {
+    "id": "random-211",
+    "source": "seed-351003-codepoints",
+    "text": "rson who investigates the model.清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法"
+  },
+  {
+    "id": "random-212",
+    "source": "seed-351003-codepoints",
+    "text": "对相同的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预"
+  },
+  {
+    "id": "random-213",
+    "source": "seed-351003-codepoints",
+    "text": "的记录是否仍然表达同样的信息：\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的"
+  },
+  {
+    "id": "random-214",
+    "source": "seed-351003-codepoints",
+    "text": " the method, the observed results, and the remaining questions. A second run should repro"
+  },
+  {
+    "id": "random-215",
+    "source": "seed-351003-codepoints",
+    "text": "he first run exactly. Thi"
+  },
+  {
+    "id": "random-216",
+    "source": "seed-351003-codepoints",
+    "text": "की\nक्ष\nภาษาไทยก้า\nก้\nำ\n한글\n한글\n가\n가\n😀\n👩‍💻\n👨‍👩‍👧‍👦\n🏳️‍🌈\n🇨🇳🇺🇸\n👍🏽\n❤️\na"
+  },
+  {
+    "id": "random-217",
+    "source": "seed-351003-codepoints",
+    "text": "awing conclusion"
+  },
+  {
+    "id": "random-218",
+    "source": "seed-351003-codepoints",
+    "text": "Ελληνικά\nעברית\nTürkçe\ncafé\ncafé\né\né\nÅ\nÅ\nñ\nñ\nö\nö\nü\nü\nà\nà\nê"
+  },
+  {
+    "id": "random-219",
+    "source": "seed-351003-codepoints",
+    "text": "方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local language model proce"
+  },
+  {
+    "id": "random-220",
+    "source": "seed-351003-codepoints",
+    "text": "567890123456789012345\n1.234e-10\n-42 +17\ndon't\nI'M\nwe'll\nyou'LL\nthey're\nshe's\nit's\nI'D\nyou've\nCAN"
+  },
+  {
+    "id": "random-221",
+    "source": "seed-351003-codepoints",
+    "text": "ecord useful for the next person who investigates the model.清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备"
+  },
+  {
+    "id": "random-222",
+    "source": "seed-351003-codepoints",
+    "text": ">\n</think>\n<|endoftext|>\n<|fim_pad|>\n<|repo_name|>\n<|file_sep|>\n<|im_start\n|>\n<|\n<<think>>\na<|"
+  },
+  {
+    "id": "random-223",
+    "source": "seed-351003-codepoints",
+    "text": "periment uses t"
+  },
+  {
+    "id": "random-224",
+    "source": "seed-351003-codepoints",
+    "text": ">user\n用一句话介绍你自己。<|im_end|>\n<|im_start"
+  },
+  {
+    "id": "random-225",
+    "source": "seed-351003-codepoints",
+    "text": "-10\n-42 +17\ndon't\nI'M\nwe'll\nyou'LL\nthey're\nshe'"
+  },
+  {
+    "id": "random-226",
+    "source": "seed-351003-codepoints",
+    "text": "nt uses the same settings and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到"
+  },
+  {
+    "id": "random-227",
+    "source": "seed-351003-codepoints",
+    "text": "\na\tb\n0123456789\n12345678901234"
+  },
+  {
+    "id": "random-228",
+    "source": "seed-351003-codepoints",
+    "text": "\nö\nö\nü\nü\nà\nà\nê\nê\nç\nç\n"
+  },
+  {
+    "id": "random-229",
+    "source": "seed-351003-codepoints",
+    "text": "d compare the interme"
+  },
+  {
+    "id": "random-230",
+    "source": "seed-351003-codepoints",
+    "text": "wing conclusions. Every e"
+  },
+  {
+    "id": "random-231",
+    "source": "seed-351003-codepoints",
+    "text": "p the original input, count each token, and compare the intermediate results before drawing conclus"
+  },
+  {
+    "id": "random-232",
+    "source": "seed-351003-codepoints",
+    "text": "utput directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe final note descr"
+  },
+  {
+    "id": "random-233",
+    "source": "seed-351003-codepoints",
+    "text": "put, count each token, and compare the"
+  },
+  {
+    "id": "random-234",
+    "source": "seed-351003-codepoints",
+    "text": "午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不"
+  },
+  {
+    "id": "random-235",
+    "source": "seed-351003-codepoints",
+    "text": "िन्दी भाषा\nРусский текст\nΕλληνικά\n"
+  },
+  {
+    "id": "random-236",
+    "source": "seed-351003-codepoints",
+    "text": "l language model processes a para"
+  },
+  {
+    "id": "random-237",
+    "source": "seed-351003-codepoints",
+    "text": "𝕬𝔅\n𠮷野家\n<|im_start"
+  },
+  {
+    "id": "random-238",
+    "source": "seed-351003-codepoints",
+    "text": "123\n日本語のテスト\n한국어 테스트\nمرحبا بالعالم\nภาษาไทย\nहिन्दी भाषा"
+  },
+  {
+    "id": "random-239",
+    "source": "seed-351003-codepoints",
+    "text": "actly. This makes the record useful for the next person who invest"
+  },
+  {
+    "id": "random-240",
+    "source": "seed-351003-codepoints",
+    "text": "kes the record useful for the next person who investigates the model.\n第二次阅读时，请核对相"
+  },
+  {
+    "id": "random-241",
+    "source": "seed-351003-codepoints",
+    "text": "\nकिताब\nकी\nक्ष\nภาษาไทยก้า\nก้\nำ\n한글\n한글\n가\n가\n😀\n👩‍💻\n👨‍👩‍👧‍👦\n🏳️‍🌈\n🇨🇳🇺🇸\n👍🏽\n❤️\na😀b\n<|im_"
+  },
+  {
+    "id": "random-242",
+    "source": "seed-351003-codepoints",
+    "text": "ate results before drawing co"
+  },
+  {
+    "id": "random-243",
+    "source": "seed-351003-codepoints",
+    "text": "比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local language m"
+  },
+  {
+    "id": "random-244",
+    "source": "seed-351003-codepoints",
+    "text": "材料核对，不把猜测写成事实。\nThe final note "
+  },
+  {
+    "id": "random-245",
+    "source": "seed-351003-codepoints",
+    "text": "m in spring.\n清晨，我们沿着河边的小路走到图书馆，观察水面的倒影和街角"
+  },
+  {
+    "id": "random-246",
+    "source": "seed-351003-codepoints",
+    "text": "art|>assistant\n<think>\n\n</think>\n\n\n春天的河流很安静。The rive"
+  },
+  {
+    "id": "random-247",
+    "source": "seed-351003-codepoints",
+    "text": "escribes the method, the observed results, and the remaining questions. A"
+  },
+  {
+    "id": "random-248",
+    "source": "seed-351003-codepoints",
+    "text": " model processes a "
+  },
+  {
+    "id": "random-249",
+    "source": "seed-351003-codepoints",
+    "text": "person who i"
+  },
+  {
+    "id": "random-250",
+    "source": "seed-351003-codepoints",
+    "text": "is makes the record useful for the next person who inv"
+  },
+  {
+    "id": "random-251",
+    "source": "seed-351003-codepoints",
+    "text": "步的变化。\nAt the library, a small team studies how a loca"
+  },
+  {
+    "id": "random-252",
+    "source": "seed-351003-codepoints",
+    "text": "d run"
+  },
+  {
+    "id": "random-253",
+    "source": "seed-351003-codepoints",
+    "text": "e first run exactly. Th"
+  },
+  {
+    "id": "random-254",
+    "source": "seed-351003-codepoints",
+    "text": "very experiment uses the same settings and a fresh output "
+  },
+  {
+    "id": "random-255",
+    "source": "seed-351003-codepoints",
+    "text": "ettings and a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式"
+  },
+  {
+    "id": "random-256",
+    "source": "seed-351003-codepoints",
+    "text": "\nעברית\nTürkçe\ncafé\ncafé\né\né\nÅ\nÅ\nñ\nñ\nö\nö\nü\nü\nà\nà\nê\nê\nç\nç\ną\ną\ná̀\ńa\ná"
+  },
+  {
+    "id": "random-257",
+    "source": "seed-351003-codepoints",
+    "text": "把猜测写成事实。\nThe final note describes the method, the observed results, and the remaining questions. "
+  },
+  {
+    "id": "random-258",
+    "source": "seed-351003-codepoints",
+    "text": "据。遇到不确定的地方，就"
+  },
+  {
+    "id": "random-259",
+    "source": "seed-351003-codepoints",
+    "text": "h. They keep the original input, count each token, and compare the intermed"
+  },
+  {
+    "id": "random-260",
+    "source": "seed-351003-codepoints",
+    "text": "ond run should reproduce the fi"
+  },
+  {
+    "id": "random-261",
+    "source": "seed-351003-codepoints",
+    "text": "fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe final n"
+  },
+  {
+    "id": "random-262",
+    "source": "seed-351003-codepoints",
+    "text": " each token, and compare the intermediate results before drawing co"
+  },
+  {
+    "id": "random-263",
+    "source": "seed-351003-codepoints",
+    "text": "水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一"
+  },
+  {
+    "id": "random-264",
+    "source": "seed-351003-codepoints",
+    "text": "endoftext|>\n<|fim_pad|>\n<|repo_name|>\n<|file_sep|>\n<|"
+  },
+  {
+    "id": "random-265",
+    "source": "seed-351003-codepoints",
+    "text": "t, count each token, and compare the intermediate results before drawing conclusions"
+  },
+  {
+    "id": "random-266",
+    "source": "seed-351003-codepoints",
+    "text": "大家检查记录中的数字，讨论"
+  },
+  {
+    "id": "random-267",
+    "source": "seed-351003-codepoints",
+    "text": "lts before drawing conclusions. Every experiment uses the sa"
+  },
+  {
+    "id": "random-268",
+    "source": "seed-351003-codepoints",
+    "text": "算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team studies how a local language model processes "
+  },
+  {
+    "id": "random-269",
+    "source": "seed-351003-codepoints",
+    "text": "介绍你自己。<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n\n春天的河流很安静。Th"
+  },
+  {
+    "id": "random-270",
+    "source": "seed-351003-codepoints",
+    "text": "0123456789012345\n1.234e-10\n-42 +17\ndon't\nI'M\nwe'll\nyou'LL\nthe"
+  },
+  {
+    "id": "random-271",
+    "source": "seed-351003-codepoints",
+    "text": "endoftext|>\n<|fim_pad|>\n<|repo_name|>\n<|file_sep|>\n<|im_start\n|>\n<|\n<<thi"
+  },
+  {
+    "id": "random-272",
+    "source": "seed-351003-codepoints",
+    "text": "er\n用一句话介绍你自己。<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>"
+  },
+  {
+    "id": "random-273",
+    "source": "seed-351003-codepoints",
+    "text": "first run exactly. This makes the record useful for the next person who "
+  },
+  {
+    "id": "random-274",
+    "source": "seed-351003-codepoints",
+    "text": "d a fresh output directory.\n下午，大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就回到原始材料核对，不把猜测写成事实。\nThe f"
+  },
+  {
+    "id": "random-275",
+    "source": "seed-351003-codepoints",
+    "text": "\u0002\u0007\n\n\n \n   \n  \n  \n﻿\n�\na...b?!\n\\n\\t\nhttps:/"
+  },
+  {
+    "id": "random-276",
+    "source": "seed-351003-codepoints",
+    "text": "cond run sh"
+  },
+  {
+    "id": "random-277",
+    "source": "seed-351003-codepoints",
+    "text": "l processes a paragraph. They keep the original input, count each token, and compare the intermedia"
+  },
+  {
+    "id": "random-278",
+    "source": "seed-351003-codepoints",
+    "text": "un should reproduce the first run exactly"
+  },
+  {
+    "id": "random-279",
+    "source": "seed-351003-codepoints",
+    "text": "\nThe final note describes the method, the obse"
+  },
+  {
+    "id": "random-280",
+    "source": "seed-351003-codepoints",
+    "text": "y. This makes the record"
+  },
+  {
+    "id": "random-281",
+    "source": "seed-351003-codepoints",
+    "text": "ttin"
+  },
+  {
+    "id": "random-282",
+    "source": "seed-351003-codepoints",
+    "text": "ge m"
+  },
+  {
+    "id": "random-283",
+    "source": "seed-351003-codepoints",
+    "text": "e"
+  },
+  {
+    "id": "random-284",
+    "source": "seed-351003-codepoints",
+    "text": "大家检查记录中的数字，讨论哪些差异来自计算方式，哪些来自数据。遇到不确定的地方，就"
+  },
+  {
+    "id": "random-285",
+    "source": "seed-351003-codepoints",
+    "text": "种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the "
+  },
+  {
+    "id": "random-286",
+    "source": "seed-351003-codepoints",
+    "text": " \r\n\na\nb\na\tb\n0123456789\n1234567890123456789012345\n1.234e-10\n-42 +17\ndon't\nI'M\nw"
+  },
+  {
+    "id": "random-287",
+    "source": "seed-351003-codepoints",
+    "text": "沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the library, a small team"
+  },
+  {
+    "id": "random-288",
+    "source": "seed-351003-codepoints",
+    "text": "es a paragraph. They keep the original input, co"
+  },
+  {
+    "id": "random-289",
+    "source": "seed-351003-codepoints",
+    "text": "，我们沿着河边的小路走到图书馆，观察水面的倒影和街角的树。研究小组准备比较两种计算方法，先写清输入和预期结果，再记录每一步的变化。\nAt the lib"
+  },
+  {
+    "id": "random-290",
+    "source": "seed-351003-codepoints",
+    "text": "午，大家检查记录中的"
+  },
+  {
+    "id": "random-291",
+    "source": "seed-351003-codepoints",
+    "text": "b\n<|im_start|>\n<|im_end|>\n<think>\n</think>\n<|endoftext|>\n<|fim_pad|>\n<|repo_name|>\n<|file_sep|>\n<|im"
+  },
+  {
+    "id": "random-292",
+    "source": "seed-351003-codepoints",
+    "text": "成"
+  },
+  {
+    "id": "random-293",
+    "source": "seed-351003-codepoints",
+    "text": "at"
+  },
+  {
+    "id": "random-294",
+    "source": "seed-351003-codepoints",
+    "text": "事实。\nThe final note describes the method, the observed r"
+  },
+  {
+    "id": "random-295",
+    "source": "seed-351003-codepoints",
+    "text": "e remaining questions. A second run should reproduce the first run exactly. This ma"
+  },
+  {
+    "id": "random-296",
+    "source": "seed-351003-codepoints",
+    "text": "录每一步的变化。\nAt the library, a small team studies how a local language"
+  },
+  {
+    "id": "random-297",
+    "source": "seed-351003-codepoints",
+    "text": "oken, and compare the intermediate results before"
+  },
+  {
+    "id": "random-298",
+    "source": "seed-351003-codepoints",
+    "text": "D\nyou've\nCAN'T\n全角，标点。！？\n　你好　\n中文English123\n日本語のテスト\n한국어 테스트\nمرحبا بالعالم\nภาษาไทย\nहिन्दी भ"
+  },
+  {
+    "id": "random-299",
+    "source": "seed-351003-codepoints",
+    "text": "el processes a paragraph."
+  }
+]

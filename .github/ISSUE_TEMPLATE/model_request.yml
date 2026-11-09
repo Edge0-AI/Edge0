@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         edge0 is built to take new models through a documented path — see
-        [`docs/adding-a-model.md`](https://github.com/Edge0-AI/Edge0/blob/main/docs/adding-a-model.md).
+        [Adding a model](https://github.com/Edge0-AI/Edge0/blob/main/edge0-infer/tools/assets/README.md#adding-a-model).
         The best model requests come with the config below. **Contributions welcome** — if you
         want to add it yourself, say so and we'll help review.
 
@@ -30,7 +30,7 @@ body:
     id: model_type
     attributes:
       label: config.json `model_type`
-      description: The architecture id from the checkpoint's config.json — edge0 resolves tiers via this (see TYPE_ALIASES).
+      description: The architecture id from the checkpoint's config.json.
       placeholder: qwen3_5_moe / bailing_hybrid / ...
     validations:
       required: false

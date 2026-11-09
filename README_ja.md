@@ -6,7 +6,7 @@
 
 **オープンソースのストリーミング MoE 推論フレームワーク — SSD expert offload + Recover-LoRA + prerouter ルーティング予測。**
 
-**Python** · **macOS** · **iOS** · **Android** — 1 つのレシピで、すべてのデバイスに対応。
+**macOS** · **iOS** · **Android** · **Windows** — 1 つのエンジン、1 つのネイティブ API。
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
@@ -23,7 +23,8 @@
 
 ## ニュース
 
-- **[2026-09-30]** **4 つのプラットフォーム — iOS、macOS、Android、Windows — 向けの edge0 推論エンジン**をリリースしました。ユーザーはアーキテクチャとプラットフォームをまたいで最適な推論体験を得られます。ソースはこのリポジトリでオープンソース化されています([`ios/`](ios/) · [`macos/`](macos/) · [`android/`](android/) · [`windows/`](windows/))— 詳細は各ディレクトリの README を参照してください。**統合推論フレームワーク**は **2026 年 Q4** に控えています。[ロードマップ](#ロードマップ)を参照。
+- **[2026-11-04]** **統合推論エンジン [`edge0-infer`](edge0-infer/README_ja.md)** をリリースしました。[GGML](https://github.com/ggml-org/ggml) をベースに、1 つのエンジンと 1 つのネイティブ C++ API で、同じモデルを macOS、iOS、Android、Windows で実行します。CLI、OpenAI 互換のローカルサーバー、デスクトップ・Android・iOS 向けのチャットアプリのサンプルも付属します。最初のリリースは `edge0-35b` をサポートし、`edge0-8b` は今後のリリースでサポートします。これまでの Python フレームワークと各プラットフォームのエンジンを置き換えるもので、以前のコードは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) に残しています。
+- **[2026-09-30]** **4 つのプラットフォーム — iOS、macOS、Android、Windows — 向けの edge0 推論エンジン**をリリースしました(ソースは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) を参照)。
 - **[2026-09-16]** 技術レポートが arXiv に掲載: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063)。
 - **[2026-09-08]** **edge0** の初オープンソースリリース。両モデルティア — [`Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) と [`Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) — を Hugging Face と ModelScope で同時公開。
 
@@ -35,37 +36,41 @@
 
 - **SSD expert offload**: エキスパートの重みは必要に応じてストレージからストリーミングされます。ピークメモリはパラメータ数ではなく、アクティブな集合によって上限が決まります。
 - **Prerouter**: 訓練済みヘッドがエキスパートルーティングを 1 ステップ先に予測するため、エキスパートのロードがフォワードパスを停滞させるのではなくオーバーラップします — デコードスループットは**最大 +59%**。ストレージレイテンシ、モデルサイズ、ルーティング幅 *K* が増すほど効果は大きくなります。
-- **Recover-LoRA**: int4 のベースは凍結され、FP 教師からの蒸留によって LoRA アダプタが訓練されることで、4-bit 時の量子化損失の大部分を回復します([品質](#品質)を参照)。アダプタはマージされません。1 つの読み取り専用ベースが複数のアダプタセットに対応します。
+- **Recover-LoRA**: int4 のベースは凍結され、FP 教師からの蒸留によって LoRA アダプタが訓練されることで、4-bit 時の量子化損失の大部分を回復します([品質](#品質)を参照)。アダプタはベースとは別に保存され、個別にオン/オフできます。
 
 ### プラットフォーム
 
-1 つのリポジトリ、1 つのレシピ、プラットフォームごとのランタイム:
+1 つのエンジンと 1 つのネイティブ API で、すべてのプラットフォームが同じコードを共有します。[`edge0-infer/`](edge0-infer/README_ja.md) を参照:
 
-| プラットフォーム | ディレクトリ | スタック | ステータス |
-|---|---|---|---|
-| **Python**(macOS · Apple Silicon) | [`python/`](python/README_ja.md) | Python + MLX | ✅ 現在利用可能 |
-| **macOS** アプリ & CLI | [`macos/`](macos/README_ja.md) | Rust | ✅ オープンソース化(2026-09-30) |
-| **iOS** アプリ | [`ios/`](ios/README_ja.md) | Swift + MLX Swift | ✅ オープンソース化(2026-09-30) |
-| **Android** アプリ & エンジン | [`android/`](android/README_ja.md) | Kotlin + ネイティブエンジン | ✅ オープンソース化(2026-09-30) |
-| **Windows** アプリ & エンジン | [`windows/`](windows/README_ja.md) | C++ + Vulkan | ✅ オープンソース化(2026-09-30) |
+| プラットフォーム | バックエンド | 検証デバイス |
+|---|---|---|
+| **macOS**(Apple Silicon) | Metal、CPU | Apple M5、16 GiB |
+| **iOS** | Metal | iPhone 17 Pro Max |
+| **Android** | CPU | OnePlus PKR110(Snapdragon 8 Elite) |
+| **Windows**(x86-64) | CPU、Vulkan | Intel Core i5-12400、NVIDIA GeForce RTX 4070 SUPER |
+
+同じデバイス上で prefill と decode に異なるバックエンドを使えます(例: Metal で prefill、CPU で decode)。デスクトップ(macOS、Windows)、Android、iOS 向けのチャットアプリのサンプルは [`edge0-infer/examples/`](edge0-infer/examples/README.md#chat-applications) にあります。
 
 ### モデル
 
 フレームワークには 2 つのモデルティアが付属します。各ティアはエンドツーエンドのリリースであり、公開されるチェックポイント、訓練済み LoRA アダプタ、訓練済み prerouter ヘッドが 1 つの単位として機能します。
 
-| ティア | 公開チェックポイント | 推論プロファイル |
-|---|---|---|
-| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit、40 層、256 エキスパート、prerouter K=4 |
-| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit、24 層、128 エキスパート、prerouter K=8 |
+| ティア | 公開チェックポイント | 推論プロファイル | edge0-infer |
+|---|---|---|---|
+| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit、40 層、256 エキスパート、prerouter K=4 | ✅ サポート済み |
+| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit、24 層、128 エキスパート、prerouter K=8 | 予定 |
 
-両方のチェックポイントともオープンのスパース MoE ベースモデル(それぞれ Qwen3.6-35B-A3B と Ling 3.0 bailing hybrid)上に構築されており、本フレームワークのために実施された LoRA と prerouter の訓練成果物を同梱しています — アダプタファイルは各チェックポイントと同じ場所に配置され、自動的にロードされるため、`edge0 serve <tier>` はすぐさま訓練済みパイプラインを実行できます。
+両方のチェックポイントともオープンのスパース MoE ベースモデル(それぞれ Qwen3.6-35B-A3B と Ling 3.0 bailing hybrid)上に構築されており、本フレームワークのために実施された LoRA と prerouter の訓練成果物を同梱しています。edge0-infer は付属のアセットツールで公開チェックポイントをダウンロードし、エンジン用のモデルアセットに変換します([はじめに](#はじめに)を参照)。
 
 ### 設計
 
-- **transformers スタイルの使い方**: `AutoModel` / `AutoConfig` / `AutoEngine` がモデル名からティアを解決します。
-- **バックエンド分離(Python フレームワーク)**: Python フレームワーク内では、すべての MLX コードは `python/src/edge0/backends/mlx/` 配下に置かれます。コアロジック(モデル仕様、prerouter、ストリーミングエキスパートプール、サーバー)はバックエンドファサード(`backends/base.py`)にのみ依存するため、新しいバックエンドは同じファサードを実装するだけで済み(`backends/cuda/` は予約スロット)、コアコードの変更はゼロです。iOS / macOS / Android エンジンは現在プラットフォームネイティブのスタックで提供されています — すべてのプラットフォームを 1 つのアクセス層の下にまとめることこそ、統合推論フレームワーク([ロードマップ](#ロードマップ)を参照)が実現するものです。
-- **safetensors 形式のアダプタ**: LoRA と prerouter の重みは、来歴メタデータ(source、version、owner layers)付きの `.safetensors` ファイルであり、モデルディレクトリまたは `artifacts/` から解決されます。
-- **モデル + アダプタを 1 つのディレクトリに**: モデルディレクトリには、ベースチェックポイント(`config.json` / `model*.safetensors` / トークナイザー)とそのモデルのアダプタの両方が格納されます。アダプタのアップグレードはアダプタファイルの交換のみ — ベースは読み取り専用のままで、決してマージされません。
+- **GGML ベース、全プラットフォームで同じコード**: ネイティブライブラリは、固定バージョンを無改変で同梱した GGML のみに依存し、ビルド時に何もダウンロードしません。
+- **1 つのネイティブ API**: アプリケーションは CMake ターゲット `edge0::edge0` にリンクし、`include/edge0/` のヘッダーをインクルードするだけで、プロセス内でエンジンを使えます。リファレンス CLI と OpenAI 互換サーバーは、ネイティブ API と同じ設定とデフォルト値を使います。
+- **エキスパートのオンデマンド読み込み**: ルーティングされるエキスパートは、ストレージから必要に応じて層ごとに固定数のエキスパートスロットへ読み込まれるため、デバイスのメモリ予算より大きなモデルでも全体を読み込まずに実行できます。
+- **2 つのルーティングモード**: `predicted`(デフォルト)は prerouter を使い、現在のトークンを計算している間に次のトークンのエキスパートをバックグラウンドで準備します。`actual` はモデル本来の計算で、比較用です。
+- **マルチターンの再利用**: マルチターン会話では通常、各ターンの新しいメッセージだけを計算し、それ以前の計算結果はそのまま再利用します。
+
+詳細は [edge0-infer のアーキテクチャ](edge0-infer/docs/architecture.md) を参照してください。
 
 ### 品質
 
@@ -82,153 +87,77 @@
 
 ### ベンチマーク
 
-`python/examples/bench.py` で測定(3.3k トークンのプロンプトのプリフィル → サンプリングによるウォームアップ 10 ステップ → 計測付きのサンプリングデコード 200 トークン、ティアごとに 2 回実行):
+`edge0-35b`、`predicted` ルーティング、edge0-infer で測定(各値は 3 プロセスの最小値〜最大値):
 
-| ティア | デコード速度 | プリフィルスループット(コールド / ウォーム)* | ピークアクティブメモリ | テストマシン |
-|---|---|---|---|---|
-| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
-| `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
+| プラットフォーム | デバイス | 入力 | 最初のトークン | デコード速度 | ピークメモリ |
+|---|---|---|---|---|---|
+| macOS Metal | Apple M5、16 GiB | 3,084 トークン | 5.60–5.87 s | 24.8–24.9 tok/s | 3.43 GiB(`phys_footprint`) |
+| macOS CPU | Apple M5、16 GiB | 627 トークン | 11.5–11.7 s | 21.7–22.3 tok/s | 2.96 GiB(`phys_footprint`) |
+| iOS Metal | iPhone 17 Pro Max、12 GB | 627 トークン | 8.20–8.26 s | 13.2 tok/s | 3.05 GiB(`phys_footprint`) |
+| Android CPU | OnePlus PKR110、16 GB | 627 トークン | 18.4–18.8 s | 11.4–11.8 tok/s | 2.82 GiB(RSS) |
+| Windows CPU | Intel Core i5-12400、32 GB | 627 トークン | 16.9–17.3 s | 7.3–8.2 tok/s | 2.86 GiB(ワーキングセット) |
+| Windows Vulkan(両フェーズ、32 エキスパートスロット) | RTX 4070 SUPER、12 GB | 627 トークン | 3.75–3.76 s | 23.6–24.0 tok/s | GPU メモリ増加 5.35 GiB |
 
-*コールド = プロセス起動後の最初のリクエスト(エキスパートの重みが SSD からフォールトインする);ウォーム = 以降のリクエスト(ページキャッシュに常駐)。プリフィルの数値は約 3.3k トークンのプロンプトに対するスループット(`BENCH_LONG=1`)。*
-
-再現手順:
-
-```bash
-cd python
-python examples/bench.py edge0-35b    # via $EDGE0_35B_MODEL
-python examples/bench.py edge0-8b     # via $EDGE0_8B_MODEL
-```
+メモリの指標はプラットフォームごとに異なり、直接比較できません。測定方法、`actual` ルーティングの数値、再現コマンドは [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures) を参照してください。
 
 ## はじめに
 
-### Python(macOS · Apple Silicon)
+以下のコマンドはすべて `edge0-infer/` ディレクトリで実行します。CMake 3.21 以上、Ninja、C++17/C11 コンパイラ、uv、Git が必要です。35B の元の重みは約 18 GB、変換後のアセットは約 20 GB で、変換中はさらに同じくらいの空き容量が必要です。
 
-#### 要件
-
-- **OS / ハードウェア**: MLX バックエンドは Apple Silicon(M1/M2/M3/M4)搭載の macOS で動作します。CUDA バックエンドはロードマップ上にあります — Python フレームワークはまだ他のプラットフォームをサポートしていません。
-- **Python**: 3.10+(3.12 推奨)。
-- **MLX**: `mlx==0.30.6` / `mlx-metal==0.30.6` と `mlx-lm==0.31.0`(`python/pyproject.toml` を参照)。Apple A18 / A18 Pro で文字化けした言語混在の出力が発生する場合、古い `mlx` が原因です: `pip install 'mlx==0.30.6' 'mlx-metal==0.30.6'`([#8](https://github.com/Edge0-AI/Edge0/issues/8))。
-- **メモリ**: `edge0-35b` でピークアクティブメモリ約 2.9 GB、`edge0-8b` で約 1.0 GB(短いコンテキストの場合;[ベンチマーク](#ベンチマーク)を参照)。OS、トークナイザー、長いコンテキストでの KV キャッシュの増加のための余裕を上乗せしてください。
-- **ディスク**: 4-bit チェックポイントは約 23 GB(`edge0-35b`)と約 4.2 GB(`edge0-8b`)です。エキスパートの重みは mmap されてオンデマンドで読み取られ、事前に RAM へロードされることはありません。
-
-#### 1) インストール
+### 1) ビルド
 
 ```bash
-cd python
-# Python >= 3.10; the MLX backend requires macOS with Apple Silicon
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+cd edge0-infer
+cmake --preset mac-metal && cmake --build --preset mac-metal
+build/mac-metal/bin/edge0-infer info        # 次の行が出力されるはず: model.0: edge0_35b
 ```
 
-#### 2) モデルのダウンロード
+Metal のないマシンでは `--preset cpu`、`build/cpu/bin/edge0-infer` を使い、以下のコマンドでは `--device cpu` を指定してください。
 
-2 つのティアは Hugging Face と ModelScope で公開されています — 各リポジトリは、ベースチェックポイントと訓練済み LoRA + prerouter アダプタを**1 つのディレクトリ**にまとめており、1 回のダウンロードですぐ実行できるモデルが揃います:
-
-- [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)(~23 GB)· [ModelScope ミラー](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview)
-- [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)(~4.2 GB)· [ModelScope ミラー](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview)
+### 2) モデルアセットのダウンロードと変換
 
 ```bash
-# with the repo's helper (defaults to the two repos above):
-.venv/bin/python scripts/fetch_models.py --tier edge0-35b --target-dir models
-.venv/bin/python scripts/fetch_models.py --tier edge0-8b --target-dir models
+export MOE_SOURCE_35B=<元の重みを置くディレクトリ>
+export MOE_ASSETS_35B=<変換後のアセットを置くディレクトリ>
 
-# or directly with the CLI:
-.venv/bin/huggingface-cli download Edge0/Edge0-35B-A3B-preview     --local-dir models/edge0-35b
-.venv/bin/huggingface-cli download Edge0/Edge0-8B-A1B-preview     --local-dir models/edge0-8b
+uv sync --project tools/assets
+assets_py() { uv run --project tools/assets --offline --no-sync python -I "$@"; }
+
+assets_py tools/assets/edge0_35b/fetch_source.py download --out "$MOE_SOURCE_35B"
+assets_py tools/assets/edge0_35b/make_assets.py --source "$MOE_SOURCE_35B" --out "$MOE_ASSETS_35B"
+assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
 ```
 
-どちらの方法でも、次のようなディレクトリが得られます:
+ダウンロードされるのは Hugging Face 上の `Edge0/Edge0-35B-A3B-preview` で、固定されたリビジョンとダイジェストで検証されます。
 
-```
-models/edge0-35b/
-├── config.json, model-*.safetensors, tokenizer files   # base checkpoint
-├── lora_edge0_35b.safetensors          # trained LoRA adapters
-└── prerouter_edge0_35b.safetensors     # trained prerouter heads
-```
-
-#### 3) edge0 にモデルを指定する
-
-ティア名は環境変数を通じてローカルディレクトリに解決されます(ダウンロード先は自由です):
+### 3) 実行
 
 ```bash
-export EDGE0_35B_MODEL=$PWD/models/edge0-35b
-export EDGE0_8B_MODEL=$PWD/models/edge0-8b
+# 単発のプロンプト
+build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "一文で自己紹介してください。"
+# マルチターンチャット
+build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
+# サーバー起動(OpenAI 互換、デフォルト http://127.0.0.1:8000/v1)
+build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 
-環境変数を完全に省略して、ディレクトリを直接渡すこともできます — ティアはチェックポイントの `config.json` から自動検出されます:
+Android、Windows、iOS 向けのビルド、および自分の CMake プロジェクトからエンジンを使う方法は [Getting started](edge0-infer/docs/getting-started.md) を参照してください。
 
-```bash
-edge0 demo models/edge0-35b
-edge0 serve models/edge0-8b
-```
+## ドキュメント
 
-#### 4) 実行
+**モデル**
 
-```bash
-# quick demo
-edge0 demo edge0-35b
-
-# serve (OpenAI-compatible /v1/chat/completions)
-edge0 serve edge0-35b
-```
-
-```bash
-curl http://127.0.0.1:8000/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"edge0-35b","messages":[{"role":"user","content":"Hello!"}],"max_tokens":32}'
-
-# 5) One-shot chat (pass --max-new to cap length; add --show-thinking to
-#    print the model's reasoning block too)
-edge0 chat edge0-35b --prompt "Explain streaming inference in one sentence."
-```
-
-`python -m edge0 ...` は `edge0 ...` と等価です。
-
-#### Python API
-
-```python
-from edge0 import AutoEngine
-from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
-
-engine = AutoEngine.from_pretrained("/path/to/model")  # tier auto-detected
-req = ChatRequest(
-    model=engine.name,
-    messages=[ChatMessage(role="user", content="Hello!")],
-    max_tokens=64,
-)
-tokens, meta = ChatSession(engine, req).run()
-print(engine._tok.decode(tokens))
-engine.close()   # release mmaps / expert cache
-```
-
-`python/examples/demo.py` も同じ最小限のウォークスルーです(`edge0 demo` はまさにこのパスを実行します)。
-
-#### モデルとアダプタ
-
-- **チェックポイント**: 元のモデルディレクトリ(`config.json`、`model*.safetensors`、トークナイザー)。`edge0 serve <dir>` / `AutoEngine.from_pretrained(<dir>)` は `config.json` からティアを検出します。
-- **アダプタ**(LoRA + prerouter、safetensors)は、次のいずれかの場所から自動的に解決されます:
-  - モデルディレクトリ(推奨): ベースと同じ場所。例: `lora_edge0_35b.safetensors` + `prerouter_edge0_35b.safetensors`
-  - Python プロジェクトルートの `artifacts/`(gitignore 済み): モデルと同じ場所にないアダプタ safetensors のための、オプションのフォールバックキャッシュ。
-- 公開されているモデルリポジトリには、ベースチェックポイントと現在のデフォルトのアダプタリリースの両方が同梱されているため、`scripts/fetch_models.py` はすぐ実行できるモデルディレクトリを生成します。アダプタの来歴(訓練データ、owner-layer レイアウト)は各モデルのドキュメントページで確認してください。
-- prerouter + LoRA パイプラインには両方のアダプタが必要です。ファイルが不足している場合、`edge0` は明確なメッセージとともに失敗します(あるいは `--no-prerouter` / `--no-lora` を渡せば、素のベースモデルを実行できます)。
-
-#### ドキュメント
-
-- [アーキテクチャ](docs/architecture.md)
-- [アテンション](docs/attention.md) / [MoE](docs/moe.md) / [SSD ストリーミング](docs/streaming.md) / [prerouter](docs/prerouter.md)
-- [モデルの追加](docs/adding-a-model.md)
+- [MoE のルーティングとエキスパート](docs/moe.md) / [prerouter](docs/prerouter.md)
 - [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
 - 技術レポート: [The Other Half of the Memory Wall](https://arxiv.org/abs/2609.18063)([PDF](paper/main.pdf))
 
-### macOS / iOS / Android / Windows
+**エンジン(edge0-infer)**
 
-4 つのプラットフォームエンジンはこのリポジトリでオープンソース化されています — 詳細は各ディレクトリの README を参照してください:
-
-- **macOS**: ローカル CLI / デーモン / デスクトップアプリ(Rust)— [`macos/README_ja.md`](macos/README_ja.md) を参照
-- **iOS**: オンデバイス iPhone アプリ(Swift + MLX Swift)— [`ios/README_ja.md`](ios/README_ja.md) を参照
-- **Android**: オンデバイスアプリ + ネイティブエンジン(Kotlin)— [`android/README_ja.md`](android/README_ja.md) を参照
-- **Windows**: デスクトップアプリ + ネイティブエンジン(C++ + Vulkan)— [`windows/README_ja.md`](windows/README_ja.md) を参照
-
-**統合推論フレームワーク** — 1 つのアクセス層、iOS / macOS / Android / Windows / Python へ自動適応するランタイム — は **2026 年 Q4** に登場します。[ロードマップ](#ロードマップ)を参照。
+- [Getting started](edge0-infer/docs/getting-started.md): 各プラットフォームでのビルド、モデルアセット、実行、チャット、サーバー
+- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [OpenAI 互換サーバー](edge0-infer/docs/openai-compatible-server.md)
+- [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
+- [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
+- [モデルアセットツールとモデルの追加](edge0-infer/tools/assets/README.md)
 
 ## ロードマップ
 
@@ -236,8 +165,8 @@ engine.close()   # release mmaps / expert cache
 
 **プラットフォーム & システム**
 
-- **edge0 統合推論フレームワーク** — 統合推論フレームワークをオープンソース化します: **1 つの統一アクセス層**(chat / serve / オンデバイス利用を横断する単一 API)を備え、**ランタイムがハードウェアプラットフォームへ自動適応**します — iOS、macOS、Android、Windows、Python。このリポジトリですでにオープンソース化されているプラットフォームエンジン(`ios/` · `macos/` · `android/` · `windows/`)の上に構築されます。
-- Python フレームワーク向け **CUDA バックエンド** — `python/src/edge0/backends/cuda/` に予約スロットがあり、コアコードの変更はゼロです。
+- ✅ **edge0 統合推論エンジンのオープンソース化**(2026-11-04)— [`edge0-infer`](edge0-infer/README_ja.md): 1 つのエンジンと 1 つのネイティブ API で macOS、iOS、Android、Windows をカバーします。
+- **edge0-infer での `edge0-8b` サポート**。
 
 **モデル & アルゴリズム**
 
@@ -251,27 +180,17 @@ Q4 は 2 つの前線で進めます: 次世代アーキテクチャをフレー
 
 コントリビューションを歓迎します — issue、PR、ベンチマークレポート、モデルポート、すべてが対象です。
 
-**Python フレームワーク**(現在利用可能):
+ビルドとテストは [Testing](edge0-infer/docs/testing.md) を参照してください。モデルアセットが不要なチェック:
 
 ```bash
-cd python
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
-
-pytest                 # unit tests (no real weights)
-EDGE0_8B_MODEL=/path/to/edge0-8b pytest -m slow -q
-                       # real-weight generation; missing tiers are skipped
-.venv/bin/python scripts/e2e_smoke.py \
-  --qwen-dir /path/to/edge0-35b --ling-dir /path/to/edge0-8b
-                       # staged vs exact consistency + generation smoke
-scripts/generate_example.py   # full-pipeline API example
-examples/demo.py              # minimal API walkthrough
+cd edge0-infer
+cmake --preset cpu && cmake --build --preset cpu
+ctest --preset cpu -L "L0|L1"
 ```
 
-CI はすべての PR で、ユニットテスト(macOS + MLX)とリポジトリ衛生スイート(ハードコードされたパスの禁止、バックエンド境界とシークレットのチェック)を実行します。
+`edge0-infer/` 配下の変更も、通常どおりこのリポジトリで issue / PR を出してください。このディレクトリは別のリポジトリで開発されており、受け入れられた変更はメンテナーがまずそちらに適用し、次回の同期でここに反映されます。詳細は [CONTRIBUTING](CONTRIBUTING.md) を参照してください。
 
-**プラットフォームランタイム**(macOS / iOS / Android / Windows): 各プラットフォームのディレクトリには独自のビルドガイドとテストが含まれています——各ディレクトリの README を参照してください。
-
-ワークフロー: fork → フィーチャーブランチ → `main` への PR。衛生スイートをグリーンのまま保ち、新しい動作にはテストを追加してください。
+ワークフロー: fork → フィーチャーブランチ → `main` への PR。テストが通る状態を保ち、新しい動作にはテストを追加してください。
 
 ## 引用
 
@@ -298,4 +217,4 @@ edge0 が役に立った場合は、私たちの技術レポートを引用し�
 
 ## ライセンス
 
-Apache-2.0。ベンダー化されたサードパーティコードを含みます([NOTICE](NOTICE) を参照)。
+Apache-2.0。同梱のサードパーティコンポーネントはそれぞれのライセンスに従います([NOTICE](NOTICE) を参照)。

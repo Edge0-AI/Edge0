@@ -1,0 +1,649 @@
+{
+  "format_version": 1,
+  "architecture": "qwen3next",
+  "metadata_keys": {
+    "n_layer": "qwen3next.block_count",
+    "n_embd": "qwen3next.embedding_length",
+    "n_head": "qwen3next.attention.head_count",
+    "n_head_kv": "qwen3next.attention.head_count_kv",
+    "head_dim": "qwen3next.attention.key_length",
+    "rope_dim": "qwen3next.rope.dimension_count",
+    "n_key_head": "qwen3next.ssm.group_count",
+    "n_value_head": "qwen3next.ssm.time_step_rank",
+    "state_dim": "qwen3next.ssm.state_size",
+    "conv_kernel": "qwen3next.ssm.conv_kernel",
+    "n_expert": "qwen3next.expert_count",
+    "top_k": "qwen3next.expert_used_count",
+    "n_ff": "qwen3next.expert_feed_forward_length",
+    "n_shared": "qwen3next.expert_shared_feed_forward_length",
+    "full_attention_interval": "qwen3next.full_attention_interval"
+  },
+  "profiles": {
+    "35b": {
+      "n_layer": 40,
+      "n_embd": 2048,
+      "n_vocab": 248320,
+      "n_head": 16,
+      "n_head_kv": 2,
+      "head_dim": 256,
+      "rope_dim": 64,
+      "n_key_head": 16,
+      "n_value_head": 32,
+      "state_dim": 128,
+      "conv_kernel": 4,
+      "n_expert": 256,
+      "top_k": 4,
+      "n_ff": 512,
+      "n_shared": 512,
+      "full_attention_interval": 4,
+      "lora_rank": 16
+    },
+    "tiny": {
+      "n_layer": 8,
+      "n_embd": 64,
+      "n_vocab": 248320,
+      "n_head": 2,
+      "n_head_kv": 1,
+      "head_dim": 256,
+      "rope_dim": 64,
+      "n_key_head": 2,
+      "n_value_head": 4,
+      "state_dim": 128,
+      "conv_kernel": 4,
+      "n_expert": 16,
+      "top_k": 4,
+      "n_ff": 64,
+      "n_shared": 64,
+      "full_attention_interval": 4,
+      "lora_rank": 4
+    }
+  },
+  "notes": [
+    "Edge0 c7ee73d5dfb3729de452bdb1fec7df7aebe42806 windows/tools/repack_r3.py:44-79: identical base name set (703 for 40 layers); :188-214: identical F32/Q4_1 representations and GGML dimension order.",
+    "llama.cpp 7ab4ee7baad2d920464cbacfad4f4b07cf111fd2 src/models/qwen3next.cpp:31-113: matching trunk names and shapes; optional legacy ssm_in, tied output, fused gate/up and MTP alternatives are deliberately absent because Edge0 emits separate trunk tensors.",
+    "Edge0 windows/tools/repack_r3.py:140 overrides source num_experts_per_tok=8 with expert_used_count=4; both profiles use the converted value 4.",
+    "Edge0 windows/tools/repack_r3.py:10-15,83-105: norms already contain +1; ssm_a=-exp(A_log); ssm_ba interleaves b,b,a,a per key-head group; value heads must equal twice key heads; conv squeezes the final singleton dimension.",
+    "Edge0 windows/tools/lora_mlx_to_gguf.py:31-43,140-176: all supported attention and shared-expert LoRA pairs are F16; ssm_ba merges two rank-r paths into rank 2r with block-diagonal B and compensation x2. Base alpha is 32 for rank 16; tiny alpha is 8 for rank 4.",
+    "Shapes use GGML order (contiguous dimension first); Q4_1 rows are blocks of 32 values, each 20 bytes. Tensor starts and the GGUF data section are aligned to 32 bytes."
+  ],
+  "tensors": [
+    {
+      "role": "base",
+      "name": "token_embd.weight",
+      "layers": "none",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "n_vocab"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "output.weight",
+      "layers": "none",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "n_vocab"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "output_norm.weight",
+      "layers": "none",
+      "representation": "F32",
+      "shape": [
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_norm.weight",
+      "layers": "all",
+      "representation": "F32",
+      "shape": [
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.post_attention_norm.weight",
+      "layers": "all",
+      "representation": "F32",
+      "shape": [
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_q.weight",
+      "layers": "attention",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "head_dim*n_head*2"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_q.weight.lora_a",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_q.weight.lora_b",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "head_dim*n_head*2"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_k.weight",
+      "layers": "attention",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "head_dim*n_head_kv"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_k.weight.lora_a",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_k.weight.lora_b",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "head_dim*n_head_kv"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_v.weight",
+      "layers": "attention",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "head_dim*n_head_kv"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_v.weight.lora_a",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_v.weight.lora_b",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "head_dim*n_head_kv"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_output.weight",
+      "layers": "attention",
+      "representation": "Q4_1",
+      "shape": [
+        "head_dim*n_head",
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_output.weight.lora_a",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "head_dim*n_head",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_output.weight.lora_b",
+      "layers": "attention",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_q_norm.weight",
+      "layers": "attention",
+      "representation": "F32",
+      "shape": [
+        "head_dim"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_k_norm.weight",
+      "layers": "attention",
+      "representation": "F32",
+      "shape": [
+        "head_dim"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_qkv.weight",
+      "layers": "delta",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "state_dim*(2*n_key_head+n_value_head)"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_qkv.weight.lora_a",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_qkv.weight.lora_b",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "state_dim*(2*n_key_head+n_value_head)"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.attn_gate.weight",
+      "layers": "delta",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "state_dim*n_value_head"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_gate.weight.lora_a",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.attn_gate.weight.lora_b",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "state_dim*n_value_head"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ssm_ba.weight",
+      "layers": "delta",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "2*n_value_head"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ssm_ba.weight.lora_a",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "2*lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ssm_ba.weight.lora_b",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "2*lora_rank",
+        "2*n_value_head"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ssm_out.weight",
+      "layers": "delta",
+      "representation": "Q4_1",
+      "shape": [
+        "state_dim*n_value_head",
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ssm_out.weight.lora_a",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "state_dim*n_value_head",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ssm_out.weight.lora_b",
+      "layers": "delta",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ssm_conv1d.weight",
+      "layers": "delta",
+      "representation": "F32",
+      "shape": [
+        "conv_kernel",
+        "state_dim*(2*n_key_head+n_value_head)"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ssm_dt.bias",
+      "layers": "delta",
+      "representation": "F32",
+      "shape": [
+        "n_value_head"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ssm_a",
+      "layers": "delta",
+      "representation": "F32",
+      "shape": [
+        "n_value_head"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ssm_norm.weight",
+      "layers": "delta",
+      "representation": "F32",
+      "shape": [
+        "state_dim"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_gate_inp.weight",
+      "layers": "all",
+      "representation": "F32",
+      "shape": [
+        "n_embd",
+        "n_expert"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_gate_exps.weight",
+      "layers": "all",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "n_ff",
+        "n_expert"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_up_exps.weight",
+      "layers": "all",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "n_ff",
+        "n_expert"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_down_exps.weight",
+      "layers": "all",
+      "representation": "Q4_1",
+      "shape": [
+        "n_ff",
+        "n_embd",
+        "n_expert"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_gate_shexp.weight",
+      "layers": "all",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "n_shared"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ffn_gate_shexp.weight.lora_a",
+      "layers": "all",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ffn_gate_shexp.weight.lora_b",
+      "layers": "all",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "n_shared"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_up_shexp.weight",
+      "layers": "all",
+      "representation": "Q4_1",
+      "shape": [
+        "n_embd",
+        "n_shared"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ffn_up_shexp.weight.lora_a",
+      "layers": "all",
+      "representation": "F16",
+      "shape": [
+        "n_embd",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ffn_up_shexp.weight.lora_b",
+      "layers": "all",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "n_shared"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_down_shexp.weight",
+      "layers": "all",
+      "representation": "Q4_1",
+      "shape": [
+        "n_shared",
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ffn_down_shexp.weight.lora_a",
+      "layers": "all",
+      "representation": "F16",
+      "shape": [
+        "n_shared",
+        "lora_rank"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "lora",
+      "name": "blk.{i}.ffn_down_shexp.weight.lora_b",
+      "layers": "all",
+      "representation": "F16",
+      "shape": [
+        "lora_rank",
+        "n_embd"
+      ],
+      "alignment": 32
+    },
+    {
+      "role": "base",
+      "name": "blk.{i}.ffn_gate_inp_shexp.weight",
+      "layers": "all",
+      "representation": "F32",
+      "shape": [
+        "n_embd"
+      ],
+      "alignment": 32
+    }
+  ],
+  "prerouter": {
+    "notes": [
+      "Edge0 c7ee73d docs/prerouter.md: the head owned by layer N reads concat[layer N MoE input, current-token top-k one-hot, previous-token top-k one-hot] and predicts layer N+1 routing for the next token; head = fc1 -> erf GELU -> fc2, plus linear_init. Owners run from first_owner to n_layer - 2.",
+      "Payload is the unchanged F16 safetensors data; GGML shape order reverses the safetensors [out, in] shape."
+    ],
+    "profiles": {
+      "35b": {
+        "prerouter_hidden": 512,
+        "prerouter_first_owner": 6
+      },
+      "tiny": {
+        "prerouter_hidden": 16,
+        "prerouter_first_owner": 1
+      }
+    },
+    "tensors": [
+      {
+        "name": "blk.{i}.prerouter_fc1.weight",
+        "representation": "F16",
+        "shape": [
+          "n_embd + 2 * n_expert",
+          "prerouter_hidden"
+        ],
+        "alignment": 32
+      },
+      {
+        "name": "blk.{i}.prerouter_fc2.weight",
+        "representation": "F16",
+        "shape": [
+          "prerouter_hidden",
+          "n_expert"
+        ],
+        "alignment": 32
+      },
+      {
+        "name": "blk.{i}.prerouter_linear_init.weight",
+        "representation": "F16",
+        "shape": [
+          "n_embd + 2 * n_expert",
+          "n_expert"
+        ],
+        "alignment": 32
+      }
+    ]
+  }
+}

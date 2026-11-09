@@ -1,0 +1,18 @@
+{
+  "files": {
+    "chat_template.jinja": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+    "config.json": "a822a9e48b0aafbe3144ec37d4fb067e178ed96615ce6e4420b3149893cc5767",
+    "generation_config.json": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+    "lora_edge0_35b.safetensors": "a407f6d27bb55e39e6461bd4bce1fd90489e70c7582b68a796fb764bdb441ec1",
+    "model-00001-of-00004.safetensors": "f7fff28fecb8221e53787c6339c938b113bcb94c7bbc60d09a8826eba08ef1ab",
+    "model-00002-of-00004.safetensors": "31dcdb1c49eebdb1505bd14e3cb33f9cf900bd2546b638f2464694ae763a033f",
+    "model-00003-of-00004.safetensors": "3e66de06a1f03dade16a612a368cfce4a4c9caa4efd7d28185454384082cec03",
+    "model-00004-of-00004.safetensors": "a5d0cf03519c26f8b506df6b0ba60526e5c08c8cea22d0c21ce92950e58a5422",
+    "model.safetensors.index.json": "e359cd95565275b923fed8df019dd8e869d9af5dc4a621b4114ab7a8e6c534d1",
+    "prerouter_edge0_35b.safetensors": "93d07af08e1f5c8d174e941016740cb4d2c143c6b90f33581237679eca9b006f",
+    "tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"
+  },
+  "repository": "Edge0/Edge0-35B-A3B-preview",
+  "revision": "e21098e7faa916a00f5493795f12f20497d032bb",
+  "revision_source": "Verified against the Hugging Face API on 2026-10-14: LFS sha256 for large files, downloaded content for small files."
+}

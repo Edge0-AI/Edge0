@@ -1,0 +1,68 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {"major": 3, "minor": 21, "patch": 0},
+  "configurePresets": [
+    {
+      "name": "base", "hidden": true, "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release", "BUILD_SHARED_LIBS": "OFF",
+        "GGML_BUILD_TESTS": "OFF", "GGML_BUILD_EXAMPLES": "OFF",
+        "GGML_BACKEND_DL": "OFF", "GGML_CPU": "ON", "GGML_OPENMP": "OFF"
+      }
+    },
+    {"name": "cpu", "inherits": "base", "cacheVariables": {
+      "GGML_METAL": "OFF", "GGML_BLAS": "OFF", "GGML_ACCELERATE": "OFF", "GGML_LLAMAFILE": "OFF"
+    }},
+    {"name": "mac-metal", "inherits": "base", "cacheVariables": {
+      "GGML_METAL": "ON", "GGML_METAL_EMBED_LIBRARY": "ON",
+      "GGML_BLAS": "OFF", "GGML_ACCELERATE": "OFF", "GGML_LLAMAFILE": "OFF"
+    }},
+    {"name": "android-cpu", "inherits": "base", "cacheVariables": {
+      "CMAKE_TOOLCHAIN_FILE": "$env{ANDROID_NDK}/build/cmake/android.toolchain.cmake",
+      "ANDROID_ABI": "arm64-v8a", "ANDROID_PLATFORM": "android-28",
+      "GGML_NATIVE": "OFF", "GGML_CPU_ARM_ARCH": "armv8.6-a+dotprod+i8mm+fp16",
+      "GGML_METAL": "OFF", "GGML_BLAS": "OFF", "GGML_ACCELERATE": "OFF", "GGML_LLAMAFILE": "OFF"
+    }},
+    {"name": "windows", "inherits": "base", "cacheVariables": {
+      "GGML_METAL": "OFF", "GGML_BLAS": "OFF", "GGML_ACCELERATE": "OFF", "GGML_LLAMAFILE": "OFF"
+    }},
+    {"name": "windows-vulkan", "inherits": "windows", "cacheVariables": {
+      "GGML_VULKAN": "ON"
+    }},
+    {
+      "name": "ios",
+      "inherits": "base",
+      "generator": "Xcode",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "17.0",
+        "CMAKE_XCODE_GENERATE_SCHEME": "ON",
+        "GGML_NATIVE": "OFF",
+        "GGML_CPU_ARM_ARCH": "armv8.4-a+dotprod+fp16",
+        "GGML_METAL": "ON",
+        "GGML_METAL_EMBED_LIBRARY": "ON",
+        "GGML_BLAS": "OFF",
+        "GGML_ACCELERATE": "OFF",
+        "GGML_LLAMAFILE": "OFF",
+        "MOE_BUILD_TESTS": "OFF",
+        "MOE_BUILD_EXAMPLES": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {"name": "cpu", "configurePreset": "cpu"},
+    {"name": "mac-metal", "configurePreset": "mac-metal"},
+    {"name": "android-cpu", "configurePreset": "android-cpu"},
+    {"name": "windows", "configurePreset": "windows"},
+    {"name": "windows-vulkan", "configurePreset": "windows-vulkan"},
+    {"name": "ios", "configurePreset": "ios", "configuration": "Release", "nativeToolOptions": ["-allowProvisioningUpdates"]}
+  ],
+  "testPresets": [
+    {"name": "cpu", "configurePreset": "cpu", "output": {"outputOnFailure": true}, "execution": {"jobs": 4}},
+    {"name": "mac-metal", "configurePreset": "mac-metal", "output": {"outputOnFailure": true}, "execution": {"jobs": 4}},
+    {"name": "windows", "configurePreset": "windows", "output": {"outputOnFailure": true}, "execution": {"jobs": 4}},
+    {"name": "windows-vulkan", "configurePreset": "windows-vulkan", "output": {"outputOnFailure": true}, "execution": {"jobs": 4}}
+  ]
+}

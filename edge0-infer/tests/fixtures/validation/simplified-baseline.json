@@ -1,0 +1,56 @@
+{
+ "source": "an internal design record (criteria.json of the original study is not in the repository)",
+ "source_sha256": "d529614cdc71323347c32096b0b6b027e631975aeb2a8aff2eb5890e8f56c573",
+ "long_input_join": "Leading sentence, four copies of the record and the closing question are joined with one newline each.",
+ "protocol": {
+  "turns": "single",
+  "thinking": "off",
+  "temperature": 0,
+  "presence_penalty": 0,
+  "repetition_penalty": 1.0
+ },
+ "tasks": [
+  {
+   "id": "short",
+   "input": "你好",
+   "max_tokens": 3,
+   "check": "smoke",
+   "criterion": "非空、可读、与问候相关；三token仅smoke，不独立证明可用"
+  },
+  {
+   "id": "chinese",
+   "input": "请用两句话解释为什么天空是蓝色的。",
+   "max_tokens": 64,
+   "check": "semantic",
+   "criterion": "中文解释天空蓝色，包含阳光散射/蓝色更易散射的正确主旨，无无关乱码或重复循环"
+  },
+  {
+   "id": "english",
+   "input": "Write one short sentence about the seaside.",
+   "max_tokens": 64,
+   "check": "semantic",
+   "criterion": "连贯英文短句，主题为海边，无乱码或重复循环"
+  },
+  {
+   "id": "long",
+   "input": "请阅读以下记录，然后用三句话概括主要内容。\n今天我们在海边观察天气，上午阳光明亮，海水平静；下午有云飘来，风逐渐增强。观察者每隔一小时记录温度、风向和海浪的变化，并比较不同时间的数据。\n今天我们在海边观察天气，上午阳光明亮，海水平静；下午有云飘来，风逐渐增强。观察者每隔一小时记录温度、风向和海浪的变化，并比较不同时间的数据。\n今天我们在海边观察天气，上午阳光明亮，海水平静；下午有云飘来，风逐渐增强。观察者每隔一小时记录温度、风向和海浪的变化，并比较不同时间的数据。\n今天我们在海边观察天气，上午阳光明亮，海水平静；下午有云飘来，风逐渐增强。观察者每隔一小时记录温度、风向和海浪的变化，并比较不同时间的数据。\n请说明天气的变化、记录的方法，以及这些记录的用途。",
+   "max_tokens": 128,
+   "check": "semantic",
+   "criterion": "连贯中文总结天气变化、按小时记录温度风向海浪的方法和比较数据用途；不捏造与材料矛盾的主要事实"
+  },
+  {
+   "id": "eos",
+   "input": "请只回答一个字：好。",
+   "max_tokens": 64,
+   "check": "exact_single_character",
+   "criterion": "按要求仅回答好（允许外围空白或标点）"
+  },
+  {
+   "id": "arithmetic",
+   "input": "只回答计算结果：17 + 25 = ?",
+   "max_tokens": 64,
+   "check": "arithmetic",
+   "criterion": "正确回答42，无错误算术；允许简短说明"
+  }
+ ]
+}

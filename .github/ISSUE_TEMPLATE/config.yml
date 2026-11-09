@@ -5,7 +5,7 @@ contact_links:
     about: Usage questions, "how do I run it on X", show-and-tell, and general Q&A. Please ask here instead of opening an issue.
   - name: 📖 Documentation
     url: https://github.com/Edge0-AI/Edge0#readme
-    about: Setup, quickstart, benchmarks, and the per-platform READMEs (python/ · macos/ · ios/ · android/ · windows/).
+    about: Setup, quickstart, benchmarks, and the engine docs in edge0-infer/docs/.
   - name: 📧 Security / private contact
     url: mailto:samuel@edge0.ai
     about: Report security issues or anything you cannot share publicly.

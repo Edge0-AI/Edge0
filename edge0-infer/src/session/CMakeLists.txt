@@ -1,0 +1,5 @@
+add_library(moe_session STATIC)
+target_sources(moe_session PRIVATE runtime.cpp session.cpp)
+target_include_directories(moe_session PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(moe_session PUBLIC moe_exec PRIVATE ggml)
+moe_warnings(moe_session)

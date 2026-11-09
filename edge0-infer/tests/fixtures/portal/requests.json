@@ -1,0 +1,1452 @@
+[
+  {
+    "name": "chat temperature accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "temperature": 0.5
+    },
+    "accept": true
+  },
+  {
+    "name": "chat temperature wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "temperature": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat top_p accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "top_p": 0.8
+    },
+    "accept": true
+  },
+  {
+    "name": "chat top_p wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "top_p": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat stream accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "stream": true
+    },
+    "accept": true
+  },
+  {
+    "name": "chat stream wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "stream": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat parallel_tool_calls accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "parallel_tool_calls": false
+    },
+    "accept": true
+  },
+  {
+    "name": "chat parallel_tool_calls wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "parallel_tool_calls": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat tool_choice accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "tool_choice": "auto"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat tool_choice wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "tool_choice": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat user accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "user": "id"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat user wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "user": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat metadata accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "metadata": {
+        "tag": "x"
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "chat metadata wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "metadata": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat store accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "store": false
+    },
+    "accept": true
+  },
+  {
+    "name": "chat store wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "store": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat service_tier accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "service_tier": "default"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat service_tier wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "service_tier": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat prompt_cache_key accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "prompt_cache_key": "key"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat prompt_cache_key wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "prompt_cache_key": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat promptCacheKey accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "promptCacheKey": "key"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat promptCacheKey wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "promptCacheKey": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat promptCacheKey with prompt_cache_key accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "prompt_cache_key": "key",
+      "promptCacheKey": "key"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat safety_identifier accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "safety_identifier": "id"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat safety_identifier wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "safety_identifier": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat n accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "n": 1
+    },
+    "accept": true
+  },
+  {
+    "name": "chat n wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "n": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat seed accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "seed": 7
+    },
+    "accept": true
+  },
+  {
+    "name": "chat seed wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "seed": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat stop accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "stop": [
+        "x",
+        "y"
+      ]
+    },
+    "accept": true
+  },
+  {
+    "name": "chat stop wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "stop": 7
+    },
+    "accept": false
+  },
+  {
+    "name": "chat presence_penalty accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "presence_penalty": 1
+    },
+    "accept": true
+  },
+  {
+    "name": "chat presence_penalty wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "presence_penalty": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat frequency_penalty accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "frequency_penalty": 1
+    },
+    "accept": true
+  },
+  {
+    "name": "chat frequency_penalty wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "frequency_penalty": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat max_tokens accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "max_tokens": 12
+    },
+    "accept": true
+  },
+  {
+    "name": "chat max_tokens wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "max_tokens": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat max_completion_tokens accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "max_completion_tokens": 12
+    },
+    "accept": true
+  },
+  {
+    "name": "chat max_completion_tokens wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "max_completion_tokens": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat logit_bias accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "logit_bias": {
+        "42": -1
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "chat logit_bias wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "logit_bias": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat logprobs accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "logprobs": true
+    },
+    "accept": true
+  },
+  {
+    "name": "chat logprobs wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "logprobs": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat top_k accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "top_k": 20
+    },
+    "accept": true
+  },
+  {
+    "name": "chat top_k wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "top_k": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat repetition_penalty accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "repetition_penalty": 1.1
+    },
+    "accept": true
+  },
+  {
+    "name": "chat repetition_penalty wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "repetition_penalty": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat response_format accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "response_format": {
+        "type": "text"
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "chat response_format wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "response_format": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat reasoning_effort accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "reasoning_effort": "high"
+    },
+    "accept": true
+  },
+  {
+    "name": "chat reasoning_effort wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "reasoning_effort": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat chat_template_kwargs accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "chat chat_template_kwargs wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "chat_template_kwargs": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat stream_options accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "stream_options": {
+        "include_usage": true
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "chat stream_options wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "stream_options": []
+    },
+    "accept": false
+  },
+  {
+    "name": "chat tools accepted",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "f",
+            "description": "d",
+            "parameters": {},
+            "strict": false
+          }
+        }
+      ]
+    },
+    "accept": true
+  },
+  {
+    "name": "chat tools wrong type",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "tools": 7
+    },
+    "accept": false
+  },
+  {
+    "name": "chat logprob pair",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "top_logprobs": 2,
+      "logprobs": true
+    },
+    "accept": true
+  },
+  {
+    "name": "responses temperature accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "temperature": 0.5
+    },
+    "accept": true
+  },
+  {
+    "name": "responses temperature wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "temperature": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses top_p accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "top_p": 0.8
+    },
+    "accept": true
+  },
+  {
+    "name": "responses top_p wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "top_p": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses stream accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "stream": true
+    },
+    "accept": true
+  },
+  {
+    "name": "responses stream wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "stream": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses parallel_tool_calls accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "parallel_tool_calls": false
+    },
+    "accept": true
+  },
+  {
+    "name": "responses parallel_tool_calls wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "parallel_tool_calls": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses tool_choice accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "tool_choice": "auto"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses tool_choice wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "tool_choice": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses user accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "user": "id"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses user wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "user": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses metadata accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "metadata": {
+        "tag": "x"
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "responses metadata wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "metadata": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses store accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "store": false
+    },
+    "accept": true
+  },
+  {
+    "name": "responses store wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "store": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses service_tier accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "service_tier": "default"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses service_tier wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "service_tier": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses prompt_cache_key accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "prompt_cache_key": "key"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses prompt_cache_key wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "prompt_cache_key": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses promptCacheKey accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "promptCacheKey": "key"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses promptCacheKey wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "promptCacheKey": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses promptCacheKey with prompt_cache_key accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "prompt_cache_key": "key",
+      "promptCacheKey": "key"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses safety_identifier accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "safety_identifier": "id"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses safety_identifier wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "safety_identifier": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses instructions accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "instructions": "system"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses instructions wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "instructions": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses input accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "hello"
+            }
+          ]
+        }
+      ]
+    },
+    "accept": true
+  },
+  {
+    "name": "responses input wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": 7
+    },
+    "accept": false
+  },
+  {
+    "name": "responses max_output_tokens accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "max_output_tokens": 12
+    },
+    "accept": true
+  },
+  {
+    "name": "responses max_output_tokens wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "max_output_tokens": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses include accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "include": [
+        "message.output_text.logprobs"
+      ]
+    },
+    "accept": true
+  },
+  {
+    "name": "responses include wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "include": 7
+    },
+    "accept": false
+  },
+  {
+    "name": "responses text accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "text": {
+        "format": {
+          "type": "text"
+        }
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "responses text wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "text": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses reasoning accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "reasoning": {
+        "effort": "none",
+        "summary": "auto"
+      }
+    },
+    "accept": true
+  },
+  {
+    "name": "responses reasoning wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "reasoning": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses truncation accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "truncation": "disabled"
+    },
+    "accept": true
+  },
+  {
+    "name": "responses truncation wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "truncation": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses background accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "background": false
+    },
+    "accept": true
+  },
+  {
+    "name": "responses background wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "background": []
+    },
+    "accept": false
+  },
+  {
+    "name": "responses tools accepted",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "tools": [
+        {
+          "type": "function",
+          "name": "f",
+          "description": "d",
+          "parameters": {},
+          "strict": false
+        }
+      ]
+    },
+    "accept": true
+  },
+  {
+    "name": "responses tools wrong type",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "tools": 7
+    },
+    "accept": false
+  },
+  {
+    "name": "responses logprob pair",
+    "protocol": "responses",
+    "request": {
+      "model": "test",
+      "input": "hello",
+      "top_logprobs": 2,
+      "include": [
+        "message.output_text.logprobs"
+      ]
+    },
+    "accept": true
+  },
+  {
+    "name": "stream_options unsupported",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "stream_options": {
+        "extra": true
+      }
+    },
+    "accept": false
+  },
+  {
+    "name": "chat_template_kwargs unsupported",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "chat_template_kwargs": {
+        "extra": false
+      }
+    },
+    "accept": false
+  },
+  {
+    "name": "response_format unsupported",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "accept": false
+  },
+  {
+    "name": "reasoning_effort unsupported",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "reasoning_effort": "maximum"
+    },
+    "accept": false
+  },
+  {
+    "name": "tool_choice unsupported",
+    "protocol": "chat",
+    "request": {
+      "model": "test",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello"
+        }
+      ],
+      "tool_choice": {
+        "type": "function",
+        "name": "f"
+      }
+    },
+    "accept": false
+  }
+]

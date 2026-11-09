@@ -1,0 +1,15 @@
+add_library(moe_platform STATIC backend.cpp file.cpp memory.cpp system.cpp)
+target_include_directories(moe_platform PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(moe_platform PRIVATE ggml)
+if(WIN32)
+    # GetProcessMemoryInfo lives in psapi; kernel32 (CreateFileW/ReadFile) links by default.
+    target_link_libraries(moe_platform PRIVATE psapi)
+endif()
+moe_warnings(moe_platform)
+
+if(APPLE)
+    target_link_libraries(moe_platform PRIVATE "-framework Foundation")
+endif()
+if(ANDROID)
+    target_link_libraries(moe_platform PRIVATE dl)
+endif()

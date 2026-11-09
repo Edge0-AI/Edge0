@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Run the process with a UTF-8 active code page (Windows 10 1903+). The C
+     runtime then decodes argv and narrow Win32 APIs as UTF-8, so command-line
+     arguments and file paths that contain non-ASCII text match the UTF-8 the
+     engine expects. Console input/output code pages are set separately in
+     main.cpp. -->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <assemblyIdentity type="win32" name="Edge0.Infer" version="1.0.0.0"/>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>
+    </windowsSettings>
+  </application>
+</assembly>

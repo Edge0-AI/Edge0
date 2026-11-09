@@ -1,0 +1,76 @@
+{
+ "assets_sha256": {
+  "base.gguf": "b4aa20bff5420b359fb100cb28b77451fb6d9fef230d08d36e2aeb6fa76eba39",
+  "chat_template.jinja": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+  "generation_config.json": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+  "lora.gguf": "053b14f3705940733bcf5563577998320877a27f390df14c6bffac97c683d222",
+  "model.json": "87884a4aed02c6db1b8ca810fc2bc808733f5fc19997ba6ca6f15e4ac9ff254e",
+  "prerouter.gguf": "ed83ebda47ba4b0db8182377db4ceec7e6c46250198705dc88b3872aa8b102b5",
+  "tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"
+ },
+ "backend": "cpu",
+ "cases": [
+  "chat-intro",
+  "plain-mixed",
+  "long-mixed"
+ ],
+ "cases_sha256": "863af30a3836929a22caa806e89ba8e62ab141cb9fba60fa5dd84839b2135c53",
+ "chunking": "whole",
+ "engine_commit": "b80cff69a58eac24073a5eab50bb0050ff0c8bae",
+ "engine_tracked_clean": false,
+ "exporter_sha256": {
+  "answer_format.py": "4eda98d31c54e46c7c9742226158a8f26de4a7cc9dfe668ff399830320550d24",
+  "export.py": "2c67164a43bcc3a64a5193d4d2787b66a750b4b5c7d1d443e0643de06b930c82",
+  "judge.py": "38e6bd67f97e9ef63f7a593d8a2a4d0707ece2c70116b8834092788c3b847d1d"
+ },
+ "format_version": 1,
+ "generation": {
+  "presence_penalty": 0,
+  "temperature": 0
+ },
+ "lora": true,
+ "model_options": {
+  "routing": "actual"
+ },
+ "probe_seed": 20261021,
+ "probes": [
+  6429,
+  8246,
+  12933,
+  13721,
+  31864,
+  32005,
+  40484,
+  49929,
+  53410,
+  54015,
+  54614,
+  69532,
+  70813,
+  95457,
+  117519,
+  136526,
+  142077,
+  142083,
+  155161,
+  163064,
+  166312,
+  172265,
+  174429,
+  180386,
+  186642,
+  190231,
+  193710,
+  202524,
+  203763,
+  215081,
+  225544,
+  225814
+ ],
+ "route_experts": 16,
+ "route_layers": 8,
+ "route_top_k": 4,
+ "suite": "tiny-lora-cpu-flash",
+ "top": 32,
+ "vocabulary": 248320
+}

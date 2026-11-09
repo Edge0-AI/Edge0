@@ -1,0 +1,52 @@
+# Direct dependencies approved for the example Apps. Transitives live in lockfiles.
+[desktop.npm.dependencies]
+react = "19.3.1"
+react-dom = "19.3.1"
+"@tauri-apps/api" = "2.12.4"
+"@tauri-apps/plugin-http" = "2.8.3"
+streamdown = "2.7.1"
+
+[desktop.npm.devDependencies]
+"@tauri-apps/cli" = "2.12.4"
+vite = "8.3.5"
+"@vitejs/plugin-react" = "6.1.2"
+typescript = "7.0.2"
+vitest = "5.0.5"
+"@types/react" = "19.3.0"
+"@types/react-dom" = "19.3.0"
+
+[desktop.cargo.dependencies]
+tauri = "2.12.5"
+tauri-plugin-http = "2.8.3"
+serde = "1.0.229"
+serde_json = "1.0.154"
+
+[desktop.cargo.build-dependencies]
+tauri-build = "2.7.4"
+
+[desktop.cargo.target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2.191"
+
+[desktop.cargo.target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = "0.61.2"
+
+[android.gradle]
+wrapper = "9.8.2"
+
+[android.gradle.plugins]
+"com.android.application" = "9.5.0"
+"org.jetbrains.kotlin.android" = "2.4.21"
+"org.jetbrains.kotlin.jvm" = "2.4.21"
+"org.jetbrains.kotlin.plugin.compose" = "2.4.21"
+
+[android.gradle.libraries]
+"androidx.compose:compose-bom" = "2026.09.00"
+# These two coordinates deliberately inherit their versions from the approved BOM.
+"androidx.compose.ui:ui" = "bom"
+"androidx.compose.material3:material3" = "bom"
+"androidx.activity:activity-compose" = "1.13.0"
+"androidx.lifecycle:lifecycle-viewmodel-compose" = "2.11.0"
+"com.mikepenz:multiplatform-markdown-renderer-m3" = "0.46.0"
+"junit:junit" = "4.13.2"
+
+[ios]

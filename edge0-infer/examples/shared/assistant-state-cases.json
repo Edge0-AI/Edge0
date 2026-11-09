@@ -1,0 +1,106 @@
+[
+  {
+    "name": "waiting_for_first_token",
+    "input": {
+      "is_last": true,
+      "generating": true,
+      "has_content": false,
+      "shows_reasoning": false
+    },
+    "expected": {
+      "pending": true,
+      "actions": false
+    }
+  },
+  {
+    "name": "reasoning_streaming",
+    "input": {
+      "is_last": true,
+      "generating": true,
+      "has_content": false,
+      "shows_reasoning": true
+    },
+    "expected": {
+      "pending": false,
+      "actions": false
+    }
+  },
+  {
+    "name": "answer_streaming",
+    "input": {
+      "is_last": true,
+      "generating": true,
+      "has_content": true,
+      "shows_reasoning": false
+    },
+    "expected": {
+      "pending": false,
+      "actions": false
+    }
+  },
+  {
+    "name": "answer_streaming_after_reasoning",
+    "input": {
+      "is_last": true,
+      "generating": true,
+      "has_content": true,
+      "shows_reasoning": true
+    },
+    "expected": {
+      "pending": false,
+      "actions": false
+    }
+  },
+  {
+    "name": "finished",
+    "input": {
+      "is_last": true,
+      "generating": false,
+      "has_content": true,
+      "shows_reasoning": false
+    },
+    "expected": {
+      "pending": false,
+      "actions": true
+    }
+  },
+  {
+    "name": "stopped_before_first_token",
+    "input": {
+      "is_last": true,
+      "generating": false,
+      "has_content": false,
+      "shows_reasoning": false
+    },
+    "expected": {
+      "pending": false,
+      "actions": true
+    }
+  },
+  {
+    "name": "earlier_answer_while_generating",
+    "input": {
+      "is_last": false,
+      "generating": true,
+      "has_content": true,
+      "shows_reasoning": false
+    },
+    "expected": {
+      "pending": false,
+      "actions": true
+    }
+  },
+  {
+    "name": "earlier_empty_answer_while_generating",
+    "input": {
+      "is_last": false,
+      "generating": true,
+      "has_content": false,
+      "shows_reasoning": false
+    },
+    "expected": {
+      "pending": false,
+      "actions": true
+    }
+  }
+]

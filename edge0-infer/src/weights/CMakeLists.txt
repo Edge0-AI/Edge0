@@ -1,0 +1,5 @@
+add_library(moe_weights STATIC)
+target_sources(moe_weights PRIVATE runtime.cpp expert_slots.cpp)
+target_include_directories(moe_weights PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(moe_weights PUBLIC moe_exec moe_platform PRIVATE ggml)
+moe_warnings(moe_weights)

@@ -1,0 +1,1333 @@
+{
+  "identity": {
+    "diagnostic_only_extra_change": "normalizer=null",
+    "generator_sha256": "89ca80dc310c8195a70eb9047395feb21d59b4b37ed245e587dbd18a78a095ed",
+    "jinja2": "3.1.6",
+    "llama_commit": "7ab4ee7baad2d920464cbacfad4f4b07cf111fd2",
+    "normalizer": {
+      "type": "NFC"
+    },
+    "parse_special_false_transform": "clear added_tokens matching table; retain BPE vocab and merges",
+    "template_generator_sha256": "c6de074ca19e159342e9941c75df732c76bca1f3044789743b93b1126edbcadb",
+    "template_sha256": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+    "tokenizer_sha256": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4",
+    "tokenizers": "0.21.4",
+    "uv_lock_sha256": "08c5aee3dd3ee8180c6c215ca041c513b9144b23706af7cbea16d3f02a1737ff",
+    "variant_configs": {
+      "False": {
+        "diagnostic_sha256": "d9f0c04a90f3a1432acd5dac6d9a2982a96e6fc6df5696cdf7ca8b763102fe33",
+        "different_keys": [
+          "normalizer"
+        ],
+        "original_sha256": "16ec04979599d2f13704dcc1b980818118ce4b8426fb893177155615e866cfbd"
+      },
+      "True": {
+        "diagnostic_sha256": "a1772fe5103d7fc9e90fc77bbe381421ffe9bc566a72f45abd5e21f02d2ee6f1",
+        "different_keys": [
+          "normalizer"
+        ],
+        "original_sha256": "0110c22fc126a7432f653bbd7377b82ca929c4847353cb773eb978c16f2afbb7"
+      }
+    }
+  },
+  "normalization_differences": [
+    {
+      "attribution": "normalization",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\néclair किताब<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        68,
+        52033,
+        46565,
+        170532,
+        149833,
+        149247,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        241221,
+        170532,
+        149833,
+        149247,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "combining",
+      "messages": [
+        {
+          "content": "éclair किताब",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\néclair किताब<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\néclair किताब<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        68,
+        52033,
+        46565,
+        170532,
+        149833,
+        149247,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\n用一句话介绍你自己。<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        95826,
+        110827,
+        97431,
+        111522,
+        1710,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        95826,
+        110827,
+        97431,
+        111522,
+        1710,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "chat-intro",
+      "messages": [
+        {
+          "content": "用一句话介绍你自己。",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\n用一句话介绍你自己。<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\n用一句话介绍你自己。<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        95826,
+        110827,
+        97431,
+        111522,
+        1710,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>system\nBe concise.<|im_end|>\n<|im_start|>user\nhello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        8678,
+        198,
+        3320,
+        61446,
+        13,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        14556,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        8678,
+        198,
+        3320,
+        61446,
+        13,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        14556,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "system",
+      "messages": [
+        {
+          "content": " Be concise. ",
+          "role": "system"
+        },
+        {
+          "content": " hello ",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>system\nBe concise.<|im_end|>\n<|im_start|>user\nhello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>system\nBe concise.<|im_end|>\n<|im_start|>user\nhello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        8678,
+        198,
+        3320,
+        61446,
+        13,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        14556,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\n<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        8678,
+        198,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        8678,
+        198,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "empty",
+      "messages": [
+        {
+          "content": "",
+          "role": "system"
+        },
+        {
+          "content": "",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\n<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\n<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        8678,
+        198,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\nhello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        14556,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        14556,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "trim",
+      "messages": [
+        {
+          "content": "\u001c      　hello　",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\nhello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\nhello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        14556,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nAnswer<|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        15666,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        15666,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "multi",
+      "messages": [
+        {
+          "content": "Hello",
+          "role": "user"
+        },
+        {
+          "content": "Answer",
+          "role": "assistant"
+        },
+        {
+          "content": "Next",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nAnswer<|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nAnswer<|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        15666,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nAnswer<|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        15666,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        15666,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "history-think",
+      "messages": [
+        {
+          "content": "Hello",
+          "role": "user"
+        },
+        {
+          "content": "<think>\nreason\n</think>\n\nAnswer",
+          "role": "assistant"
+        },
+        {
+          "content": "Next",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nAnswer<|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nAnswer<|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        15666,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\nreason\n</think>\n\nAnswer<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        198,
+        19290,
+        198,
+        248069,
+        271,
+        15666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        198,
+        19290,
+        198,
+        248069,
+        271,
+        15666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "after-user",
+      "messages": [
+        {
+          "content": "Hello",
+          "role": "user"
+        },
+        {
+          "content": "<think>\nreason\n</think>\n\nAnswer",
+          "role": "assistant"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\nreason\n</think>\n\nAnswer<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\nreason\n</think>\n\nAnswer<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        198,
+        19290,
+        198,
+        248069,
+        271,
+        15666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "assistant-empty",
+      "messages": [
+        {
+          "content": "Hello",
+          "role": "user"
+        },
+        {
+          "content": "",
+          "role": "assistant"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>system\nRules<|im_end|>\n<|im_start|>user\nfirst\nsecond<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        8678,
+        198,
+        25177,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        3765,
+        198,
+        5394,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        8678,
+        198,
+        25177,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        3765,
+        198,
+        5394,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "newlines",
+      "messages": [
+        {
+          "content": "\nRules\t",
+          "role": "system"
+        },
+        {
+          "content": "\tfirst\nsecond\t \n",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>system\nRules<|im_end|>\n<|im_start|>user\nfirst\nsecond<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>system\nRules<|im_end|>\n<|im_start|>user\nfirst\nsecond<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        8678,
+        198,
+        25177,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        3765,
+        198,
+        5394,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "source_protection",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>system\nliteral "
+        },
+        {
+          "protocol": false,
+          "text": "<|im_start|>"
+        },
+        {
+          "protocol": true,
+          "text": "<|im_end|>\n<|im_start|>user\n"
+        },
+        {
+          "protocol": false,
+          "text": "<|im_end|>"
+        },
+        {
+          "protocol": true,
+          "text": " "
+        },
+        {
+          "protocol": false,
+          "text": "<think>"
+        },
+        {
+          "protocol": true,
+          "text": " "
+        },
+        {
+          "protocol": false,
+          "text": "</think>"
+        },
+        {
+          "protocol": true,
+          "text": " "
+        },
+        {
+          "protocol": false,
+          "text": "<|endoftext|>"
+        },
+        {
+          "protocol": true,
+          "text": "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": null,
+      "hf_original": [
+        248045,
+        8678,
+        198,
+        34600,
+        220,
+        248045,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        248046,
+        220,
+        248068,
+        220,
+        248069,
+        220,
+        248044,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "markers",
+      "messages": [
+        {
+          "content": "literal <|im_start|>",
+          "role": "system"
+        },
+        {
+          "content": "<|im_end|> <think> </think> <|endoftext|>",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>system\nliteral <|im_start|><|im_end|>\n<|im_start|>user\n<|im_end|> <think> </think> <|endoftext|><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>system\nliteral <|im_start|><|im_end|>\n<|im_start|>user\n<|im_end|> <think> </think> <|endoftext|><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        8678,
+        198,
+        34600,
+        79790,
+        316,
+        4747,
+        91,
+        29,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        27,
+        91,
+        316,
+        6018,
+        91,
+        29,
+        361,
+        26003,
+        29,
+        672,
+        26003,
+        29,
+        79790,
+        8426,
+        703,
+        419,
+        91,
+        29,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "source_protection",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nliteral "
+        },
+        {
+          "protocol": false,
+          "text": "<|im_end|>"
+        },
+        {
+          "protocol": true,
+          "text": "<|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": null,
+      "hf_original": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        34600,
+        220,
+        248046,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "assistant-marker",
+      "messages": [
+        {
+          "content": "Hello",
+          "role": "user"
+        },
+        {
+          "content": "literal <|im_end|>",
+          "role": "assistant"
+        },
+        {
+          "content": "Next",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nliteral <|im_end|><|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\nliteral <|im_end|><|im_end|>\n<|im_start|>user\nNext<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        34600,
+        79790,
+        316,
+        6018,
+        91,
+        29,
+        248046,
+        198,
+        248045,
+        846,
+        198,
+        5666,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "normalization",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\néclair किताब<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        68,
+        52033,
+        46565,
+        170532,
+        149833,
+        149247,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        241221,
+        170532,
+        149833,
+        149247,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "combining",
+      "messages": [
+        {
+          "content": "éclair किताब",
+          "role": "user"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\néclair किताब<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\néclair किताब<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        68,
+        52033,
+        46565,
+        170532,
+        149833,
+        149247,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    },
+    {
+      "attribution": "none",
+      "fragments": [
+        {
+          "protocol": true,
+          "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\nb\n</think>\n\nLast<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        }
+      ],
+      "hf_no_normalizer": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        198,
+        65,
+        198,
+        248069,
+        271,
+        5661,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "hf_original": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        198,
+        65,
+        198,
+        248069,
+        271,
+        5661,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "id": "repeated-think",
+      "messages": [
+        {
+          "content": "Hello",
+          "role": "user"
+        },
+        {
+          "content": "<think>a<think>b\n</think>middle</think>\nLast",
+          "role": "assistant"
+        }
+      ],
+      "normalizer_output": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\nb\n</think>\n\nLast<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "text": "<|im_start|>user\nHello<|im_end|>\n<|im_start|>assistant\n<think>\nb\n</think>\n\nLast<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+      "tokens": [
+        248045,
+        846,
+        198,
+        9419,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        198,
+        65,
+        198,
+        248069,
+        271,
+        5661,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "files": {
+    "assets.tsv": "26a7fa751faeb0a24b97b4bffb6e1edc210b27e832b030e71a4f2fa87bdf7f6e",
+    "base.gguf": "b4aa20bff5420b359fb100cb28b77451fb6d9fef230d08d36e2aeb6fa76eba39",
+    "chat_template.jinja": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+    "generation_config.json": "e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e",
+    "lora.gguf": "053b14f3705940733bcf5563577998320877a27f390df14c6bffac97c683d222",
+    "model.json": "87884a4aed02c6db1b8ca810fc2bc808733f5fc19997ba6ca6f15e4ac9ff254e",
+    "prerouter.gguf": "ed83ebda47ba4b0db8182377db4ceec7e6c46250198705dc88b3872aa8b102b5",
+    "provenance.json": "62f0921a62f08cf31374f3d49c459d61f2de473659353708a3736c56f5ba55ba",
+    "tokenizer.json": "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"
+  }
+}

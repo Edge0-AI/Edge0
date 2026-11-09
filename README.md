@@ -6,7 +6,7 @@
 
 **An open-source streaming MoE inference framework — SSD expert offload + Recover-LoRA + prerouter routing prediction.**
 
-**Python** · **macOS** · **iOS** · **Android** — one recipe, every device.
+**macOS** · **iOS** · **Android** · **Windows** — one engine, one native API.
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
@@ -23,7 +23,8 @@ English | [中文](README_zh.md) | [日本語](README_ja.md) | [Español](README
 
 ## News
 
-- **[2026-09-30]** We released the **edge0 inference engines for four platforms — iOS, macOS, Android and Windows** — so users get the best inference experience across architectures and platforms. The source is open-sourced in this repo ([`ios/`](ios/) · [`macos/`](macos/) · [`android/`](android/) · [`windows/`](windows/)) — see each directory's README for details. The **unified inference framework** follows in **Q4 2026**; see the [Roadmap](#roadmap).
+- **[2026-11-04]** We released the **unified inference engine [`edge0-infer`](edge0-infer/README.md)**: built on [GGML](https://github.com/ggml-org/ggml), one engine and one native C++ API run the same model on macOS, iOS, Android and Windows, with a CLI, an OpenAI-compatible local server, and chat app examples for desktop, Android and iOS. The first release supports `edge0-35b`; `edge0-8b` follows in a later release. It replaces the Python framework and the per-platform engines; the previous code is kept at tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer).
+- **[2026-09-30]** We released the **edge0 inference engines for four platforms — iOS, macOS, Android and Windows** (source at tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer)).
 - **[2026-09-16]** Our technical report is on arXiv: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063).
 - **[2026-09-08]** Initial open-source release of **edge0**, together with both model tiers — [`Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) and [`Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) — on Hugging Face and ModelScope.
 
@@ -46,20 +47,21 @@ memory is bounded by the *active* expert set, not the parameter count.
   latency, model size, and routed width *K*.
 - **Recover-LoRA**: the int4 base is frozen and LoRA adapters are
   trained by distillation from the FP teacher, recovering most of the
-  quantization loss at 4-bit (see [Quality](#quality)). Adapters stay
-  unmerged: one read-only base serves multiple adapter sets.
+  quantization loss at 4-bit (see [Quality](#quality)). Adapters are
+  stored separately from the base and can be switched on or off.
 
 ### Platforms
 
-One repo, one recipe, per-platform runtimes:
+One engine and one native API, with the same code on every platform — see [`edge0-infer/`](edge0-infer/README.md):
 
-| Platform | Directory | Stack | Status |
-|---|---|---|---|
-| **Python** (macOS · Apple Silicon) | [`python/`](python/README.md) | Python + MLX | ✅ Available now |
-| **macOS** app & CLI | [`macos/`](macos/README.md) | Rust | ✅ Open-sourced (2026-09-30) |
-| **iOS** app | [`ios/`](ios/README.md) | Swift + MLX Swift | ✅ Open-sourced (2026-09-30) |
-| **Android** app & engine | [`android/`](android/README.md) | Kotlin + native engine | ✅ Open-sourced (2026-09-30) |
-| **Windows** app & engine | [`windows/`](windows/README.md) | C++ + Vulkan | ✅ Open-sourced (2026-09-30) |
+| Platform | Backends | Verified on |
+|---|---|---|
+| **macOS** (Apple Silicon) | Metal, CPU | Apple M5, 16 GiB |
+| **iOS** | Metal | iPhone 17 Pro Max |
+| **Android** | CPU | OnePlus PKR110 (Snapdragon 8 Elite) |
+| **Windows** (x86-64) | CPU, Vulkan | Intel Core i5-12400, NVIDIA GeForce RTX 4070 SUPER |
+
+Prefill and decode can run on different backends of the same device, for example Metal prefill with CPU decode. Chat app examples for desktop (macOS, Windows), Android and iOS are in [`edge0-infer/examples/`](edge0-infer/examples/README.md#chat-applications).
 
 ### Models
 
@@ -67,37 +69,37 @@ Two model tiers ship with the framework. Each tier is an end-to-end
 release: the released checkpoint, the trained LoRA adapters, and the
 trained prerouter heads work together as one unit.
 
-| Tier | Released checkpoint | Inference profile |
-|---|---|---|
-| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 |
-| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 |
+| Tier | Released checkpoint | Inference profile | edge0-infer |
+|---|---|---|---|
+| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 | ✅ Supported |
+| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 | Planned |
 
 Both checkpoints are built on open sparse-MoE base models (Qwen3.6-35B-A3B
 and the Ling 3.0 bailing hybrid respectively) and ship with the
-LoRA and prerouter training done for this framework — the adapter files
-are co-located with each checkpoint and load automatically, so
-`edge0 serve <tier>` runs the trained pipeline out of the box.
+LoRA and prerouter training done for this framework. edge0-infer downloads
+the released checkpoint with its asset tools and converts it into the
+engine's model assets (see [Getting Started](#getting-started)).
 
 ### Design
 
-- **transformers-style usage**: `AutoModel` / `AutoConfig` / `AutoEngine`
-  resolve the tier from the model name;
-- **Backend isolation (Python framework)**: within the Python framework,
-  all MLX code lives under `python/src/edge0/backends/mlx/`; the core
-  logic (model specs, prerouter, streaming expert pool, server) depends
-  only on the backend facade (`backends/base.py`), so a new backend
-  implements the same facade (`backends/cuda/` is a reserved slot) with
-  zero changes to core code. The iOS / macOS / Android engines ship
-  platform-native stacks today — bringing every platform under one
-  access layer is exactly what the unified inference framework
-  (see [Roadmap](#roadmap)) will deliver;
-- **Adapters as safetensors**: LoRA and prerouter weights are
-  `.safetensors` files with provenance metadata (source, version, owner
-  layers), resolved from the model directory or `artifacts/`;
-- **Model + adapters in one directory**: a model directory holds both
-  the base checkpoint (`config.json` / `model*.safetensors` / tokenizer)
-  and that model's adapters; upgrading adapters swaps adapter
-  files only — the base stays read-only and is never merged.
+- **GGML-based, the same code on every platform**: the native library
+  depends only on GGML, vendored unmodified at a fixed version; the build
+  downloads nothing;
+- **One native API**: applications link the CMake target `edge0::edge0`
+  and include the headers in `include/edge0/` to use the engine in
+  process; the reference CLI and the OpenAI-compatible server use the same
+  settings and defaults as the native API;
+- **Experts on demand**: routed experts are read from storage on demand
+  into a fixed number of expert slots per layer, so a model larger than the
+  device memory budget runs without being loaded whole;
+- **Two routing modes**: `predicted` (default) uses the prerouter to
+  prepare the next token's experts in the background while the current
+  token computes; `actual` is the model's original computation, for
+  comparison;
+- **Multi-turn reuse**: in a multi-turn conversation usually only each
+  turn's new message is computed; earlier results are reused.
+
+See the [edge0-infer architecture](edge0-infer/docs/architecture.md).
 
 ### Quality
 
@@ -118,190 +120,83 @@ edge0-35b, 2.8 for edge0-8b** (MMLU-Pro is even above the base). Max 100:
 
 ### Benchmark
 
-Measured with `python/examples/bench.py` (3.3k-token prompt prefill → 10
-sampled warmup steps → 200 timed sampled decode tokens, 2 runs per tier):
+`edge0-35b` with `predicted` routing, measured with edge0-infer (each range is the minimum to maximum of three processes):
 
-| Tier | Decode speed | Prefill throughput (cold / warm)* | Peak MLX allocator memory | Test machine |
-|---|---|---|---|---|
-| `edge0-35b` | 14.9–17.7 tok/s | 113 / 140 tok/s | 2.9 GiB | Mac mini M4 Pro, 24 GB |
-| `edge0-8b` | 23.9–25.3 tok/s | 500 / 1428 tok/s | 1.0 GiB | Mac mini M4 Pro, 24 GB |
+| Platform | Device | Prompt | First token | Decode speed | Memory peak |
+|---|---|---|---|---|---|
+| macOS Metal | Apple M5, 16 GiB | 3,084 tokens | 5.60–5.87 s | 24.8–24.9 tok/s | 3.43 GiB (`phys_footprint`) |
+| macOS CPU | Apple M5, 16 GiB | 627 tokens | 11.5–11.7 s | 21.7–22.3 tok/s | 2.96 GiB (`phys_footprint`) |
+| iOS Metal | iPhone 17 Pro Max, 12 GB | 627 tokens | 8.20–8.26 s | 13.2 tok/s | 3.05 GiB (`phys_footprint`) |
+| Android CPU | OnePlus PKR110, 16 GB | 627 tokens | 18.4–18.8 s | 11.4–11.8 tok/s | 2.82 GiB (RSS) |
+| Windows CPU | Intel Core i5-12400, 32 GB | 627 tokens | 16.9–17.3 s | 7.3–8.2 tok/s | 2.86 GiB (working set) |
+| Windows Vulkan (both phases, 32 expert slots) | RTX 4070 SUPER, 12 GB | 627 tokens | 3.75–3.76 s | 23.6–24.0 tok/s | GPU memory increase 5.35 GiB |
 
-*Cold = first request after process start (expert weights fault in from
-SSD); warm = subsequent requests (page cache resident). Prefill numbers
-are throughput over a ~3.3k-token prompt (`BENCH_LONG=1`). Peak MLX
-allocator memory is `mlx.core.get_peak_memory()` after decode — not
-process RSS.*
-
-Reproduce:
-
-```bash
-cd python
-python examples/bench.py edge0-35b    # via $EDGE0_35B_MODEL
-python examples/bench.py edge0-8b     # via $EDGE0_8B_MODEL
-```
+Memory metrics differ by platform and cannot be compared directly. The measurement method, the `actual` routing figures and the commands to reproduce them are in [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures).
 
 ## Getting Started
 
-### Python (macOS · Apple Silicon)
+Run the following commands in `edge0-infer/`. You need CMake 3.21+,
+Ninja, a C++17/C11 compiler, uv and Git; the 35B needs about 18 GB for the
+original weights and about 20 GB for the converted assets, plus as much free
+space again while converting.
 
-#### Requirements
-
-- **OS / hardware**: the MLX backend runs on macOS with Apple Silicon
-  (M1/M2/M3/M4). The CUDA backend is on the roadmap — no other
-  platforms are supported by the Python framework yet.
-- **Python**: 3.10+ (3.12 recommended).
-- **MLX**: `mlx==0.30.6` / `mlx-metal==0.30.6` with `mlx-lm==0.31.0` (see
-  `python/pyproject.toml`). Garbled, mixed-language output on Apple A18 /
-  A18 Pro means an older `mlx`: `pip install 'mlx==0.30.6'
-  'mlx-metal==0.30.6'` ([#8](https://github.com/Edge0-AI/Edge0/issues/8)).
-- **Memory**: ~2.9 GB **MLX allocator** peak for `edge0-35b`, ~1.0 GB for
-  `edge0-8b` (short contexts; see [Benchmark](#benchmark)). That figure is
-  `mlx.core.get_peak_memory()`, not process RSS — file-backed expert pages,
-  the MLX buffer cache, tokenizer, and interpreter are extra, but that
-  extra RSS is reclaimable and does not set the machine requirement (the
-  same build runs on a 16 GB M2). Add headroom for the OS, tokenizer, and
-  long-context KV growth.
-- **Disk**: the 4-bit checkpoints are ~23 GB (`edge0-35b`) and ~4.2 GB
-  (`edge0-8b`); expert weights are mmapped and read on demand, they are
-  not loaded into RAM up front.
-
-#### 1) Install
+### 1) Build
 
 ```bash
-cd python
-# Python >= 3.10; the MLX backend requires macOS with Apple Silicon
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
+cd edge0-infer
+cmake --preset mac-metal && cmake --build --preset mac-metal
+build/mac-metal/bin/edge0-infer info        # expect a line: model.0: edge0_35b
 ```
 
-#### 2) Download a model
+On machines without Metal use `--preset cpu`, `build/cpu/bin/edge0-infer`,
+and `--device cpu` in the commands below.
 
-The two tiers are published on Hugging Face and ModelScope — each repo
-bundles the base checkpoint and the trained LoRA + prerouter adapters in
-**one directory**, so a single download is a ready-to-run model:
-
-- [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) (~23 GB) · [ModelScope mirror](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview)
-- [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) (~4.2 GB) · [ModelScope mirror](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview)
+### 2) Download and convert the model assets
 
 ```bash
-# with the repo's helper (defaults to the two repos above):
-.venv/bin/python scripts/fetch_models.py --tier edge0-35b --target-dir models
-.venv/bin/python scripts/fetch_models.py --tier edge0-8b --target-dir models
+export MOE_SOURCE_35B=<directory for the original weights>
+export MOE_ASSETS_35B=<directory for the converted assets>
 
-# or directly with the CLI:
-.venv/bin/huggingface-cli download Edge0/Edge0-35B-A3B-preview     --local-dir models/edge0-35b
-.venv/bin/huggingface-cli download Edge0/Edge0-8B-A1B-preview     --local-dir models/edge0-8b
+uv sync --project tools/assets
+assets_py() { uv run --project tools/assets --offline --no-sync python -I "$@"; }
+
+assets_py tools/assets/edge0_35b/fetch_source.py download --out "$MOE_SOURCE_35B"
+assets_py tools/assets/edge0_35b/make_assets.py --source "$MOE_SOURCE_35B" --out "$MOE_ASSETS_35B"
+assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
 ```
 
-Either way you end up with a directory like:
+This downloads `Edge0/Edge0-35B-A3B-preview` from Hugging Face and checks
+it against the locked revision and digests.
 
-```
-models/edge0-35b/
-├── config.json, model-*.safetensors, tokenizer files   # base checkpoint
-├── lora_edge0_35b.safetensors          # trained LoRA adapters
-└── prerouter_edge0_35b.safetensors     # trained prerouter heads
-```
-
-#### 3) Point edge0 at it
-
-Tier names resolve to local directories via environment variables
-(where you put the download is up to you):
+### 3) Run
 
 ```bash
-export EDGE0_35B_MODEL=$PWD/models/edge0-35b
-export EDGE0_8B_MODEL=$PWD/models/edge0-8b
+# one prompt
+build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "Introduce yourself in one sentence."
+# multi-turn chat
+build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
+# serve (OpenAI-compatible, default http://127.0.0.1:8000/v1)
+build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 
-Or skip the env vars entirely and pass the directory directly — the
-tier is auto-detected from the checkpoint's `config.json`:
+For the Android, Windows and iOS builds, and for using the engine from
+your own CMake project, see [Getting started](edge0-infer/docs/getting-started.md).
 
-```bash
-edge0 demo models/edge0-35b
-edge0 serve models/edge0-8b
-```
+## Documentation
 
-#### 4) Run
+**Models**
 
-```bash
-# quick demo
-edge0 demo edge0-35b
-
-# serve (OpenAI-compatible /v1/chat/completions)
-edge0 serve edge0-35b
-```
-
-```bash
-curl http://127.0.0.1:8000/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"edge0-35b","messages":[{"role":"user","content":"Hello!"}],"max_tokens":32}'
-
-# 5) One-shot chat (pass --max-new to cap length; add --show-thinking to
-#    print the model's reasoning block too)
-edge0 chat edge0-35b --prompt "Explain streaming inference in one sentence."
-```
-
-`python -m edge0 ...` is equivalent to `edge0 ...`.
-
-#### Python API
-
-```python
-from edge0 import AutoEngine
-from edge0.server.chat import ChatMessage, ChatRequest, ChatSession
-
-engine = AutoEngine.from_pretrained("/path/to/model")  # tier auto-detected
-req = ChatRequest(
-    model=engine.name,
-    messages=[ChatMessage(role="user", content="Hello!")],
-    max_tokens=64,
-)
-tokens, meta = ChatSession(engine, req).run()
-print(engine._tok.decode(tokens))
-engine.close()   # release mmaps / expert cache
-```
-
-`python/examples/demo.py` is the same minimal walkthrough (`edge0 demo`
-runs this exact path).
-
-#### Models and adapters
-
-- **Checkpoint**: the original model directory (`config.json`,
-  `model*.safetensors`, tokenizer). `edge0 serve <dir>` /
-  `AutoEngine.from_pretrained(<dir>)` detect the tier from
-  `config.json`.
-- **Adapters** (LoRA + prerouter, safetensors) are resolved from either
-  location automatically:
-  - the model directory (recommended): side by side with the base, e.g.
-    `lora_edge0_35b.safetensors` + `prerouter_edge0_35b.safetensors`;
-  - `artifacts/` at the Python project root (gitignored): an optional
-    fallback cache for adapter safetensors not co-located with the model.
-- The published model repos bundle both the base checkpoint and the
-  current default adapter release, so `scripts/fetch_models.py` produces
-  a ready-to-run model directory. Check each model's doc page for its
-  adapter provenance (training data, owner-layer layout).
-- Both adapters are required for the prerouter + LoRA pipeline; if a
-  file is missing, `edge0` fails with a clear message (or pass
-  `--no-prerouter` / `--no-lora` to run the plain base model).
-
-#### Documentation
-
-- [Architecture](docs/architecture.md)
-- [Attention](docs/attention.md) / [MoE](docs/moe.md) / [SSD streaming](docs/streaming.md) / [prerouter](docs/prerouter.md)
-- [Adding a model](docs/adding-a-model.md)
+- [MoE routing and experts](docs/moe.md) / [prerouter](docs/prerouter.md)
 - [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
 - Technical report: [The Other Half of the Memory Wall](https://arxiv.org/abs/2609.18063) ([PDF](paper/main.pdf))
 
-### macOS / iOS / Android / Windows
+**Engine (edge0-infer)**
 
-The four platform engines are open-sourced in this repo — more details
-in each directory's README:
-
-- **macOS**: local CLI / daemon / desktop app (Rust) — see [`macos/README.md`](macos/README.md)
-- **iOS**: on-device iPhone app (Swift + MLX Swift) — see [`ios/README.md`](ios/README.md)
-- **Android**: on-device app + native engine (Kotlin) — see [`android/README.md`](android/README.md)
-- **Windows**: desktop app + native engine (C++ + Vulkan) — see [`windows/README.md`](windows/README.md)
-
-The **unified inference framework** — one access layer, runtime
-auto-adapting to iOS / macOS / Android / Windows / Python — arrives in
-**Q4 2026**; see the [Roadmap](#roadmap).
+- [Getting started](edge0-infer/docs/getting-started.md): build, model assets, run, chat and serve on every platform
+- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [OpenAI-compatible server](edge0-infer/docs/openai-compatible-server.md)
+- [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
+- [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
+- [Model asset tools and adding a model](edge0-infer/tools/assets/README.md)
 
 ## Roadmap
 
@@ -309,15 +204,10 @@ auto-adapting to iOS / macOS / Android / Windows / Python — arrives in
 
 **Platforms & systems**
 
-- **edge0 unified inference framework** — we will
-  open-source a unified inference framework: **one unified access
-  layer** (a single API across chat / serve / on-device use), with the
-  **runtime automatically adapting to the hardware platform** — iOS,
-  macOS, Android, Windows and Python. It builds on the platform
-  engines already open-sourced in this repo (`ios/` · `macos/` ·
-  `android/` · `windows/`).
-- **CUDA backend** for the Python framework — reserved slot at
-  `python/src/edge0/backends/cuda/`, core code needs zero changes.
+- ✅ **edge0 unified inference engine open-sourced** (2026-11-04) —
+  [`edge0-infer`](edge0-infer/README.md): one engine and one native API
+  across macOS, iOS, Android and Windows.
+- **`edge0-8b` support in edge0-infer**.
 
 **Models & algorithms**
 
@@ -347,31 +237,22 @@ than just an arithmetic one.
 Contributions are welcome — issues, PRs, benchmark reports and model
 ports all count.
 
-**Python framework** (available now):
+Building and testing are described in [Testing](edge0-infer/docs/testing.md);
+the checks that need no model assets:
 
 ```bash
-cd python
-python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev,fetch]'
-
-pytest                 # unit tests (no real weights)
-EDGE0_8B_MODEL=/path/to/edge0-8b pytest -m slow -q
-                       # real-weight generation; missing tiers are skipped
-.venv/bin/python scripts/e2e_smoke.py \
-  --qwen-dir /path/to/edge0-35b --ling-dir /path/to/edge0-8b
-                       # staged vs exact consistency + generation smoke
-scripts/generate_example.py   # full-pipeline API example
-examples/demo.py              # minimal API walkthrough
+cd edge0-infer
+cmake --preset cpu && cmake --build --preset cpu
+ctest --preset cpu -L "L0|L1"
 ```
 
-CI runs unit tests (macOS + MLX) and a repo-hygiene suite (no hardcoded
-paths, backend-boundary and secret checks) on every PR.
-
-**Platform runtimes** (macOS / iOS / Android / Windows): each platform
-directory ships its own build guide and tests — see the directory
-READMEs.
+For changes under `edge0-infer/`, open issues and PRs in this repository
+as usual; the directory is developed in a separate repository, and an
+accepted change is applied there first by the maintainers and arrives here
+with the next sync. See [CONTRIBUTING](CONTRIBUTING.md).
 
 Workflow: fork → feature branch → PR against `main`. Please keep the
-hygiene suite green and add tests for new behavior.
+tests passing and add tests for new behavior.
 
 ## Citation
 
@@ -399,4 +280,4 @@ For bugs and feature requests, please use
 
 ## License
 
-Apache-2.0, including vendored third-party code (see [NOTICE](NOTICE)).
+Apache-2.0; bundled third-party components keep their own licenses (see [NOTICE](NOTICE)).

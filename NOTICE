@@ -3,33 +3,31 @@ edge0
 
 This project bundles or adapts the following third-party works:
 
-mlx-lm (MIT License)
-  - `python/src/edge0/backends/mlx/_impl/qwen3_next.py` is vendored from mlx-lm
-    0.31.0 (https://github.com/ml-explore/mlx-lm), with additive hooks for
-    prerouter routing and layer callbacks.  Non-prerouter paths are kept
-    byte-identical to the upstream file.
-  - mlx-lm is used at runtime for checkpoint / tokenizer loading.
-  Copyright (c) 2023-2024 Apple Inc. and the mlx-lm contributors.
+GGML (MIT License)
+  - `edge0-infer/third_party/ggml/` is an unmodified copy of the `ggml/` tree
+    of llama.cpp (https://github.com/ggml-org/llama.cpp) at commit 7ab4ee7
+    (GGML 0.24.0). The license is kept verbatim in
+    `edge0-infer/third_party/GGML_LICENSE`; `edge0-infer/third_party/GGML_ORIGIN`
+    records the commit and hashes.
+  Copyright (c) 2023-2026 The ggml authors.
 
-bailing_hybrid (Apache License 2.0)
-  - `python/src/edge0/backends/mlx/_impl/bailing_hybrid.py` is vendored from the
-    Ling 3.0 MLX implementation (rapid-mlx / Ling-3.0-tiny, Apache-2.0), with
-    prerouter hook identifiers renamed for consistency with the framework.
-  Copyright (c) the bailing / Ling MLX contributors.
+llama.cpp tokenizer code (MIT License)
+  - The tokenizer in `edge0-infer/src/app/text/` is adapted from
+    `src/llama-vocab.cpp` and `src/unicode.cpp` of llama.cpp at commit 7ab4ee7.
+    License: `edge0-infer/src/app/text/LICENSE.llama.cpp`.
+  Copyright (c) 2023-2026 The ggml authors.
 
-llama.cpp (MIT License)
-  - The Android and Windows engines build their inference core from a
-    pristine upstream checkout of llama.cpp
-    (https://github.com/ggml-org/llama.cpp), pinned at commit 7ab4ee7
-    (release b11100) via `vendor.llama.pin` and materialized into the
-    gitignored `vendor/llama.cpp` by the platform build scripts.
-  - It is never patched in place: all modifications ship as replayable
-    patch bands under `patches/llama.cpp/{common,android,windows}` and are
-    replayed into an isolated build worktree at compile time.
-  - ggml (Apache License 2.0) is developed within the same upstream tree.
-  - Not vendored as files in this repo; built from source by the consumer
-    (see `android/NOTICE` and `windows/NOTICE` for the per-platform detail).
-  Copyright (c) 2023-2024 The ggml authors.
+cpp-httplib (MIT License)
+  - `edge0-infer/third_party/cpp-httplib/` (version 0.60.1), used only by the
+    CLI and the OpenAI-compatible server.
+    License: `edge0-infer/third_party/cpp-httplib/LICENSE`.
+  Copyright (c) 2017 yhirose.
+
+nlohmann/json (MIT License)
+  - `edge0-infer/third_party/nlohmann-json/` (version 3.12.0), used only by the
+    CLI and the OpenAI-compatible server.
+    License: `edge0-infer/third_party/nlohmann-json/LICENSE.MIT`.
+  Copyright (c) 2013-2025 Niels Lohmann.
 
 All other files are Copyright (c) 2025 edge0 contributors, licensed under
 the Apache License, Version 2.0 (see LICENSE).

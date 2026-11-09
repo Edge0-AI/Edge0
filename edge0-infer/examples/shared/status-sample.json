@@ -1,0 +1,235 @@
+{
+  "instance": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "pid": 12345,
+    "started_at": "2026-01-01T00:00:00.000Z",
+    "uptime_seconds": 8040.0
+  },
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 8080,
+    "auth": false
+  },
+  "engine": {
+    "version": "0.1.0",
+    "source_commit": "83070985da9fc6340f01d8a2c61a23c472285b20",
+    "source_modified": "no",
+    "source_reason": "",
+    "ggml_origin": "7ab4ee7baad2d920464cbacfad4f4b07cf111fd2",
+    "ggml_version": "0.24.0",
+    "backends": [
+      {
+        "name": "cpu",
+        "compiled": "yes",
+        "initializable": "unknown",
+        "verified": "unknown",
+        "reason": ""
+      },
+      {
+        "name": "metal",
+        "compiled": "no",
+        "initializable": "unknown",
+        "verified": "unknown",
+        "reason": ""
+      }
+    ],
+    "devices": [
+      {
+        "name": "CPU",
+        "backend": "cpu",
+        "description": "Apple M5",
+        "memory_total_bytes": 17179869184,
+        "memory_free_bytes": 17179869184
+      }
+    ]
+  },
+  "model": {
+    "alias": "tiny-a",
+    "directory": "tiny-a",
+    "context_length": 4096,
+    "device": "CPU",
+    "prefill_device": "CPU"
+  },
+  "current": {
+    "endpoint": "/v1/chat/completions",
+    "source": "127.0.0.1",
+    "phase": "decode",
+    "started_steady_seconds": 1000.0,
+    "elapsed_seconds": 0.0061735,
+    "input_tokens": 13,
+    "reused_tokens": 12,
+    "computed_tokens": 1,
+    "pending_tokens": 0,
+    "generated_tokens": 3,
+    "first_token_seconds": 0.002878875,
+    "prefill_tokens_per_second": 347.3579089053884,
+    "decode_elapsed_seconds": 0.003294625,
+    "decode_tokens_per_second": 607.0493607011421
+  },
+  "last": {
+    "time": "2026-01-01T00:00:00.000Z",
+    "endpoint": "/v1/chat/completions",
+    "source": "127.0.0.1",
+    "http_status": 200,
+    "stream": false,
+    "total_seconds": 0.018704292,
+    "stop_reason": "length",
+    "error_stage": 0,
+    "reuse_method": "first",
+    "input_tokens": 13,
+    "reused_tokens": 0,
+    "computed_tokens": 20,
+    "generated_tokens": 8,
+    "first_token_seconds": 0.006230292,
+    "decode_tokens_per_second": 564.8235934883909,
+    "prefill_tokens_per_second": 2086.579569625308,
+    "decode_seconds": 0.01239325,
+    "decode_forwards": 7,
+    "checkpoint_restored": false,
+    "experts": {
+      "demand": 365,
+      "hits": 95,
+      "loads": 270,
+      "bytes": 2073600
+    },
+    "ended_at": "2026-01-01T00:00:00.000Z"
+  },
+  "totals": {
+    "requests": 1,
+    "rejected_busy": 0,
+    "rejected_invalid": 1,
+    "unauthorized": 0,
+    "input_tokens": 13,
+    "reused_tokens": 0,
+    "computed_tokens": 20,
+    "generated_tokens": 8,
+    "checkpoint_restores": 0,
+    "continued_turns": 0,
+    "decode_seconds": 0.01239325,
+    "first_token_seconds_mean": 0.006230292,
+    "prefill_tokens_per_second": 2086.579569625308,
+    "decode_tokens_per_second": 564.8235934883909,
+    "experts": {
+      "demand": 365,
+      "hits": 95,
+      "loads": 270,
+      "bytes": 2073600
+    }
+  },
+  "memory": {
+    "ledger": {
+      "limit_bytes": 17179869184,
+      "current_bytes": 46837024,
+      "peak_bytes": 48252608,
+      "scope": "runtime_lifetime",
+      "by_purpose": {
+        "resident_weights": 20945152,
+        "experts": 491520,
+        "session_state": 13328384,
+        "workspace": 4231136,
+        "transfer": 2176,
+        "staging": 0,
+        "metadata": 7838656
+      },
+      "by_device": {
+        "CPU": {
+          "current_bytes": 38998368,
+          "peak_bytes": 39993312,
+          "memory": "system"
+        },
+        "host": {
+          "current_bytes": 7838656,
+          "peak_bytes": 8259296,
+          "memory": "system"
+        }
+      }
+    },
+    "resident": {
+      "scope": "process_lifetime",
+      "values": {
+        "current_bytes": 199081984,
+        "peak_bytes": 220856320,
+        "current_reason": "",
+        "peak_reason": ""
+      },
+      "reason": "",
+      "source": "task_info.resident_size/ru_maxrss"
+    },
+    "physical": {
+      "scope": "process_lifetime",
+      "values": {
+        "current_bytes": 169476720,
+        "peak_bytes": 215188032,
+        "current_reason": "",
+        "peak_reason": ""
+      },
+      "reason": "",
+      "source": "phys_footprint"
+    }
+  },
+  "system": {
+    "memory": {
+      "total": {
+        "bytes": 17179869184,
+        "source": "sysctl.hw.memsize",
+        "reason": ""
+      },
+      "available": {
+        "bytes": 4924522496,
+        "source": "host_statistics64.free_count+inactive_count+purgeable_count+speculative_count",
+        "reason": ""
+      }
+    },
+    "thermal": {
+      "state": "nominal",
+      "source": "NSProcessInfo.thermalState",
+      "reason": ""
+    },
+    "app_memory_limit": {
+      "bytes": null,
+      "source": "",
+      "reason": "App memory limit is only available on iOS",
+      "current_physical_bytes": null
+    }
+  },
+  "recent_requests": [
+    {
+      "time": "2026-01-01T00:00:00.000Z",
+      "endpoint": "/v1/chat/completions",
+      "source": "127.0.0.1",
+      "http_status": 400,
+      "stream": false,
+      "total_seconds": 0.000107584,
+      "code": "invalid_argument",
+      "message": "Invalid generation input: input",
+      "param": "input"
+    },
+    {
+      "time": "2026-01-01T00:00:00.000Z",
+      "endpoint": "/v1/chat/completions",
+      "source": "127.0.0.1",
+      "http_status": 200,
+      "stream": false,
+      "total_seconds": 0.018704292,
+      "stop_reason": "length",
+      "error_stage": 0,
+      "reuse_method": "first",
+      "input_tokens": 13,
+      "reused_tokens": 0,
+      "computed_tokens": 20,
+      "generated_tokens": 8,
+      "first_token_seconds": 0.006230292,
+      "decode_tokens_per_second": 564.8235934883909,
+      "prefill_tokens_per_second": 2086.579569625308,
+      "decode_seconds": 0.01239325,
+      "decode_forwards": 7,
+      "checkpoint_restored": false,
+      "experts": {
+        "demand": 365,
+        "hits": 95,
+        "loads": 270,
+        "bytes": 2073600
+      }
+    }
+  ]
+}

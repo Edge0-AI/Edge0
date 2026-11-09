@@ -1,0 +1,25 @@
+{
+  "parameters": {
+    "n_layer": 8,
+    "n_embd": 64,
+    "n_vocab": 248320,
+    "n_head": 2,
+    "n_head_kv": 1,
+    "head_dim": 256,
+    "rope_dim": 64,
+    "n_key_head": 2,
+    "n_value_head": 4,
+    "state_dim": 128,
+    "conv_kernel": 4,
+    "n_expert": 16,
+    "top_k": 4,
+    "n_ff": 64,
+    "n_shared": 64,
+    "full_attention_interval": 4,
+    "lora_rank": 4
+  },
+  "seed": 20261014,
+  "weight_std": 0.02,
+  "lora_std": 0.04,
+  "lora_alpha": 8.0
+}

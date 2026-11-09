@@ -8,21 +8,19 @@ Fixes #
 
 ## Area
 
-- [ ] Python framework (`python/`)
-- [ ] macOS (`macos/`)
-- [ ] iOS (`ios/`)
-- [ ] Android (`android/`)
-- [ ] Windows (`windows/`)
-- [ ] Docs / other
+- [ ] Engine, CLI or server (`edge0-infer/`)
+- [ ] Model asset tools (`edge0-infer/tools/assets/`)
+- [ ] Chat app examples (`edge0-infer/examples/`)
+- [ ] Model docs (`docs/`)
+- [ ] Other
 
 ## How was it tested?
 
-<!-- Commands you ran, hardware/chip, model tier. Paste bench.py numbers for perf changes. -->
+<!-- Commands you ran, platform and backend, hardware/chip. Paste the `edge0-infer bench` summary for perf changes. -->
 
 ## Checklist
 
-- [ ] `pytest -m 'not slow'` passes locally (Python changes; CI runs this on macOS + MLX)
-- [ ] Repo hygiene passes: `pytest tests/test_repo_hygiene.py` (no hardcoded paths, no secrets, **no MLX imports outside `backends/mlx/`**)
+- [ ] `ctest --preset cpu -L "L0|L1"` passes locally in `edge0-infer/` (engine changes)
+- [ ] Ran the higher test levels this change affects (see `edge0-infer/docs/testing.md`)
 - [ ] Added/updated tests for new behavior
-- [ ] Did **not** bump `mlx` past the pinned `0.30.6` (see the note in `python/pyproject.toml` / issue #8) unless this PR is specifically about that
 - [ ] Updated relevant docs / READMEs (incl. translations if user-facing)
