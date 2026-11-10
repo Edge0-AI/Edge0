@@ -102,7 +102,7 @@
 
 ## はじめに
 
-以下のコマンドはすべて `edge0-infer/` ディレクトリで実行します。CMake 3.21 以上、Ninja、C++17/C11 コンパイラ、uv、Git が必要です。35B の元の重みは約 18 GB、変換後のアセットは約 20 GB で、変換中はさらに同じくらいの空き容量が必要です。
+以下のコマンドはすべて `edge0-infer/` ディレクトリで実行します。CMake 3.21 以上、Ninja、C++17/C11 コンパイラ、uv、Git が必要です。35B には約 42 GB の空きディスク容量が必要です。内訳は [Requirements](edge0-infer/docs/getting-started.md#requirements) を参照してください。
 
 ### 1) ビルド
 

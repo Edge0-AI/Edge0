@@ -145,8 +145,8 @@ Las métricas de memoria difieren entre plataformas y no se pueden comparar dire
 
 Ejecuta los siguientes comandos en `edge0-infer/`. Necesitas CMake 3.21 o
 posterior, Ninja, un compilador de C++17/C11, uv y Git; el 35B necesita unos
-18 GB para los pesos originales y unos 20 GB para los recursos convertidos,
-más otro tanto de espacio libre durante la conversión.
+42 GB de espacio libre en disco. Consulta el desglose en
+[Requirements](edge0-infer/docs/getting-started.md#requirements).
 
 ### 1) Compilar
 

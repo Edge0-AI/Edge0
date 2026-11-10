@@ -139,8 +139,8 @@ edge0-infer 用自带的资产工具下载发布的 checkpoint，并转换成引
 ## 快速开始
 
 以下命令都在 `edge0-infer/` 目录下运行。需要 CMake 3.21+、Ninja、C++17/C11
-编译器、uv 与 Git；35B 的原始权重约 18 GB、转换后的资产约 20 GB，转换时还需要
-同样大小的空闲空间。
+编译器、uv 与 Git；35B 约需 42 GB 可用磁盘空间，具体构成见
+[Requirements](edge0-infer/docs/getting-started.md#requirements)。
 
 ### 1) 构建
 

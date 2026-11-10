@@ -136,9 +136,9 @@ Memory metrics differ by platform and cannot be compared directly. The measureme
 ## Getting Started
 
 Run the following commands in `edge0-infer/`. You need CMake 3.21+,
-Ninja, a C++17/C11 compiler, uv and Git; the 35B needs about 18 GB for the
-original weights and about 20 GB for the converted assets, plus as much free
-space again while converting.
+Ninja, a C++17/C11 compiler, uv and Git; the 35B needs about 42 GB of free
+disk space. See [Requirements](edge0-infer/docs/getting-started.md#requirements)
+for the exact breakdown.
 
 ### 1) Build
 
