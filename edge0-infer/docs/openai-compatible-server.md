@@ -37,7 +37,9 @@ then release the session, unload the model, and finish the runtime.
 
 Unknown fields are rejected with 400, including unknown nested control fields.
 Tool parameter schemas are passed through as schema data. Fields marked ignored
-are accepted without an effect. `store` never enables persistence.
+are accepted without an effect. `store` never enables persistence. Optional fields that OpenAI declares
+nullable (for example `temperature`, `max_tokens`, `stop`, `instructions`) may be
+null, which is the same as leaving them out.
 
 | Fields | Chat Completions | Responses |
 | --- | --- | --- |

@@ -79,6 +79,21 @@ int main(int argc,char** argv) {
         j=base;if(protocol==Protocol::chat)j["messages"][0]["name"]="x";else j["input"]=Json::array({{{"role","user"},{"content","hello"},{"name","x"}}});
         names_field(j,protocol,protocol==Protocol::chat?"messages.name":"input.name");
     }
+    // OpenAI declares these optional fields nullable; null means the field is not set.
+    for(const auto* field:{"temperature","top_p","top_logprobs","stream","parallel_tool_calls","store","metadata","user","service_tier","prompt_cache_key","safety_identifier",
+                           "stream_options","seed","stop","presence_penalty","frequency_penalty","max_tokens","max_completion_tokens","logit_bias","logprobs","n","reasoning_effort"}) {
+        auto j=chat;j[field]=nullptr;const auto r=portal::parse(j,Protocol::chat,"test");
+        CHECK(!r.overrides.temperature && !r.overrides.top_p && !r.overrides.max_tokens && !r.overrides.seed && !r.overrides.stop && !r.overrides.logprobs && !r.overrides.thinking);
+        CHECK(!r.stream && !r.include_usage && !r.echo.contains(field));
+    }
+    for(const auto* field:{"temperature","top_p","top_logprobs","stream","parallel_tool_calls","store","metadata","user","service_tier","prompt_cache_key","safety_identifier",
+                           "instructions","max_output_tokens","include","reasoning","truncation","background"}) {
+        auto j=responses;j[field]=nullptr;const auto r=portal::parse(j,Protocol::responses,"test");
+        CHECK(r.input.messages.size()==1 && !r.overrides.max_tokens && !r.overrides.logprobs && !r.overrides.thinking && !r.echo.contains(field));
+    }
+    // A null value does not make an unknown or other-protocol field acceptable.
+    {auto j=chat;j["unknown"]=nullptr;rejects(j,Protocol::chat);j=chat;j["max_output_tokens"]=nullptr;rejects(j,Protocol::chat);}
+    {auto j=responses;j["seed"]=nullptr;rejects(j,Protocol::responses);j=responses;j["model"]=nullptr;rejects(j,Protocol::responses);}
     auto j=chat;j["n"]=2;rejects(j,Protocol::chat);j["n"]=1;portal::parse(j,Protocol::chat,"test");
     j=chat;j["max_tokens"]=1;j["max_completion_tokens"]=2;rejects(j,Protocol::chat);j["max_completion_tokens"]=1;portal::parse(j,Protocol::chat,"test");
     j=chat;j["reasoning_effort"]="medium";j["chat_template_kwargs"]={{"enable_thinking",false}};rejects(j,Protocol::chat);
