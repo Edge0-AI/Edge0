@@ -281,7 +281,11 @@ void Encoder::close(std::vector<std::string>& records) {
         records.push_back(event("response.function_call_arguments.done",common));
     } else {
         common["content_index"]=0;common["text"]=item["content"][0]["text"];
-        if(type=="message") {common["logprobs"]=pending_probs_;for(const auto& p:pending_probs_)item["content"][0]["logprobs"].push_back(p);pending_probs_=Json::array();}
+        if(type=="message") {
+            for(const auto& p:pending_probs_)item["content"][0]["logprobs"].push_back(p);
+            common["logprobs"]=item["content"][0]["logprobs"];
+            pending_probs_=Json::array();
+        }
         records.push_back(event(type=="message"?"response.output_text.done":"response.reasoning_text.done",common));
         common.erase("text");common.erase("logprobs");common["part"]=item["content"][0];records.push_back(event("response.content_part.done",common));
     }
