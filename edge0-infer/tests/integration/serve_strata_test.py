@@ -857,7 +857,10 @@ def platform_launch(cli, root):
     try:
         process = process_record(record)
         expected_python = engine / '.venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
-        assert Path(process['python']) == expected_python, process
+        # The folder, resolved: a temporary directory can be reached through a link (/var -> /private/var on macOS),
+        # and the interpreter itself is a link into the Python it was made from.
+        actual = Path(process['python'])
+        assert actual.name == expected_python.name and actual.parent.resolve() == expected_python.parent.resolve(), process
         print('PASS default Python: real venv without --strata-python')
         assert request(server.port, 'POST', '/v1/chat/completions', {'messages': [{'role': 'user', 'content': 'hi'}]})[0] == 200
         print('PASS space paths: model and engine directories')
