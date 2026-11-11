@@ -23,6 +23,9 @@ body:
         - Android (CPU)
         - Windows (CPU)
         - Windows (Vulkan)
+        - Linux (CPU)
+        - Linux (NVIDIA GPU, edge0-strata)
+        - Windows (NVIDIA GPU, edge0-strata)
         - Other (describe below)
     validations:
       required: true
@@ -33,6 +36,8 @@ body:
       label: Model tier
       options:
         - edge0-35b
+        - edge0-145b
+        - edge0-120b
         - other / custom checkpoint
     validations:
       required: true
@@ -59,7 +64,7 @@ body:
     id: os
     attributes:
       label: OS version
-      placeholder: macOS 15.1 / Windows 11 23H2 / Android 15 / iOS 18.1
+      placeholder: macOS 15.1 / Windows 11 23H2 / Ubuntu 24.04 / Android 15 / iOS 18.1
     validations:
       required: true
 
@@ -78,7 +83,7 @@ body:
       label: How are you running it?
       options:
         - edge0-infer CLI (run / chat / bench)
-        - edge0-infer serve (OpenAI-compatible server)
+        - edge0-infer serve (local OpenAI- and Anthropic-compatible server)
         - Native C++ API in my own application
         - Chat app example (desktop / Android / iOS)
         - Other (describe below)

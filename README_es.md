@@ -87,7 +87,7 @@ el entrenamiento de LoRA y prerouter realizado para este framework.
 edge0-infer descarga el checkpoint publicado con sus herramientas de recursos
 y lo convierte en los recursos de modelo del motor (consulta
 [Primeros pasos](#primeros-pasos)).
-`edge0-145b` y `edge0-120b` forman un nivel latent-MoE aparte para una sola GPU NVIDIA que se publicará próximamente; se ejecutan con edge0-strata, que `edge0-infer serve` y `edge0-infer chat` inician (consulta [edge0-145b y edge0-120b](docs/models/edge0-145b.md)).
+`edge0-145b` y `edge0-120b` forman un nivel latent-MoE aparte para una sola GPU NVIDIA; se ejecutan con edge0-strata, que `edge0-infer serve` y `edge0-infer chat` inician (consulta [edge0-145b y edge0-120b](docs/models/edge0-145b.md)).
 
 ### Diseño
 

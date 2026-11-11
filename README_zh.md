@@ -91,7 +91,7 @@ MoE 模型跑在消费级硬件上——峰值内存由**激活**专家集而非
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重。
 edge0-infer 用自带的资产工具下载发布的 checkpoint，并转换成引擎的模型
 资产（见[快速开始](#快速开始)）。
-`edge0-145b` 与 `edge0-120b` 是面向单块 NVIDIA GPU 的 latent-MoE，即将发布；它们在 edge0-strata 上运行，由 `edge0-infer serve` 与 `edge0-infer chat` 启动（见 [edge0-145b 与 edge0-120b](docs/models/edge0-145b.md)）。
+`edge0-145b` 与 `edge0-120b` 是面向单块 NVIDIA GPU 的 latent-MoE；它们在 edge0-strata 上运行，由 `edge0-infer serve` 与 `edge0-infer chat` 启动（见 [edge0-145b 与 edge0-120b](docs/models/edge0-145b.md)）。
 
 ### 设计
 

@@ -87,7 +87,7 @@ Les deux checkpoints publiés reposent sur des modèles de base sparse-MoE ouver
 l'entraînement LoRA et prerouter réalisé pour ce framework. edge0-infer
 télécharge le checkpoint publié avec ses outils de ressources et le convertit
 en ressources de modèle du moteur (voir [Démarrage rapide](#démarrage-rapide)).
-`edge0-145b` et `edge0-120b` forment une gamme latent-MoE distincte pour un seul GPU NVIDIA, bientôt publiée ; ils s'exécutent avec edge0-strata, que `edge0-infer serve` et `edge0-infer chat` démarrent (voir [edge0-145b et edge0-120b](docs/models/edge0-145b.md)).
+`edge0-145b` et `edge0-120b` forment une gamme latent-MoE distincte pour un seul GPU NVIDIA ; ils s'exécutent avec edge0-strata, que `edge0-infer serve` et `edge0-infer chat` démarrent (voir [edge0-145b et edge0-120b](docs/models/edge0-145b.md)).
 
 ### Conception
 

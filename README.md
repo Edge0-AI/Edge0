@@ -83,7 +83,7 @@ and the Ling 3.0 bailing hybrid respectively) and ship with the
 LoRA and prerouter training done for this framework. edge0-infer downloads
 the released checkpoint with its asset tools and converts it into the
 engine's model assets (see [Getting Started](#getting-started)).
-`edge0-145b` and `edge0-120b` are a separate latent-MoE tier for a single NVIDIA GPU, coming soon; they run on edge0-strata, which `edge0-infer serve` and `edge0-infer chat` start for them (see [edge0-145b and edge0-120b](docs/models/edge0-145b.md)).
+`edge0-145b` and `edge0-120b` are a separate latent-MoE tier for a single NVIDIA GPU; they run on edge0-strata, which `edge0-infer serve` and `edge0-infer chat` start for them (see [edge0-145b and edge0-120b](docs/models/edge0-145b.md)).
 
 ### Design
 

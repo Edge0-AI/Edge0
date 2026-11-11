@@ -65,7 +65,7 @@
 | [`edge0-120b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | Q3_K または NVFP4 latent エキスパート（1280）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
 
 公開済みの 2 つのチェックポイントはいずれもオープンのスパース MoE ベースモデル(それぞれ Qwen3.6-35B-A3B と Ling 3.0 bailing hybrid)上に構築されており、本フレームワークのために実施された LoRA と prerouter の訓練成果物を同梱しています。edge0-infer は付属のアセットツールで公開チェックポイントをダウンロードし、エンジン用のモデルアセットに変換します([はじめに](#はじめに)を参照)。
-`edge0-145b` と `edge0-120b` は単一の NVIDIA GPU 向けの latent-MoE で、近日公開予定です。edge0-strata 上で動作し、`edge0-infer serve` と `edge0-infer chat` がそれを起動します([edge0-145b と edge0-120b](docs/models/edge0-145b.md) を参照)。
+`edge0-145b` と `edge0-120b` は単一の NVIDIA GPU 向けの latent-MoE です。edge0-strata 上で動作し、`edge0-infer serve` と `edge0-infer chat` がそれを起動します([edge0-145b と edge0-120b](docs/models/edge0-145b.md) を参照)。
 
 ### 設計
 
