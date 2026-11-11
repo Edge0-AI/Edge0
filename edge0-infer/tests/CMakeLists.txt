@@ -883,6 +883,7 @@ moe_warnings(moe_test_delegated_directory)
 moe_add_test(NAME moe_test_delegated_directory LEVEL L1 COMMAND moe_test_delegated_directory)
 moe_add_test(NAME moe_test_fake_strata LEVEL L1 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/integration/fake_strata.py" --self-test)
+set_tests_properties(moe_test_fake_strata PROPERTIES TIMEOUT 120)  # it takes seconds; never hold CI for an hour
 if(MOE_BUILD_CLI)
     add_executable(moe_test_strata_registry unit/cli/strata_registry_test.cpp
         "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_registry.cpp" "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_status.cpp"

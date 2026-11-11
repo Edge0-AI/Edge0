@@ -339,7 +339,10 @@ def serve(argv):
         Path(record).mkdir(parents=True, exist_ok=True)
         (Path(record) / 'config.json').write_text(json.dumps(config, indent=1))
     fake = Fake(config, record)
-    fake.child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(3600)'])
+    # The child holds none of this process's pipes: if it outlives an abrupt exit, whoever reads this
+    # process's output (CTest, a test) still sees the end of it instead of waiting for the child.
+    fake.child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(3600)'],
+                                  stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     fake.log('process.json', {'pid': os.getpid(), 'pgid': os.getpgid(0) if os.name != 'nt' else None,
                               'child': fake.child.pid, 'strata_api_key_present': 'STRATA_API_KEY' in os.environ, 'argv': argv, 'path': os.environ.get('PATH', ''), 'python': sys.executable})
     if os.environ.get('FAKE_STRATA_FAIL_START'):
@@ -384,9 +387,10 @@ def self_test():
                                     '--port', '0', '--ready-file', str(ready)], env=env,
                                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
         try:
-            for _ in range(200):
-                if ready.exists() and ready.read_text().endswith('\n'):
-                    break
+            deadline = time.monotonic() + 30
+            while not (ready.exists() and ready.read_text().endswith('\n')):
+                assert process.poll() is None, f'fake exited before it was ready (code {process.returncode})'
+                assert time.monotonic() < deadline, 'fake not ready after 30 s'
                 time.sleep(0.05)
             port = json.loads(ready.read_text())['bound_port']
 
@@ -440,7 +444,13 @@ def self_test():
             child = process_info['child']
         finally:
             process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
-            assert process.wait(10) == 0
+            try:
+                code = process.wait(10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(10)
+                raise AssertionError('fake did not stop within 10 s of SIGTERM')
+            assert code == 0, code
         assert not ready.exists()
         if os.name != 'nt':
             try:
@@ -453,6 +463,9 @@ def self_test():
                                   '--ready-file', str(root / 'ready2.json')], env=dict(env, FAKE_STRATA_FAIL_START='5'),
                                  capture_output=True)
         assert failing.returncode == 5 and not (root / 'ready2.json').exists()
+    # fake_failure=exit: the engine sends part of an answer and exits with code 4. What the client reads after
+    # that depends on the platform (EOF, or a reset that can even drop the part already sent), so the check
+    # uses what the fake itself recorded as sent, and its exit code; the client only has to end its read.
     for stream in (False, True):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -460,30 +473,30 @@ def self_test():
             ready = root / 'ready.json'
             process = subprocess.Popen([sys.executable, __file__, '--engine', 'strata', '--config', str(root / 'config.json'),
                                         '--port', '0', '--ready-file', str(ready)],
-                                       env=dict(os.environ, FAKE_STRATA_RECORD=str(root / 'record')))
+                                       env=dict(os.environ, FAKE_STRATA_RECORD=str(root / 'record')),
+                                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
             try:
-                for _ in range(200):
-                    if ready.exists() and ready.read_text().endswith('\n'): break
+                deadline = time.monotonic() + 30
+                while not (ready.exists() and ready.read_text().endswith('\n')):
+                    assert process.poll() is None, f'fake exited before it was ready (code {process.returncode})'
+                    assert time.monotonic() < deadline, 'fake not ready after 30 s'
                     time.sleep(0.05)
                 port = json.loads(ready.read_text())['bound_port']
                 connection = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
-                connection.request('POST', '/v1/chat/completions', json.dumps({'stream': stream, 'fake_failure': 'exit'}))
-                response = connection.getresponse()
-                data = bytearray()
-                reset = False
                 try:
-                    while chunk := response.read(1024):
-                        data.extend(chunk)
-                except ConnectionResetError:
-                    # Windows may report the engine's abrupt exit as RST instead of EOF.
-                    reset = True
+                    connection.request('POST', '/v1/chat/completions', json.dumps({'stream': stream, 'fake_failure': 'exit'}))
+                    connection.getresponse().read()
+                except (OSError, http.client.HTTPException):
+                    pass
                 finally:
                     connection.close()
-                assert response.status == 200 and b'[DONE]' not in data
-                assert b'partial' in data or reset
                 assert process.wait(10) == 4
+                sent = (root / 'record' / 'sent-1.bin').read_bytes()
+                assert b'partial' in sent and b'[DONE]' not in sent, sent
             finally:
-                if process.poll() is None: process.terminate(); process.wait(10)
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(10)
     print('PASS fake strata: command line, ready file, status, streaming with timings, echo, records, failure, child cleanup')
 
 
