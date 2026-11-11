@@ -6,7 +6,7 @@
 
 **An open-source streaming MoE inference framework — SSD expert offload + Recover-LoRA + prerouter routing prediction.**
 
-**macOS** · **iOS** · **Android** · **Windows** — one engine, one native API.
+**macOS** · **iOS** · **Android** · **Linux** · **Windows** — one program for every Edge0 model.
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
@@ -52,33 +52,37 @@ memory is bounded by the *active* expert set, not the parameter count.
 
 ### Platforms
 
-One engine and one native API, with the same code on every platform — see [`edge0-infer/`](edge0-infer/README.md):
+[`edge0-infer`](edge0-infer/README.md) is the program you run (CLI, OpenAI-compatible local server, chat apps), with the same commands for every model. Each model runs on the engine built for it, and edge0-infer picks the engine from the model folder; there is nothing to choose: `edge0-35b` runs on the **native engine** in `edge0-infer/` (built on GGML, with a native C++ API), and `edge0-145b` and `edge0-120b` run on **edge0-strata** in [`edge0-strata/`](edge0-strata/EDGE0.md), a fork of Strata.
 
-| Platform | Backends | Verified on |
+| Platform | `edge0-35b` (native engine) | `edge0-145b`, `edge0-120b` (edge0-strata) |
 |---|---|---|
-| **macOS** (Apple Silicon) | Metal, CPU | Apple M5, 16 GiB |
-| **iOS** | Metal | iPhone 17 Pro Max |
-| **Android** | CPU | OnePlus PKR110 (Snapdragon 8 Elite) |
-| **Windows** (x86-64) | CPU, Vulkan | Intel Core i5-12400, NVIDIA GeForce RTX 4070 SUPER |
+| **macOS** (Apple Silicon) | Metal, CPU | — |
+| **iOS** | Metal | — |
+| **Android** | CPU | — |
+| **Linux** | CPU | NVIDIA GPU (CUDA 13) |
+| **Windows** | CPU, Vulkan | NVIDIA GPU (CUDA 13) |
 
-Prefill and decode can run on different backends of the same device, for example Metal prefill with CPU decode. Chat app examples for desktop (macOS, Windows), Android and iOS are in [`edge0-infer/examples/`](edge0-infer/examples/README.md#chat-applications).
+Measurements: [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures) for `edge0-35b`, and the [model page](docs/models/edge0-145b.md) for `edge0-145b` and `edge0-120b`. On the native engine, prefill and decode can run on different backends of the same device, for example Metal prefill with CPU decode. Chat app examples for desktop (macOS, Windows), Android and iOS are in [`edge0-infer/examples/`](edge0-infer/examples/README.md#chat-applications).
 
 ### Models
 
-Two model tiers ship with the framework. Each tier is an end-to-end
+Two model tiers, `edge0-35b` and `edge0-8b`, ship with the framework. Each tier is an end-to-end
 release: the released checkpoint, the trained LoRA adapters, and the
 trained prerouter heads work together as one unit.
 
-| Tier | Released checkpoint | Inference profile | edge0-infer |
+| Tier | Released checkpoint | Inference profile | Engine |
 |---|---|---|---|
-| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 | ✅ Supported |
-| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 | Planned |
+| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 layers, 256 experts, prerouter K=4 | Native engine ✅ |
+| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 layers, 128 experts, prerouter K=8 | Native engine (planned) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | Q3_K or NVFP4 latent experts (1792), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | Q3_K or NVFP4 latent experts (1280), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU) |
 
-Both checkpoints are built on open sparse-MoE base models (Qwen3.6-35B-A3B
+The two released checkpoints are built on open sparse-MoE base models (Qwen3.6-35B-A3B
 and the Ling 3.0 bailing hybrid respectively) and ship with the
 LoRA and prerouter training done for this framework. edge0-infer downloads
 the released checkpoint with its asset tools and converts it into the
 engine's model assets (see [Getting Started](#getting-started)).
+`edge0-145b` and `edge0-120b` are a separate latent-MoE tier for a single NVIDIA GPU, coming soon; they run on edge0-strata, which `edge0-infer serve` and `edge0-infer chat` start for them (see [edge0-145b and edge0-120b](docs/models/edge0-145b.md)).
 
 ### Design
 
@@ -151,7 +155,9 @@ build/mac-metal/bin/edge0-infer info        # expect a line: model.0: edge0_35b
 On machines without Metal use `--preset cpu`, `build/cpu/bin/edge0-infer`,
 and `--device cpu` in the commands below.
 
-### 2) Download and convert the model assets
+### 2) Get a model
+
+**edge0-35b (native engine).** Download and convert the model assets:
 
 ```bash
 export MOE_SOURCE_35B=<directory for the original weights>
@@ -168,6 +174,8 @@ assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
 This downloads `Edge0/Edge0-35B-A3B-preview` from Hugging Face and checks
 it against the locked revision and digests.
 
+**edge0-145b and edge0-120b (edge0-strata).** Build edge0-strata as [`edge0-strata/EDGE0.md`](edge0-strata/EDGE0.md) describes and use a released model folder (see [edge0-145b and edge0-120b](docs/models/edge0-145b.md)).
+
 ### 3) Run
 
 ```bash
@@ -179,6 +187,8 @@ build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
 build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 
+For edge0-145b and edge0-120b, `chat` and `serve` take the model folder the same way (`--model <model folder>`); `run` is for the native engine.
+
 For the Android, Windows and iOS builds, and for using the engine from
 your own CMake project, see [Getting started](edge0-infer/docs/getting-started.md).
 
@@ -187,16 +197,21 @@ your own CMake project, see [Getting started](edge0-infer/docs/getting-started.m
 **Models**
 
 - [MoE routing and experts](docs/moe.md) / [prerouter](docs/prerouter.md)
-- [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
+- [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md) / [edge0-145b and edge0-120b](docs/models/edge0-145b.md)
 - Technical report: [The Other Half of the Memory Wall](https://arxiv.org/abs/2609.18063) ([PDF](paper/main.pdf))
 
-**Engine (edge0-infer)**
+**edge0-infer**
 
 - [Getting started](edge0-infer/docs/getting-started.md): build, model assets, run, chat and serve on every platform
 - [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [OpenAI-compatible server](edge0-infer/docs/openai-compatible-server.md)
 - [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
 - [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
 - [Model asset tools and adding a model](edge0-infer/tools/assets/README.md)
+
+**Engines**
+
+- Native engine: [Architecture](edge0-infer/docs/architecture.md#native-engine) / [Native API](edge0-infer/docs/native-api.md)
+- edge0-strata: [build and launch contract](edge0-strata/EDGE0.md) / [edge0-145b](edge0-infer/docs/edge0-145b.md) and [edge0-120b](edge0-infer/docs/edge0-120b.md) in edge0-infer
 
 ## Roadmap
 
