@@ -53,7 +53,7 @@ memory is bounded by the *active* expert set, not the parameter count.
 
 ### Platforms
 
-[`edge0-infer`](edge0-infer/README.md) is the program you run (CLI, OpenAI-compatible local server, chat apps), with the same commands for every model. Each model runs on the engine built for it, and edge0-infer picks the engine from the model folder; there is nothing to choose: `edge0-35b` runs on the **native engine** in `edge0-infer/` (built on GGML, with a native C++ API), and `edge0-145b` and `edge0-120b` run on **edge0-strata** in [`edge0-strata/`](edge0-strata/EDGE0.md), a fork of Strata.
+[`edge0-infer`](edge0-infer/README.md) is the program you run (CLI, local OpenAI- and Anthropic-compatible server, chat apps), with the same commands for every model. Each model runs on the engine built for it, and edge0-infer picks the engine from the model folder; there is nothing to choose: `edge0-35b` runs on the **native engine** in `edge0-infer/` (built on GGML, with a native C++ API), and `edge0-145b` and `edge0-120b` run on **edge0-strata** in [`edge0-strata/`](edge0-strata/EDGE0.md), a fork of Strata.
 
 | Platform | `edge0-35b` (native engine) | `edge0-145b`, `edge0-120b` (edge0-strata) |
 |---|---|---|
@@ -92,7 +92,7 @@ engine's model assets (see [Getting Started](#getting-started)).
   downloads nothing;
 - **One native API**: applications link the CMake target `edge0::edge0`
   and include the headers in `include/edge0/` to use the engine in
-  process; the reference CLI and the OpenAI-compatible server use the same
+  process; the reference CLI and the local server use the same
   settings and defaults as the native API;
 - **Experts on demand**: routed experts are read from storage on demand
   into a fixed number of expert slots per layer, so a model larger than the
@@ -222,7 +222,7 @@ it against the locked revision and digests.
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "Introduce yourself in one sentence."
 # multi-turn chat
 build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
-# serve (OpenAI-compatible, default http://127.0.0.1:8000/v1)
+# serve (OpenAI- and Anthropic-compatible, default http://127.0.0.1:8000)
 build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 

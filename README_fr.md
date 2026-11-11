@@ -56,7 +56,7 @@ matériel grand public : la mémoire de pointe est limitée par l'ensemble
 
 ### Plateformes
 
-[`edge0-infer`](edge0-infer/README_fr.md) est le programme que vous lancez (CLI, serveur local compatible OpenAI, applications de discussion), avec les mêmes commandes pour tous les modèles. Chaque modèle s'exécute sur le moteur conçu pour lui, et edge0-infer choisit le moteur d'après le dossier du modèle ; il n'y a rien à choisir : `edge0-35b` s'exécute sur le **moteur natif** de `edge0-infer/` (construit sur GGML, avec une API C++ native), et `edge0-145b` et `edge0-120b` sur **edge0-strata**, dans [`edge0-strata/`](edge0-strata/EDGE0.md), un fork de Strata.
+[`edge0-infer`](edge0-infer/README_fr.md) est le programme que vous lancez (CLI, serveur local compatible OpenAI et Anthropic, applications de discussion), avec les mêmes commandes pour tous les modèles. Chaque modèle s'exécute sur le moteur conçu pour lui, et edge0-infer choisit le moteur d'après le dossier du modèle ; il n'y a rien à choisir : `edge0-35b` s'exécute sur le **moteur natif** de `edge0-infer/` (construit sur GGML, avec une API C++ native), et `edge0-145b` et `edge0-120b` sur **edge0-strata**, dans [`edge0-strata/`](edge0-strata/EDGE0.md), un fork de Strata.
 
 | Plateforme | `edge0-35b` (moteur natif) | `edge0-145b`, `edge0-120b` (edge0-strata) |
 |---|---|---|
@@ -96,8 +96,8 @@ en ressources de modèle du moteur (voir [Démarrage rapide](#démarrage-rapide)
   fixe ; la compilation ne télécharge rien ;
 - **Une seule API native** : les applications se lient à la cible CMake
   `edge0::edge0` et incluent les en-têtes de `include/edge0/` pour utiliser le
-  moteur dans le processus ; la CLI de référence et le serveur compatible
-  OpenAI utilisent les mêmes paramètres et valeurs par défaut que l'API
+  moteur dans le processus ; la CLI de référence et le serveur local
+  utilisent les mêmes paramètres et valeurs par défaut que l'API
   native ;
 - **Experts à la demande** : les experts routés sont lus depuis le stockage à
   la demande dans un nombre fixe d'emplacements par couche, si bien qu'un
@@ -231,7 +231,7 @@ vérifie avec la révision et les empreintes verrouillées.
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "Présente-toi en une phrase."
 # discussion multi-tours
 build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
-# serveur (compatible OpenAI, par défaut http://127.0.0.1:8000/v1)
+# serveur (compatible OpenAI et Anthropic, par défaut http://127.0.0.1:8000)
 build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 

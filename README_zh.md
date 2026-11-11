@@ -61,7 +61,7 @@ MoE 模型跑在消费级硬件上——峰值内存由**激活**专家集而非
 
 ### 平台
 
-[`edge0-infer`](edge0-infer/README_zh.md) 是你运行的程序（命令行、OpenAI 兼容本地服务、聊天应用），所有模型使用相同的命令。每个模型运行在为它准备的引擎上，edge0-infer 根据模型目录自动选择，无需用户选择：`edge0-35b` 运行在 `edge0-infer/` 中的**原生引擎**上（基于 GGML，提供原生 C++ API）；`edge0-145b` 与 `edge0-120b` 运行在 [`edge0-strata/`](edge0-strata/EDGE0.md) 中的 **edge0-strata** 上（Strata 的分支）。
+[`edge0-infer`](edge0-infer/README_zh.md) 是你运行的程序（命令行、本地 OpenAI／Anthropic 兼容服务、聊天应用），所有模型使用相同的命令。每个模型运行在为它准备的引擎上，edge0-infer 根据模型目录自动选择，无需用户选择：`edge0-35b` 运行在 `edge0-infer/` 中的**原生引擎**上（基于 GGML，提供原生 C++ API）；`edge0-145b` 与 `edge0-120b` 运行在 [`edge0-strata/`](edge0-strata/EDGE0.md) 中的 **edge0-strata** 上（Strata 的分支）。
 
 | 平台 | `edge0-35b`（原生引擎） | `edge0-145b`、`edge0-120b`（edge0-strata） |
 |---|---|---|
@@ -98,8 +98,8 @@ edge0-infer 用自带的资产工具下载发布的 checkpoint，并转换成引
 - **基于 GGML、四端同一份代码**：原生库只依赖固定版本、原样内置的 GGML，
   构建时不下载任何东西；
 - **一套原生 API**：应用链接 CMake 目标 `edge0::edge0`、包含
-  `include/edge0/` 下的头文件即可在进程内使用引擎；参考 CLI 与 OpenAI
-  兼容服务使用与原生 API 相同的配置与默认值；
+  `include/edge0/` 下的头文件即可在进程内使用引擎；参考 CLI 与本地
+  服务使用与原生 API 相同的配置与默认值；
 - **专家按需读入**：路由专家从存储按需读入每层固定数量的专家槽，比
   设备内存预算更大的模型无需整体载入内存即可运行；
 - **两种路由模式**：`predicted`（默认）用 prerouter 在当前 token 计算时
@@ -224,7 +224,7 @@ assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "用一句话介绍你自己。"
 # 多轮对话
 build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
-# 起服务（OpenAI 兼容，默认 http://127.0.0.1:8000/v1）
+# 起服务（OpenAI／Anthropic 兼容，默认 http://127.0.0.1:8000）
 build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 

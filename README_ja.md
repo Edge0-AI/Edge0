@@ -41,7 +41,7 @@
 
 ### プラットフォーム
 
-[`edge0-infer`](edge0-infer/README_ja.md) は実行するプログラム(CLI、OpenAI 互換のローカルサーバー、チャットアプリ)で、どのモデルも同じコマンドで使えます。各モデルはそれぞれ専用のエンジンで動作し、edge0-infer がモデルフォルダからエンジンを自動で選ぶため、選択する必要はありません。`edge0-35b` は `edge0-infer/` の**ネイティブエンジン**(GGML ベース、ネイティブ C++ API を提供)で、`edge0-145b` と `edge0-120b` は [`edge0-strata/`](edge0-strata/EDGE0.md) の **edge0-strata**(Strata のフォーク)で動作します。
+[`edge0-infer`](edge0-infer/README_ja.md) は実行するプログラム(CLI、OpenAI／Anthropic 互換のローカルサーバー、チャットアプリ)で、どのモデルも同じコマンドで使えます。各モデルはそれぞれ専用のエンジンで動作し、edge0-infer がモデルフォルダからエンジンを自動で選ぶため、選択する必要はありません。`edge0-35b` は `edge0-infer/` の**ネイティブエンジン**(GGML ベース、ネイティブ C++ API を提供)で、`edge0-145b` と `edge0-120b` は [`edge0-strata/`](edge0-strata/EDGE0.md) の **edge0-strata**(Strata のフォーク)で動作します。
 
 | プラットフォーム | `edge0-35b`(ネイティブエンジン) | `edge0-145b`、`edge0-120b`(edge0-strata) |
 |---|---|---|
@@ -70,7 +70,7 @@
 ### 設計
 
 - **GGML ベース、全プラットフォームで同じコード**: ネイティブライブラリは、固定バージョンを無改変で同梱した GGML のみに依存し、ビルド時に何もダウンロードしません。
-- **1 つのネイティブ API**: アプリケーションは CMake ターゲット `edge0::edge0` にリンクし、`include/edge0/` のヘッダーをインクルードするだけで、プロセス内でエンジンを使えます。リファレンス CLI と OpenAI 互換サーバーは、ネイティブ API と同じ設定とデフォルト値を使います。
+- **1 つのネイティブ API**: アプリケーションは CMake ターゲット `edge0::edge0` にリンクし、`include/edge0/` のヘッダーをインクルードするだけで、プロセス内でエンジンを使えます。リファレンス CLI とローカルサーバーは、ネイティブ API と同じ設定とデフォルト値を使います。
 - **エキスパートのオンデマンド読み込み**: ルーティングされるエキスパートは、ストレージから必要に応じて層ごとに固定数のエキスパートスロットへ読み込まれるため、デバイスのメモリ予算より大きなモデルでも全体を読み込まずに実行できます。
 - **2 つのルーティングモード**: `predicted`(デフォルト)は prerouter を使い、現在のトークンを計算している間に次のトークンのエキスパートをバックグラウンドで準備します。`actual` はモデル本来の計算で、比較用です。
 - **マルチターンの再利用**: マルチターン会話では通常、各ターンの新しいメッセージだけを計算し、それ以前の計算結果はそのまま再利用します。
@@ -184,7 +184,7 @@ assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "一文で自己紹介してください。"
 # マルチターンチャット
 build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
-# サーバー起動(OpenAI 互換、デフォルト http://127.0.0.1:8000/v1)
+# サーバー起動(OpenAI／Anthropic 互換、デフォルト http://127.0.0.1:8000)
 build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 

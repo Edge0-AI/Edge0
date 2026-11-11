@@ -56,7 +56,7 @@ número de parámetros.
 
 ### Plataformas
 
-[`edge0-infer`](edge0-infer/README_es.md) es el programa que ejecutas (CLI, servidor local compatible con OpenAI, aplicaciones de chat), con los mismos comandos para todos los modelos. Cada modelo se ejecuta en el motor preparado para él, y edge0-infer elige el motor a partir de la carpeta del modelo; no hay nada que elegir: `edge0-35b` se ejecuta en el **motor nativo** de `edge0-infer/` (construido sobre GGML, con una API nativa en C++), y `edge0-145b` y `edge0-120b` en **edge0-strata**, en [`edge0-strata/`](edge0-strata/EDGE0.md), un fork de Strata.
+[`edge0-infer`](edge0-infer/README_es.md) es el programa que ejecutas (CLI, servidor local compatible con OpenAI y Anthropic, aplicaciones de chat), con los mismos comandos para todos los modelos. Cada modelo se ejecuta en el motor preparado para él, y edge0-infer elige el motor a partir de la carpeta del modelo; no hay nada que elegir: `edge0-35b` se ejecuta en el **motor nativo** de `edge0-infer/` (construido sobre GGML, con una API nativa en C++), y `edge0-145b` y `edge0-120b` en **edge0-strata**, en [`edge0-strata/`](edge0-strata/EDGE0.md), un fork de Strata.
 
 | Plataforma | `edge0-35b` (motor nativo) | `edge0-145b`, `edge0-120b` (edge0-strata) |
 |---|---|---|
@@ -96,8 +96,8 @@ y lo convierte en los recursos de modelo del motor (consulta
   fija; la compilación no descarga nada;
 - **Una API nativa**: las aplicaciones enlazan el target de CMake
   `edge0::edge0` e incluyen las cabeceras de `include/edge0/` para usar el
-  motor dentro del proceso; la CLI de referencia y el servidor compatible con
-  OpenAI usan los mismos ajustes y valores por defecto que la API nativa;
+  motor dentro del proceso; la CLI de referencia y el servidor local
+  usan los mismos ajustes y valores por defecto que la API nativa;
 - **Expertos bajo demanda**: los expertos enrutados se leen del almacenamiento
   bajo demanda en un número fijo de ranuras por capa, de modo que un modelo
   más grande que el presupuesto de memoria del dispositivo se ejecuta sin
@@ -230,7 +230,7 @@ la revisión y los resúmenes fijados.
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "Preséntate en una frase."
 # chat de varios turnos
 build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
-# servidor (compatible con OpenAI, por defecto http://127.0.0.1:8000/v1)
+# servidor (compatible con OpenAI y Anthropic, por defecto http://127.0.0.1:8000)
 build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
 
