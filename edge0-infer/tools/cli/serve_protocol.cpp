@@ -359,7 +359,10 @@ std::vector<std::string> Encoder::finish(const edge0::GenerationResult& r,const 
         if(request_.include_usage) {auto u=chunk(Json::object());u["choices"]=Json::array();u["usage"]=usage(r,true);u["metrics"]=metrics(r,memory);records.push_back("data: "+u.dump()+"\n\n");}
         records.push_back("data: [DONE]\n\n");return records;
     }
-    std::vector<std::string> records;close(records);
+    std::vector<std::string> records;
+    if(reason(r)=="length" && active_>=0 && output_[active_]["status"]=="in_progress")
+        output_[active_]["status"]="incomplete";
+    close(records);
     records.push_back(event(reason(r)=="length"?"response.incomplete":"response.completed",{{"response",complete(r,memory)}}));return records;
 }
 std::vector<std::string> Encoder::fail(const Failure& error) {
