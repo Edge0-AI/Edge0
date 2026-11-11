@@ -1,0 +1,39 @@
+# strata launch preview: the monitor's Connect view (key 7), OpenCode selected
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Connect   http://127.0.0.1:8080                                                                         [LIVE]
+ 1 Overview  2 Serving  3 Requests  4 Engine  5 Hardware  6 Logs  [7 Connect]
+ ----------------------------------------------------------------------------------------------------
+ Connect an app     URL http://127.0.0.1:8080/v1    model qwen3.8-flash-next-iq3_xxs    key sk-strata-****  (k show)
+      also reachable at http://192.168.88.21:8080/v1
+
+    App                 Works with            Status
+   > OpenCode            chat + tools          tested ok
+     Codex CLI           responses + tools     tested ok
+     Claude Code         messages + tools      tested ok
+     oh-my-pi (omp)      chat + tools          tested ok
+     pi (pi.dev)         chat + tools          tested ok
+     Hermes Agent        chat + tools          tested ok
+     OpenClaw            chat + tools          tested ok
+     DeepSeek Harness    the Strata app        tested ok
+
+ OpenCode setup   ~/.config/opencode/opencode.json
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "model": "strata/qwen3.8-flash-next-iq3_xxs",
+     "small_model": "strata/qwen3.8-flash-next-iq3_xxs",
+     "autoupdate": false,
+     "compaction": {
+       "auto": true,
+       "buffer": 13672
+   ... 25 more lines (c copies all)
+ Good to know
+   - The setup needs limit.input (strata connect sets it to 28672); without it OpenCode never compacts its
+     conversation.
+   - Its first start downloads a plug-in from npm (internet needed once; the first run can take over a minute).
+   - In a script or over ssh, run it as: opencode run "..." < /dev/null (it waits for typing otherwise).
+   - Its system prompt and tools take about 7.4K tokens of the window.
+
+
+
+ c copy   w write it for me (keeps a backup)   h check it   1-7 views   q quit (asks: keep serving / stop)

@@ -1,0 +1,2 @@
+co_off | 0,1 | 8 |   |  | | w2:4@--nonce pf --keep-text --max-tokens 128 --rounds 1;w2:8@--nonce pf --keep-text --max-tokens 128 --rounds 1
+co_on  | 0,1 | 8 |   | STRATA_COALESCE_PREFILL=8 | | w2:4@--nonce pf --keep-text --max-tokens 128 --rounds 1;w2:8@--nonce pf --keep-text --max-tokens 128 --rounds 1

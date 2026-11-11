@@ -71,7 +71,7 @@ Result<Rules> load_rules(const model::AssetView &assets, const model::Adapter &a
       catch (const TextError &e) { return edge0::Error{ErrorCategory::incompatible, e.what()}; }
 }
 Result<Rules> load_rules(const std::string &directory) {
-    auto catalog = model::open_catalog(directory);
+    auto catalog = model::open_catalog(directory, app::compiled_adapters());
     if (!catalog) return catalog.error();
     auto adapter = model::select_adapter(catalog.value(), app::compiled_adapters());
     if (!adapter) return adapter.error();

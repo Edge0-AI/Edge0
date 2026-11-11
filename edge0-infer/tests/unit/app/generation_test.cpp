@@ -374,7 +374,7 @@ void thinking_tools_tests() {
         r=take(generate(f.session,chat,f.config,o));CHECK(r.tool_calls.empty() && r.text.find("<tool_call>")!=std::string::npos && f.adapter.seen.tools.empty());
         o.thinking=true;
         r=take(generate(f.session,chat,f.config,o,[](const OutputEvent& e)->exec::Status {
-            if(e.kind==OutputKind::reasoning) return Error{ErrorCategory::invalid_argument,"reject reasoning"};return {};
+            if(e.kind==OutputKind::reasoning){return Error{ErrorCategory::invalid_argument,"reject reasoning"};}return {};
         }));CHECK(r.error_stage==GenerationStage::delivery && r.reasoning.empty());
         for(auto mode:{ToolChoiceMode::required,ToolChoiceMode::function}) {
             chat.tool_choice.mode=mode;const auto before=take(query_session_check(f.session));
@@ -416,12 +416,12 @@ void thinking_tools_tests() {
     {Fixture f(3);auto r=take(generate_tokens_check(f.session,{0,0,0},f.config)).result;CHECK(r.stop_reason==StopReason::capacity);}
     for(int kind=0;kind<9;++kind) {
         Fixture f;GenerationOverrides o;
-        if(kind==0)o.presence_penalty=3;if(kind==1)o.frequency_penalty=std::numeric_limits<double>::quiet_NaN();
+        if(kind==0){o.presence_penalty=3;}if(kind==1){o.frequency_penalty=std::numeric_limits<double>::quiet_NaN();}
         if(kind==2)o.logit_bias=std::map<std::int32_t,double>{{3,1}};
         if(kind==3)o.logit_bias=std::map<std::int32_t,double>{{0,101}};
         if(kind==4)o.top_logprobs=1;
-        if(kind==5)o.stop=std::vector<std::string>{""};if(kind==6)o.stop=std::vector<std::string>(17,"x");
-        if(kind==7)o.stop=std::vector<std::string>{"\xff"};if(kind==8)o.stop=std::vector<std::string>{"x","x"};
+        if(kind==5){o.stop=std::vector<std::string>{""};}if(kind==6){o.stop=std::vector<std::string>(17,"x");}
+        if(kind==7){o.stop=std::vector<std::string>{"\xff"};}if(kind==8){o.stop=std::vector<std::string>{"x","x"};}
         const auto before=take(query_session_check(f.session));const auto r=generate_tokens_check(f.session,{0},f.config,o);
         CHECK(!r && r.error().category==ErrorCategory::invalid_argument);
         const auto after=take(query_session_check(f.session));CHECK(before.tokens==after.tokens && before.e==after.e);
@@ -639,16 +639,16 @@ int main() {
       missing_window(r,"ended_by_failure");CHECK(clock_reads==3); }
     { Fixture f;f.model->clock_now=counted_clock;clock_reads=0;int received=0;
       auto r=f.run(1,9,[&](const OutputEvent&)->std::optional<Error> {
-          if(++received==2) return Error{ErrorCategory::invalid_argument,"receiver stopped"};return {};
+          if(++received==2){return Error{ErrorCategory::invalid_argument,"receiver stopped"};}return {};
       });CHECK(r.generated.size()==2 && r.request_summary.first_token_seconds);
       missing_window(r,"ended_by_receiver");CHECK(clock_reads==3); }
     { Fixture f;f.model->clock_now=counted_clock;clock_reads=0;int received=0;
       auto r=f.run(1,9,[&](const OutputEvent&)->std::optional<Error> {
-          if(++received==2) take(release_session(f.session));return {};
+          if(++received==2){take(release_session(f.session));}return {};
       });CHECK(r.generated.size()==2);missing_window(r,"cancelled");CHECK(clock_reads==3); }
     { Fixture f;f.model->clock_now=counted_clock;clock_reads=0;int received=0;
       auto r=f.run(1,2,[&](const OutputEvent&)->std::optional<Error> {
-          if(++received==2) return Error{ErrorCategory::invalid_argument,"last delivery failed"};return {};
+          if(++received==2){return Error{ErrorCategory::invalid_argument,"last delivery failed"};}return {};
       });missing_window(r,"ended_by_receiver");CHECK(clock_reads==4); }
     for(std::size_t marker:{1,4,5}) {
         Fixture f;f.model->clock_now=counted_clock;clock_reads=0;

@@ -1,0 +1,23 @@
+{
+  "id": "performance-short-r1",
+  "phase": "performance",
+  "case_id": "short",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 512,
+  "concurrency": 1,
+  "category": null,
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case performance-short-r1]\nExplain how a hash table finds a value, including collisions and one small example."
+    }
+  ],
+  "tools": null,
+  "tool_choice": null,
+  "expected": null,
+  "input_tokens_frozen": 77,
+  "max_shared_prefix_tokens": 50
+}

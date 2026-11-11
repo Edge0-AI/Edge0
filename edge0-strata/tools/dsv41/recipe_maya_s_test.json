@@ -1,0 +1,13 @@
+{
+  "comment": "a quick Maya-S-like test model (~200 GB): ggml's IQ2_XXS quantizer runs at ~1 M weights/s a thread (a full Maya-S takes ~8 h on 12 threads), so most layers take Q2_K / Q3_K (20-80 M/s) and a few layers each low-bit type the engine reads, on real weights",
+  "experts": {"gate": "Q2_K", "up": "Q2_K", "down": "Q3_K"},
+  "layers": [
+    {"layers": "10", "gate": "IQ2_XXS", "up": "IQ2_XXS", "down": "IQ3_XXS"},
+    {"layers": "20", "gate": "IQ4_XS", "up": "IQ4_XS", "down": "Q4_K"},
+    {"layers": "25", "gate": "IQ3_XXS", "up": "IQ3_XXS", "down": "IQ3_S"},
+    {"layers": "30", "gate": "IQ2_S", "up": "IQ2_S", "down": "IQ3_S"}
+  ],
+  "dense": "Q8_0",
+  "dense_keep": ["hc_", "engram", "norm", "attn_sinks", "exp_probs_b", "ffn_gate_inp"],
+  "engram": "skip"
+}

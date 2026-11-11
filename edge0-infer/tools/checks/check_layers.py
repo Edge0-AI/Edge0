@@ -10,10 +10,10 @@ _common = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_common)
 cmake_commands, files = _common.cmake_commands, _common.files
 
-# Process entry points outside src/platform/ that must configure the Windows console
-# and standard streams themselves (UTF-8 code pages, binary stdio). Only these files,
-# and only these headers.
+# Windows console/stdio setup and delegated process management outside src/platform/.
+# Only these files, and only these headers.
 CONSOLE_SETUP = {
+    "tools/cli/serve_delegate_process.cpp": {"windows.h"},
     "tools/cli/main.cpp": {"windows.h", "io.h", "fcntl.h"},
     "tests/unit/app/template_tools_probe.cpp": {"io.h", "fcntl.h"},
 }

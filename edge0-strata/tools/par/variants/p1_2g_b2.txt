@@ -1,0 +1,3 @@
+conc8  | 0,1 | 8 |   | STRATA_PIPED_CONCURRENT=1 | | w2:4,8@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+piece8 | 0,1 | 8 |   | STRATA_PIPED_READ_PIECE=4096;STRATA_PIPED_DECODE_MIN_MS=50 | | w2:4,8@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+adapt8 | 0,1 | 8 |   | STRATA_PIPE_ADAPT_EVERY=2000 | | w2:4,8@--max-tokens 128

@@ -1,0 +1,199 @@
+// src/kernels/latent_module_verify.cpp - one layer through strata::latent::run_layer.
+//
+//     latent_layer_pack_verify <layerL_test.bin> <latent_a_pack> <latent_dense_q8.bin> <layer>
+//
+// A comes from FileExpertSource (latent_a_pack/experts.bin), D/U from LatentDense
+// (mmap), and the test bundle supplies only x/routing/reference.  This is the
+// production storage path, without touching verify.cpp.
+//
+// D (Q8_0) -> q8_1 -> A (native NVFP4 grouped experts) -> U (Q8_0) -> combine,
+// against the Python float32 reference written in the test bundle.  This is the
+// first module of the latent adaptation: kernels + routing + two-stage output,
+// without the Strata verify/cache integration yet.
+#include "strata/kernels/iq_kernels.hpp"
+#include "strata/core/expert_source.hpp"
+#include "strata/core/latent_dense.hpp"
+#include "strata/kernels/cpu/expert_layout.hpp"
+#include "strata/latent/latent_moe.hpp"
+
+#include <cuda_runtime.h>
+
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <string>
+#include <vector>
+
+namespace k = strata::kernels;
+
+namespace {
+void ck(cudaError_t e, const char* what) {
+    if (e != cudaSuccess) { std::fprintf(stderr, "%s: %s\n", what, cudaGetErrorString(e)); std::exit(1); }
+}
+
+template<typename T>
+std::vector<T> read_n(std::ifstream& f, size_t n, const char* what) {
+    std::vector<T> v(n);
+    if (!f.read((char*) v.data(), (std::streamsize) (n * sizeof(T)))) {
+        std::fprintf(stderr, "short read: %s\n", what);
+        std::exit(1);
+    }
+    return v;
+}
+
+double rel_l2(const std::vector<float>& got, const std::vector<float>& ref) {
+    double num = 0, den = 0;
+    for (size_t i = 0; i < got.size(); ++i) {
+        const double d = (double) got[i] - (double) ref[i];
+        num += d * d;
+        den += (double) ref[i] * (double) ref[i];
+    }
+    return std::sqrt(num / (den + 1e-30));
+}
+
+float max_abs(const std::vector<float>& got, const std::vector<float>& ref) {
+    float m = 0;
+    for (size_t i = 0; i < got.size(); ++i) m = std::fmax(m, std::fabs(got[i] - ref[i]));
+    return m;
+}
+
+void report(const char* name, const std::vector<float>& got, const std::vector<float>& ref) {
+    std::printf("  %-4s relL2 %.4f%%  max_abs %.6g\n", name, 100 * rel_l2(got, ref), max_abs(got, ref));
+}
+}  // namespace
+
+int main(int argc, char** argv) {
+    if (argc < 5) { std::fprintf(stderr, "usage: %s test.bin latent_a_pack dense_q8.bin layer\n", argv[0]); return 2; }
+    const int layer = std::atoi(argv[4]);
+    std::ifstream f(argv[1], std::ios::binary);
+    if (!f) { std::fprintf(stderr, "cannot open %s\n", argv[1]); return 2; }
+    char magic[4];
+    f.read(magic, 4);
+    if (std::memcmp(magic, "LAT0", 4) != 0) { std::fprintf(stderr, "bad magic\n"); return 2; }
+    int32_t hdr[7];
+    if (!f.read((char*) hdr, sizeof hdr)) return 2;
+    const int T = hdr[0], K = hdr[1], G = hdr[2], E = hdr[3], H = hdr[4], ELL = hdr[5], I = hdr[6];
+    std::printf("T=%d K=%d G=%d E=%d H=%d ELL=%d I=%d\n", T, K, G, E, H, ELL, I);
+    if (T * K > 128) { std::fprintf(stderr, "cap too large for this test\n"); return 2; }
+
+    const auto x = read_n<float>(f, (size_t) T * H, "x");
+    const auto topk = read_n<int32_t>(f, (size_t) T * K, "topk");
+    const auto w = read_n<float>(f, (size_t) T * K, "w");
+    const auto labels = read_n<int32_t>(f, (size_t) E, "labels");
+    // The test bundle's D/U Q8 is skipped; the real dense pack replaces it.  Q4DU: the
+    // bundle's D/U width follows the FORMAT ENV (the same pack family the operator passes).
+    {
+        const char* fe = std::getenv("STRATA_LATENT_DENSE_FMT");
+        const int fmtb = (fe && fe[0] == '4' && fe[1] == 0) ? 4 : 8;
+        const size_t drow = (size_t) H / 32 * (fmtb == 4 ? 18 : 34);
+        const size_t urow = (size_t) ELL / 32 * (fmtb == 4 ? 18 : 34);
+        f.seekg((std::streamoff) ((size_t) G * ELL * drow + (size_t) G * H * urow), std::ios::cur);
+    }
+    const auto ref_xl = read_n<float>(f, (size_t) T * G * ELL, "ref_xl");
+    const auto ref_yl = read_n<float>(f, (size_t) T * K * ELL, "ref_yl");
+    const auto ref_y = read_n<float>(f, (size_t) T * K * H, "ref_y");
+    const auto ref_out = read_n<float>(f, (size_t) T * H, "ref_out");
+
+    std::string err;
+    if (!strata::kernels::cpu::expert_layout_load(argv[2], 48, 512, err)) {
+        std::fprintf(stderr, "layout: %s\n", err.c_str()); return 2;
+    }
+    strata::core::FileExpertSource src;
+    if (!src.open(argv[2], 48, 512, err)) { std::fprintf(stderr, "source: %s\n", err.c_str()); return 2; }
+    strata::core::LatentDense dense;
+    if (!dense.open(argv[3], 48, G, H, ELL, err)) { std::fprintf(stderr, "dense: %s\n", err.c_str()); return 2; }
+    const int fmt = dense.fmt();   // Q4DU: the bundle's D/U skip and Inputs.fmt follow the pack
+    (void) fmt;
+
+    const k::NativeExpertLayout L = k::native_expert_layout(40, 40, ELL, I);
+    if (!k::native_expert_supported(40, 40, ELL, I)) { std::fprintf(stderr, "native layout unsupported\n"); return 2; }
+    const size_t asz = (size_t) E * L.bytes;
+
+    const int32_t cap = T * K;
+    // route plan grouped by expert: entries are the route indices, activations are token*G+group
+    std::vector<int32_t> start(E + 1, 0), dst(cap), tok(cap), pos(E);
+    std::vector<int32_t> counts(E, 0);
+    for (int32_t r = 0; r < cap; ++r) counts[topk[r]]++;
+    for (int e = 0; e < E; ++e) start[e + 1] = start[e] + counts[e];
+    pos = start;
+    for (int32_t r = 0; r < cap; ++r) {
+        const int e = topk[r];
+        const int p = pos[e]++;
+        dst[p] = r;
+        tok[p] = (r / K) * G + labels[e];
+    }
+
+    void *dxq = nullptr, *dxlq = nullptr, *dscr = nullptr;
+    float *dx = nullptr, *dD = nullptr, *dU = nullptr, *dXl = nullptr, *dYl = nullptr, *dY = nullptr;
+    float *dUIn = nullptr, *dUOut = nullptr;
+    void* dUq = nullptr;
+    uint8_t* dA = nullptr;
+    unsigned long long* dPtr = nullptr;
+    int32_t *dStart = nullptr, *dN = nullptr, *dDst = nullptr, *dTok = nullptr;
+
+    ck(cudaMalloc(&dx, (size_t) T * H * 4), "x");
+    ck(cudaMalloc(&dxq, (size_t) T * (H / 32) * 36), "xq");
+    ck(cudaMalloc(&dD, dense.d_bytes()), "D");
+    ck(cudaMalloc(&dU, dense.u_bytes()), "U");
+    ck(cudaMalloc(&dXl, (size_t) T * G * ELL * 4), "xl");
+    ck(cudaMalloc(&dxlq, (size_t) T * G * (ELL / 32) * 36), "xlq");
+    ck(cudaMalloc(&dA, asz), "A");
+    ck(cudaMalloc(&dPtr, (size_t) E * 8), "ptr");
+    ck(cudaMalloc(&dStart, (size_t) (E + 1) * 4), "start");
+    ck(cudaMalloc(&dN, 4), "n");
+    ck(cudaMalloc(&dDst, (size_t) cap * 4), "dst");
+    ck(cudaMalloc(&dTok, (size_t) cap * 4), "tok");
+    ck(cudaMalloc(&dYl, (size_t) cap * ELL * 4), "yl");
+    ck(cudaMalloc(&dY, (size_t) cap * H * 4), "y");
+    ck(cudaMalloc(&dUIn, (size_t) cap * ELL * 4), "uin");
+    ck(cudaMalloc(&dUOut, (size_t) cap * H * 4), "uout");
+    ck(cudaMalloc(&dUq, (size_t) cap * (ELL / 32) * 36), "uq");
+    ck(cudaMalloc(&dscr, k::native_expert_scratch_bytes(cap, I)), "scratch");
+
+    ck(cudaMemcpy(dx, x.data(), x.size() * 4, cudaMemcpyHostToDevice), "x");
+    ck(cudaMemcpy(dD, dense.d(layer), dense.d_bytes(), cudaMemcpyHostToDevice), "D");
+    ck(cudaMemcpy(dU, dense.u(layer), dense.u_bytes(), cudaMemcpyHostToDevice), "U");
+    for (int e = 0; e < E; ++e) {
+        const uint8_t* p = src.blob(layer, e);
+        if (!p) { std::fprintf(stderr, "source blob null layer %d expert %d\n", layer, e); return 2; }
+        ck(cudaMemcpy(dA + (size_t) e * L.bytes, p, L.bytes, cudaMemcpyHostToDevice), "A blob");
+    }
+    std::vector<unsigned long long> ptr(E);
+    for (int e = 0; e < E; ++e) ptr[e] = (unsigned long long) (dA + (size_t) e * L.bytes);
+    const int32_t n_groups = E;
+    ck(cudaMemcpy(dPtr, ptr.data(), ptr.size() * 8, cudaMemcpyHostToDevice), "ptr");
+    ck(cudaMemcpy(dStart, start.data(), start.size() * 4, cudaMemcpyHostToDevice), "start");
+    ck(cudaMemcpy(dN, &n_groups, 4, cudaMemcpyHostToDevice), "n");
+    ck(cudaMemcpy(dDst, dst.data(), dst.size() * 4, cudaMemcpyHostToDevice), "dst");
+    ck(cudaMemcpy(dTok, tok.data(), tok.size() * 4, cudaMemcpyHostToDevice), "tok");
+
+    const strata::latent::Geometry g{(int64_t) H, (int64_t) ELL, (int64_t) I, G, E, K};
+    const strata::latent::Inputs in{(const uint8_t*) dD, (const uint8_t*) dU, dx, topk.data(), labels.data(), nullptr, w.data(), T, fmt};   // Q4DU: the pack's fmt
+    const strata::latent::DevicePlan dp{dPtr, dStart, dN, dDst, dTok, cap, E};
+    const strata::latent::Buffers b{dxq, dxlq, dUq, dscr, dXl, dYl, dUIn, dUOut, dY};
+    if (!strata::latent::run_layer(g, in, dp, b, nullptr)) { std::fprintf(stderr, "run_layer failed\n"); return 2; }
+    ck(cudaDeviceSynchronize(), "run");
+
+    std::vector<float> xl((size_t) T * G * ELL), yl((size_t) cap * ELL), y((size_t) cap * H), out((size_t) T * H, 0.f);
+    ck(cudaMemcpy(xl.data(), dXl, xl.size() * 4, cudaMemcpyDeviceToHost), "xl");
+    ck(cudaMemcpy(yl.data(), dYl, yl.size() * 4, cudaMemcpyDeviceToHost), "yl");
+    ck(cudaMemcpy(y.data(), dY, y.size() * 4, cudaMemcpyDeviceToHost), "y");
+    strata::latent::combine(g, w.data(), y.data(), out.data(), T);
+
+    std::printf("latent module layer %d:\n", layer);
+    report("xl", xl, ref_xl);
+    report("yl", yl, ref_yl);
+    report("y", y, ref_y);
+    report("out", out, ref_out);
+    const double eo = rel_l2(out, ref_out);
+    std::printf("RESULT: %s (combine relL2 %.3f%%)\n", eo < 0.03 ? "ok" : "TOO FAR", 100 * eo);
+
+    for (void* p : {(void*) dx, dxq, (void*) dD, (void*) dU, (void*) dXl, dxlq, (void*) dA, (void*) dPtr,
+                    (void*) dStart, (void*) dN, (void*) dDst, (void*) dTok, (void*) dYl, (void*) dY,
+                    (void*) dUIn, (void*) dUOut, dUq, dscr})
+        cudaFree(p);
+    return eo < 0.03 ? 0 : 1;
+}

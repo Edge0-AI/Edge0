@@ -27,7 +27,7 @@ std::vector<std::shared_ptr<exec::Backend>> consumers_for(model::StorageStages u
     return result;
 }
 exec::Status add_estimate(WeightEstimate& total, const WeightEstimate& item) {
-    for (const auto pair : {std::make_pair(&total.buffer_bytes, item.buffer_bytes),
+    for (const auto& pair : {std::make_pair(&total.buffer_bytes, item.buffer_bytes),
         std::make_pair(&total.metadata_bytes, item.metadata_bytes), std::make_pair(&total.total_bytes, item.total_bytes),
         std::make_pair(&total.resident_bytes, item.resident_bytes), std::make_pair(&total.pool_bytes, item.pool_bytes),
         std::make_pair(&total.temporary_bytes, item.temporary_bytes)}) {

@@ -1,0 +1,125 @@
+"""Minimal GGUF v3 header reader - no ggml, no gguf-py.
+
+Written because the `gguf` PyPI package cannot open this artifact: its `GGMLQuantizationType`
+enum has no member for type 42 (`Q2_0`), which is newer than the library. That is itself a P0.S6
+finding - the format this engine is specialized for is ahead of the standard tooling.
+
+This is the reference implementation for `src/artifact/` (architecture §15: "GGUF v3 reader (mmap,
+no ggml dependency)"). It parses the header only; tensor data is never read.
+"""
+from __future__ import annotations
+
+import dataclasses
+import pathlib
+import struct
+from typing import Any
+
+GGUF_MAGIC = 0x46554747  # "GGUF" little-endian
+
+# ggml_type values. 42 = Q2_0, the GSQ-RCO routed-expert encoding, absent from gguf-py as of 0.19.
+GGML_TYPES: dict[int, str] = {
+    0: "F32", 1: "F16", 2: "Q4_0", 3: "Q4_1", 4: "Q4_2", 5: "Q4_3", 6: "Q5_0", 7: "Q5_1",
+    8: "Q8_0", 9: "Q8_1", 10: "Q2_K", 11: "Q3_K", 12: "Q4_K", 13: "Q5_K", 14: "Q6_K",
+    15: "Q8_K", 16: "IQ2_XXS", 17: "IQ2_XS", 18: "IQ3_XXS", 19: "IQ1_S", 20: "IQ4_NL",
+    21: "IQ3_S", 22: "IQ2_S", 23: "IQ4_XS", 24: "I8", 25: "I16", 26: "I32", 27: "I64",
+    28: "F64", 29: "IQ1_M", 30: "BF16", 31: "Q4_0_4_4", 32: "Q4_0_4_8", 33: "Q4_0_8_8",
+    34: "TQ1_0", 35: "TQ2_0", 36: "IQ4_NL_4_4", 37: "IQ4_NL_4_8", 38: "IQ4_NL_8_8",
+    39: "MXFP4", 40: "NVFP4", 41: "Q4_0_8_8", 42: "Q2_0",
+}
+
+# GGUF metadata value type ids
+GGUF_META = {
+    0: ("u8", 1), 1: ("i8", 1), 2: ("u16", 2), 3: ("i16", 2), 4: ("u32", 4), 5: ("i32", 4),
+    6: ("f32", 4), 7: ("bool", 1), 8: ("string", None), 9: ("array", None),
+    10: ("u64", 8), 11: ("i64", 8), 12: ("f64", 8),
+}
+
+# ggml block geometry for the encodings this model uses: (block elements, bytes per block)
+# This is what makes a per-tensor byte count checkable, and it is the contract the kernels share.
+BLOCK_GEOMETRY: dict[str, tuple[int, int]] = {
+    "F32": (1, 4), "F16": (1, 2), "BF16": (1, 2), "F64": (1, 8),
+    "Q4_0": (32, 18), "Q4_1": (32, 20), "Q5_0": (32, 22), "Q5_1": (32, 24),
+    "Q8_0": (32, 34), "Q8_1": (32, 36),
+    "Q2_K": (256, 84), "Q3_K": (256, 110), "Q4_K": (256, 144), "Q5_K": (256, 176),
+    "Q6_K": (256, 210), "Q8_K": (256, 292),
+    "IQ2_XXS": (256, 66), "IQ2_XS": (256, 74), "IQ3_XXS": (256, 98), "IQ1_S": (256, 50),
+    "IQ4_NL": (32, 18), "IQ3_S": (256, 110), "IQ2_S": (256, 82), "IQ4_XS": (256, 136),
+    "IQ1_M": (256, 56), "Q2_0": (64, 18), "MXFP4": (32, 17), "NVFP4": (64, 36),
+}
+
+
+@dataclasses.dataclass
+class TensorInfo:
+    name: str
+    shape: list[int]
+    type_id: int
+    type_name: str
+    offset: int
+
+    @property
+    def elements(self) -> int:
+        n = 1
+        for d in self.shape:
+            n *= d
+        return n
+
+    def expected_bytes(self) -> int | None:
+        geom = BLOCK_GEOMETRY.get(self.type_name)
+        if geom is None:
+            return None
+        block_elems, block_bytes = geom
+        if self.elements % block_elems:
+            return None
+        return self.elements // block_elems * block_bytes
+
+
+class GGUFFile:
+    def __init__(self, path: pathlib.Path):
+        self.path = pathlib.Path(path)
+        self.metadata: dict[str, Any] = {}
+        self.tensors: list[TensorInfo] = []
+        self.version = 0
+        self.alignment = 32
+        with self.path.open("rb") as fh:
+            self._parse(fh)
+        self.data_start = self._data_start
+
+    # ------------------------------------------------------------------ internals
+    def _parse(self, fh) -> None:
+        magic = struct.unpack("<I", fh.read(4))[0]
+        if magic != GGUF_MAGIC:
+            raise ValueError(f"{self.path.name}: not a GGUF file (magic {magic:#x})")
+        self.version, n_tensors, n_kv = struct.unpack("<IQQ", fh.read(20))
+        if self.version != 3:
+            raise ValueError(f"{self.path.name}: GGUF v{self.version}, this reader handles v3")
+        for _ in range(n_kv):
+            key = self._str(fh)
+            self.metadata[key] = self._value(fh)
+        for _ in range(n_tensors):
+            name = self._str(fh)
+            (n_dims,) = struct.unpack("<I", fh.read(4))
+            shape = list(struct.unpack(f"<{n_dims}Q", fh.read(8 * n_dims)))
+            type_id, offset = struct.unpack("<IQ", fh.read(12))
+            self.tensors.append(TensorInfo(name, shape, type_id,
+                                           GGML_TYPES.get(type_id, f"type{type_id}"), offset))
+        align = self.metadata.get("general.alignment")
+        if isinstance(align, int) and align:
+            self.alignment = align
+        pos = fh.tell()
+        self._data_start = (pos + self.alignment - 1) // self.alignment * self.alignment
+
+    def _str(self, fh) -> str:
+        (n,) = struct.unpack("<Q", fh.read(8))
+        return fh.read(n).decode("utf-8", "replace")
+
+    def _value(self, fh):
+        (t,) = struct.unpack("<I", fh.read(4))
+        name, size = GGUF_META[t]
+        if name == "string":
+            return self._str(fh)
+        if name == "array":
+            (et,) = struct.unpack("<I", fh.read(4))
+            (count,) = struct.unpack("<Q", fh.read(8))
+            ename, esize = GGUF_META[et]
+            if ename == "string":
+                return [self._str(fh) for _ in r

@@ -26,7 +26,7 @@ int main() {
         CHECK(!edge::initialize_session(loaded,*kv,states,resources.budget,loaded->stages));
         models::ForwardRequest request{{-1},{0,1},exec::Phase::prefill,{0},{}};models::ForwardProgress progress;request.progress=&progress;
         CHECK(!edge::forward(loaded,request,*kv,states,resources.budget)); CHECK(!progress.submitted && started==0);
-        request.tokens={1}; auto result=edge::forward(loaded,request,*kv,states,resources.budget);
+        request.tokens.assign(1,1); auto result=edge::forward(loaded,request,*kv,states,resources.budget);
         CHECK(!result && progress.submitted); CHECK(started==36 && finished==36);
         for(const auto& pool:loaded->pools)for(std::size_t i=0;i<12;++i)CHECK(pool->storage()->state(i)!=weights::RegionState::writing);
         CHECK(loaded->pools[2]->storage()->state(0)==weights::RegionState::isolated);

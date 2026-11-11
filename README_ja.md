@@ -6,7 +6,7 @@
 
 **オープンソースのストリーミング MoE 推論フレームワーク — SSD expert offload + Recover-LoRA + prerouter ルーティング予測。**
 
-**macOS** · **iOS** · **Android** · **Windows** — 1 つのエンジン、1 つのネイティブ API。
+**macOS** · **iOS** · **Android** · **Linux** · **Windows** — すべての Edge0 モデルを 1 つのプログラムで。
 
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
@@ -23,6 +23,7 @@
 
 ## ニュース
 
+- **[2026-11-13]** **`edge0-145b`** と **`edge0-120b`** をリリースしました。Qwen3.8-Flash-Next から派生した latent MoE モデルで、Linux または Windows 上の NVIDIA GPU 1 枚で動作します。[edge0-strata](edge0-strata/EDGE0.md) で動作し、`edge0-infer serve` と `edge0-infer chat` がこれらのモデル用に起動します。[モデルページ](docs/models/edge0-145b.md)を参照してください。
 - **[2026-11-04]** **統合推論エンジン [`edge0-infer`](edge0-infer/README_ja.md)** をリリースしました。[GGML](https://github.com/ggml-org/ggml) をベースに、1 つのエンジンと 1 つのネイティブ C++ API で、同じモデルを macOS、iOS、Android、Windows で実行します。CLI、OpenAI 互換のローカルサーバー、デスクトップ・Android・iOS 向けのチャットアプリのサンプルも付属します。最初のリリースは `edge0-35b` をサポートし、`edge0-8b` は今後のリリースでサポートします。これまでの Python フレームワークと各プラットフォームのエンジンを置き換えるもので、以前のコードは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) に残しています。
 - **[2026-09-30]** **4 つのプラットフォーム — iOS、macOS、Android、Windows — 向けの edge0 推論エンジン**をリリースしました(ソースは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) を参照)。
 - **[2026-09-16]** 技術レポートが arXiv に掲載: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063)。
@@ -40,32 +41,36 @@
 
 ### プラットフォーム
 
-1 つのエンジンと 1 つのネイティブ API で、すべてのプラットフォームが同じコードを共有します。[`edge0-infer/`](edge0-infer/README_ja.md) を参照:
+[`edge0-infer`](edge0-infer/README_ja.md) は実行するプログラム(CLI、OpenAI／Anthropic 互換のローカルサーバー、チャットアプリ)で、どのモデルも同じコマンドで使えます。各モデルはそれぞれ専用のエンジンで動作し、edge0-infer がモデルフォルダからエンジンを自動で選ぶため、選択する必要はありません。`edge0-35b` は `edge0-infer/` の**ネイティブエンジン**(GGML ベース、ネイティブ C++ API を提供)で、`edge0-145b` と `edge0-120b` は [`edge0-strata/`](edge0-strata/EDGE0.md) の **edge0-strata**(Strata のフォーク)で動作します。
 
-| プラットフォーム | バックエンド | 検証デバイス |
+| プラットフォーム | `edge0-35b`(ネイティブエンジン) | `edge0-145b`、`edge0-120b`(edge0-strata) |
 |---|---|---|
-| **macOS**(Apple Silicon) | Metal、CPU | Apple M5、16 GiB |
-| **iOS** | Metal | iPhone 17 Pro Max |
-| **Android** | CPU | OnePlus PKR110(Snapdragon 8 Elite) |
-| **Windows**(x86-64) | CPU、Vulkan | Intel Core i5-12400、NVIDIA GeForce RTX 4070 SUPER |
+| **macOS**(Apple Silicon) | Metal、CPU | — |
+| **iOS** | Metal | — |
+| **Android** | CPU | — |
+| **Linux** | CPU | NVIDIA GPU(CUDA 13) |
+| **Windows** | CPU、Vulkan | NVIDIA GPU(CUDA 13) |
 
-同じデバイス上で prefill と decode に異なるバックエンドを使えます(例: Metal で prefill、CPU で decode)。デスクトップ(macOS、Windows)、Android、iOS 向けのチャットアプリのサンプルは [`edge0-infer/examples/`](edge0-infer/examples/README.md#chat-applications) にあります。
+測定結果：`edge0-35b` は [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures)、`edge0-145b` と `edge0-120b` は[モデルページ](docs/models/edge0-145b.md)を参照してください。ネイティブエンジンでは、同じデバイス上で prefill と decode に異なるバックエンドを使えます(例: Metal で prefill、CPU で decode)。デスクトップ(macOS、Windows)、Android、iOS 向けのチャットアプリのサンプルは [`edge0-infer/examples/`](edge0-infer/examples/README.md#chat-applications) にあります。
 
 ### モデル
 
-フレームワークには 2 つのモデルティアが付属します。各ティアはエンドツーエンドのリリースであり、公開されるチェックポイント、訓練済み LoRA アダプタ、訓練済み prerouter ヘッドが 1 つの単位として機能します。
+フレームワークには 2 つのモデルティア（`edge0-35b` と `edge0-8b`）が付属します。各ティアはエンドツーエンドのリリースであり、公開されるチェックポイント、訓練済み LoRA アダプタ、訓練済み prerouter ヘッドが 1 つの単位として機能します。
 
-| ティア | 公開チェックポイント | 推論プロファイル | edge0-infer |
+| ティア | 公開チェックポイント | 推論プロファイル | エンジン |
 |---|---|---|---|
-| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit、40 層、256 エキスパート、prerouter K=4 | ✅ サポート済み |
-| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit、24 層、128 エキスパート、prerouter K=8 | 予定 |
+| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit、40 層、256 エキスパート、prerouter K=4 | ネイティブエンジン ✅ |
+| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit、24 層、128 エキスパート、prerouter K=8 | ネイティブエンジン(予定) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | coming soon | Q3_K または NVFP4 latent エキスパート（1792）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | coming soon | Q3_K または NVFP4 latent エキスパート（1280）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
 
-両方のチェックポイントともオープンのスパース MoE ベースモデル(それぞれ Qwen3.6-35B-A3B と Ling 3.0 bailing hybrid)上に構築されており、本フレームワークのために実施された LoRA と prerouter の訓練成果物を同梱しています。edge0-infer は付属のアセットツールで公開チェックポイントをダウンロードし、エンジン用のモデルアセットに変換します([はじめに](#はじめに)を参照)。
+公開済みの 2 つのチェックポイントはいずれもオープンのスパース MoE ベースモデル(それぞれ Qwen3.6-35B-A3B と Ling 3.0 bailing hybrid)上に構築されており、本フレームワークのために実施された LoRA と prerouter の訓練成果物を同梱しています。edge0-infer は付属のアセットツールで公開チェックポイントをダウンロードし、エンジン用のモデルアセットに変換します([はじめに](#はじめに)を参照)。
+`edge0-145b` と `edge0-120b` は単一の NVIDIA GPU 向けの latent-MoE です。edge0-strata 上で動作し、`edge0-infer serve` と `edge0-infer chat` がそれを起動します([edge0-145b と edge0-120b](docs/models/edge0-145b.md) を参照)。
 
 ### 設計
 
 - **GGML ベース、全プラットフォームで同じコード**: ネイティブライブラリは、固定バージョンを無改変で同梱した GGML のみに依存し、ビルド時に何もダウンロードしません。
-- **1 つのネイティブ API**: アプリケーションは CMake ターゲット `edge0::edge0` にリンクし、`include/edge0/` のヘッダーをインクルードするだけで、プロセス内でエンジンを使えます。リファレンス CLI と OpenAI 互換サーバーは、ネイティブ API と同じ設定とデフォルト値を使います。
+- **1 つのネイティブ API**: アプリケーションは CMake ターゲット `edge0::edge0` にリンクし、`include/edge0/` のヘッダーをインクルードするだけで、プロセス内でエンジンを使えます。リファレンス CLI とローカルサーバーは、ネイティブ API と同じ設定とデフォルト値を使います。
 - **エキスパートのオンデマンド読み込み**: ルーティングされるエキスパートは、ストレージから必要に応じて層ごとに固定数のエキスパートスロットへ読み込まれるため、デバイスのメモリ予算より大きなモデルでも全体を読み込まずに実行できます。
 - **2 つのルーティングモード**: `predicted`(デフォルト)は prerouter を使い、現在のトークンを計算している間に次のトークンのエキスパートをバックグラウンドで準備します。`actual` はモデル本来の計算で、比較用です。
 - **マルチターンの再利用**: マルチターン会話では通常、各ターンの新しいメッセージだけを計算し、それ以前の計算結果はそのまま再利用します。
@@ -85,6 +90,17 @@
 | IFBench | 57.9 | 61.7 | 53.9 | 60.6 |
 | **平均** | **79.2** | **83.2** | **69.9** | **72.7** |
 
+`edge0-145b` と `edge0-120b`(**太字** = 列内の最高値。[モデルページ](docs/models/edge0-145b.md#quality)を参照):
+
+| Model | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Edge0-145B** | **64.6** | **86.5** | 79.3 | 80.6 | 90.4 | 35.4 |
+| **Edge0-120B** | 50.0 | 75.0 | 81.0 | 79.3 | 87.4 | 31.0 |
+| DeepSeek-V4-Flash-0731 | 54.4 | 82.7 | 79.7 | 79.2 | 90.8 | 33.8 |
+| Qwen3.8-Flash-Next | 58.7 | 83.3 | 79.1 | **81.3** | **91.7** | 35.9 |
+| Qwen3.8-27B | 42.2 | 73.0 | **82.0** | 79.5 | 89.2 | 30.8 |
+| Claude-Opus-4.6 (Max) | / | 78.2 | 78.0 | 62.5 | 91.3 | **40.0** |
+
 ### ベンチマーク
 
 `edge0-35b`、`predicted` ルーティング、edge0-infer で測定(各値は 3 プロセスの最小値〜最大値):
@@ -100,6 +116,33 @@
 
 メモリの指標はプラットフォームごとに異なり、直接比較できません。測定方法、`actual` ルーティングの数値、再現コマンドは [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures) を参照してください。
 
+`edge0-145b` と `edge0-120b`、edge0-strata、NVIDIA GPU 1 枚(tok/s):
+
+#### edge0-145b
+
+| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
+| --- | --- | ---: | ---: | ---: | ---: |
+| RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
+| RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
+| RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
+| RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
+| 16 GiB VRAM + 20 GiB RAM | Q3_K | 249 | 335 | 36.8 | 44.9 |
+
+#### edge0-120b
+
+| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
+| --- | --- | ---: | ---: | ---: | ---: |
+| RTX 5090 D 24 GB | Q3_K | 3236.7 | 4576.5 | 130.2 | **144.6** |
+| RTX 5090 D 24 GB | NVFP4 | 2668.5 | 4357.1 | 124.9 | 135.5 |
+| RTX 4090 24 GB | Q3_K | 2637.5 | 3551.1 | 95.0 | 104.9 |
+| RTX Spark N1X 60 GiB | Q3_K | 987.0 | 1081.7 | 47.2 | 68.4 |
+| RTX Spark N1X 60 GiB | NVFP4 | 996.4 | 1066.9 | 45.1 | 68.9 |
+| 16 GiB VRAM + 20 GiB RAM | Q3_K | 430 | 778 | 62.4 | 73.3 |
+| 16 GiB VRAM + 20 GiB RAM | NVFP4 | 361.1 | 619.7 | 51.3 | 59.9 |
+
+`16 GiB VRAM + 20 GiB RAM` の行は同じ RTX 5090 D 24 GB を cgroup で GPU メモリ 16 GiB、システムメモリ 20 GiB に制限したものです。詳細は[モデルページ](docs/models/edge0-145b.md#speed-measured-one-card)を参照してください。
+
 ## はじめに
 
 以下のコマンドはすべて `edge0-infer/` ディレクトリで実行します。CMake 3.21 以上、Ninja、C++17/C11 コンパイラ、uv、Git が必要です。35B の元の重みは約 18 GB、変換後のアセットは約 20 GB で、変換中はさらに同じくらいの空き容量が必要です。
@@ -114,7 +157,9 @@ build/mac-metal/bin/edge0-infer info        # 次の行が出力されるはず:
 
 Metal のないマシンでは `--preset cpu`、`build/cpu/bin/edge0-infer` を使い、以下のコマンドでは `--device cpu` を指定してください。
 
-### 2) モデルアセットのダウンロードと変換
+### 2) モデルの準備
+
+**edge0-35b(ネイティブエンジン)**:モデルアセットをダウンロードして変換します。
 
 ```bash
 export MOE_SOURCE_35B=<元の重みを置くディレクトリ>
@@ -130,6 +175,8 @@ assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
 
 ダウンロードされるのは Hugging Face 上の `Edge0/Edge0-35B-A3B-preview` で、固定されたリビジョンとダイジェストで検証されます。
 
+**edge0-145b と edge0-120b(edge0-strata)**:[`edge0-strata/EDGE0.md`](edge0-strata/EDGE0.md) に従って edge0-strata をビルドし、公開されたモデルフォルダを使います([edge0-145b と edge0-120b](docs/models/edge0-145b.md) を参照)。
+
 ### 3) 実行
 
 ```bash
@@ -137,9 +184,11 @@ assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "一文で自己紹介してください。"
 # マルチターンチャット
 build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
-# サーバー起動(OpenAI 互換、デフォルト http://127.0.0.1:8000/v1)
+# サーバー起動(OpenAI／Anthropic 互換、デフォルト http://127.0.0.1:8000)
 build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
 ```
+
+edge0-145b と edge0-120b でも、`chat` と `serve` は同じく `--model <モデルフォルダ>` で使います。`run` はネイティブエンジン専用です。
 
 Android、Windows、iOS 向けのビルド、および自分の CMake プロジェクトからエンジンを使う方法は [Getting started](edge0-infer/docs/getting-started.md) を参照してください。
 
@@ -148,16 +197,21 @@ Android、Windows、iOS 向けのビルド、および自分の CMake プロジ�
 **モデル**
 
 - [MoE のルーティングとエキスパート](docs/moe.md) / [prerouter](docs/prerouter.md)
-- [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
+- [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md) / [edge0-145b と edge0-120b](docs/models/edge0-145b.md)
 - 技術レポート: [The Other Half of the Memory Wall](https://arxiv.org/abs/2609.18063)([PDF](paper/main.pdf))
 
-**エンジン(edge0-infer)**
+**edge0-infer**
 
 - [Getting started](edge0-infer/docs/getting-started.md): 各プラットフォームでのビルド、モデルアセット、実行、チャット、サーバー
-- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [OpenAI 互換サーバー](edge0-infer/docs/openai-compatible-server.md)
+- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [ローカルサーバー](edge0-infer/docs/local-server.md)
 - [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
 - [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
 - [モデルアセットツールとモデルの追加](edge0-infer/tools/assets/README.md)
+
+**エンジン**
+
+- ネイティブエンジン: [Architecture](edge0-infer/docs/architecture.md#native-engine) / [Native API](edge0-infer/docs/native-api.md)
+- edge0-strata: [ビルドと起動の取り決め](edge0-strata/EDGE0.md) / edge0-infer での [edge0-145b](edge0-infer/docs/edge0-145b.md) と [edge0-120b](edge0-infer/docs/edge0-120b.md)
 
 ## ロードマップ
 

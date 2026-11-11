@@ -99,7 +99,11 @@ identifier/directory labels and unavailable entries, server-port validation,
 Stopping/Stopped transitions, CSS spinner markup, 429 backoff and cancellation,
 UTF-8, incomplete streams, normal HTTP request bodies without generation overrides,
 page-header actions, bounded scrolling layouts, all four editable/locked On/Off
-switch states, and default/override application identifiers.
+switch states, and default/override application identifiers. For a delegated model
+they render the Status page from a `/status` that model returned (null commit and
+backends) and its current-request card while streaming (prefill, decode with the
+forwarded fragment count) and while a non-streaming request runs (In progress only),
+never showing `null`, and read the metrics line from the final chunk's `timings`.
 
 Rust tests compile a small fixture executable with `rustc`. It does not load the
 engine or use a port. Tests cover readiness parsing, argument boundaries, settings,
@@ -108,7 +112,8 @@ loading cancellation before child publication, a newer start replacing a pending
 start, recovery serialized with startup, preservation of replaced PID records,
 terminal shutdown rejecting queued starts, automatic/explicit ports, compatible
 legacy settings, inspection identifiers, conversation and totals storage, LAN arguments, token
-format and file permissions. Each test owns its temporary
+format and file permissions, and `EDGE0_HOME` holding the settings, archive and PID
+record (unset or blank keeps the platform directories). Each test owns its temporary
 directory and child processes.
 
 A Mac can additionally check the Windows Rust source. Install Homebrew's `llvm`
@@ -136,7 +141,7 @@ Windows checklist below. App tests are independent of the engine's ctest suite.
 
 ## Assets and first launch
 
-Prepare assets using the [asset guide](../../docs/getting-started.md#get-the-model-assets).
+Prepare assets using the [asset guide](../../docs/getting-started.md#get-a-model).
 Build `edge0-infer` using the [build guide](../../docs/getting-started.md).
 On Choose a model, expand Other location… to enter the full executable path
 and one asset directory per line. This section starts collapsed, including on
@@ -159,6 +164,10 @@ The default device is `metal` on macOS and `cpu` on Windows. Settings also allow
 `vulkan` and an optional prefill device; the selected executable must support the
 chosen backend. Model loading can take several minutes. Cancel stops a pending
 load. Changing model or saving settings ends the old service and clears history.
+A model that `inspect --json` reports as `delegated` is started without the device
+settings: it runs on the GPU its external engine uses. Its `edge0-infer` finds edge0-strata through
+`EDGE0_STRATA_DIR` in the app's environment or an `edge0-strata/` directory beside an ancestor of the
+selected executable.
 
 Server port is optional: leave it blank for an automatically assigned port, or
 enter an integer from 1 to 65535. Invalid input cannot be saved. The app passes
@@ -178,7 +187,7 @@ Choose a model header with loaded-only Back to chat and Refresh actions.
 Normal chat requests omit `max_tokens`, leaving the output limit to the engine.
 Requests explicitly include only model, complete messages, streaming, final usage,
 the selected thinking flag and the temperature of the generation style; other
-sampling parameters keep the model's recommended values. Service startup passes only model, device, port and optional prefill device;
+sampling parameters keep the model's recommended values. Service startup passes only model, device, port and optional prefill device (no devices for a delegated model);
 it does not override generation settings.
 
 The four empty-chat suggestions, and the system prompt used when the setting is
@@ -212,6 +221,26 @@ The app does not time generation or read process memory; every number on the Sta
 and Service pages comes from the engine. Math is shown verbatim
 as code within Markdown; it is not typeset. Model errors and unexpected service
 exit are shown above the conversation; inspect the error before retrying.
+
+### Environment variables
+
+None of these is needed for normal use; when unset, the App behaves as described above.
+
+| Variable | Effect |
+| --- | --- |
+| `EDGE0_HOME` | A directory that holds all of the App's state instead of the per-user directories: settings, API token, conversation archive, totals and `serve-pid.json`. Use it when the per-user directories are not writable for the App (a locked-down profile, a sandboxed launcher) or for a portable copy. Unset or blank means the per-user directories. |
+| `EDGE0_DEBUG_LOG` | A file the App appends one line to for each step of loading a model (inspection, start, process attachment, PID record) and its outcome, so a failing load shows which step failed. |
+| `EDGE0_AUTOLOAD` | `1` loads the first configured asset directory about three seconds after start-up, without using the UI; with `EDGE0_DEBUG_LOG` the load can be followed unattended. |
+
+On Windows the App puts the service it starts into a Job Object so that the service
+ends when the App is ended outright. When the App itself runs inside a job that does not
+allow this (some launchers, agent shells and CI runners), loading continues without the
+Job Object. Stopping, switching models and quitting the App normally still stop the
+service (through the stored PID, CTRL_BREAK and forced termination), but if the App is
+then ended outright, for example from Task Manager, the service can keep running until
+the App is started again or it is ended by hand. When the App cannot create its hidden
+console, loading also continues; CTRL_BREAK then cannot reach the service, and it is
+stopped by the forced termination that follows the 15-second wait.
 
 ## Pages and settings
 
@@ -320,6 +349,9 @@ A checkmark below is a procedure, not a claim that it has passed on this machine
    group; the host sends CTRL_BREAK before the 15-second forced-termination fallback.
 2. Start again and end the App process in Task Manager. Its Job Object has
    `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`; confirm the service immediately exits too.
+   Start the App from Explorer or a plain console for this check: started inside
+   a job that forbids nesting, the App has no Job Object (see
+   [Environment variables](#environment-variables)).
 3. Repeat after switching models and after cancelling a pending load. Confirm
    the App remains usable and no service is left over. The GUI host creates a hidden console when it has none, so its child group
    can receive CTRL_BREAK without signalling the host.

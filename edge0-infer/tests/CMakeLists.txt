@@ -191,6 +191,8 @@ moe_warnings(moe_test_platform_runtime)
 moe_add_test(NAME moe_test_platform_runtime LEVEL L1 COMMAND moe_test_platform_runtime)
 moe_add_test(NAME check_runtime_backends LEVEL L0 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/unit/checks/check_runtime_backends.py" "${PROJECT_SOURCE_DIR}")
+moe_add_test(NAME check_strata_files LEVEL L0 COMMAND ${moe_python}
+    "${PROJECT_SOURCE_DIR}/tests/unit/cli/check_strata_files.py" "${PROJECT_SOURCE_DIR}")
 
 add_executable(moe_test_exec_budget unit/exec/budget_test.cpp)
 target_include_directories(moe_test_exec_budget PRIVATE "${PROJECT_SOURCE_DIR}")
@@ -713,6 +715,9 @@ if(MOE_BUILD_CLI)
 endif()
 
 if(MOE_BUILD_CLI)
+    moe_add_test(NAME moe_test_serve_sdk_anthropic LEVEL L2 COMMAND ${moe_python}
+        "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py" --with anthropic==2.8.0
+        "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_anthropic_test.py" --cli $<TARGET_FILE:edge0-infer>)
     moe_add_test(NAME moe_test_serve_sdk LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py"
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_test.py" --cli $<TARGET_FILE:edge0-infer>)
@@ -732,6 +737,7 @@ if(MOE_BUILD_CLI)
     endif()
     moe_add_test(NAME moe_test_serve_35b LEVEL L3 DEVICE COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py"
+        --with openai==3.26.1 --with anthropic==2.8.0
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_35b_test.py"
         --cli $<TARGET_FILE:edge0-infer> --decode $<TARGET_FILE:moe_portal_decode>
         --backend ${_moe_serve_35b_backend})
@@ -866,4 +872,28 @@ if(MOE_BUILD_CLI)
     target_link_libraries(moe_test_serve_status PRIVATE edge0::edge0)
     moe_warnings(moe_test_serve_status)
     moe_add_test(NAME moe_test_serve_status LEVEL L1 COMMAND moe_test_serve_status)
+endif()
+
+# Delegated models (such as Edge0 145B): the native API refuses their directories;
+# edge0-infer serve and chat start and proxy edge0-strata, tested with a fake engine.
+add_executable(moe_test_delegated_directory unit/app/delegated_directory_test.cpp)
+target_include_directories(moe_test_delegated_directory PRIVATE "${PROJECT_SOURCE_DIR}")
+target_link_libraries(moe_test_delegated_directory PRIVATE edge0::edge0)
+moe_warnings(moe_test_delegated_directory)
+moe_add_test(NAME moe_test_delegated_directory LEVEL L1 COMMAND moe_test_delegated_directory)
+moe_add_test(NAME moe_test_fake_strata LEVEL L1 COMMAND ${moe_python}
+    "${PROJECT_SOURCE_DIR}/tests/integration/fake_strata.py" --self-test)
+set_tests_properties(moe_test_fake_strata PROPERTIES TIMEOUT 120)  # it takes seconds; never hold CI for an hour
+if(MOE_BUILD_CLI)
+    add_executable(moe_test_strata_registry unit/cli/strata_registry_test.cpp
+        "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_registry.cpp" "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_status.cpp"
+        "${PROJECT_SOURCE_DIR}/tools/cli/serve_protocol.cpp")
+    target_include_directories(moe_test_strata_registry PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include")
+    target_include_directories(moe_test_strata_registry SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/nlohmann-json")
+    moe_warnings(moe_test_strata_registry)
+    moe_add_test(NAME moe_test_strata_registry LEVEL L1 COMMAND moe_test_strata_registry)
+    moe_add_test(NAME moe_test_serve_strata LEVEL L2 COMMAND ${moe_python}
+        "${PROJECT_SOURCE_DIR}/tests/integration/serve_strata_test.py" --cli $<TARGET_FILE:edge0-infer>)
+    moe_add_test(NAME moe_test_chat_strata LEVEL L2 COMMAND ${moe_python}
+        "${PROJECT_SOURCE_DIR}/tests/integration/chat_strata_test.py" --cli $<TARGET_FILE:edge0-infer>)
 endif()

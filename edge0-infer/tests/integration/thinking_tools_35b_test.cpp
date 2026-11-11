@@ -15,7 +15,7 @@ void require(bool okay,const std::string& message) {
     if(!okay) {++failures;std::cout<<"FAIL: "<<message<<'\n';}
 }
 template<class T> T take(const edge0::Result<T>& r) {
-    if(!r) throw std::runtime_error(r.error().message);return r.value();
+    if(!r){throw std::runtime_error(r.error().message);}return r.value();
 }
 void report(const std::string& label,const edge0::GenerationResult& r,const edge0::RuntimeReference& runtime) {
     const auto memory=take(edge0::memory_snapshot(runtime));
@@ -115,7 +115,7 @@ int main() {
             std::vector<edge0::OutputKind> kinds;std::string arguments;
             auto first=take(edge0::generate(session,chat,configuration,request,[&](const edge0::OutputEvent& event)->std::optional<edge0::Error> {
                 if(event.kind==edge0::OutputKind::tool_call_begin || event.kind==edge0::OutputKind::tool_call_arguments || event.kind==edge0::OutputKind::tool_call_end) kinds.push_back(event.kind);
-                if(event.kind==edge0::OutputKind::tool_call_arguments) arguments+=event.text;return {};
+                if(event.kind==edge0::OutputKind::tool_call_arguments){arguments+=event.text;}return {};
             }));
             report(thinking?"tool thinking first":"tool nonthinking first",first,runtime);
             require(first.tool_calls.size()==1 && first.rejected_tool_calls.empty(),"one complete weather call");

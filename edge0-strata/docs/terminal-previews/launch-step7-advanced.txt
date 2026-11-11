@@ -1,0 +1,36 @@
+# strata launch preview: step7-advanced
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Set up   Step 7 of 9: Advanced
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ All settings   (optional · for tinkerers)   / filter   x show experimental only
+   Setting                 Default    Tuned        Yours     What it does
+ › --expert-cache          auto       auto         -         experts kept in graphics memory
+   --kv                    int8       int8         -         how the conversation memory is stored
+   --max-context           131072     131072       -         memory for the conversation
+   --prefill               auto       auto         -         how many prompt tokens are read at once
+   --spec                  4          4            -         draft tokens per step
+   --native-rope           -          -            -         [experimental] experimental pinned rotary arithm
+   STRATA_PIN_BY_NEED      off        off          -         Pin memory only when needed
+   + Add a setting by name…                                  for flags of newer engine versions
+ Command that will run
+   component:strata-engine --max-context 131072 --kv int8 --prefill auto --expert-cache auto --spec 4
+   Same as: strata launch --model iq3_xxs --context 128k --vision off --tune quick --access local --port 8080
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ --expert-cache: experts kept in graphics memory
+ ↑↓ choose   Enter edit   Del reset   x experimental   / filter   a add by name   c copy command   n next

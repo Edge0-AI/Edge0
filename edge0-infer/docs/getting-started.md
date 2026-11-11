@@ -1,16 +1,23 @@
 # Getting started
 
-From a fresh clone to a chat with the Edge0 35B model and a local OpenAI-compatible server. The engine is the `edge0-infer/` directory of the [Edge0 repository](https://github.com/Edge0-AI/Edge0): after cloning, `cd edge0-infer` and run every command from there. Paths in these documents are relative to that directory.
+From a fresh clone to a chat and a local OpenAI- and Anthropic-compatible server. `edge0-infer` is the `edge0-infer/` directory of the [Edge0 repository](https://github.com/Edge0-AI/Edge0): after cloning, `cd edge0-infer` and run every command from there. Paths in these documents are relative to that directory.
 
-## Status
+## Two layers
 
-One model, Edge0 35B, is supported. It is verified on macOS on Apple silicon with the Metal and CPU backends and on Android (CPU, tested on PKR110) and on Windows (x86-64: CPU, tested on an Intel Core i5-12400; Vulkan for prefill or for both phases, tested on an NVIDIA GeForce RTX 4070 SUPER) and on iOS (Metal, tested on an iPhone 17 Pro Max). Measured speed and memory on each platform are listed under [Benchmarking](benchmarking.md#reference-figures).
+`edge0-infer` is the program you run: `run`, `chat`, `serve` (an OpenAI- and Anthropic-compatible server) and `inspect`, and the chat applications built on them, with the same commands for every model. Below it, each model runs on the engine built for it; `edge0-infer` picks the engine from the model folder given with `--model`, so there is nothing to choose:
+
+| Model | Engine | Hardware | Where the engine is |
+| --- | --- | --- | --- |
+| Edge0 35B | Native engine | Metal, CPU or Vulkan on macOS, iOS, Android, Linux and Windows | this directory, also usable in process through the [native API](native-api.md) |
+| Edge0 145B, Edge0 120B | edge0-strata | NVIDIA GPU (CUDA 13) on Linux and Windows | `edge0-strata/` in the Edge0 repository; `edge0-infer` starts it as a separate process |
+
+[Architecture](architecture.md) describes how the two layers work together.
+
+Edge0 35B is verified on macOS on Apple silicon (Metal and CPU), on Android (CPU, PKR110), on Windows (CPU on an Intel Core i5-12400; Vulkan on an NVIDIA GeForce RTX 4070 SUPER) and on iOS (Metal, iPhone 17 Pro Max); measured speed and memory are under [Benchmarking](benchmarking.md#reference-figures). The measured speed of Edge0 145B and Edge0 120B is on their model page, `docs/models/edge0-145b.md` in the Edge0 repository.
 
 ## Requirements
 
-CMake 3.21 or newer, Ninja, a C++17/C11 compiler, uv and Git. The `mac-metal` preset also needs macOS with the Xcode command line tools; the `cpu` preset needs no Apple frameworks. GGML is vendored at a fixed version, so the build downloads nothing.
-
-The 35B needs about 42 GB of free disk space: about 19.7 GB for the original weights and about 22 GB for the converted assets. The converter writes no other large files. Once converted, the engine needs only the assets; the tiny test fixtures need just three small text files of the original weights (see [Testing](testing.md#setup)).
+CMake 3.21 or newer, Ninja, a C++17/C11 compiler, uv and Git. The `mac-metal` preset also needs macOS with the Xcode command line tools; the `cpu` preset needs no Apple frameworks. GGML is vendored at a fixed version, so the build downloads nothing. Each model has its own needs, listed under [Get a model](#get-a-model).
 
 ## Build
 
@@ -20,9 +27,16 @@ cmake --build --preset mac-metal
 build/mac-metal/bin/edge0-infer info        # expect a line: model.0: edge0_35b
 ```
 
-On machines without Metal use `--preset cpu`, `build/cpu/bin/edge0-infer` and `--device cpu` in the commands below.
+On Linux and on other machines without Metal use `--preset cpu`, `build/cpu/bin/edge0-infer` and `--device cpu` in the commands below. For Edge0 145B and Edge0 120B, `edge0-infer` needs no GPU backend of its own: the `cpu` preset on Linux (or the `windows` preset on Windows) is enough. Android, Windows and iOS are built as described in their sections at the end of this page.
 
-## Get the model assets
+Compiler warnings are printed but do not stop the build; configure with `-DMOE_WARNINGS_AS_ERRORS=ON` to treat warnings in this project's own code as errors.
+
+## Get a model
+
+<a id="get-the-model-assets"></a>
+### Edge0 35B (native engine)
+
+The 35B needs about 42 GB of free disk space: about 19.7 GB for the original weights and about 22 GB for the converted assets. The converter writes no other large files. Once converted, the engine needs only the assets; the tiny test fixtures need just three small text files of the original weights (see [Testing](testing.md#setup)).
 
 Weights never go into Git. Choose where to keep them and export two directories:
 
@@ -70,11 +84,28 @@ assets_py() { uv run --project tools/assets --offline --no-sync python -I "$@"; 
 
 The [asset tools guide](../tools/assets/README.md) describes the asset directory, comparing two copies, the tiny test fixtures and adding a model.
 
+### Edge0 145B and Edge0 120B (edge0-strata)
+
+These models come as released model folders, one model and one expert format per folder (for example `Edge0-145B-q3k`); the asset tools above do not make them. They need an NVIDIA GPU with CUDA 13 on Linux or Windows.
+
+1. **Build edge0-strata**, the `edge0-strata/` directory beside `edge0-infer/` in the Edge0 repository, as its `EDGE0.md` describes (sections "Build (Linux, NVIDIA)" and "Build (Windows, NVIDIA)"). `edge0-infer` finds it there and uses the engine and the Python environment that the build produces.
+
+2. **Check the model folder**, the one that contains `model.json`:
+
+   ```sh
+   export EDGE0_145B=/path/to/Edge0-145B-q3k
+   build/cpu/bin/edge0-infer inspect --model "$EDGE0_145B" --json
+   ```
+
+[Edge0 145B](edge0-145b.md) and [Edge0 120B](edge0-120b.md) list the files of a folder, the options and the limits of each model.
+
 ## Run one prompt
 
 ```sh
 build/mac-metal/bin/edge0-infer run --model "$MOE_ASSETS_35B" --device metal --user "Introduce yourself in one sentence." --max-tokens 256
 ```
+
+`run` is for the native engine; for Edge0 145B and Edge0 120B use `chat` or `serve`.
 
 `--max-tokens` caps the answer length; without it the model's limit applies (32768 tokens for the 35B). The answer streams to standard output; with thinking on, the thinking text goes to standard error, after a `[thinking]` line. Standard error ends with a JSON summary: `request_summary` (time to first token, decode speed, total time), `weight_activity` (expert demand, hits, loads and bytes read), `memory_snapshot` (budget ledger, RSS and platform physical footprint, reported separately) and the effective load configuration. On Metal the first run spends extra seconds compiling shaders.
 
@@ -103,6 +134,12 @@ Each line is one turn. Answers go to standard output; thinking text and status l
 
 Ctrl-C stops the current answer; the conversation can continue.
 
+For Edge0 145B and Edge0 120B, `chat` starts edge0-strata and takes the same commands; see Chat for [Edge0 145B](edge0-145b.md#chat) and [Edge0 120B](edge0-120b.md#chat):
+
+```sh
+build/cpu/bin/edge0-infer chat --model "$EDGE0_145B"
+```
+
 <a id="serve"></a>
 ## Serve
 
@@ -116,7 +153,13 @@ The server loads and warms the model, then listens on `http://127.0.0.1:8000/v1`
 uv run --no-project --with openai==3.26.1 python examples/openai_client.py --model edge0_35b
 ```
 
-Endpoints, request fields and limits are in the [server guide](openai-compatible-server.md).
+Endpoints, request fields and limits are in the [server guide](local-server.md).
+
+For Edge0 145B and Edge0 120B, `serve` starts edge0-strata and forwards generation requests to it; clients use the model name `edge0_145b` or `edge0_120b`. See Serve for [Edge0 145B](edge0-145b.md#serve) and [Edge0 120B](edge0-120b.md#serve):
+
+```sh
+build/cpu/bin/edge0-infer serve --model "$EDGE0_145B"
+```
 
 ## Chat applications
 
@@ -138,7 +181,7 @@ Example chat applications for desktop (macOS and Windows), Android and iOS use t
 
 ## Use from another CMake project
 
-An application can build the engine as part of its own CMake project and link the static library `edge0::edge0`,
+An application can build the native engine as part of its own CMake project and link the static library `edge0::edge0`,
 which carries the public include directory and the C++17 requirement:
 
 ```cmake
@@ -188,9 +231,10 @@ Known interactions with the host build:
 
 ## Measure performance
 
-See [Benchmarking](benchmarking.md): what is measured, a quick one-off `bench`, the recommended standard measurement for macOS and Android, and reference figures.
+See [Benchmarking](benchmarking.md) for the native engine: what is measured, a quick one-off `bench`, the recommended standard measurement for macOS and Android, and reference figures. The speed of Edge0 145B and Edge0 120B is on their model page, `docs/models/edge0-145b.md` in the Edge0 repository.
 
-## Android CPU
+<a id="android-cpu"></a>
+## Android
 
 Use Android NDK r28c (`28.2.13676358`), CMake, Ninja, Python 3 and Android platform-tools
 on the host. Set `ANDROID_NDK` to the NDK directory, `ANDROID_SERIAL` to the authorized
@@ -218,7 +262,7 @@ Text generation and tokenization run entirely on the device; Python is only host
 
 To measure performance on the device, see [Benchmarking](benchmarking.md#android).
 
-For an OpenAI-compatible server:
+For an OpenAI- and Anthropic-compatible server:
 
 ```sh
 tests/platform/android-cli serve --model "$MOE_ASSETS_35B" --device cpu --port 0
@@ -237,22 +281,64 @@ with reasons, not zero.
 
 Android thread defaults differ from macOS; see [Runtime settings](configuration.md#runtime).
 
-## Windows CPU
+## Windows
 
-Windows uses the CPU backend on x86-64 (Intel or AMD); Windows on Arm is not supported.
 Requirements: Windows 10 version 1903 or newer (the executable asks for a UTF-8 code page,
-which older versions ignore), Visual Studio 2022 or its Build Tools with the C++ workload
-(MSVC), CMake, Ninja, uv and Git. Run the build in an x64 MSVC environment: the "x64 Native
-Tools" prompt, or a shell after running `vcvars64.bat`. Build with the `windows` preset and
-run the commands above with `build\windows\bin\edge0-infer.exe` and `--device cpu`. The
-examples below use PowerShell; in PowerShell an environment variable is set with
+which older versions ignore), CMake, Ninja, uv and Git, and a compiler that depends on the CPU of
+the machine:
+
+- x64 CPU: Visual Studio 2022 or its Build Tools with the C++ workload (MSVC). Run the build in
+  the **x64 Native Tools Command Prompt for VS 2022**, or in a shell after running `vcvars64.bat`.
+- Arm64 CPU: Visual Studio 2022 or its Build Tools with the **MSVC ARM64 build tools** and the
+  **Windows 11 SDK**, and LLVM for `clang-cl` (`winget install LLVM.LLVM`). ggml does not accept
+  MSVC as the compiler there, so the compiler is clang-cl and only the linker is MSVC. Run the
+  build in the **ARM64 Native Tools Command Prompt for VS 2022** with `clang-cl` on `PATH`.
+
+The examples use PowerShell; in PowerShell an environment variable is set with
 `$env:NAME = "value"` rather than `export`.
+
+### Build
+
+With MSVC (x64 CPU):
 
 ```powershell
 cmake --preset windows
 cmake --build --preset windows
 build\windows\bin\edge0-infer.exe info          # expect a line: model.0: edge0_35b
 ```
+
+With clang-cl (Arm64 CPU):
+
+```powershell
+cmake --preset windows -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build --preset windows
+build\windows\bin\edge0-infer.exe info          # expect a line: model.0: edge0_35b
+```
+
+`CMAKE_OSX_ARCHITECTURES=arm64` makes ggml compile its Arm sources on Windows; without it the link
+fails on a duplicate `ggml_quantize_mat_q8_K_4x8`. If `build\windows` holds a cache from an MSVC
+configure, delete it first: CMake cannot change the compiler of an existing cache. For an
+executable that runs without the Visual C++ redistributable and without OpenMP, add
+`-DBUILD_SHARED_LIBS=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DGGML_OPENMP=OFF`; a missing
+runtime DLL shows up as exit code `0xC0000135` before the program prints anything.
+
+**Instruction set (x64 CPU).** The `windows` preset optimizes for the CPU of the build machine
+(`GGML_NATIVE`); GGML and the engine are linked statically into the executable. To build for other
+x64 machines, turn detection off and name the instruction set; with MSVC, AVX2 also enables FMA
+and F16C:
+
+```powershell
+cmake --preset windows -DGGML_NATIVE=OFF -DGGML_AVX2=ON      # most x64 CPUs since about 2013
+cmake --preset windows -DGGML_NATIVE=OFF -DGGML_AVX512=ON    # CPUs with AVX-512
+```
+
+A binary built for instructions the CPU lacks stops with an illegal-instruction error at
+start-up. Reconfigure in a fresh build directory (or delete `build\windows`) when changing
+these options. Only the native AVX2 build was tested.
+
+### Run
+
+Edge0 35B on the native engine, with the commands described above:
 
 ```powershell
 $env:MOE_ASSETS_35B = "<directory for the converted assets>"
@@ -261,47 +347,25 @@ build\windows\bin\edge0-infer.exe chat --model $env:MOE_ASSETS_35B --device cpu
 build\windows\bin\edge0-infer.exe serve --model $env:MOE_ASSETS_35B --device cpu
 ```
 
-The asset tools from [Get the model assets](#get-the-model-assets) run the same way; define
+The asset tools from [Get a model](#get-the-model-assets) run the same way; define
 the shortcut as a PowerShell function, for example
 `function assets_py { uv run --project tools/assets --offline --no-sync python -I @args }`.
 
-**Instruction set.** The `windows` preset optimizes for the CPU of the build machine
-(`GGML_NATIVE`); GGML and the engine are linked statically into the executable. To build for other machines, turn
-detection off and name the instruction set; with MSVC, AVX2 also enables FMA and F16C:
+Edge0 145B and Edge0 120B on edge0-strata, after building it as the "Build (Windows, NVIDIA)" section
+of `edge0-strata/EDGE0.md` describes:
 
 ```powershell
-cmake --preset windows -DGGML_NATIVE=OFF -DGGML_AVX2=ON      # most x86-64 CPUs since about 2013
-cmake --preset windows -DGGML_NATIVE=OFF -DGGML_AVX512=ON    # CPUs with AVX-512
+$env:EDGE0_145B = "C:\path\to\Edge0-145B-q3k"
+build\windows\bin\edge0-infer.exe serve --model $env:EDGE0_145B
 ```
 
-A binary built for instructions the CPU lacks stops with an illegal-instruction error at
-start-up. Reconfigure in a fresh build directory (or delete `build\windows`) when changing
-these options. Only the native AVX2 build was tested.
-
-Windows specifics:
-
-- **Default threads.** Decode and prefill default from the physical core count
-  `P = logical / 2`: decode uses `max(1, P - 2)` and prefill uses `min(logical, P + 2)`,
-  because decode is bandwidth-bound while prefill is compute-parallel. On a 12-logical,
-  6-physical part this is decode four and prefill eight. The rule assumes two threads per
-  core and was measured only on such a CPU; on CPUs without simultaneous multithreading or
-  with efficiency cores, set the thread counts explicitly. Override either with `--threads`
-  and `--prefill-threads`; `info` reports the defaults and runtime summaries report the
-  resolved values and their source.
-- **Expert reads.** `expert_read=direct` is unsupported on Windows (the GGUF expert
-  offsets are not aligned for unbuffered reads); experts are always read through the cache.
-- **Memory reporting.** The budget ledger peak is always reported. The process footprint
-  (working-set current and peak) comes from the Windows process APIs. Values that the
-  platform does not provide are reported as JSON `null` with a reason, never as zero.
-- **Measurement.** Windows Defender real-time scanning can read expert files on first
-  access and disturb a cold measurement; check its status before measuring and report it
-  with the figures. See [Benchmarking](benchmarking.md).
+How `edge0-infer` finds the CUDA libraries is under CUDA libraries on Windows for [Edge0 145B](edge0-145b.md#cuda-libraries-on-windows) and [Edge0 120B](edge0-120b.md#cuda-libraries-on-windows).
 
 ### Vulkan
 
-The `windows-vulkan` preset is the `windows` preset with Vulkan enabled. Configure and
-build it from the same x64 MSVC environment, and set `VULKAN_SDK` so `glslc` is available.
-The first build compiles shaders and can take a long time.
+The `windows-vulkan` preset is the `windows` preset with Vulkan enabled, for the native engine.
+Configure and build it in the same developer prompt as the `windows` preset, and set `VULKAN_SDK`
+so `glslc` is available. The first build compiles shaders and can take a long time.
 Keep the clone at a short path (for example `C:\src\edge0`): the shader
 generator's object paths can exceed the MSVC path limit and cause error C1041.
 Clone the repository there rather than copying its files, so the build still
@@ -321,9 +385,29 @@ build\windows-vulkan\bin\edge0-infer.exe run --model $env:MOE_ASSETS_35B --devic
 build\windows-vulkan\bin\edge0-infer.exe run --model $env:MOE_ASSETS_35B --device vulkan --user "1+1=" --max-tokens 8
 ```
 
-These paths were checked on one NVIDIA GPU. They do not cover other Vulkan implementations.
+These paths were checked on one NVIDIA GPU with the MSVC build. They do not cover other Vulkan implementations.
 
-## iOS (Metal)
+### Native engine notes
+
+- **Default threads.** Decode and prefill default from the physical core count
+  `P = logical / 2`: decode uses `max(1, P - 2)` and prefill uses `min(logical, P + 2)`,
+  because decode is bandwidth-bound while prefill is compute-parallel. On a 12-logical,
+  6-physical part this is decode four and prefill eight. The rule assumes two threads per
+  core and was measured only on such a CPU; on CPUs without simultaneous multithreading or
+  with efficiency cores, set the thread counts explicitly. Override either with `--threads`
+  and `--prefill-threads`; `info` reports the defaults and runtime summaries report the
+  resolved values and their source.
+- **Expert reads.** `expert_read=direct` is unsupported on Windows (the GGUF expert
+  offsets are not aligned for unbuffered reads); experts are always read through the cache.
+- **Memory reporting.** The budget ledger peak is always reported. The process footprint
+  (working-set current and peak) comes from the Windows process APIs. Values that the
+  platform does not provide are reported as JSON `null` with a reason, never as zero.
+- **Measurement.** Windows Defender real-time scanning can read expert files on first
+  access and disturb a cold measurement; check its status before measuring and report it
+  with the figures. See [Benchmarking](benchmarking.md).
+
+<a id="ios-metal"></a>
+## iOS
 
 Use Xcode with the iOS SDK, a paired iPhone with Developer Mode enabled, and a
 USB data cable. Configure your own Apple account in Xcode. Export `MOE_IOS_TEAM`

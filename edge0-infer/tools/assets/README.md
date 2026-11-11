@@ -28,7 +28,7 @@ Tests and examples read three directories from environment variables; set them t
 
 ## Downloading and converting the 35B
 
-[Getting started](../../docs/getting-started.md#get-the-model-assets) walks through probing the source, downloading, converting and checking the 35B, then running it. `check` trusts the catalog, so data that was changed together with its digest still passes. To prove that assets are a faithful re-make or untouched, use `compare` against another trusted copy: it compares tensor by tensor and should report every file equal except `provenance.json`.
+[Getting started](../../docs/getting-started.md#get-a-model) walks through probing the source, downloading, converting and checking the 35B, then running it. `check` trusts the catalog, so data that was changed together with its digest still passes. To prove that assets are a faithful re-make or untouched, use `compare` against another trusted copy: it compares tensor by tensor and should report every file equal except `provenance.json`.
 
 ```sh
 assets_py tools/assets/check_assets.py compare "$MOE_ASSETS_35B" <trusted-assets>

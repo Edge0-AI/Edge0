@@ -51,7 +51,10 @@ struct Slice {
     std::string path, type;
     std::uint64_t offset = 0, bytes = 0;
 };
-Result<Catalog> open_catalog(const std::string &directory, Integrity integrity = Integrity::size_only);
+// With `architectures`, a model.json whose architecture is not in the list is refused
+// (unsupported, as select_adapter would) before assets.tsv is read.
+Result<Catalog> open_catalog(const std::string &directory, Integrity integrity = Integrity::size_only,
+                             const std::vector<std::string> *architectures = nullptr);
 Result<TensorIndex> index_tensors(const AssetFile &file);
 template <class T> Result<const T *> read_metadata(const Metadata &metadata, const std::string &key) {
     auto found = metadata.find(key);

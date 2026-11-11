@@ -29,3 +29,5 @@ jobs:
         run: cmake --build --preset cpu
       - name: Test (L0, L1)
         run: ctest --preset cpu --no-tests=error --output-on-failure -L "L0|L1"
+      - name: Test (L2, delegated engine)
+        run: ctest --preset cpu --no-tests=error --output-on-failure -L L2 -R strata

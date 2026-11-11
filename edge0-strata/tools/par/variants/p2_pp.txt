@@ -1,0 +1,4 @@
+pp0    | 0,1 | 8 |   |  | | w2:4,8@--max-tokens 128;w3:1,4@--rounds 1
+pp1    | 0,1 | 8 |   |  | --prefill-pipe 1 | w2:4,8@--max-tokens 128;w3:1,4@--rounds 1
+pp1k   | 0,1 | 8 |   |  | --prefill-pipe 1024 | w2:4,8@--max-tokens 128;w3:1,4@--rounds 1
+pp4k   | 0,1 | 8 |   |  | --prefill-pipe 4096 | w2:4,8@--max-tokens 128;w3:1,4@--rounds 1

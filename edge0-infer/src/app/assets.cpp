@@ -2,7 +2,7 @@
 #include "app/adapters.h"
 namespace edge0 {
 Result<AssetReport> inspect_assets(const InspectOptions &options) {
-    auto catalog = model::open_catalog(options.directory, options.digest ? model::Integrity::digest
+    auto catalog = model::open_catalog(options.directory, app::compiled_adapters(), options.digest ? model::Integrity::digest
                                                                          : model::Integrity::size_only);
     if (!catalog)
         return catalog.error();

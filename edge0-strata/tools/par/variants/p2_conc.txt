@@ -1,0 +1,4 @@
+a_def   | 0,1 | 8 |   |  | | w2:4,8@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+b_conc  | 0,1 | 8 |   | STRATA_PIPED_CONCURRENT=1 | | w2:4,8@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+c_min4k | 0,1 | 8 |   | STRATA_PIPED_CONCURRENT=1;STRATA_PIPED_CONCURRENT_MIN=4096 | | w2:4,8@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+d_min12k | 0,1 | 8 |   | STRATA_PIPED_CONCURRENT=1;STRATA_PIPED_CONCURRENT_MIN=12000 | | w2:4,8@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128

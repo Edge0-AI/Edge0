@@ -1,0 +1,31 @@
+{
+  "id": "sanity-I2",
+  "phase": "sanity",
+  "case_id": "I2",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "instruction",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-I2]\nSort these integers in ascending order and remove duplicates: 9, 2, -4, 2, 1. Return only a JSON array."
+    }
+  ],
+  "tools": null,
+  "tool_choice": null,
+  "expected": {
+    "kind": "json",
+    "value": [
+      -4,
+      1,
+      2,
+      9
+    ]
+  },
+  "input_tokens_frozen": 90,
+  "max_shared_prefix_tokens": 49
+}

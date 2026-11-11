@@ -1,0 +1,29 @@
+{
+  "id": "sanity-I3",
+  "phase": "sanity",
+  "case_id": "I3",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "instruction",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-I3]\nProject: Orion. Build: 17. Return only a JSON object with keys project (string) and build (integer)."
+    }
+  ],
+  "tools": null,
+  "tool_choice": null,
+  "expected": {
+    "kind": "json",
+    "value": {
+      "project": "Orion",
+      "build": 17
+    }
+  },
+  "input_tokens_frozen": 85,
+  "max_shared_prefix_tokens": 49
+}

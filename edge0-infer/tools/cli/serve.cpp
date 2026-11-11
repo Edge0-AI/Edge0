@@ -44,7 +44,7 @@ Options options(int argc,char** argv) {
     Options o;
     for(int i=2;i<argc;++i) {
         const std::string key=argv[i];if(key=="--verbose") {o.verbose=true;continue;}if(key=="--no-warmup"){o.warmup=false;continue;}
-        if(i+1>=argc)throw std::runtime_error("Missing option value");const std::string value=argv[++i];
+        if(i+1>=argc){throw std::runtime_error("Missing option value");}const std::string value=argv[++i];
         if(cli::runtime_option(key,value,o.runtime)) {}
         else if(cli::stage_option(key,value,o.load)) {}
         else if(key=="--model")o.directory=value;else if(key=="--device")o.device=value;else if(key=="--host")o.host=value;
@@ -79,7 +79,7 @@ struct Watch {
 }
 int serve_command(int argc,char** argv) {
     for(int i=2;i<argc;++i)if(std::string(argv[i])=="--help") {
-        std::cout<<"Usage: edge0-infer serve --model <directory> [--device cpu|metal|vulkan] [--prefill-device cpu|metal|vulkan] [--stage-policy <name>] [--alias <name>] [--host <address>] [--api-key-file <path>] [--port <0..65535>] [--context <n>] [--prefill-chunk <n>] [--model-option <name=value>] [--max-tokens <n>] [--no-warmup] [--session-idle-seconds <s>] [--max-body-bytes <n>] [--write-timeout-seconds <s>] [--verbose] [--out <directory> (development)] [--hold-file <path> (development)]"<<cli::sampling_help()<<'\n';return 0;
+        std::cout<<"Usage: edge0-infer serve --model <directory> [--device cpu|metal|vulkan] [--prefill-device cpu|metal|vulkan] [--stage-policy <name>] [--alias <name>] [--host <address>] [--api-key-file <path>] [--port <0..65535>] [--context <n>] [--prefill-chunk <n>] [--model-option <name=value>] [--max-tokens <n>] [--no-warmup] [--session-idle-seconds <s>] [--max-body-bytes <n>] [--write-timeout-seconds <s>] [--verbose] [--out <directory> (development)] [--hold-file <path> (development)]"<<cli::sampling_help()<<"\nFor a delegated model (such as Edge0 145B or Edge0 120B, run on edge0-strata): [--strata-dir <directory>] (the edge0-strata directory) [--strata-python <path>] (its Python interpreter) [--strata-ready-timeout <s>] (seconds to wait until it is ready) [--strata-arg <argument>]... (one engine command-line word, repeatable)\n";return 0;
     }
     try {
         auto o=options(argc,argv);interrupted=false;
@@ -111,7 +111,7 @@ int serve_command(int argc,char** argv) {
                 if(done)return true;
                 if(session){if(!edge0::release_session(session))return false;session.reset();}
                 if(model){if(!edge0::unload_model(model))return false;model.reset();}
-                if(!edge0::finish_runtime_use(runtime))return false;done=true;return true;
+                if(!edge0::finish_runtime_use(runtime)){return false;}done=true;return true;
             }
             ~Cleanup(){if(!done && !close())log("Cleanup failed");}
         } cleanup{runtime,model,session};
@@ -122,7 +122,7 @@ int serve_command(int argc,char** argv) {
         if(o.warmup) {
             edge0::GenerationOverrides warm;warm.max_tokens=1;warm.temperature=0;
             auto r=take(edge0::generate(session,std::vector<edge0::TextMessage>{{"user","Hello"}},configuration,warm));
-            if(r.error || r.stop_reason==edge0::StopReason::failed || r.stop_reason==edge0::StopReason::cancelled)throw std::runtime_error("Warmup failed");take(edge0::reset_conversation(session));
+            if(r.error || r.stop_reason==edge0::StopReason::failed || r.stop_reason==edge0::StopReason::cancelled){throw std::runtime_error("Warmup failed");}take(edge0::reset_conversation(session));
         }
         const auto version=capabilities.engine_version;
         const auto started = std::chrono::steady_clock::now();
@@ -154,6 +154,7 @@ int serve_command(int argc,char** argv) {
         struct TrackedRequest {
             std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
             bool recorded = false, entered = false;
+            std::optional<portal::Failure> failure;
         };
         std::map<const httplib::Request*, std::shared_ptr<TrackedRequest>> tracked;
         auto save_record = [&](const portal::RequestRecord& record, const std::shared_ptr<TrackedRequest>& state) {
@@ -175,7 +176,7 @@ int serve_command(int argc,char** argv) {
         hooks.generate=[&](const portal::Request& request,edge0::OutputReceiver receiver){
             return edge0::generate(session,request.input,configuration,request.overrides,std::move(receiver),&*active_token);
         };
-        portal::Engine engine(std::move(hooks));httplib::Server server;
+        portal::Engine engine(std::move(hooks));httplib::Server server;server.set_tcp_nodelay(true);
         server.set_socket_options([](socket_t socket) {
             // A second server must not share an existing listener's port.
 #ifdef _WIN32
@@ -188,20 +189,30 @@ int serve_command(int argc,char** argv) {
         });
         server.new_task_queue=[] {return new httplib::ThreadPool(8);};
         server.set_payload_max_length(o.max_body);server.set_write_timeout(o.write_timeout);
-        auto send_error=[](httplib::Response& response,const portal::Failure& error){response.status=error.status;response.set_content(error.body().dump(),"application/json");};
-        server.set_error_handler([&](const httplib::Request&,httplib::Response& res){
-            if(res.status==413)send_error(res,portal::Failure(413,"Request body too large","request_too_large"));
-            else if(res.body.empty())send_error(res,portal::Failure(res.status,"Unknown endpoint","not_found"));
+        auto is_inference=[](const std::string& path) {return path=="/v1/chat/completions" || path=="/v1/responses" || path=="/v1/messages";};
+        auto error_protocol=[](const std::string& path) {return path=="/v1/messages" || path.rfind("/v1/messages/",0)==0?portal::Protocol::messages:portal::Protocol::chat;};
+        auto send_error=[&](const httplib::Request& req,httplib::Response& response,const portal::Failure& error){
+            {
+                std::lock_guard<std::mutex> lock(status_mutex);
+                auto found=tracked.find(&req);
+                if(found==tracked.end() && is_inference(req.path))found=tracked.emplace(&req,std::make_shared<TrackedRequest>()).first;
+                if(found!=tracked.end())found->second->failure=error;
+            }
+            response.status=error.status;response.set_content(error.body(error_protocol(req.path)).dump(),"application/json");
+        };
+        server.set_error_handler([&](const httplib::Request& req,httplib::Response& res){
+            if(res.status==413)send_error(req,res,portal::Failure(413,"Request body too large","request_too_large"));
+            else if(res.body.empty())send_error(req,res,portal::http_failure(res.status));
         });
         server.set_pre_routing_handler([&](const httplib::Request& req, httplib::Response& res) {
-            const bool allowed = portal::authorized(req.remote_addr, api_token, req.get_header_value("Authorization"));
-            const bool inference = req.path == "/v1/chat/completions" || req.path == "/v1/responses";
+            const bool allowed = portal::authorized(req.remote_addr, api_token, req.get_header_value("Authorization"), req.get_header_value("x-api-key"));
+            const bool inference = is_inference(req.path);
             if (inference || !allowed) {
                 std::lock_guard<std::mutex> lock(status_mutex);
                 tracked[&req] = std::make_shared<TrackedRequest>();
             }
             if (!allowed) {
-                send_error(res, portal::Failure(401,"Invalid API key","invalid_api_key"));
+                send_error(req,res, portal::Failure(401,"Invalid API key","invalid_api_key"));
                 return httplib::Server::HandlerResponse::Handled;
             }
             return httplib::Server::HandlerResponse::Unhandled;
@@ -213,17 +224,13 @@ int serve_command(int argc,char** argv) {
                 const auto found = tracked.find(&req);
                 if (found != tracked.end()) { state = found->second; tracked.erase(found); if (state->entered) return; }
             }
-            if (!state && (req.path == "/v1/chat/completions" || req.path == "/v1/responses")) state = std::make_shared<TrackedRequest>();
+            if (!state && is_inference(req.path)) state = std::make_shared<TrackedRequest>();
             if (!state) return;
             portal::RequestRecord record; record.time = timestamp(); record.endpoint = req.path; record.source = req.remote_addr;
             record.http_status = res.status;
             record.total_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now()-state->start).count();
-            const auto body = Json::parse(res.body,nullptr,false);
-            if (!body.is_discarded() && body.contains("error")) {
-                const auto& error = body["error"];
-                if (error.contains("code") && error["code"].is_string()) record.code = error["code"];
-                if (error.contains("message") && error["message"].is_string()) record.message = error["message"];
-                if (error.contains("param") && error["param"].is_string()) record.param = error["param"];
+            if (state->failure) {
+                record.code=state->failure->code;record.message=state->failure->message();record.param=state->failure->param;
             }
             save_record(record,state);
         });
@@ -244,16 +251,18 @@ int serve_command(int argc,char** argv) {
             res.set_content(portal::status_json(input).dump(),"application/json");
         });
         auto model_object=[&]{return Json{{"id",o.alias},{"object","model"},{"created",0},{"owned_by","local"},{"context_length",description.context},{"capabilities",{{"thinking",description.thinking_enabled_supported},{"thinking_default",description.thinking_default}}}};};
-        server.Get("/health",[&](const httplib::Request&,httplib::Response& res){if(engine.stopping())send_error(res,portal::Failure(503,"Server shutting down","shutting_down"));else res.set_content("{\"status\":\"ok\"}","application/json");});
+        server.Get("/health",[&](const httplib::Request& req,httplib::Response& res){if(engine.stopping())send_error(req,res,portal::Failure(503,"Server shutting down","shutting_down"));else res.set_content("{\"status\":\"ok\"}","application/json");});
         server.Get("/v1/models",[&](const httplib::Request&,httplib::Response& res){res.set_content(Json{{"object","list"},{"data",Json::array({model_object()})}}.dump(),"application/json");});
-        server.Get(R"(/v1/models/(.+))",[&](const httplib::Request& req,httplib::Response& res){if(req.matches[1].str()!=o.alias)send_error(res,portal::Failure(404,"Unknown model","model_not_found","model"));else res.set_content(model_object().dump(),"application/json");});
+        server.Get(R"(/v1/models/(.+))",[&](const httplib::Request& req,httplib::Response& res){if(req.matches[1].str()!=o.alias)send_error(req,res,portal::Failure(404,"Unknown model","model_not_found","model"));else res.set_content(model_object().dump(),"application/json");});
         auto handler=[&](const httplib::Request& http,httplib::Response& response) {
             try {
-                auto protocol=http.path=="/v1/responses"?portal::Protocol::responses:portal::Protocol::chat;
-                auto request=portal::parse(Json::parse(http.body),protocol,o.alias);
+                const bool count_only=http.path=="/v1/messages/count_tokens";
+                auto protocol=http.path=="/v1/responses"?portal::Protocol::responses:error_protocol(http.path);
+                auto request=portal::parse(Json::parse(http.body),protocol,o.alias,count_only);
                 const auto effective=take(edge0::resolve_generation_configuration(model,merge(o.generation,request.overrides)));
                 const auto count=take(edge0::count_tokens(model,request.input,effective));
                 if(count.input_tokens>std::size_t(count.capacity))throw portal::Failure(400,"Input exceeds context capacity","context_length_exceeded","input");
+                if(count_only) {response.set_content(Json{{"input_tokens",count.input_tokens}}.dump(),"application/json");return;}
                 auto lease=engine.acquire();
                 std::shared_ptr<TrackedRequest> request_state;
                 {
@@ -305,13 +314,18 @@ int serve_command(int argc,char** argv) {
                         const portal::Request& request;
                         const std::function<httplib::DataSink*()>& sink_provider;
                         portal::Encoder& encoder;
+                        const edge0::RuntimeReference& runtime;
+                        std::size_t input_tokens;
                         bool write(const std::vector<std::string>& records) {for(const auto& record:records)if(sink && !sink->write(record.data(),record.size()))return false;return true;}
                         bool ensure_open() {
                             if(opened || !request.stream)return true;
                             sink=sink_provider();if(!sink)return false;
-                            opened=true;return write(encoder.begin());
+                            opened=true;
+                            std::optional<edge0::GenerationProgress> progress;
+                            if(request.protocol==portal::Protocol::messages) {auto value=edge0::query_generation_progress(runtime);if(value && value.value().phase!=edge0::GenerationPhase::idle)progress=value.value();}
+                            return write(encoder.begin(input_tokens,progress));
                         }
-                    } io{sink,opened,request,sink_provider,encoder};
+                    } io{sink,opened,request,sink_provider,encoder,runtime,count.input_tokens};
                     auto result=engine.generate(request,[&](const edge0::OutputEvent& event)->std::optional<edge0::Error>{
                         if(!io.ensure_open() || !io.write(encoder.accept(event)))return edge0::Error{edge0::ErrorCategory::backend_error,"Stream delivery failed"};
                         if(!held && !event.text.empty() && event.kind!=edge0::OutputKind::token_logprob) {
@@ -362,11 +376,12 @@ int serve_command(int argc,char** argv) {
                         edge0::request_cancel(token);handoff->abort();
                     });
                 } else response.set_content(run({}).dump(),"application/json");
-            } catch(const portal::Failure& f) {send_error(response,f);}
-            catch(const Json::exception&) {send_error(response,portal::Failure(400,"Invalid JSON body","invalid_json"));}
-            catch(const std::exception&) {send_error(response,portal::Failure(500,"Request failed","backend_error"));}
+            } catch(const portal::Failure& f) {send_error(http,response,f);}
+            catch(const Json::exception&) {send_error(http,response,portal::Failure(400,"Invalid JSON body","invalid_json"));}
+            catch(const std::exception&) {send_error(http,response,portal::Failure(500,"Request failed","backend_error"));}
         };
         server.Post("/v1/chat/completions",handler);server.Post("/v1/responses",handler);
+        server.Post("/v1/messages",handler);server.Post("/v1/messages/count_tokens",handler);
         const int port=o.port==0?server.bind_to_any_port(o.host):(server.bind_to_port(o.host,o.port)?o.port:-1);
         if(port<0)throw std::runtime_error("Cannot bind server");
         bound_port = port;

@@ -45,7 +45,7 @@ The tests read `examples/shared/app.json`, `metrics-cases.json`, `math-cases.jso
 
 ## Assets and installation
 
-Prepare assets using [the model asset instructions](../../docs/getting-started.md#get-the-model-assets). The App scans every immediate directory under `Documents/assets` and runs `inspect_assets`. Available choices show the model identifier plus directory name. Invalid directories are excluded from the picker and listed separately under **Unavailable models** with the inspection error. Use **Refresh models** after changing assets. **Close model** releases the session, model, and runtime on the worker; switching models closes the old one first.
+Prepare assets using [the model asset instructions](../../docs/getting-started.md#get-a-model). The App scans every immediate directory under `Documents/assets` and runs `inspect_assets`. Available choices show the model identifier plus directory name. Invalid directories are excluded from the picker and listed separately under **Unavailable models** with the inspection error. Use **Refresh models** after changing assets. **Close model** releases the session, model, and runtime on the worker; switching models closes the old one first.
 
 Run from the engine's top-level directory (`edge0-infer/`). Set the transport's `MOE_IOS_BUNDLE_ID` to the same identifier used by this example's build. The push command installs without uninstalling, so an existing container is retained. By default it synchronizes only 35B and does not require `MOE_TINY`.
 
@@ -129,7 +129,7 @@ Visual mode requires `tiny-a` alongside the real assets; use the fixture-only co
 
 `background_check.py` actually opens the system Settings App, returns to this App without terminating it, and checks background/foreground lifecycle markers, the same process/session, and exact retention of the original history. With visual mode enabled, returning also sends a follow-up through the normal UI model and captures its completed state. The script changes no Settings data. Review the screenshots separately; automated model execution alone is not visual acceptance.
 
-For the single CLI-to-App decode comparison, prepare the separate reference CLI App as described in the [iOS guide](../../docs/getting-started.md#ios-metal), and end this example's process before running it. The CLI assets are in a separate container. Run from the engine's top-level directory (`edge0-infer/`); the command reads the shared system prompt instead of repeating it:
+For the single CLI-to-App decode comparison, prepare the separate reference CLI App as described in the [iOS guide](../../docs/getting-started.md#ios), and end this example's process before running it. The CLI assets are in a separate container. Run from the engine's top-level directory (`edge0-infer/`); the command reads the shared system prompt instead of repeating it:
 
 ```bash
 env -u MOE_IOS_BUNDLE_ID uv run --no-project python -I - <<'PY'

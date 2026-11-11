@@ -1,0 +1,49 @@
+{
+  "id": "sanity-T1",
+  "phase": "sanity",
+  "case_id": "T1",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "tool_call",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-T1]\nUse lookup_record to look up record A-17."
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "lookup_record",
+        "description": "Synthetic benchmark lookup; no external action is performed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "expected": {
+    "kind": "tool_call",
+    "name": "lookup_record",
+    "arguments": {
+      "id": "A-17"
+    }
+  },
+  "input_tokens_frozen": 325,
+  "max_shared_prefix_tokens": 61
+}

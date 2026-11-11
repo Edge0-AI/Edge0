@@ -2,13 +2,13 @@ import type { DeviceMemory } from './format';
 export interface Experts { demand: number; hits: number; loads: number; bytes: number; }
 export interface Totals { requests: number; rejected_busy: number; rejected_invalid: number; unauthorized: number; input_tokens: number; reused_tokens: number; computed_tokens: number; generated_tokens: number; checkpoint_restores: number; continued_turns: number; decode_seconds: number; first_token_seconds_mean?: number; prefill_tokens_per_second?: number; decode_tokens_per_second?: number; experts?: Experts; }
 export interface RequestRecord { time: string; endpoint: string; source: string; http_status: number; total_seconds: number; input_tokens?: number | null; reused_tokens?: number | null; generated_tokens?: number | null; first_token_seconds?: number | null; prefill_tokens_per_second?: number | null; decode_tokens_per_second?: number | null; decode_seconds?: number | null; stop_reason?: string; ended_at?: string; }
-export interface Progress { phase: 'prefill' | 'decode'; input_tokens: number; reused_tokens: number; computed_tokens: number; pending_tokens: number; generated_tokens: number; elapsed_seconds: number; first_token_seconds?: number; prefill_tokens_per_second?: number | null; decode_elapsed_seconds?: number; decode_tokens_per_second?: number | null; }
+export interface Progress { phase: 'prefill' | 'decode' | null; input_tokens: number | null; reused_tokens: number | null; computed_tokens: number | null; pending_tokens: number | null; generated_tokens: number | null; elapsed_seconds: number; first_token_seconds?: number; prefill_tokens_per_second?: number | null; decode_elapsed_seconds?: number; decode_tokens_per_second?: number | null; }
 interface Measurement { values: { current_bytes: number | null; peak_bytes: number | null } | null; source: string; reason: string; }
 export interface EngineStatus {
   instance: { id: string; pid: number; started_at: string; uptime_seconds: number };
   listen: { host: string; port: number; auth: boolean };
   model: { alias: string; directory: string; context_length: number; device: string; prefill_device: string };
-  engine: { version: string; source_commit: string; ggml_version: string; backends: { name: string; compiled: string }[]; devices: { name: string; backend: string; description: string }[] };
+  engine: { version: string | null; source_commit: string | null; ggml_version: string | null; backends: { name: string; compiled: string }[] | null; devices: { name: string; backend: string; description: string | null }[] | null };
   current: Progress | null; last: RequestRecord | null; recent_requests: RequestRecord[]; totals: Totals;
   memory: { ledger: { limit_bytes: number; current_bytes: number; peak_bytes: number; by_purpose: { resident_weights: number; experts: number; session_state: number; workspace: number; transfer: number; staging: number; metadata: number }; by_device: Record<string, DeviceMemory> }; physical: Measurement; resident: Measurement };
   system: { memory: { total: { bytes: number | null }; available: { bytes: number | null } }; thermal: { state: string | null; source: string; reason: string } };
@@ -24,8 +24,8 @@ export function parseInfo(text: string): Info {
 }
 export const sourceLabel = (source: string, platform = globalThis.navigator?.platform ?? '') => /^(127\.|::1$|::ffff:127\.)/.test(source) ? platform.toLowerCase().includes('mac') ? 'this Mac' : 'this PC' : source;
 
-export function deviceLabel(name: string, devices: EngineStatus['engine']['devices'] = []): string {
-  const backend = devices.find(device => device.name === name || device.backend.toLowerCase() === name.toLowerCase())?.backend ?? name;
+export function deviceLabel(name: string, devices?: EngineStatus['engine']['devices']): string {
+  const backend = (devices ?? []).find(device => device.name === name || device.backend.toLowerCase() === name.toLowerCase())?.backend ?? name;
   switch (backend.toLowerCase()) {
     case 'metal': return 'Metal';
     case 'cpu': return 'CPU';

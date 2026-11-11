@@ -1,0 +1,2 @@
+co_ref | 0,1 | 8 |   |  | | w2:4@--nonce idt --keep-text --max-tokens 48 --rounds 1;w2:8@--nonce idt --keep-text --max-tokens 48 --rounds 1
+co_on  | 0,1 | 8 |   | STRATA_COALESCE_PREFILL=8;STRATA_CRASH_BT=/data/external/niko/par29/res/co/crash.txt | | w2:4@--nonce idt --keep-text --max-tokens 48 --rounds 1;w2:8@--nonce idt --keep-text --max-tokens 48 --rounds 1

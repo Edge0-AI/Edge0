@@ -1,0 +1,26 @@
+# strata monitor Overview in the classic Windows console mode (--glyphs ascii, or detected): no characters Consolas lacks
+
+STRATA  Serving   http://127.0.0.1:8080   IQ3_S 128K                        * Generating a reply · 3%   [LIVE]
+[1 Overview]  2 Serving  3 Requests  4 Engine  5 Hardware  6 Logs  7 Connect  
+--------------------------------------------------------------------------------------------------------------
+Model state  Idle  Reading  [Generating]  Queued  Error                                120 / 4,096 tokens · 3%
+###.........................................................................................................
+
+┌─ Speed ────────────────┐ ┌─ GPU load ─────────────┐ ┌─ VRAM ─────────────────┐ ┌─ GPU temp ─────────────┐
+│ 50.4 tok/s             │ │ 88 %                   │ │ 11.2 / 12 GB           │ │ 54 C                   │
+│ now                    │ │ RTX 5070               │ │ 1,644 experts cached   │ │                        │
+│ :*.=@:*.=@:*.=@:*.=@:* │ │ ####@####@####@####@## │ │ @@@@@@@@@@@@@@@@@@@@@@ │ │ ====================== │
+└────────────────────────┘ └────────────────────────┘ └────────────────────────┘ └────────────────────────┘
+┌─ Power ────────────────┐ ┌─ PCIe ─────────────────┐ ┌─ CPU ──────────────────┐ ┌─ Disk read ────────────┐
+│ 114 W                  │ │ Gen4 x16               │ │ 14 %                   │ │ 0.1 MB/s               │
+│ of 250 W limit         │ │ to GPU 18,237 MB/s     │ │ 6 cores · 12 threads   │ │ write 0.0 MB/s         │
+│ @@@@@@@@@@@@@@@@@@@@@@ │ │ *@+#@*@+#@*@+#@*@+#@*@ │ │ .:.::.:.::.:.::.:.::.: │ │ :*.=@:*.=@:*.=@:*.=@:* │
+└────────────────────────┘ └────────────────────────┘ └────────────────────────┘ └────────────────────────┘
+Context fill  36K / 128K  28%                  Recent requests                                          
+############................................   TIME      STATUS  PROMPT  REUSED  OUTPUT  TOK/S  DURATION
+Experts in VRAM   1,644 · 3.2 GB               23:53:42  Done    17,183       0  19,511   50.5   429.8 s
+##############..............................   23:53:38  Done       626       0      11   26.8     4.0 s
+System RAM        58.5 / 63 GB                                                                          
+#########################################...                                                            
+
+1-7 views   / filter   Space freeze   r refresh   t theme   b open in browser   ? help   q quit

@@ -20,7 +20,8 @@ platform/backend work.
 
 | Path | What |
 |---|---|
-| [`edge0-infer/`](edge0-infer/) | The inference engine (C++, GGML), its CLI and OpenAI-compatible server, the model asset tools, and the chat app examples for desktop, Android and iOS |
+| [`edge0-infer/`](edge0-infer/) | The program you run: the native inference engine (C++, GGML), its CLI and local OpenAI- and Anthropic-compatible server, the model asset tools, and the chat app examples for desktop, Android and iOS |
+| [`edge0-strata/`](edge0-strata/EDGE0.md) | The engine for `edge0-145b` and `edge0-120b` (NVIDIA GPU, Linux or Windows), a fork of Strata that `edge0-infer` starts for these models |
 | [`docs/`](docs/) | Model design docs: MoE routing, the prerouter, and the model tiers |
 | [`paper/`](paper/) | The technical report |
 
@@ -32,7 +33,8 @@ is applied there first and arrives here with the next sync.
 
 Build the engine and get the model assets as described in
 [Getting started](edge0-infer/docs/getting-started.md). It covers macOS, iOS,
-Android and Windows.
+Android, Linux and Windows. For `edge0-145b` and `edge0-120b`, also build
+`edge0-strata/` as [`edge0-strata/EDGE0.md`](edge0-strata/EDGE0.md) describes.
 
 ## Running the tests
 
@@ -84,4 +86,5 @@ instead.
 ## License
 
 By contributing, you agree that your contributions will be licensed under the
-project's [Apache-2.0](LICENSE) license.
+project's [Apache-2.0](LICENSE) license. Contributions to `edge0-strata/` are
+licensed under that directory's [MIT](edge0-strata/LICENSE) license.

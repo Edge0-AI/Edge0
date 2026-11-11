@@ -1,9 +1,9 @@
 use crate::platform;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     fs,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Write},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{
@@ -13,6 +13,23 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+
+/// When `EDGE0_DEBUG_LOG` names a file, every step of `Manager::start` and its outcome is appended there, so a load
+/// that fails (for example with ERROR_ACCESS_DENIED, os error 5, where a directory is not writable) shows which call
+/// failed.  Silent when the variable is unset, so the default behaviour is unchanged.
+fn trace(message: &str) {
+    let Ok(path) = std::env::var("EDGE0_DEBUG_LOG") else {
+        return;
+    };
+    if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = writeln!(file, "{message}");
+    }
+}
+
+/// `trace` for the rest of the crate (the autoload probe in lib.rs).
+pub fn trace_line(message: &str) {
+    trace(message);
+}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -107,6 +124,8 @@ pub struct Manager {
     epoch: AtomicU64,
     closing: AtomicBool,
     start_lock: Mutex<()>,
+    // Whether `inspect --json` reported each model directory as delegated (run by an external engine).
+    delegated: Mutex<BTreeMap<PathBuf, bool>>,
     #[cfg(test)]
     publication_gate: Mutex<Option<Arc<PublicationGate>>>,
     #[cfg(test)]
@@ -118,19 +137,30 @@ struct PublicationGate {
     resume: std::sync::Barrier,
 }
 pub fn arguments(settings: &Settings, model: &str) -> Vec<String> {
-    let mut args = vec![
-        "serve".into(),
-        "--model".into(),
-        model.into(),
-        "--device".into(),
-        settings.device.clone(),
-        "--port".into(),
-        settings.port.unwrap_or(0).to_string(),
-    ];
-    if !settings.prefill_device.is_empty() {
+    arguments_for(settings, model, false)
+}
+// A delegated model runs on the device its engine registers, so the device settings are not passed.
+pub fn arguments_for(settings: &Settings, model: &str, delegated: bool) -> Vec<String> {
+    let mut args = vec!["serve".into(), "--model".into(), model.into()];
+    if !delegated {
+        args.extend(["--device".into(), settings.device.clone()]);
+    }
+    args.extend(["--port".into(), settings.port.unwrap_or(0).to_string()]);
+    if !delegated && !settings.prefill_device.is_empty() {
         args.extend(["--prefill-device".into(), settings.prefill_device.clone()]);
     }
     args
+}
+fn is_delegated(report: Option<&serde_json::Value>) -> bool {
+    report
+        .and_then(|report| report.get("delegated"))
+        .and_then(serde_json::Value::as_bool)
+        == Some(true)
+}
+fn canonical(path: &str) -> PathBuf {
+    Path::new(path)
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(path))
 }
 pub fn ready_url(line: &str) -> Option<String> {
     let rest = line
@@ -146,8 +176,13 @@ pub fn ready_url(line: &str) -> Option<String> {
     }
     Some(format!("http://127.0.0.1:{port}"))
 }
-fn network_arguments(settings: &Settings, model: &str, token: &Path) -> Vec<String> {
-    let mut args = arguments(settings, model);
+fn network_arguments(
+    settings: &Settings,
+    model: &str,
+    token: &Path,
+    delegated: bool,
+) -> Vec<String> {
+    let mut args = arguments_for(settings, model, delegated);
     if settings.lan_access {
         args.extend([
             "--host".into(),
@@ -189,13 +224,14 @@ impl Manager {
             epoch: AtomicU64::new(0),
             closing: AtomicBool::new(false),
             start_lock: Mutex::new(()),
+            delegated: Mutex::new(BTreeMap::new()),
             #[cfg(test)]
             publication_gate: Mutex::new(None),
             #[cfg(test)]
             recovery_gate: Mutex::new(None),
         })
     }
-    fn record_path(&self) -> PathBuf {
+    pub(crate) fn record_path(&self) -> PathBuf {
         self.directory.join("serve-pid.json")
     }
     pub fn settings(&self) -> Result<Settings, String> {
@@ -322,6 +358,9 @@ impl Manager {
                     )
                 };
                 let report = serde_json::from_slice::<serde_json::Value>(&output.stdout).ok();
+                if let Ok(mut delegated) = self.delegated.lock() {
+                    delegated.insert(canonical(path), is_delegated(report.as_ref()));
+                }
                 let total_bytes = report.as_ref().and_then(|report| {
                     report
                         .get("files")?
@@ -367,10 +406,17 @@ impl Manager {
             .collect()
     }
     pub fn start(&self, settings: &Settings, model: &str) -> Result<Service, String> {
+        trace(&format!(
+            "start: model={model} executable={} assets={:?} device={} port={:?}",
+            settings.executable, settings.assets, settings.device, settings.port
+        ));
         if self.closing.load(Ordering::SeqCst) {
             return Err("The application is shutting down".into());
         }
-        settings.validate()?;
+        settings.validate().map_err(|e| {
+            trace(&format!("validate failed: {e}"));
+            e
+        })?;
         if !settings.assets.iter().any(|p| {
             p == model
                 || Path::new(model)
@@ -380,41 +426,89 @@ impl Manager {
                     .zip(Path::new(p).canonicalize().ok())
                     .is_some_and(|(parent, root)| parent == root)
         }) {
+            trace("asset check failed: the model is not under a configured asset directory");
             return Err("Select a configured asset directory".into());
         }
         let executable = Path::new(&settings.executable)
             .canonicalize()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                trace(&format!("canonicalize executable failed: {e}"));
+                e.to_string()
+            })?;
+        // Decided before any lock is taken: an unknown directory is inspected once here.
+        let known = self
+            .delegated
+            .lock()
+            .map_err(|e| e.to_string())?
+            .get(&canonical(model))
+            .copied();
+        let delegated = match known {
+            Some(value) => value,
+            None => {
+                trace(&format!("running inspect: {}", executable.display()));
+                let output = Command::new(&executable)
+                    .args(["inspect", "--model", model, "--json"])
+                    .output()
+                    .map_err(|e| {
+                        trace(&format!("inspect spawn failed: {e}"));
+                        format!("Cannot run edge0-infer: {e}")
+                    })?;
+                trace(&format!("inspect exited with {:?}", output.status.code()));
+                is_delegated(serde_json::from_slice(&output.stdout).ok().as_ref())
+            }
+        };
+        trace(&format!("delegated={delegated}"));
         let epoch = self.epoch.fetch_add(1, Ordering::SeqCst) + 1;
-        self.recover()?;
+        self.recover().map_err(|e| {
+            trace(&format!("recover failed: {e}"));
+            e
+        })?;
         let _starting = self.start_lock.lock().map_err(|e| e.to_string())?;
         if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
             return Err("Model loading cancelled".into());
         }
-        self.stop_process(None)?;
+        self.stop_process(None).map_err(|e| {
+            trace(&format!("stop_process failed: {e}"));
+            e
+        })?;
         let mut publication = self.process.lock().map_err(|e| e.to_string())?;
         if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
             return Err("Model loading cancelled".into());
         }
         let mut command = Command::new(&executable);
-        let args = network_arguments(settings, model, &self.directory.join("api-token"));
+        let args = network_arguments(
+            settings,
+            model,
+            &self.directory.join("api-token"),
+            delegated,
+        );
         if settings.lan_access {
             if crate::storage::read_token(&self.directory)?.is_none() {
                 return Err("Enable network access with an API token first".into());
             }
         }
+        trace(&format!("spawning: {} {:?}", executable.display(), args));
         command
             .args(args)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::piped());
-        platform::configure(&mut command)?;
-        let mut child = command
-            .spawn()
-            .map_err(|e| format!("Cannot start edge0-infer: {e}"))?;
+        platform::configure(&mut command).map_err(|e| {
+            trace(&format!("platform::configure failed: {e}"));
+            e
+        })?;
+        let mut child = command.spawn().map_err(|e| {
+            trace(&format!("spawn failed: {e}"));
+            format!("Cannot start edge0-infer: {e}")
+        })?;
+        trace(&format!("spawned pid {}", child.id()));
         let lifetime = match platform::attach(&child) {
-            Ok(v) => v,
+            Ok(v) => {
+                trace("attach: ok (job or pid-only fallback)");
+                v
+            }
             Err(e) => {
+                trace(&format!("attach failed: {e}"));
                 let _ = child.kill();
                 let _ = child.wait();
                 return Err(e);
@@ -423,10 +517,15 @@ impl Manager {
         let pid = child.id();
         let record = PidRecord { pid, executable };
         if let Err(e) = write_json(&self.record_path(), &record) {
+            trace(&format!(
+                "write_json({}) failed: {e}",
+                self.record_path().display()
+            ));
             let _ = child.kill();
             let _ = child.wait();
             return Err(e);
         }
+        trace("pid record written");
         let stderr = match child.stderr.take() {
             Some(stderr) => stderr,
             None => {
@@ -617,6 +716,7 @@ mod tests {
             &settings,
             "model with spaces",
             Path::new("config with spaces/api-token"),
+            false,
         );
         assert_eq!(
             &args[args.len() - 4..],
@@ -629,7 +729,8 @@ mod tests {
         );
         settings.lan_access = false;
         assert!(
-            !network_arguments(&settings, "model", Path::new("unused")).contains(&"--host".into())
+            !network_arguments(&settings, "model", Path::new("unused"), false)
+                .contains(&"--host".into())
         );
     }
     #[test]
@@ -809,6 +910,73 @@ mod tests {
             .manager
             .start(&fixture.settings, &fixture.directory.to_string_lossy())
             .is_err());
+    }
+    fn check_delegated_directory(model_name: &str, identifier: &str) {
+        let mut fixture = Fixture::new();
+        let root = fixture.directory.join("models");
+        let big = root.join("big");
+        for folder in ["mtp", "tokenizer"] {
+            fs::create_dir_all(big.join(folder)).unwrap();
+        }
+        fs::write(
+            big.join("model.json"),
+            format!(
+                r#"{{"model_name":"{model_name}","args":["ignored"],"env":{{"ignored":"value"}}}}"#
+            ),
+        )
+        .unwrap();
+        let native = root.join("native");
+        fs::create_dir_all(&native).unwrap();
+        fs::write(
+            native.join("model.json"),
+            r#"{"architecture": "edge0_35b", "format_version": 1}"#,
+        )
+        .unwrap();
+        fixture.settings.device = "metal".into();
+        fixture.settings.prefill_device = "metal".into();
+        let big_path = big.to_string_lossy().into_owned();
+        // As a location of its own and inside a parent location: the directory itself, its subdirectories not listed.
+        for location in [big_path.clone(), root.to_string_lossy().into_owned()] {
+            fixture.settings.assets = vec![location];
+            let found = fixture.manager.inspect(&fixture.settings).unwrap();
+            let paths: Vec<_> = found.iter().map(|a| a.path.clone()).collect();
+            assert!(paths.contains(&big_path), "{paths:?}");
+            assert!(paths
+                .iter()
+                .all(|p| !p.ends_with("mtp") && !p.ends_with("tokenizer")));
+            let entry = found.iter().find(|a| a.path == big_path).unwrap();
+            assert!(entry.ok && entry.model_id.as_deref() == Some(identifier));
+        }
+        assert!(fixture.manager.delegated.lock().unwrap()[&big.canonicalize().unwrap()]);
+        assert!(!fixture.manager.delegated.lock().unwrap()[&native.canonicalize().unwrap()]);
+        // The fixture refuses device arguments for a delegated directory, so starting proves they were left out.
+        let service = fixture.manager.start(&fixture.settings, &big_path).unwrap();
+        assert_eq!(service.url, "http://127.0.0.1:41325");
+        fixture.manager.stop().unwrap();
+        assert_eq!(
+            arguments_for(&fixture.settings, &big_path, true),
+            ["serve", "--model", big_path.as_str(), "--port", "0"]
+        );
+        let native_args = arguments_for(&fixture.settings, &native.to_string_lossy(), false);
+        assert!(
+            native_args.contains(&"--device".into())
+                && native_args.contains(&"--prefill-device".into())
+        );
+        // Without a prior inspection, start asks edge0-infer itself.
+        let fresh = Manager::new(fixture.directory.join("fresh")).unwrap();
+        fresh.start(&fixture.settings, &big_path).unwrap();
+        fresh.stop().unwrap();
+    }
+    #[test]
+    fn delegated_directories_are_one_model_started_without_devices() {
+        for (name, identifier) in [
+            ("edge0-145b-q3k", "edge0_145b"),
+            ("edge0-145b-fp4", "edge0_145b"),
+            ("edge0-120b-q3k", "edge0_120b"),
+            ("edge0-120b-fp4", "edge0_120b"),
+        ] {
+            check_delegated_directory(name, identifier);
+        }
     }
     #[test]
     fn cancels_before_child_publication_without_leaking() {
@@ -1011,14 +1179,26 @@ mod tests {
         let mut empty = fixture.settings.clone();
         empty.executable = " ".into();
         let message = empty.validate().unwrap_err();
-        assert!(message.starts_with("No edge0-infer executable is configured."), "{message}");
-        assert!(message.contains("Settings > Engine > Executable"), "{message}");
+        assert!(
+            message.starts_with("No edge0-infer executable is configured."),
+            "{message}"
+        );
+        assert!(
+            message.contains("Settings > Engine > Executable"),
+            "{message}"
+        );
         let mut missing = fixture.settings.clone();
-        missing.executable = directory().join("edge0-infer").to_string_lossy().into_owned();
+        missing.executable = directory()
+            .join("edge0-infer")
+            .to_string_lossy()
+            .into_owned();
         let message = missing.validate().unwrap_err();
         assert!(message.contains(&missing.executable), "{message}");
         assert!(message.contains("moved or deleted"), "{message}");
-        assert!(message.contains("Other location… on Choose a model"), "{message}");
+        assert!(
+            message.contains("Other location… on Choose a model"),
+            "{message}"
+        );
         let mut folder = fixture.settings.clone();
         folder.executable = std::env::temp_dir().to_string_lossy().into_owned();
         assert!(folder.validate().unwrap_err().contains("was not found at"));

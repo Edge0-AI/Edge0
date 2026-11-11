@@ -1,0 +1,36 @@
+# strata launch preview: step3-context
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Set up   Step 3 of 9: Context
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ How much text should it remember at once?
+   8K     about 6,100 words       +0.1 GB
+   32K    about 25,000 words      +0.4 GB     recommended
+   64K    about 49,000 words      +0.9 GB
+ › 128K   about 98,000 words      +1.8 GB
+   200K   about 150,000 words     +2.8 GB     tight on this computer
+   256K   about 200,000 words     +3.6 GB     tight on this computer
+   384K   about 290,000 words     +5.4 GB     experimental: rope scaling
+   512K   about 390,000 words     +7.2 GB     experimental: rope scaling
+   Custom…
+ Conversation memory: 8-bit (recommended: what the published numbers were measured with)   press m to change
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ More context lets agents read bigger projects. It uses more memory and the first reply of a long chat is
+ slower. The memory shown is only the extra for the conversation itself.
+ ↑↓ choose   Enter next   m memory format   Esc back   ? help
