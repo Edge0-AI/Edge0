@@ -149,18 +149,16 @@ on `PATH`, and change to `edge0-strata/`. The CUDA installer sets `CUDA_PATH`, f
 
    ```bat
    cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ^
-     -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl ^
+     -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_OSX_ARCHITECTURES=arm64 ^
      -DCMAKE_CUDA_COMPILER="%CUDA_PATH%\bin\nvcc.exe" -DCMAKE_CUDA_ARCHITECTURES=native ^
+     -DCMAKE_CUDA_HOST_COMPILER=cl.exe -DCMAKE_CUDA_FLAGS=--use-local-env ^
      -DSTRATA_ENABLE_CUDA=ON -DSTRATA_GGML_DIR="%CD%\third_party\llama.cpp" -DSTRATA_BUILD_TESTS=OFF
    cmake --build build --target strata
    ```
 
    `CMAKE_CUDA_ARCHITECTURES=native` builds for the GPU in this machine. If the toolchain cannot see the
    GPU, give its compute capability without the dot instead:
-   `nvidia-smi --query-gpu=compute_cap --format=csv` shows it, and 12.1 is `121`. In a shell whose
-   compiler environment was set by hand rather than by the developer prompt, also pass
-   `-DCMAKE_CUDA_HOST_COMPILER=cl.exe -DCMAKE_CUDA_FLAGS=--use-local-env`, because nvcc otherwise looks for
-   a `vcvars` script that such a toolchain does not have.
+   `nvidia-smi --query-gpu=compute_cap --format=csv` shows it, and 12.1 is `121`.
 
 3. Create the standard Python environment:
 
