@@ -1,0 +1,31 @@
+{
+  "source_commit": "fb58e0dbc8399662c0e47c76578c6e878b14f6cf",
+  "engine_build": {
+    "version": "0.1.41",
+    "source": "release",
+    "archs": [
+      75,
+      86,
+      89,
+      120
+    ],
+    "ptx": true,
+    "cuda": "13.0",
+    "vision": "gpu",
+    "portable": true
+  },
+  "python": "3.13.11 (tags/v3.13.11:6278944, Dec  5 2025, 16:26:58) [MSC v.1944 64 bit (AMD64)]",
+  "cpu_logical": 20,
+  "cpu_physical": 12,
+  "ram_bytes": 68481699840,
+  "disk_free_bytes": 567245737984,
+  "start_clock": {
+    "start_utc": "2026-10-09T01:02:07+00:00",
+    "measurement_stop_utc": "2026-10-09T09:12:07+00:00",
+    "report_deadline_utc": "2026-10-09T10:02:07+00:00",
+    "start_epoch": 1791507727.0,
+    "measurement_stop_epoch": 1791537127.0,
+    "report_deadline_epoch": 1791540127.0
+  },
+  "background_gpu": "name, memory.total [MiB], memory.used [MiB], driver_version, power.limit [W], pcie.link.gen.max, pcie.link.width.max\nNVIDIA GeForce RTX 3060, 12288 MiB, 612 MiB, 610.62, 170.00 W, 4, 16\n"
+}

@@ -1,0 +1,148 @@
+{
+ "tag": "default",
+ "max_tokens": 256,
+ "runs_per_config": 3,
+ "warmup": true,
+ "configs": [
+  {
+   "requested_tokens": 512,
+   "prompt_n": 556,
+   "cache_n": [
+    0,
+    0,
+    0
+   ],
+   "generated_n": [
+    256,
+    256,
+    256
+   ],
+   "runs": 3,
+   "prompt_tok_s_median_range": "50.4 (37.5-57.8)",
+   "decode_tok_s_median_range": "19.3 (16.5-22.8)",
+   "ttft_s_median_range": "11.0 (9.6-14.8)",
+   "wall_s": [
+    28.11,
+    26.53,
+    20.87
+   ],
+   "rows": [
+    {
+     "wall_s": 28.11,
+     "prompt_n": 556,
+     "cache_n": 0,
+     "prompt_ms": 14837.2,
+     "prompt_tok_s": 37.5,
+     "predicted_n": 256,
+     "predicted_ms": 13259.5,
+     "decode_tok_s": 19.3,
+     "draft_n": 212,
+     "draft_accepted": 147,
+     "finish": "length",
+     "answer_head": "The provided text is a documentation header for `tools/iq_pack.py`, a utility designed to create native packs for quantized model files (specifically Q2_0, IQ2_",
+     "run": 1
+    },
+    {
+     "wall_s": 26.53,
+     "prompt_n": 556,
+     "cache_n": 0,
+     "prompt_ms": 11028.6,
+     "prompt_tok_s": 50.4,
+     "predicted_n": 256,
+     "predicted_ms": 15480.7,
+     "decode_tok_s": 16.5,
+     "draft_n": 205,
+     "draft_accepted": 136,
+     "finish": "length",
+     "answer_head": "The provided text is not executable code but rather a documentation header and usage guide for `tools/iq_pack.py`, a tool designed to create optimized \"packs\" f",
+     "run": 2
+    },
+    {
+     "wall_s": 20.87,
+     "prompt_n": 556,
+     "cache_n": 0,
+     "prompt_ms": 9623.6,
+     "prompt_tok_s": 57.8,
+     "predicted_n": 256,
+     "predicted_ms": 11232.8,
+     "decode_tok_s": 22.8,
+     "draft_n": 219,
+     "draft_accepted": 150,
+     "finish": "length",
+     "answer_head": "The provided text is a documentation header for `tools/iq_pack.py`, a utility designed to create native packs for GGUF model files using i-quant formats (Q2_0, ",
+     "run": 3
+    }
+   ]
+  },
+  {
+   "requested_tokens": 2048,
+   "prompt_n": 2309,
+   "cache_n": [
+    0,
+    0,
+    0
+   ],
+   "generated_n": [
+    256,
+    256,
+    256
+   ],
+   "runs": 3,
+   "prompt_tok_s_median_range": "59.6 (53.3-61.7)",
+   "decode_tok_s_median_range": "9.1 (8.6-13.7)",
+   "ttft_s_median_range": "38.7 (37.4-43.3)",
+   "wall_s": [
+    71.58,
+    68.46,
+    56.17
+   ],
+   "rows": [
+    {
+     "wall_s": 71.58,
+     "prompt_n": 2309,
+     "cache_n": 0,
+     "prompt_ms": 43299.1,
+     "prompt_tok_s": 53.3,
+     "predicted_n": 256,
+     "predicted_ms": 28235.9,
+     "decode_tok_s": 9.1,
+     "draft_n": 206,
+     "draft_accepted": 141,
+     "finish": "length",
+     "answer_head": "This code implements `iq_pack.py`, a tool for creating optimized model packs from GGUF files, specifically targeting quantized models like Q2_0, IQ2_XS, and IQ3",
+     "run": 1
+    },
+    {
+     "wall_s": 68.46,
+     "prompt_n": 2309,
+     "cache_n": 0,
+     "prompt_ms": 38735.4,
+     "prompt_tok_s": 59.6,
+     "predicted_n": 256,
+     "predicted_ms": 29665.6,
+     "decode_tok_s": 8.6,
+     "draft_n": 206,
+     "draft_accepted": 148,
+     "finish": "length",
+     "answer_head": "This code implements `iq_pack.py`, a tool for creating optimized \"packs\" of quantized model weights (specifically for IQ2_XS, IQ3_XXS, and Q2_0 formats) from GG",
+     "run": 2
+    },
+    {
+     "wall_s": 56.17,
+     "prompt_n": 2309,
+     "cache_n": 0,
+     "prompt_ms": 37407.4,
+     "prompt_tok_s": 61.7,
+     "predicted_n": 256,
+     "predicted_ms": 18686.8,
+     "decode_tok_s": 13.7,
+     "draft_n": 198,
+     "draft_accepted": 136,
+     "finish": "length",
+     "answer_head": "This code implements `iq_pack.py`, a tool for creating optimized \"packs\" of quantized model weights (specifically for IQ2_XS, IQ3_XXS, and Q2_0 formats) from GG",
+     "run": 3
+    }
+   ]
+  }
+ ]
+}

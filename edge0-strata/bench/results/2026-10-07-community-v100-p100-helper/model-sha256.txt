@@ -1,0 +1,7 @@
+219ea929900dfa9ef091f3aa473fdba6874b65fcb36526d7d851ac9e95856d15  Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf
+316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113  Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf
+b1a82259702816a5330d7bd7607cd9676b11780e79ff7348c21103ff3ce49bd0  mmproj-Qwen3.8-Flash-Next-BF16.gguf
+09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f  mtp/rt/experts.bin
+c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a  mtp/rt/dense.bin
+b1e1d3a7a9e4bf862dcd5923ce661fb59bbd07907e594df5cf86a62ac235cb91  mtp/rt/draft_vocab.bin
+8f59b4aa8873209dff11c11e37bcda9529a1335b724a1afeea37bf6388975baf  expert-profile.bin

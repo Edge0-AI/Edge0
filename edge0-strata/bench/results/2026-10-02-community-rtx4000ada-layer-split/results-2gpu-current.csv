@@ -1,0 +1,13 @@
+test_id,category,prompt_tokens,reused_tokens,generated_tokens,prompt_tok_s,decode_tok_s,wall_seconds,finish_reason,draft_n,draft_accepted,correct
+math_01_bayes,mathematical_reasoning,253,0,503,243.8,68.0,8.445,stop,397,326,true
+math_02_integer_system,mathematical_reasoning,204,0,768,246.6,78.4,10.627,length,617,501,false
+math_03_tank,mathematical_reasoning,255,0,121,271.5,72.4,2.616,stop,94,79,true
+logic_01_schedule_count,logical_reasoning,220,0,768,252.8,63.6,12.951,length,617,401,false
+logic_02_implication,logical_reasoning,247,0,768,297.0,65.4,12.583,length,589,407,false
+code_01_python_alias,code_reasoning,240,0,316,273.4,71.9,5.279,stop,264,216,true
+code_02_complexity,code_reasoning,246,0,305,291.8,65.9,5.475,stop,233,171,true
+ee_01_nodal,electronics_reasoning,245,0,694,280.2,73.9,10.273,stop,574,460,true
+instruction_01_json,instruction_following,298,0,288,286.7,64.9,5.480,stop,268,176,true
+agent_01_safe_tool_plan,agent_reasoning,297,0,160,282.8,60.8,3.686,stop,117,89,true
+reasoning_01_false_positive,adversarial_reasoning,233,0,321,259.2,68.5,5.593,stop,263,199,true
+long_01_aster,long_context_reasoning,16591,0,147,2117.5,68.9,10.064,stop,128,92,true

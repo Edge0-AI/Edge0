@@ -1,0 +1,36 @@
+# strata launch preview: start screen with saved presets
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Launch                                                       RTX 5070 12 GB · 64 GB RAM · 47 GB free
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Start from a saved preset
+
+ › IQ3_XXS 128K - Full speed         IQ3_XXS       128K    1 request     tuned 10-16   last used 10-16
+   Network serving                   Q2_0          32K     1 request     tuned 10-15   last used 10-15
+   Coder 64K - agents                IQ1_M         64K     2 requests    not tuned     last used 10-14
+   Set up from the beginning
+   Use model files I already have
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ This computer: RTX 5070 12 GB · 64 GB RAM · 47 GB free.  Preset: model, context, parallel requests, tuned
+ settings, access. Shared with the Strata app.
+ ↑↓ choose   Enter launch   e edit preset   d delete   ? help   q quit

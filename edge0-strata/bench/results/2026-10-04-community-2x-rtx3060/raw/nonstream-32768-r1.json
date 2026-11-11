@@ -1,0 +1,48 @@
+{
+ "request": {
+  "model": "qwen3.8-flash-next-iq3_s",
+  "max_tokens": 256,
+  "temperature": 0,
+  "stream": false
+ },
+ "prompt_chars": 128420,
+ "filler_repeats": 206,
+ "response": {
+  "id": "chatcmpl-455632f4423d4b1c8e68948f",
+  "object": "chat.completion",
+  "created": 1791084224,
+  "model": "qwen3.8-flash-next-iq3_s",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "Mixture-of-experts layers increase model capacity by routing each token to a few small experts, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.",
+     "reasoning_content": "We need answer user's request. Need summarize text in exactly one sentence. User text is repeated paragraph many times. Need likely output one sentence only. Need ensure exactly one sentence. Could say: \"Mixture-of-experts layers increase model capacity by routing each token to a few small experts, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.\" That's one sentence. Need maybe mention repeated? No. Ensure no extra sentence. Final only one sentence.\n"
+    },
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "prompt_tokens": 24798,
+   "completion_tokens": 150,
+   "total_tokens": 24948,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 24798,
+   "prompt_ms": 21389.7,
+   "prompt_per_token_ms": 0.863,
+   "prompt_per_second": 1159.3,
+   "predicted_n": 150,
+   "predicted_ms": 3625.6,
+   "predicted_per_token_ms": 24.171,
+   "predicted_per_second": 41.4,
+   "draft_n": 130,
+   "draft_n_accepted": 93
+  }
+ }
+}

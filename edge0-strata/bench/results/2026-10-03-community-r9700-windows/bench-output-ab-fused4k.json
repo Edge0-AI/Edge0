@@ -1,0 +1,159 @@
+{
+  "started": "2026-10-03 15:37:12",
+  "url": "http://127.0.0.1:8080/v1/chat/completions",
+  "model": "strata",
+  "engine_log": "D:\\AI\\Strata\\Strata-main\\Strata-main\\strata-iq2_xs.log",
+  "cap_tokens": 256,
+  "reps": 3,
+  "speed": [
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 5.339,
+      "total_s": 8.077,
+      "answer_len": 1382,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 4195,
+        "completion_tokens": 256,
+        "total_tokens": 4451,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 4195,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 4195,
+      "read_ms": 5294,
+      "read_tok_s": 792.3,
+      "generated_tokens": 256,
+      "gen_ms": 2753,
+      "decode_tok_s": 93.0,
+      "target": 4096,
+      "rep": 1,
+      "chars": 10535
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 5.816,
+      "total_s": 8.554,
+      "answer_len": 1391,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 4198,
+        "completion_tokens": 256,
+        "total_tokens": 4454,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 4198,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 4198,
+      "read_ms": 5769,
+      "read_tok_s": 727.6,
+      "generated_tokens": 256,
+      "gen_ms": 2752,
+      "decode_tok_s": 93.0,
+      "target": 4096,
+      "rep": 2,
+      "chars": 10535
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 5.593,
+      "total_s": 8.174,
+      "answer_len": 1351,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 4199,
+        "completion_tokens": 256,
+        "total_tokens": 4455,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 4199,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 4199,
+      "read_ms": 5557,
+      "read_tok_s": 755.6,
+      "generated_tokens": 256,
+      "gen_ms": 2596,
+      "decode_tok_s": 98.6,
+      "target": 4096,
+      "rep": 3,
+      "chars": 10535
+    }
+  ],
+  "needles": [],
+  "notes": [],
+  "calibration": {
+    "ok": true,
+    "payload_variant": 0,
+    "thinking_off": true,
+    "ttft_s": 5.256,
+    "total_s": 5.989,
+    "answer_len": 372,
+    "reasoning_len": 0,
+    "reasoning_text": "",
+    "finish_reason": "length",
+    "usage": {
+      "prompt_tokens": 3216,
+      "completion_tokens": 64,
+      "total_tokens": 3280,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "engine_prompt_tokens": 3216,
+    "reused_tokens": 0,
+    "new_prompt_tokens": 3216,
+    "read_ms": 5213,
+    "read_tok_s": 616.9,
+    "generated_tokens": 64,
+    "gen_ms": 752,
+    "decode_tok_s": 85.1
+  },
+  "chars_per_token": 2.5188916876574305,
+  "warmup": {
+    "ok": true,
+    "payload_variant": 0,
+    "thinking_off": true,
+    "ttft_s": 3.19,
+    "total_s": 3.436,
+    "answer_len": 94,
+    "reasoning_len": 0,
+    "reasoning_text": "",
+    "finish_reason": "length",
+    "usage": {
+      "prompt_tokens": 2082,
+      "completion_tokens": 32,
+      "total_tokens": 2114,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "engine_prompt_tokens": 2082,
+    "reused_tokens": 0,
+    "new_prompt_tokens": 2082,
+    "read_ms": 3159,
+    "read_tok_s": 659.1,
+    "generated_tokens": 32,
+    "gen_ms": 260,
+    "decode_tok_s": 122.9
+  },
+  "finished": "2026-10-03 15:37:46",
+  "tag": "fused4k"
+}

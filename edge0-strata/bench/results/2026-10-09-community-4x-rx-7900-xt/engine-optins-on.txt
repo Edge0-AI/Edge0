@@ -1,0 +1,66 @@
+[strata] layer split across GPUs [0, 1, 2, 3] (12,24,36)
+[strata] 2026-10-09 02:48:58 engine started: /opt/strata/src/engine/strata --serve --pack /mnt/spare/build/strata-data/packs/iq3_s --native /mnt/spare/build/strata-data/models/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /mnt/spare/build/strata-data/models/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --expert-profile /opt/strata/src/data/expert-profile.bin --
+strata generate: layer split: every stage keeps its own prompt buffers (~1904 MiB each, 2048-token chunks) (STRATA_SPLIT_OWN=1)
+strata generate: layer split across 4 GPUs: CUDA0, then CUDA1,2,3 (split 12,24,36)
+strata generate: layer split: CUDA0 loads the dense weights of layers 0-11 only
+strata generate: layer split: CUDA1 loads the dense weights of layers 12-23 only
+strata generate: layer split: CUDA1 PCIe probe 6.8 GB/s (best of 6.8 6.8 6.8 6.8) -> pcie_frac 0.19
+strata generate: layer split: CUDA1 holds its weights; 18.83 GiB free (its session follows the split search)
+strata generate: layer split: CUDA2 loads the dense weights of layers 24-35 only
+strata generate: layer split: CUDA2 PCIe probe 13.8 GB/s (best of 13.8 13.8 13.8 13.8) -> pcie_frac 0.38
+strata generate: layer split: CUDA2 holds its weights; 18.82 GiB free (its session follows the split search)
+strata generate: layer split: CUDA3 loads the dense weights of layers 36-47 only
+strata generate: layer split: CUDA3 PCIe probe 3.4 GB/s (best of 3.4 3.4 3.4 3.4) -> pcie_frac 0.09
+strata generate: layer split: CUDA3 holds its weights; 18.83 GiB free (its session follows the split search)
+strata generate: layer split: CUDA1 holds its weights, session [12, 24); 17.86 GiB free
+strata generate: layer split: CUDA2 holds its weights, session [24, 36); 17.85 GiB free
+strata generate: layer split: CUDA3 holds its weights, session [36, 48) and the head; 17.38 GiB free
+strata generate: expert cache auto: 17.80 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 6144 slots
+strata generate: expert cache 6144 slots, 10.82 GiB of VRAM; policy is
+strata generate: pre-filled 6144 of 6144 slots from the profile in 5.0 s (2339 MB/s); slot 0 verified
+strata generate: layer split, CUDA1: 17.86 GiB free of 19.98, room for experts 15.36 GiB
+strata generate: layer split: CUDA1 runs layers 12-23, expert cache 6144 slots (11.33 GiB), 6144 of its 6144 profiled pairs; slot 0 verified
+strata generate: layer split, CUDA2: 17.85 GiB free of 19.98, room for experts 15.35 GiB
+strata generate: layer split: CUDA2 runs layers 24-35, expert cache 6144 slots (12.21 GiB), 6144 of its 6144 profiled pairs; slot 0 verified
+strata generate: layer split, CUDA3: 16.30 GiB free of 19.98, room for experts 13.80 GiB
+strata generate: layer split: CUDA3 runs layers 36-47, expert cache 6144 slots (12.49 GiB), 6144 of its 6144 profiled pairs; slot 0 verified
+strata generate: layer split: CUDA0 runs layers 0-11
+strata generate: R4 hit path ON - resident experts are computed on the GPU
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: layer split: layers 0-11 (CUDA0), 12-23 (CUDA1), 24-35 (CUDA2), 36-47 (CUDA3), one hand-off per window
+strata serve: prompt 32768 tokens = 0 reused + 32768 read in 9553 ms (3430.3 tok/s), 256 generated in 4206 ms (60.9 tok/s), drafts accepted 167 of 211, 2 checkpoints
+[strata] done: 256 tokens in 14 s (61.4 tok/s) (length, cancel=False)
+strata serve: prompt 4096 tokens = 0 reused + 4096 read in 2044 ms (2003.8 tok/s), 256 generated in 4260 ms (60.1 tok/s), drafts accepted 161 of 220, 1 checkpoints
+[strata] done: 256 tokens in 6 s (60.5 tok/s) (length, cancel=False)
+strata serve: prompt 32767 tokens = 0 reused + 32767 read in 8810 ms (3719.4 tok/s), 256 generated in 4983 ms (51.4 tok/s), drafts accepted 149 of 249, 2 checkpoints
+[strata] done: 256 tokens in 14 s (51.7 tok/s) (length, cancel=False)
+strata serve: prompt 4096 tokens = 0 reused + 4096 read in 1950 ms (2100.3 tok/s), 256 generated in 4124 ms (62.1 tok/s), drafts accepted 161 of 211, 1 checkpoints
+[strata] done: 256 tokens in 6 s (62.5 tok/s) (length, cancel=False)
+strata serve: prompt 4096 tokens = 0 reused + 4096 read in 1997 ms (2050.8 tok/s), 256 generated in 4282 ms (59.8 tok/s), drafts accepted 158 of 220, 1 checkpoints
+[strata] done: 256 tokens in 6 s (60.2 tok/s) (length, cancel=False)
+strata serve: prompt 4096 tokens = 0 reused + 4096 read in 1996 ms (2051.6 tok/s), 256 generated in 4267 ms (60.0 tok/s), drafts accepted 159 of 221, 1 checkpoints
+[strata] done: 256 tokens in 6 s (60.4 tok/s) (length, cancel=False)
+strata serve: prompt 32768 tokens = 0 reused + 32768 read in 8654 ms (3786.6 tok/s), 256 generated in 4809 ms (53.2 tok/s), drafts accepted 152 of 207, 2 checkpoints
+[strata] done: 256 tokens in 13 s (53.6 tok/s) (length, cancel=False)
+strata serve: prompt 32768 tokens = 0 reused + 32768 read in 8598 ms (3810.9 tok/s), 256 generated in 4860 ms (52.7 tok/s), drafts accepted 151 of 221, 2 checkpoints
+[strata] done: 256 tokens in 13 s (53.0 tok/s) (length, cancel=False)
+strata serve: prompt 32773 tokens = 0 reused + 32773 read in 8615 ms (3804.1 tok/s), 256 generated in 5040 ms (50.8 tok/s), drafts accepted 151 of 233, 2 checkpoints
+[strata] done: 256 tokens in 14 s (51.1 tok/s) (length, cancel=False)
+strata serve: prompt 128005 tokens = 0 reused + 128005 read in 29639 ms (4318.7 tok/s), 256 generated in 5073 ms (50.5 tok/s), drafts accepted 155 of 230, 6 checkpoints
+[strata] done: 256 tokens in 35 s (50.8 tok/s) (length, cancel=False)
+strata serve: prompt 128005 tokens = 0 reused + 128005 read in 29722 ms (4306.8 tok/s), 256 generated in 5148 ms (49.7 tok/s), drafts accepted 146 of 212, 6 checkpoints
+[strata] done: 256 tokens in 35 s (50.1 tok/s) (length, cancel=False)
+strata serve: prompt 128005 tokens = 0 reused + 128005 read in 29893 ms (4282.1 tok/s), 256 generated in 5081 ms (50.4 tok/s), drafts accepted 152 of 224, 6 checkpoints
+[strata] done: 256 tokens in 35 s (50.7 tok/s) (length, cancel=False)
+strata serve: prompt 33286 tokens = 0 reused + 33286 read in 9055 ms (3675.9 tok/s), 9 generated in 131 ms (68.9 tok/s), drafts accepted 6 of 6, 3 checkpoints
+[strata] done: 9 tokens in 9 s (89.0 tok/s) (stop, cancel=False)
+strata serve: prompt 33286 tokens = 0 reused + 33286 read in 8958 ms (3715.6 tok/s), 9 generated in 131 ms (68.7 tok/s), drafts accepted 6 of 6, 3 checkpoints
+[strata] done: 9 tokens in 9 s (88.6 tok/s) (stop, cancel=False)
+strata serve: prompt 33287 tokens = 16384 reused + 16903 read in 5373 ms (3145.7 tok/s), 10 generated in 206 ms (48.5 tok/s), drafts accepted 9 of 9, 3 checkpoints
+[strata] done: 10 tokens in 6 s (56.6 tok/s) (stop, cancel=False)
+strata serve: prompt 126640 tokens = 0 reused + 126640 read in 29489 ms (4294.4 tok/s), 10 generated in 242 ms (41.3 tok/s), drafts accepted 8 of 12, 6 checkpoints
+[strata] done: 10 tokens in 30 s (47.5 tok/s) (stop, cancel=False)
+strata serve: prompt 126638 tokens = 0 reused + 126638 read in 29846 ms (4243.0 tok/s), 9 generated in 238 ms (37.9 tok/s), drafts accepted 6 of 11, 6 checkpoints
+[strata] done: 9 tokens in 30 s (43.9 tok/s) (stop, cancel=False)
+strata serve: prompt 126638 tokens = 16384 reused + 110254 read in 26650 ms (4137.2 tok/s), 9 generated in 218 ms (41.2 tok/s), drafts accepted 7 of 8, 6 checkpoints
+[strata] done: 9 tokens in 27 s (48.2 tok/s) (stop, cancel=False)

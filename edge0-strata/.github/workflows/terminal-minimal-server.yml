@@ -1,0 +1,65 @@
+name: Minimal serving runtime
+
+on:
+  push:
+    paths:
+      - .github/workflows/terminal-minimal-server.yml
+      - requirements.txt
+      - strata.py
+      - strata_cli/**
+      - strata_control/**
+      - serve/**
+      - tests/terminal/test_runtime.py
+      - tools/minimal_server_smoke.py
+      - tools/strata_tokenizer.py
+  pull_request:
+    paths:
+      - .github/workflows/terminal-minimal-server.yml
+      - requirements.txt
+      - strata.py
+      - strata_cli/**
+      - strata_control/**
+      - serve/**
+      - tests/terminal/test_runtime.py
+      - tools/minimal_server_smoke.py
+      - tools/strata_tokenizer.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fake-engine:
+    name: Linux / runtime requirements only
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Install only pinned runtime requirements
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/strata-runtime-venv"
+          "$RUNNER_TEMP/strata-runtime-venv/bin/python" -m pip install -r requirements.txt
+      - name: Check fake-engine serving without terminal packages
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          from pathlib import Path
+
+          report = Path(os.environ['RUNNER_TEMP']) / 'minimal-server-smoke.json'
+          python = str(Path(os.environ['RUNNER_TEMP']) / 'strata-runtime-venv' / 'bin' / 'python')
+          subprocess.run([python, 'tools/minimal_server_smoke.py',
+                          '--report', str(report)], check=True)
+          print(report.read_text())
+          PY
+      - name: Run full server suite without terminal packages
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/strata-runtime-venv/bin/python" -m unittest discover -s serve -p 'test_*.py'

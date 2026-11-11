@@ -1,0 +1,25 @@
+# Real Time-skip driven by a real Harness revision attempt
+# repo: 12432d29f48bd86954d3715f36c785d6614546ad
+# worker: Strata API worker, MockEngine on 127.0.0.1:8095 (no weights fit this Mac)
+# agent:  DeepSeek Harness CLI 0.2.0-rc.2 with the Strata profile
+# command:
+#   strata timeskip run --workspace /tmp/ts-harness-demo \
+#     --prompt 'Add a status line with the value draft. Keep everything else exactly as it is.' \
+#     --attempts 1 --revise-command '<python> integrations/harness/revise_once.py --deadline 200'
+
+run       ee1f8ab4c2ae4833b114ae32f6d52957
+state     completed
+workspace /tmp/ts-harness-demo
+prompt    Add a status line with the value draft. Keep everything else exactly as it is.
+  cp1-baseline     75069f85862a  has-status=failed, has-title=passed
+  attempt 1: reject - deterministic check(s) failed: has-status
+decision  inconclusive (every candidate was rejected; the retained version is the baseline)
+retained  cp1-baseline
+          needs user review: the evidence does not justify an automatic choice
+
+# worker activity at the end: {'requests': 2, 'in_flight': 0, 'last_request_at': 1792037442}
+# workspace after the run (the run must not write to it):
+#   title: notes
+#   owner: nik
+# rejected candidate kept for inspection at:
+#   /tmp/ts-harness-runs/ee1f8ab4c2ae4833b114ae32f6d52957/candidates/attempt1/

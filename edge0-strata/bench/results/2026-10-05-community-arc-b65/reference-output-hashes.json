@@ -1,0 +1,52 @@
+{
+  "bench-512-0": {
+    "input_ids_sha256": "7a8b790518b46aeb09308bcaf0b2d6e5f88e1833675f003ab729879bd66f0429",
+    "output_ids_sha256": "d277375b1674930b1e1980947c49907f7bf58aa547d7ef3b630e368abc2541db",
+    "output_tokens": 640
+  },
+  "bench-512-1": {
+    "input_ids_sha256": "46ba88f7512466954166caa83b4d4a9efb14ea97a572d40b6e2b2314fae0fbf2",
+    "output_ids_sha256": "28280a3c946f179e212e92f9c52a80be4ab43ea5275ed9dbda95385a8d09293b",
+    "output_tokens": 640
+  },
+  "bench-512-2": {
+    "input_ids_sha256": "ca4431f9e01900953702dc1788b319df7c908ff2af329367eef614c6f47f793d",
+    "output_ids_sha256": "b02c23434cd85358d849997c7b23a93622bb74232d45f62185e22761324d2f5a",
+    "output_tokens": 640
+  },
+  "bench-512-3": {
+    "input_ids_sha256": "2577f5dc58806bfa2d770923235ca38c2ee1287f591bf3f0a5affd0d9da1704b",
+    "output_ids_sha256": "41d479890c0e2453c214754be93b2a940ce9414410299bcea7a1e3b7ec531e82",
+    "output_tokens": 640
+  },
+  "bench-512-4": {
+    "input_ids_sha256": "2affe3aea9eb191ea72197455b01efed5acb3922d1414da0f890491bbde3e67f",
+    "output_ids_sha256": "0b36f61808663208495e4bf7e2ca18e45667678bdd4fe1569f7088df01bae04a",
+    "output_tokens": 640
+  },
+  "bench-7000-0": {
+    "input_ids_sha256": "6b8e7149da625c30b478f0e793fc4e788febe8013160276f5eb7d4217659b619",
+    "output_ids_sha256": "6251264969ceb2d9982a642c9f6ccf7b2ba0749eed4686a3c2018c9a62f00832",
+    "output_tokens": 640
+  },
+  "bench-7000-1": {
+    "input_ids_sha256": "cf3bf3862432f28434d999ab26bbb99900518e85f635bb30fbe3b2dee8a43269",
+    "output_ids_sha256": "c784bd97c8c4edab4b433078dce124ec600d8ce9efe441398226b4d2bf7ff74c",
+    "output_tokens": 640
+  },
+  "bench-7000-2": {
+    "input_ids_sha256": "bbd058e7ee29c3a3403b7d2dedffb873412386e3185a537dc677f2649b4e64fa",
+    "output_ids_sha256": "106cb92ecb3ea209582e16b33d592e1ec607e75c34b3076d620de6115ead4cee",
+    "output_tokens": 640
+  },
+  "bench-7000-3": {
+    "input_ids_sha256": "271be8da7554e506184cb33a8d8211846dfe34551cfa5e1088b57dae34386533",
+    "output_ids_sha256": "f404e22f2422adb91cb328a55e0e3e465c9af64b434f8a5591d2dcd7ca08c14d",
+    "output_tokens": 640
+  },
+  "bench-7000-4": {
+    "input_ids_sha256": "36e2231837959a481491bf9d851b048eaff4008e60ef9025e304425e89a6ad53",
+    "output_ids_sha256": "8c07d27bdc8c73408a9de369f99cd7aef71d3412938931b0bbeb224a2bd0445a",
+    "output_tokens": 640
+  }
+}

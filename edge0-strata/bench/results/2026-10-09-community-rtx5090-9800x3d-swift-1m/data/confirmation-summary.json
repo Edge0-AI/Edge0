@@ -1,0 +1,398 @@
+[
+  {
+    "arm": "baseline",
+    "mode": "greedy",
+    "depth": 32768,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6686.874291881373,
+      "minimum": 6609.649830563175,
+      "maximum": 6764.098753199572
+    },
+    "engine_decode_tok_s": {
+      "median": 198.88338756615735,
+      "minimum": 196.17609870109965,
+      "maximum": 201.59067643121503
+    },
+    "client_ttft_s": {
+      "median": 4.924592024999583,
+      "minimum": 4.868193627999062,
+      "maximum": 4.9809904220001044
+    },
+    "client_total_s": {
+      "median": 7.491084282999509,
+      "minimum": 7.469213290998596,
+      "maximum": 7.512955275000422
+    },
+    "draft_acceptance": {
+      "median": 0.7229329838466418,
+      "minimum": 0.7107061503416856,
+      "maximum": 0.7351598173515982
+    }
+  },
+  {
+    "arm": "baseline",
+    "mode": "greedy",
+    "depth": 131072,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6426.22364038619,
+      "minimum": 6318.123535819988,
+      "maximum": 6534.32374495239
+    },
+    "engine_decode_tok_s": {
+      "median": 190.58448553681703,
+      "minimum": 189.27211563343315,
+      "maximum": 191.8968554402009
+    },
+    "client_ttft_s": {
+      "median": 20.459368598000765,
+      "minimum": 20.116647631000887,
+      "maximum": 20.802089565000642
+    },
+    "client_total_s": {
+      "median": 23.13732174550023,
+      "minimum": 22.812694967000425,
+      "maximum": 23.461948524000036
+    },
+    "draft_acceptance": {
+      "median": 0.6988822611357197,
+      "minimum": 0.6984478935698448,
+      "maximum": 0.6993166287015945
+    }
+  },
+  {
+    "arm": "baseline",
+    "mode": "sampled",
+    "depth": 32768,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6778.767757943998,
+      "minimum": 6761.028349770973,
+      "maximum": 6796.507166117022
+    },
+    "engine_decode_tok_s": {
+      "median": 175.599946349057,
+      "minimum": 170.17882071395334,
+      "maximum": 181.02107198416064
+    },
+    "client_ttft_s": {
+      "median": 4.861934371499046,
+      "minimum": 4.852322487999118,
+      "maximum": 4.871546254998975
+    },
+    "client_total_s": {
+      "median": 7.767808022499594,
+      "minimum": 7.690274419999696,
+      "maximum": 7.845341624999492
+    },
+    "draft_acceptance": {
+      "median": 0.6913995798680639,
+      "minimum": 0.683291770573566,
+      "maximum": 0.6995073891625616
+    }
+  },
+  {
+    "arm": "baseline",
+    "mode": "sampled",
+    "depth": 131072,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6441.4510325235115,
+      "minimum": 6348.480592070211,
+      "maximum": 6534.421472976813
+    },
+    "engine_decode_tok_s": {
+      "median": 178.76910974147438,
+      "minimum": 177.38973772650104,
+      "maximum": 180.1484817564477
+    },
+    "client_ttft_s": {
+      "median": 20.410763315500844,
+      "minimum": 20.117400414001168,
+      "maximum": 20.70412621700052
+    },
+    "client_total_s": {
+      "median": 23.265321400501307,
+      "minimum": 22.949393510001755,
+      "maximum": 23.58124929100086
+    },
+    "draft_acceptance": {
+      "median": 0.6823850896860987,
+      "minimum": 0.65625,
+      "maximum": 0.7085201793721974
+    }
+  },
+  {
+    "arm": "prefill16",
+    "mode": "greedy",
+    "depth": 32768,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6948.4770111293765,
+      "minimum": 6926.670471600398,
+      "maximum": 6970.283550658356
+    },
+    "engine_decode_tok_s": {
+      "median": 185.52553055889547,
+      "minimum": 184.29198761788209,
+      "maximum": 186.75907349990882
+    },
+    "client_ttft_s": {
+      "median": 4.739072520999798,
+      "minimum": 4.724321097999564,
+      "maximum": 4.7538239440000325
+    },
+    "client_total_s": {
+      "median": 7.491097279999849,
+      "minimum": 7.487536134000038,
+      "maximum": 7.49465842599966
+    },
+    "draft_acceptance": {
+      "median": 0.6876804520935011,
+      "minimum": 0.6506550218340611,
+      "maximum": 0.7247058823529412
+    }
+  },
+  {
+    "arm": "prefill16",
+    "mode": "greedy",
+    "depth": 131072,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6958.752192454573,
+      "minimum": 6753.886504284558,
+      "maximum": 7163.617880624586
+    },
+    "engine_decode_tok_s": {
+      "median": 184.90881288489402,
+      "minimum": 178.22954015386225,
+      "maximum": 191.58808561592576
+    },
+    "client_ttft_s": {
+      "median": 18.908981086000495,
+      "minimum": 18.354112118000558,
+      "maximum": 19.46385005400043
+    },
+    "client_total_s": {
+      "median": 21.673277195999617,
+      "minimum": 21.017920772999787,
+      "maximum": 22.328633618999447
+    },
+    "draft_acceptance": {
+      "median": 0.697737944963393,
+      "minimum": 0.6566523605150214,
+      "maximum": 0.7388235294117647
+    }
+  },
+  {
+    "arm": "prefill16",
+    "mode": "sampled",
+    "depth": 32768,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 7069.867033771217,
+      "minimum": 6918.772829965583,
+      "maximum": 7220.961237576853
+    },
+    "engine_decode_tok_s": {
+      "median": 186.85127383198665,
+      "minimum": 180.51687057081406,
+      "maximum": 193.18567709315926
+    },
+    "client_ttft_s": {
+      "median": 4.663545019499907,
+      "minimum": 4.565968400000202,
+      "maximum": 4.761121638999612
+    },
+    "client_total_s": {
+      "median": 7.396014924000156,
+      "minimum": 7.3899174880007195,
+      "maximum": 7.402112359999592
+    },
+    "draft_acceptance": {
+      "median": 0.7500929929790301,
+      "minimum": 0.7338308457711443,
+      "maximum": 0.7663551401869159
+    }
+  },
+  {
+    "arm": "prefill16",
+    "mode": "sampled",
+    "depth": 131072,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6900.934037078112,
+      "minimum": 6647.361027289924,
+      "maximum": 7154.507046866301
+    },
+    "engine_decode_tok_s": {
+      "median": 179.8373714433581,
+      "minimum": 178.8646288209607,
+      "maximum": 180.81011406575556
+    },
+    "client_ttft_s": {
+      "median": 19.08028169550016,
+      "minimum": 18.378179630000886,
+      "maximum": 19.782383760999437
+    },
+    "client_total_s": {
+      "median": 21.915672651000023,
+      "minimum": 21.230093923000823,
+      "maximum": 22.601251378999223
+    },
+    "draft_acceptance": {
+      "median": 0.7497816212438854,
+      "minimum": 0.7264150943396226,
+      "maximum": 0.7731481481481481
+    }
+  },
+  {
+    "arm": "prefill32",
+    "mode": "greedy",
+    "depth": 32768,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 7054.572305238924,
+      "minimum": 7040.220006875215,
+      "maximum": 7068.924603602632
+    },
+    "engine_decode_tok_s": {
+      "median": 183.25882671894067,
+      "minimum": 181.24535381783426,
+      "maximum": 185.27229962004705
+    },
+    "client_ttft_s": {
+      "median": 4.6697037790008835,
+      "minimum": 4.659066739000991,
+      "maximum": 4.680340819000776
+    },
+    "client_total_s": {
+      "median": 7.455746058000841,
+      "minimum": 7.415364143000261,
+      "maximum": 7.496127973001421
+    },
+    "draft_acceptance": {
+      "median": 0.7212682137075014,
+      "minimum": 0.7201834862385321,
+      "maximum": 0.7223529411764706
+    }
+  },
+  {
+    "arm": "prefill32",
+    "mode": "greedy",
+    "depth": 131072,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 6961.847748154409,
+      "minimum": 6944.690230320499,
+      "maximum": 6979.005265988318
+    },
+    "engine_decode_tok_s": {
+      "median": 166.16930965067758,
+      "minimum": 156.95410931608473,
+      "maximum": 175.38450998527043
+    },
+    "client_ttft_s": {
+      "median": 18.887982061000002,
+      "minimum": 18.84073416799947,
+      "maximum": 18.935229954000533
+    },
+    "client_total_s": {
+      "median": 21.969752260999485,
+      "minimum": 21.845470993999697,
+      "maximum": 22.094033527999272
+    },
+    "draft_acceptance": {
+      "median": 0.645054945054945,
+      "minimum": 0.6373626373626373,
+      "maximum": 0.6527472527472528
+    }
+  },
+  {
+    "arm": "prefill32",
+    "mode": "sampled",
+    "depth": 32768,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 7010.227369333972,
+      "minimum": 6955.34046527424,
+      "maximum": 7065.114273393704
+    },
+    "engine_decode_tok_s": {
+      "median": 178.28145483666108,
+      "minimum": 173.6535069868403,
+      "maximum": 182.90940268648185
+    },
+    "client_ttft_s": {
+      "median": 4.701850946500599,
+      "minimum": 4.665361297000345,
+      "maximum": 4.738340596000853
+    },
+    "client_total_s": {
+      "median": 7.565747783999541,
+      "minimum": 7.453257270999529,
+      "maximum": 7.678238296999552
+    },
+    "draft_acceptance": {
+      "median": 0.6885812803954396,
+      "minimum": 0.6846846846846847,
+      "maximum": 0.6924778761061947
+    }
+  },
+  {
+    "arm": "prefill32",
+    "mode": "sampled",
+    "depth": 131072,
+    "runs": 2,
+    "generated": 512,
+    "reused": 0,
+    "engine_prefill_tok_s": {
+      "median": 7239.885862619636,
+      "minimum": 7155.717881105634,
+      "maximum": 7324.053844133638
+    },
+    "engine_decode_tok_s": {
+      "median": 171.2392755626077,
+      "minimum": 159.7454057595707,
+      "maximum": 182.73314536564473
+    },
+    "client_ttft_s": {
+      "median": 18.167664320000767,
+      "minimum": 17.956240403000265,
+      "maximum": 18.37908823700127
+    },
+    "client_total_s": {
+      "median": 21.16110741850025,
+      "minimum": 20.74801275900063,
+      "maximum": 21.57420207799987
+    },
+    "draft_acceptance": {
+      "median": 0.6865956788531944,
+      "minimum": 0.6813953488372093,
+      "maximum": 0.6917960088691796
+    }
+  }
+]

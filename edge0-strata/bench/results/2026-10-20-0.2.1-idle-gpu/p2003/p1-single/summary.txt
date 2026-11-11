@@ -1,0 +1,36 @@
+arm | metric | median | vs base | pairs faster (higher) | rounds
+default | story:tok_s | 60.84 | 1.000 | 0/5 | 5
+overlap | story:tok_s | 57.15 | 0.939 | 1/5 | 5
+default2 | story:tok_s | 58.45 | 0.961 | 2/5 | 5
+default | code:tok_s | 73.31 | 1.000 | 0/5 | 5
+overlap | code:tok_s | 70.42 | 0.961 | 0/5 | 5
+default2 | code:tok_s | 71.61 | 0.977 | 1/5 | 5
+default | facts:tok_s | 72.78 | 1.000 | 0/5 | 5
+overlap | facts:tok_s | 70.71 | 0.972 | 2/5 | 5
+default2 | facts:tok_s | 71.70 | 0.985 | 4/5 | 5
+default | pp16k:pp_tok_s | 1056.99 | 1.000 | 0/5 | 5
+overlap | pp16k:pp_tok_s | 1055.63 | 0.999 | 2/5 | 5
+default2 | pp16k:pp_tok_s | 1049.49 | 0.993 | 1/5 | 5
+
+arm | window | mean util per card % (median over runs) | mean power W per card | idle% (mean over cards)
+default | story | gpu0 95 | 160 | 5
+default | code | gpu0 94 | 157 | 6
+default | facts | gpu0 95 | 158 | 5
+default | pp16k | gpu0 96 | 165 | 4
+overlap | story | gpu0 95 | 157 | 5
+overlap | code | gpu0 95 | 155 | 5
+overlap | facts | gpu0 94 | 157 | 6
+overlap | pp16k | gpu0 96 | 165 | 4
+default2 | story | gpu0 95 | 159 | 5
+default2 | code | gpu0 96 | 156 | 4
+default2 | facts | gpu0 95 | 158 | 5
+default2 | pp16k | gpu0 96 | 166 | 4
+
+answer hashes per window kind (distinct values over all runs of all arms; 1 = byte-identical)
+story: 7 distinct -> 033f8528b3200257:default,default2,overlap; 2716f6f2fc99292c:default,default2,overlap; 4052d318cba851cb:default; b4a3057bdecccf4f:default2; adc32395466acb00:default; c17b144815b999df:overlap; 2f4f22980c51f841:overlap
+code: 10 distinct -> 0703822025adc5cd:default,overlap; ac5c27594626917e:default2,overlap; 1d4835a2b000cab1:default2; 67d321d92de13695:default; f3d41c60d98f1350:default2; ae301750e1e37258:default; 479384a12bcbf66d:overlap; 8ed63b77cb9b53a0:default,default2; 4e821729b15eb132:default2; befb3506d31053b3:overlap
+facts: 11 distinct -> def9b9bededd44f5:default,overlap; b9418f1083429dad:overlap; 2aae9df816677cc0:default2; aa63d8e104525a97:default2; ae3d3e64d0680f38:default; 1dfba8ccf3d25593:default2; 9773a821d035b4c7:default; eb599068c53e8662:overlap; 929e1f8cbb2392cb:default,default2; 0ea64dbce799a869:default2; 130b3ef0071e1d05:overlap
+pp16k: 1 distinct
+default: expert-cache slots ['3355']
+overlap: expert-cache slots ['3355']
+default2: expert-cache slots ['3355']

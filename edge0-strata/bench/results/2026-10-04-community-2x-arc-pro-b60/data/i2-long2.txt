@@ -1,0 +1,23 @@
+[long2 BST] prompt_n=1922 cache_n=0 prompt 445.1 tok/s | decode 256 tok 55.5 tok/s | drafts 183/213 | wall 9.0s | finish length
+[long2 turn2] prompt_n=284 cache_n=1915 prompt 177.0 tok/s | decode 256 tok 72.5 tok/s | drafts 211/217 | wall 5.1s | finish length
+```python
+class BinarySearchTree:
+    """A binary search tree implementation with insert, search, delete, and in-order traversal."""
+
+    class Node:
+        """Internal node of the binary search tree."""
+
+        def __init__(self, value):
+            """Initialize a node with a value and no children."""
+            self.value = value
+            self.left = None
+            self.right = None
+
+    def __init__(self):
+        """Initialize an empty binary search tree."""
+        self.root = None
+
+    def insert(self, value):
+        """Insert a value into the binary search tree.
+
+        Args:

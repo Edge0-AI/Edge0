@@ -1,0 +1,97 @@
+# Generated, not source: deterministic build products of tools/ (see docs/).
+# tiny-qwen4exp.gguf is ~113 MB, over GitHub's 100 MB file limit -- regenerate with
+#   python tools/make_tiny_model.py
+bench/tiny-*.gguf
+bench/wide-*.gguf
+bench/micro/*.exe
+bench/micro/*.obj
+bench/micro/*.bin
+bench/micro/*.dll
+bench/micro/*.txt
+*.log
+build*/
+pack/
+logs/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# plan v0.3 P1 (repository hygiene, review E1): profiler captures and large diagnostic dumps stay out of git.
+*.nsys-rep
+
+# Pi harness metadata (local session state, not project source)
+*.sqlite
+*.npz
+*.occ1
+td.log
+
+# created by setup.py on the user's machine
+/.venv/
+/build/
+/third_party/llama.cpp
+/models/
+/packs/
+/mtp/
+/run-*.bat
+/run-*.sh
+/strata-*.json
+/strata-*.log
+/build-strata.bat
+/build-strata-cuda12.bat
+/build-cuda12/
+/.strata-mcp/
+
+# image encoder (setup.py --vision): build output and the generated build script
+build-vision*/
+build-vision.bat
+build-vision-cuda12.bat
+
+# setup.py outputs (engine, downloads) and release builds
+/engine/
+/engine-sycl/
+/engine-cuda12/
+/build-release*/
+/dist/
+*.done
+/third_party/*.zip
+
+# IDEs
+.vscode/
+.idea/
+.cursor/
+
+/.ccache/
+/.rocm-win/
+
+# Optional MCP raster cache
+*.tool-media/
+/.tool-media/
+
+# local Windows HIP packaging output
+dist-hip/
+
+# Terminal / Desktop split: local venvs, build output and archives never enter git
+.terminal-venv/
+.terminal-test-venv/
+node_modules/
+*.dmg
+/release/artifacts/
+/apps/host/dist/
+/apps/desktop/src-tauri/target/
+/apps/desktop/src-tauri/resources/node/*
+!/apps/desktop/src-tauri/resources/node/.gitignore
+# the Control component (bundled CPython + wheels + strata_control) is built by apps/desktop/scripts/stage-control.py
+/apps/desktop/src-tauri/resources/control/*
+!/apps/desktop/src-tauri/resources/control/.gitignore
+# the pruned DeepSeek Harness (MIT) is built by apps/desktop/scripts/stage-harness.mjs
+/apps/desktop/src-tauri/resources/harness/*
+!/apps/desktop/src-tauri/resources/harness/.gitignore
+# screenshots and checkpoints from the Mac rebuild live outside git (StrataSplit\evidence-archive)
+/apps/host/docs/evidence/
+/apps/host/docs/checkpoints/
+
+# DGX Spark build outputs and local venv (docs/DGX_SPARK_LINUX.md)
+/out-spark/
+/build-spark/
+/build-vision-spark/
+/.venv-build/

@@ -1,0 +1,10 @@
+Internal ctest changing into directory: C:/Users/<user>/.codex/worktrees/zen2-gfx1030-defaults/Strata/build-default-tests
+Test project C:/Users/<user>/.codex/worktrees/zen2-gfx1030-defaults/Strata/build-default-tests
+    Start  9: pool_affinity_test
+1/2 Test  #9: pool_affinity_test ...............   Passed    0.05 sec
+    Start 13: pool_stress
+2/2 Test #13: pool_stress ......................   Passed    0.05 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   0.13 sec

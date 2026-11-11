@@ -1,0 +1,92 @@
+[
+ {
+  "name": "greedy story 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 94,
+  "drafts_offered": 169,
+  "tok_s": 43.0,
+  "text": "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with salt and age. He was seventy-three years old, and he had been the keeper of the Blackwood Point Light for forty of those years. The other thirty-three had been spent in a small, drafty cottage that smelled perpetually of kerosene and damp wood.\n\nFor decades, Elias had tended the great Fresnel lens, polishing the glass prisms until they gleamed like diamonds, winding the clockwork mechanism that turned the beam, and trimming the wick of the oil lamp. It was a job of patience, of precision, of silence. The light was his charge. The sea was his neighbor.\n\nBut this morning, the sea was not his neighbor. It was his enemy.\n\nThe storm had been forecasted for three days, but it had arrived in one. The barometric pressure had dropped so sharply that Elias\u2019s ears popped."
+ },
+ {
+  "name": "greedy code 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 136,
+  "drafts_offered": 178,
+  "tok_s": 63.7,
+  "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+ },
+ {
+  "name": "greedy sanity",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 56.8,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy, no penalty (sanity)",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 57.7,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64",
+  "tokens": 94,
+  "repeats": 0,
+  "drafts_accepted": 24,
+  "drafts_offered": 49,
+  "tok_s": 43.3,
+  "text": "Lion  \nTiger   \nElephant    \nGiraffe     \nZebra       \nHippopotamus \nRhinoceros      \nCheetah         \nLeopard        \nJaguar          \nPuma           \nWolf            \nFox             \nBear              \nDeer                \nElk                 \nMoose               \nAntelope                  \nBison                   \nBuffalo                    \nCamel                     \nDonkey                      \nGoat                       \nSheep                        \nCow                         \nDog                          \nCat                           \nRabbit                            \nMouse                             \nHamster                               \nGuinea Pig<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64 story",
+  "tokens": 160,
+  "repeats": 0,
+  "drafts_accepted": 35,
+  "drafts_offered": 108,
+  "tok_s": 41.4,
+  "text": "The wind didn\u2019t just blow; it screamed against the glass of Lantern House 42, rattling like chains in an empty cathedral vaults below Elias\u2019s boots smelled faintly brine and old coffee as he climbed spiral stairs worn smooth by decades feet his hands were calloused from gripping iron railings that had been polished to a dull shine.\n\nElias wasn\u2019t just keeping light; was guarding silence the beam swept across black water every seven seconds cutting through fog so thick it swallowed sound entirely for three nights straight no ships answered its signal not even fishing trawlers seeking shelter they\u2019d long abandoned this stretch of coast where currents shifted unpredictably pulling debris from sunken wrecks into tangled heaps that snagged anchors and tore hulls open like wounds.\n\nHe remembered the last time someone had"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 3",
+  "tokens": 59,
+  "repeats": 0,
+  "drafts_accepted": 11,
+  "drafts_offered": 46,
+  "tok_s": 33.7,
+  "text": "The wind didn\u2019t just blow at Blackwood Rock; it screamed through the gaps in his teeth, trying to pry them apart like loose planks of weathered oak outside your own mouth again and then you are going away from home is fine but for now let me write a proper story.<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 11",
+  "tokens": 60,
+  "repeats": 0,
+  "drafts_accepted": 17,
+  "drafts_offered": 48,
+  "tok_s": 43.2,
+  "text": "Aardvark  \nAntelope allonax (Oryx) \u2013 *Note: Using standard names for clarity*  \n\nLet me provide a clean list of exactly **1** animal name on each single physical text file/terminal output stream with no other characters except the newline (\\n).<|im_end|>"
+ },
+ {
+  "name": "greedy frequency=100 last_n=16",
+  "tokens": 11,
+  "repeats": 0,
+  "drafts_accepted": 5,
+  "drafts_offered": 11,
+  "tok_s": 48.9,
+  "text": "1 to 50, separated by commas:<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=4096 (8-row windows)",
+  "tokens": 300,
+  "repeats": 0,
+  "drafts_accepted": 27,
+  "drafts_offered": 105,
+  "tok_s": 40.2,
+  "text": "The ocean is not merely water; it has been, and remains to this day one giant machine for making life possible on Earth.\" \u2014 *David Attenborough* \n\nThis quote captures perhaps more than any other single sentence in human language: that which we call \"the Sea\" or \u201cOcean\u201d was never just an element\u2014it became civilization itself through its capacity as both barrier (to land) but also conduit between lands\u2014and thus gave rise directly from being part nature\u2019s own evolutionary engine into becoming humanity's greatest historical actor across all time scales since first emergence until now present-day future projections still ongoing today within our current era context window limits allowed here by system constraints set above threshold levels required before output generation begins below line break marker inserted immediately after final punctuation mark ending entire preceding paragraph block structure defined earlier during initial drafting phase prior execution stage completed successfully without errors detected internally via internal validation routines executed automatically upon completion cycle termination signal received end-of-file condition triggered correctly according standard protocol specifications followed strictly adhered-to throughout process flow control logic implemented using structured programming constructs compatible with target runtime environment configuration parameters specified herein explicitly declared beforehand at top-level scope declaration section located near beginning source code file header comments included inline documentation style guidelines observed consistently applied uniformly everywhere else similarly formatted sections appearing later down document body text area scrolling vertically downward directionally aligned left margin justified right edge wrapped around fixed-width column boundaries determined dynamically based available screen real estate measured pixel-per-unit scaling factor adjusted responsively depending viewport dimensions reported back client-side rendering pipeline components responsible"
+ }
+]

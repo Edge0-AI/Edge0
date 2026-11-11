@@ -1,0 +1,40 @@
+{
+  "kind": "observational interactive sessions; not the controlled prefill A/B workload",
+  "date": "2026-10-04",
+  "q2_0": {
+    "strata": {
+      "requests": 5,
+      "output_tokens": 5552,
+      "decode_seconds": 118.236,
+      "weighted_decode_tok_s": 46.96,
+      "drafted": 4684,
+      "drafts_accepted": 3169
+    },
+    "llama_cpp_vulkan": {
+      "requests": 6,
+      "output_tokens": 5540,
+      "decode_seconds": 147.197,
+      "weighted_decode_tok_s": 37.64,
+      "drafted": 6678,
+      "drafts_accepted": 3320
+    }
+  },
+  "unsloth_ud_iq4_xs": {
+    "strata": {
+      "requests": 5,
+      "output_tokens": 3670,
+      "decode_seconds": 100.784,
+      "weighted_decode_tok_s": 36.41,
+      "drafted": 3283,
+      "drafts_accepted": 2126
+    },
+    "llama_cpp_vulkan": {
+      "requests": 5,
+      "output_tokens": 3009,
+      "decode_seconds": 82.673,
+      "weighted_decode_tok_s": 36.40,
+      "drafted": 3300,
+      "drafts_accepted": 1912
+    }
+  }
+}

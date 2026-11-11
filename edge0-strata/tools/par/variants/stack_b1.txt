@@ -1,0 +1,1 @@
+st_b1   | 0,1 | 8 |   |  | | w1;w2:4,8,16@--nonce st --max-tokens 256 --rounds 2;w2:16,8,4@--nonce st --max-tokens 128 --rounds 2

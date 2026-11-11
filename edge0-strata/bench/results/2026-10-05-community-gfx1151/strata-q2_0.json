@@ -1,0 +1,49 @@
+{
+ "exe": "/home/$USER/dev/ai/Strata/engine/strata",
+ "args": [
+  "--pack",
+  "/home/$USER/dev/ai/Strata-data/packs/q2_0",
+  "--native",
+  "/opt/qwen38-flash/models/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/opt/qwen38-flash/models/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf",
+  "--expert-profile",
+  "/home/$USER/dev/ai/Strata/data/expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "/home/$USER/dev/ai/Strata-data/mtp/rt",
+  "--max-context",
+  "131072",
+  "--kv",
+  "int8",
+  "--kv-resident",
+  "32768",
+  "--vision",
+  "--vram-reserve-mib",
+  "700"
+ ],
+ "cwd": "/home/$USER/dev/ai/Strata",
+ "tokenizer": "/home/$USER/dev/ai/Strata-data/packs/q2_0/tokenizer",
+ "model_name": "qwen3.8-flash-next-q2_0",
+ "log": "/home/$USER/dev/ai/Strata/strata-q2_0.log",
+ "lib_dirs": [
+  "/home/$USER/rocm-10.1-venv/lib/python3.14/site-packages/_rocm_sdk_devel/lib"
+ ],
+ "port": 8080,
+ "backend": "hip",
+ "vision": {
+  "exe": "/home/$USER/dev/ai/Strata/engine/strata-vision",
+  "mmproj": "/opt/qwen38-flash/models/Q2_0/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+  "model": "/opt/qwen38-flash/models/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "gpu": false,
+  "max_tokens": 512,
+  "threads": 16
+ }
+}

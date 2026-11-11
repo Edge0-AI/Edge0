@@ -1,0 +1,73 @@
+{
+  "exe": "<strata checkout>/engine/strata",
+  "args": [
+    "--pack",
+    "<data root>/packs/coder-iq1_m",
+    "--native",
+    "<data root>/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf",
+    "--ple-gguf",
+    "<data root>/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00002-of-00002.gguf",
+    "--expert-profile",
+    "<strata checkout>/expert-profile-learned-coder.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "5",
+    "--spec-min-p",
+    "0.5",
+    "--mtp",
+    "<data root>/mtp/rt",
+    "--max-context",
+    "262144",
+    "--kv",
+    "int8",
+    "--kv-resident",
+    "32768",
+    "--vram-reserve-mib",
+    "3072",
+    "--vram-reserve-later-mib",
+    "800",
+    "--pipeline-windows",
+    "2",
+    "--vision"
+  ],
+  "cwd": "<strata checkout>",
+  "tokenizer": "<data root>/packs/coder-iq1_m/tokenizer",
+  "model_name": "qwen3.8-flash-next-coder-iq1_m",
+  "log": "<strata checkout>/strata-coder-iq1_m.log",
+  "lib_dirs": [
+    "<local opt>/rocm/lib"
+  ],
+  "port": 8080,
+  "backend": "hip",
+  "gpu": [
+    1,
+    0
+  ],
+  "reasoning_budget_tokens": 2048,
+  "layer_split": "27",
+  "fit_max_tokens": true,
+  "env": {
+    "STRATA_HIPBLASLT_TUNING": "<strata checkout>/tools/hip/gfx1100-hipblaslt-100202.txt",
+    "STRATA_ADAPT_NOWAIT": "1",
+    "STRATA_STAGE_TRIM": "0",
+    "STRATA_PREFILL_HELP": "1",
+    "STRATA_RING_BYTES": "1",
+    "STRATA_SPLIT_OWN": "1",
+    "STRATA_EXCHANGE_ROTATE": "1",
+    "STRATA_PF_FUSED": "1"
+  },
+  "draft_vocab": "en",
+  "expert_profile_save": "expert-profile-learned-coder.bin",
+  "vision": {
+    "exe": "<strata checkout>/engine/strata-vision",
+    "mmproj": "<data root>/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+    "model": "<data root>/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf",
+    "gpu": false,
+    "threads": 4,
+    "min_tokens": 1024,
+    "max_tokens": 1024
+  }
+}

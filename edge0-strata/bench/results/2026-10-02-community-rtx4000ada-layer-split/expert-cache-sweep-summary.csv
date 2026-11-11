@@ -1,0 +1,7 @@
+helper_slots,short_decode_mean_tps,short_decode_median_tps,short_decode_min_tps,short_decode_max_tps,long_prefill_tps,long_decode_tps,long_wall_s,suite_wall_s,avg_gpu_power_w,notes
+0,68.518,68.0,60.8,78.4,2117.5,68.9,10.064,93.072,141.527,"pure 2-GPU active-card power; SFF separately idle at 10.987 W"
+2000,69.745,70.7,61.2,75.7,2117.9,72.4,10.593,84.112,164.26,"summary retained"
+3000,69.2,69.3,,,2118.1,69.6,9.863,,163.18,"summary retained"
+4000,70.60,71.9,,,2116.9,70.1,10.387,,164.0,"best helper point; power approximate from retained summary"
+6000,69.327,70.9,60.9,74.2,2117.8,69.2,9.910,,,"summary retained"
+8000,69.773,70.8,61.0,75.8,2120.8,67.8,10.618,87.807,,"summary retained"

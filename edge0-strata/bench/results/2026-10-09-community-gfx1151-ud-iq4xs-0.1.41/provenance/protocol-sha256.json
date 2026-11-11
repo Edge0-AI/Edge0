@@ -1,0 +1,9 @@
+{
+  "bench/results/2026-10-05-community-2x-p40/scripts/bench.py": "44bc618438ad1622861586fd37e05d4534545172763685a98bb78e427f6bf9d4",
+  "bench/results/2026-10-04-community-v100-16gb-ram/benchmark.py": "694df81b3d064ca609c73dc8606baf6cbb8a4837ea800933ee6f2eb80dc52d9a",
+  "tools/needle_bench.py": "eb55ad42a0846057e20a2f0ca53112502dd78f5407bf8470b82b2a16698945d2",
+  "tools/batch_test.py": "38bcc5baa01f633722878147ba348546271d5e44f41b0f8e7717b88f212727d6",
+  "data/expert-profile.bin": "8f59b4aa8873209dff11c11e37bcda9529a1335b724a1afeea37bf6388975baf",
+  "data/draft_vocab.bin": "b1e1d3a7a9e4bf862dcd5923ce661fb59bbd07907e594df5cf86a62ac235cb91",
+  "tools/hip/gfx1151-hipblaslt-100401.txt": "7e9e4e81b2306cab0906936e1e836fdf7f2f4e0805d17ab7596ea398a0946ac9"
+}

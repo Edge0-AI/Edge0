@@ -1,0 +1,76 @@
+{
+  "turns": [
+    {
+      "turn": 1,
+      "assistant_seconds": 62.468,
+      "polling_wall_seconds": 65.17466425895691,
+      "answer": "{\"start\":\"CLENEX-4181\",\"middle\":\"STRATA-8081\",\"end\":\"LONDON-9060\"}",
+      "correct": true,
+      "tokens": {
+        "total": 22205,
+        "input": 22102,
+        "output": 103,
+        "reasoning": 0,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "finish": "stop"
+    },
+    {
+      "turn": 2,
+      "assistant_seconds": 1.276,
+      "polling_wall_seconds": 5.040393352508545,
+      "answer": "CLENEX-4181",
+      "correct": true,
+      "tokens": {
+        "total": 22270,
+        "input": 30,
+        "output": 35,
+        "reasoning": 0,
+        "cache": {
+          "read": 22205,
+          "write": 0
+        }
+      },
+      "finish": "stop"
+    },
+    {
+      "turn": 3,
+      "assistant_seconds": 1.181,
+      "polling_wall_seconds": 5.044191360473633,
+      "answer": "STRATA-8081",
+      "correct": true,
+      "tokens": {
+        "total": 22322,
+        "input": 31,
+        "output": 22,
+        "reasoning": 0,
+        "cache": {
+          "read": 22269,
+          "write": 0
+        }
+      },
+      "finish": "stop"
+    },
+    {
+      "turn": 4,
+      "assistant_seconds": 1.085,
+      "polling_wall_seconds": 5.0410315990448,
+      "answer": "LONDON-9060",
+      "correct": true,
+      "tokens": {
+        "total": 22372,
+        "input": 28,
+        "output": 21,
+        "reasoning": 0,
+        "cache": {
+          "read": 22323,
+          "write": 0
+        }
+      },
+      "finish": "stop"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "source": "telemetry-checks.jsonl",
+  "samples": 217,
+  "unparseable_lines": 0,
+  "sampled_seconds": 216.5,
+  "note": "Each sample is one GET /metrics, so the values are the engine's own view. Sampled peaks can miss shorter spikes between samples.",
+  "fields": {
+    "gpu_mem_used": {
+      "median": 16873041920,
+      "min": 16814977024,
+      "max": 16954896384,
+      "max_gib": 15.79,
+      "median_gib": 15.71
+    },
+    "gpu_mem_total": {
+      "median": 17094934528,
+      "min": 17094934528,
+      "max": 17094934528,
+      "max_gib": 15.92,
+      "median_gib": 15.92
+    },
+    "gpu_util": {
+      "median": 99,
+      "min": 0,
+      "max": 100
+    },
+    "gpu_temp_c": {
+      "median": 62,
+      "min": 41,
+      "max": 68
+    },
+    "gpu_power_w": {
+      "median": 243.997,
+      "min": 27.019,
+      "max": 273.323
+    },
+    "gpu_pcie_gen": {
+      "median": 5,
+      "min": 5,
+      "max": 5
+    },
+    "gpu_pcie_width": {
+      "median": 8,
+      "min": 8,
+      "max": 8
+    },
+    "ram_used": {
+      "median": 31151665152,
+      "min": 30438551552,
+      "max": 31736569856,
+      "max_gib": 29.56,
+      "median_gib": 29.01
+    },
+    "ram_total": {
+      "median": 58965274624,
+      "min": 58965274624,
+      "max": 58965274624,
+      "max_gib": 54.92,
+      "median_gib": 54.92
+    },
+    "disk_read_mb": {
+      "median": 0.7253774717579398,
+      "min": 0.0,
+      "max": 230.18278498204805
+    },
+    "vram_free_mib": {
+      "median": 179,
+      "min": 179,
+      "max": 179
+    },
+    "expert_cache_mib": {
+      "median": 6938,
+      "min": 6938,
+      "max": 6938
+    }
+  }
+}

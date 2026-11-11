@@ -1,0 +1,103 @@
+{
+ "label": "v-x2-auto",
+ "extra": [
+  "--layer-split",
+  "auto"
+ ],
+ "gpus": "0,2",
+ "needles": [
+  {
+   "tokens": 2726,
+   "prompt_ms": 2577.0,
+   "pp_tok_s": 1057.8,
+   "found": true,
+   "answer": "meadow-254<|im_end|>"
+  },
+  {
+   "tokens": 8379,
+   "prompt_ms": 4433.5,
+   "pp_tok_s": 1889.9,
+   "found": true,
+   "answer": "juniper-766<|im_end|>"
+  },
+  {
+   "tokens": 16066,
+   "prompt_ms": 7885.8,
+   "pp_tok_s": 2037.3,
+   "found": true,
+   "answer": "falcon-174<|im_end|>"
+  },
+  {
+   "tokens": 27743,
+   "prompt_ms": 13384.6,
+   "pp_tok_s": 2072.8,
+   "found": true,
+   "answer": "willow-474<|im_end|>"
+  }
+ ],
+ "chat": {
+  "turn1_tokens": 6584,
+  "turn1_ms": 3667.5,
+  "turn2_tokens": 6660,
+  "reused": 6632,
+  "turn2_ms": 253.8,
+  "answer": "lantern-417<|im_end|>",
+  "ok": true
+ },
+ "decode": [
+  {
+   "name": "story",
+   "tok_s": 79.5,
+   "reps": [
+    78.9,
+    79.0,
+    80.7
+   ],
+   "hit_rate": 0.9969903443250137,
+   "text": "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his woolen collar up to his chin, the rough fabric scratching against his stubble. Outside the thick, salt-crusted glass of the lantern room, the Atlantic was a churning cauldron of black and white foam. Rain lashed against the panes in horizontal sheets, blurring the world into a smear of gray and shadow.\n\nInside, however, it was warm. The smell of kerosene and old wood hung heavy in the air, a scent that had defined his life for thirty years.\n\nElias was not a man of many words. He was a man of many tasks. His hands, mapped with scars from rope burns and broken glass, moved with a rhythm that predated his memory. He checked the clockwork mechanism of the Fresnel lens, listening for the faint, rhythmic *tick-tick-tick* that signaled the rotation was true. If the rhythm faltered, ships"
+  },
+  {
+   "name": "code",
+   "tok_s": 108.9,
+   "reps": [
+    103.3,
+    113.7,
+    109.5
+   ],
+   "hit_rate": 0.9971795386830036,
+   "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+  }
+ ],
+ "stage_timing": [
+  "strata serve: stage 0: 542 windows; per window: wait for the GPU 7.167 ms, pool + plan 0.572 ms, host staging 0.550 ms, commit 0.232 ms",
+  "strata serve: stage 1: 542 windows; per window: wait for the GPU 12.855 ms, pool + plan 0.250 ms, host staging 0.000 ms, commit 0.334 ms",
+  "strata serve: stage 0: 610 windows; per window: wait for the GPU 7.276 ms, pool + plan 0.559 ms, host staging 0.493 ms, commit 0.234 ms",
+  "strata serve: stage 1: 610 windows; per window: wait for the GPU 13.048 ms, pool + plan 0.258 ms, host staging 0.000 ms, commit 0.337 ms"
+ ],
+ "engine_lines": [
+  "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)",
+  "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+  "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+  "strata generate: layer split auto: CUDA0 84 SMs at 2.81 GHz -> 0.31 ms per layer, 8.30 GiB for experts",
+  "strata generate: layer split auto: CUDA1 82 SMs at 1.86 GHz -> 0.48 ms per layer, 14.14 GiB for experts",
+  "strata generate: layer split auto: K=22 - predicted 19.7 ms per decode window; the caches hold 11298 of 12288 profiled pairs (~99.7% of the routed mass)",
+  "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+  "strata generate: expert cache 4640 slots, 8.29 GiB of VRAM; policy is",
+  "strata generate: layer split: CUDA1 runs layers 22-47, expert cache 6656 slots (13.34 GiB), 6656 of its 6656 profiled pairs; slot 0 verified",
+  "strata generate: layer split: CUDA0 runs layers 0-21",
+  "strata serve: the prompt path allocates its own buffers (too few cache slots to borrow)",
+  "strata serve: layer split: layers 0-21 (CUDA0), 22-47 (CUDA1), one hand-off per window",
+  "strata serve: decode expert cache hit rate: 97.7% (5609 hits / 5739 lookups)",
+  "strata serve: decode expert cache hit rate: 98.5% (4241 hits / 4306 lookups)",
+  "strata serve: decode expert cache hit rate: 98.9% (4262 hits / 4309 lookups)",
+  "strata serve: decode expert cache hit rate: 99.4% (4290 hits / 4315 lookups)",
+  "strata serve: decode expert cache hit rate: 99.6% (4303 hits / 4319 lookups)",
+  "strata serve: decode expert cache hit rate: 98.8% (28379 hits / 28721 lookups)",
+  "strata serve: decode expert cache hit rate: 99.3% (4285 hits / 4314 lookups)",
+  "strata serve: decode expert cache hit rate: 98.5% (136232 hits / 138256 lookups)",
+  "strata serve: decode expert cache hit rate: 99.5% (135540 hits / 136216 lookups)",
+  "strata serve: decode expert cache hit rate: 99.7% (136812 hits / 137225 lookups)",
+  "strata serve: decode expert cache hit rate: 98.4% (118437 hits / 120406 lookups)",
+  "strata serve: decode expert cache hit rate: 99.7% (112836 hits / 113230 lookups)"
+ ]
+}

@@ -1,0 +1,49 @@
+{
+  "source_commit": "6674a0065fb96bacde33e3eb10f91a1df86f95f2",
+  "source_commit_of_second_round": "fb58e0dbc8399662c0e47c76578c6e878b14f6cf",
+  "date": "2026-10-09",
+  "engine_versions": ["0.1.40.4", "0.1.41"],
+  "measured_by": "the machine's owner (host R7-SERVER)",
+  "hardware": {
+    "gpu": "AMD Radeon Pro VII 16 GB (Vega 20, gfx906); rocminfo reports the marketing name from the VBIOS",
+    "gpu_pci": "0000:06:00.0",
+    "vram_total_bytes": 17163091968,
+    "pcie_sysfs": "max/current 16.0 GT/s, width x16",
+    "pcie_measured": "13.7-13.8 GB/s host->device (the engine's own PCIe probe at startup), i.e. PCIe 3.0 x16 throughput on this Xeon E5-2666 v3 platform",
+    "power_cap": "190 W (hwmon power1_cap = 190000000 uW, == power1_cap_default == power1_cap_max; rocm-smi --showpowercap is not available on ROCm 6.2)",
+    "cpu": "Intel(R) Xeon(R) CPU E5-2666 v3 @ 2.90GHz",
+    "cores_threads": "10 cores / 20 threads, single socket; AVX2, no AVX-512",
+    "ram_total_kib": 131800488,
+    "swap_total_kib": 2097148,
+    "storage": "system NVMe: GLOWAY Basic256GNVMe-M.2/80 (256 GB); model shard 1 on a SATA SSD (GALAX TA1D0120A, NTFS), model shard 2 on the NVMe via a symlink",
+    "os": "Ubuntu 22.04.5 LTS",
+    "kernel": "6.8.0-138-generic",
+    "rocm": "6.2.0-66 (distribution ROCm; hipcc = HIP 6.2.41133-dd7f95766, AMD clang 18.0.0)",
+    "display_gpu": "a separate NVIDIA GT 710 drives the monitor; the Radeon Pro VII has no display attached and was dedicated to Strata during the runs"
+  },
+  "model": {
+    "repository": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "revision": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "quantization": "IQ2_XS",
+    "gguf_files": [
+      {
+        "filename": "Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+        "bytes": 39225954592,
+        "sha256": "92cee27ae5bbadcd732416a0f7a7f0acc092399dbbe8f5a5efa707c2ec0a49d7",
+        "verified": "local sha256 == the repository's published LFS oid (queried from the Hub mirror API)"
+      },
+      {
+        "filename": "Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+        "bytes": 28800138432,
+        "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113",
+        "verified": "local sha256 == the repository's published LFS oid"
+      }
+    ],
+    "note": "Shard 2 is the n-gram/PLE table and is identical across all four quantizations of this release; the local copy is the same file the IQ3_S download placed on the NVMe, linked beside shard 1 under the IQ2_XS name (llama.cpp's split loader requires all shards in one directory)."
+  },
+  "artifacts": {
+    "pack": "built with tools/iq_pack.py --gguf <shard 1> --out <pack>; index.txt: 1079 tensors, 302 served natively, arena 1.43 GiB",
+    "mtp": "tools/mtp_fetch.py fetch + tools/mtp_pack.py --experts q2_0 + tools/mtp_rt.py; draft vocabulary: the shipped CJK subset (data/draft_vocab.bin)",
+    "tokenizer": "exported from shard 1 by iq_pack.py into <pack>/tokenizer"
+  }
+}

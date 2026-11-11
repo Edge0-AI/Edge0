@@ -1,0 +1,105 @@
+# Every request of the engine A/B (bench.py).  One server start per label; the card at 65 C before each.
+# A3..A6-base: a0116b2 unchanged.  B3-new, B4-new: the change without the GEMM route (its defaults).
+# B5-new, B6-new: with the GEMM route (STRATA_DENSE_F32=1 here).  off-switches: the B5/B6 build with
+# STRATA_DEQUANT_WIDE=0 STRATA_SM61_TABLE=0 STRATA_DENSE_F32=0.  Order as run: A3 B3 A4 B4, then A5 B5 A6 B6 off.
+# PR-default, PR-dense: the commits as pushed, one pass each, without and with STRATA_DENSE_F32=1 (the first
+# started at 54 C, the second at 64 C).
+A3-base-p1 short run 0: prompt 565 tok (565 read) at 208.4 tok/s | 200 generated at 32.1 tok/s | wall 9.0s
+A3-base-p1 short run 1: prompt 565 tok (565 read) at 202.9 tok/s | 200 generated at 35.0 tok/s | wall 8.5s
+A3-base-p1 short run 2: prompt 566 tok (566 read) at 185.9 tok/s | 200 generated at 36.2 tok/s | wall 8.6s
+A3-base-p1 long run 0: prompt 7048 tok (7048 read) at 360.7 tok/s | 60 generated at 32.4 tok/s | wall 21.4s
+A3-base-p1 long run 1: prompt 7047 tok (7047 read) at 431.7 tok/s | 60 generated at 33.3 tok/s | wall 18.1s
+A3-base-p1 long run 2: prompt 7048 tok (7048 read) at 363.6 tok/s | 60 generated at 33.1 tok/s | wall 21.2s
+== A3-base-p1 short: prompt median 203 tok/s | decode median 35.0 tok/s | n=3
+== A3-base-p1 long: prompt median 364 tok/s | decode median 33.1 tok/s | n=3
+A3-base: GPU at the end 83 C; clock under load (util >= 90): mean 1515 MHz, min 1392 MHz, 43 samples
+B3-new-p1 short run 0: prompt 565 tok (565 read) at 251.3 tok/s | 200 generated at 34.5 tok/s | wall 8.1s
+B3-new-p1 short run 1: prompt 567 tok (567 read) at 256.6 tok/s | 200 generated at 38.2 tok/s | wall 7.5s
+B3-new-p1 short run 2: prompt 566 tok (566 read) at 255.8 tok/s | 200 generated at 38.6 tok/s | wall 7.4s
+B3-new-p1 long run 0: prompt 7048 tok (7048 read) at 369.4 tok/s | 60 generated at 33.5 tok/s | wall 20.9s
+B3-new-p1 long run 1: prompt 7048 tok (7048 read) at 372.9 tok/s | 60 generated at 33.5 tok/s | wall 20.7s
+B3-new-p1 long run 2: prompt 7043 tok (7043 read) at 442.8 tok/s | 60 generated at 37.3 tok/s | wall 17.5s
+== B3-new-p1 short: prompt median 256 tok/s | decode median 38.2 tok/s | n=3
+== B3-new-p1 long: prompt median 373 tok/s | decode median 33.5 tok/s | n=3
+B3-new: GPU at the end 83 C; clock under load (util >= 90): mean 1512 MHz, min 1379 MHz, 41 samples
+A4-base-p1 short run 0: prompt 567 tok (567 read) at 197.6 tok/s | 200 generated at 32.0 tok/s | wall 9.1s
+A4-base-p1 short run 1: prompt 567 tok (567 read) at 210.2 tok/s | 200 generated at 34.2 tok/s | wall 8.6s
+A4-base-p1 short run 2: prompt 566 tok (566 read) at 205.4 tok/s | 200 generated at 34.7 tok/s | wall 8.5s
+A4-base-p1 long run 0: prompt 7049 tok (7049 read) at 360.9 tok/s | 60 generated at 34.1 tok/s | wall 21.3s
+A4-base-p1 long run 1: prompt 7047 tok (7047 read) at 431.9 tok/s | 60 generated at 33.3 tok/s | wall 18.1s
+A4-base-p1 long run 2: prompt 7043 tok (7043 read) at 430.1 tok/s | 60 generated at 32.9 tok/s | wall 18.2s
+== A4-base-p1 short: prompt median 205 tok/s | decode median 34.2 tok/s | n=3
+== A4-base-p1 long: prompt median 430 tok/s | decode median 33.3 tok/s | n=3
+A4-base: GPU at the end 83 C; clock under load (util >= 90): mean 1495 MHz, min 1379 MHz, 40 samples
+B4-new-p1 short run 0: prompt 565 tok (565 read) at 254.7 tok/s | 200 generated at 34.0 tok/s | wall 8.1s
+B4-new-p1 short run 1: prompt 564 tok (564 read) at 242.4 tok/s | 200 generated at 37.2 tok/s | wall 7.7s
+B4-new-p1 short run 2: prompt 565 tok (565 read) at 255.2 tok/s | 200 generated at 37.8 tok/s | wall 7.5s
+B4-new-p1 long run 0: prompt 7047 tok (7047 read) at 436.7 tok/s | 60 generated at 34.9 tok/s | wall 17.9s
+B4-new-p1 long run 1: prompt 7046 tok (7046 read) at 441.4 tok/s | 60 generated at 36.6 tok/s | wall 17.6s
+B4-new-p1 long run 2: prompt 7048 tok (7048 read) at 373.8 tok/s | 60 generated at 35.6 tok/s | wall 20.6s
+== B4-new-p1 short: prompt median 255 tok/s | decode median 37.2 tok/s | n=3
+== B4-new-p1 long: prompt median 437 tok/s | decode median 35.6 tok/s | n=3
+B4-new: GPU at the end 83 C; clock under load (util >= 90): mean 1487 MHz, min 1379 MHz, 36 samples
+A5-base-p1 short run 0: prompt 564 tok (564 read) at 206.6 tok/s | 200 generated at 29.9 tok/s | wall 9.5s
+A5-base-p1 short run 1: prompt 567 tok (567 read) at 199.3 tok/s | 200 generated at 35.4 tok/s | wall 8.5s
+A5-base-p1 short run 2: prompt 566 tok (566 read) at 204.6 tok/s | 200 generated at 35.7 tok/s | wall 8.4s
+A5-base-p1 long run 0: prompt 7048 tok (7048 read) at 359.6 tok/s | 60 generated at 32.0 tok/s | wall 21.5s
+A5-base-p1 long run 1: prompt 7046 tok (7046 read) at 430.9 tok/s | 60 generated at 33.4 tok/s | wall 18.2s
+A5-base-p1 long run 2: prompt 7043 tok (7043 read) at 430.2 tok/s | 60 generated at 32.1 tok/s | wall 18.3s
+== A5-base-p1 short: prompt median 205 tok/s | decode median 35.4 tok/s | n=3
+== A5-base-p1 long: prompt median 430 tok/s | decode median 32.1 tok/s | n=3
+A5-base: GPU at the end 84 C; clock under load (util >= 90): mean 1498 MHz, min 1379 MHz, 40 samples
+B5-new-p1 short run 0: prompt 565 tok (565 read) at 253.8 tok/s | 200 generated at 34.7 tok/s | wall 8.0s
+B5-new-p1 short run 1: prompt 565 tok (565 read) at 243.7 tok/s | 200 generated at 37.7 tok/s | wall 7.6s
+B5-new-p1 short run 2: prompt 562 tok (562 read) at 274.2 tok/s | 200 generated at 37.9 tok/s | wall 7.3s
+B5-new-p1 long run 0: prompt 7046 tok (7046 read) at 467.7 tok/s | 60 generated at 33.9 tok/s | wall 16.9s
+B5-new-p1 long run 1: prompt 7043 tok (7043 read) at 474.4 tok/s | 60 generated at 37.1 tok/s | wall 16.5s
+B5-new-p1 long run 2: prompt 7049 tok (7049 read) at 474.3 tok/s | 60 generated at 35.9 tok/s | wall 16.5s
+== B5-new-p1 short: prompt median 254 tok/s | decode median 37.7 tok/s | n=3
+== B5-new-p1 long: prompt median 474 tok/s | decode median 35.9 tok/s | n=3
+B5-new: GPU at the end 83 C; clock under load (util >= 90): mean 1525 MHz, min 1493 MHz, 37 samples
+A6-base-p1 short run 0: prompt 567 tok (567 read) at 209.9 tok/s | 200 generated at 30.0 tok/s | wall 9.4s
+A6-base-p1 short run 1: prompt 567 tok (567 read) at 198.8 tok/s | 200 generated at 34.4 tok/s | wall 8.7s
+A6-base-p1 short run 2: prompt 565 tok (565 read) at 214.6 tok/s | 200 generated at 35.3 tok/s | wall 8.3s
+A6-base-p1 long run 0: prompt 7048 tok (7048 read) at 361.6 tok/s | 60 generated at 33.6 tok/s | wall 21.3s
+A6-base-p1 long run 1: prompt 7048 tok (7048 read) at 364.5 tok/s | 60 generated at 33.4 tok/s | wall 21.1s
+A6-base-p1 long run 2: prompt 7046 tok (7046 read) at 431.4 tok/s | 60 generated at 32.7 tok/s | wall 18.2s
+== A6-base-p1 short: prompt median 210 tok/s | decode median 34.4 tok/s | n=3
+== A6-base-p1 long: prompt median 364 tok/s | decode median 33.4 tok/s | n=3
+A6-base: GPU at the end 84 C; clock under load (util >= 90): mean 1512 MHz, min 1379 MHz, 40 samples
+B6-new-p1 short run 0: prompt 565 tok (565 read) at 251.6 tok/s | 200 generated at 34.8 tok/s | wall 8.0s
+B6-new-p1 short run 1: prompt 567 tok (567 read) at 252.2 tok/s | 200 generated at 38.4 tok/s | wall 7.5s
+B6-new-p1 short run 2: prompt 565 tok (565 read) at 254.7 tok/s | 200 generated at 37.9 tok/s | wall 7.5s
+B6-new-p1 long run 0: prompt 7047 tok (7047 read) at 463.9 tok/s | 60 generated at 34.0 tok/s | wall 17.0s
+B6-new-p1 long run 1: prompt 7047 tok (7047 read) at 474.1 tok/s | 60 generated at 35.9 tok/s | wall 16.5s
+B6-new-p1 long run 2: prompt 7049 tok (7049 read) at 472.6 tok/s | 60 generated at 33.0 tok/s | wall 16.7s
+== B6-new-p1 short: prompt median 252 tok/s | decode median 37.9 tok/s | n=3
+== B6-new-p1 long: prompt median 473 tok/s | decode median 34.0 tok/s | n=3
+B6-new: GPU at the end 82 C; clock under load (util >= 90): mean 1527 MHz, min 1506 MHz, 35 samples
+off-switches-p1 short run 0: prompt 567 tok (567 read) at 210.4 tok/s | 200 generated at 33.3 tok/s | wall 8.7s
+off-switches-p1 short run 1: prompt 565 tok (565 read) at 201.0 tok/s | 200 generated at 34.8 tok/s | wall 8.6s
+off-switches-p1 short run 2: prompt 565 tok (565 read) at 213.5 tok/s | 200 generated at 32.0 tok/s | wall 8.9s
+off-switches-p1 long run 0: prompt 7048 tok (7048 read) at 359.8 tok/s | 60 generated at 33.4 tok/s | wall 21.4s
+off-switches-p1 long run 1: prompt 7047 tok (7047 read) at 430.8 tok/s | 60 generated at 33.5 tok/s | wall 18.2s
+off-switches-p1 long run 2: prompt 7048 tok (7048 read) at 364.8 tok/s | 60 generated at 31.0 tok/s | wall 21.3s
+== off-switches-p1 short: prompt median 210 tok/s | decode median 33.3 tok/s | n=3
+== off-switches-p1 long: prompt median 365 tok/s | decode median 33.4 tok/s | n=3
+off-switches: GPU at the end 84 C; clock under load (util >= 90): mean 1517 MHz, min 1417 MHz, 41 samples
+PR-default-p1 short run 0: prompt 565 tok (565 read) at 223.3 tok/s | 200 generated at 35.0 tok/s | wall 8.3s
+PR-default-p1 short run 1: prompt 565 tok (565 read) at 260.8 tok/s | 200 generated at 38.3 tok/s | wall 7.4s
+PR-default-p1 short run 2: prompt 563 tok (563 read) at 262.0 tok/s | 200 generated at 38.1 tok/s | wall 7.4s
+PR-default-p1 long run 0: prompt 7045 tok (7045 read) at 439.4 tok/s | 60 generated at 36.0 tok/s | wall 17.7s
+PR-default-p1 long run 1: prompt 7047 tok (7047 read) at 444.6 tok/s | 60 generated at 34.7 tok/s | wall 17.6s
+PR-default-p1 long run 2: prompt 7047 tok (7047 read) at 445.5 tok/s | 60 generated at 37.1 tok/s | wall 17.4s
+== PR-default-p1 short: prompt median 261 tok/s | decode median 38.1 tok/s | n=3
+== PR-default-p1 long: prompt median 445 tok/s | decode median 36.0 tok/s | n=3
+PR-default: GPU at the end 75 C; clock under load (util >= 90): mean 1465 MHz, min 1392 MHz, 36 samples
+PR-dense-p1 short run 0: prompt 565 tok (565 read) at 264.7 tok/s | 200 generated at 31.2 tok/s | wall 8.6s
+PR-dense-p1 short run 1: prompt 567 tok (567 read) at 249.5 tok/s | 200 generated at 37.6 tok/s | wall 7.6s
+PR-dense-p1 short run 2: prompt 567 tok (567 read) at 245.9 tok/s | 200 generated at 38.6 tok/s | wall 7.5s
+PR-dense-p1 long run 0: prompt 7047 tok (7047 read) at 464.6 tok/s | 60 generated at 34.3 tok/s | wall 16.9s
+PR-dense-p1 long run 1: prompt 7047 tok (7047 read) at 471.9 tok/s | 60 generated at 37.5 tok/s | wall 16.5s
+PR-dense-p1 long run 2: prompt 7047 tok (7047 read) at 473.0 tok/s | 60 generated at 34.1 tok/s | wall 16.7s
+== PR-dense-p1 short: prompt median 250 tok/s | decode median 37.6 tok/s | n=3
+== PR-dense-p1 long: prompt median 472 tok/s | decode median 34.3 tok/s | n=3
+PR-dense: GPU at the end 81 C; clock under load (util >= 90): mean 1528 MHz, min 1506 MHz, 35 samples

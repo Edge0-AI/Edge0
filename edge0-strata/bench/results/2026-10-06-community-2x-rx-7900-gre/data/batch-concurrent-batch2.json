@@ -1,0 +1,87 @@
+{
+  "batch": 2,
+  "config": "<strata checkout>/bench/results/2026-10-06-community-2x-rx-7900-gre/data/cfg-batch2-B.json",
+  "max_tokens": 500,
+  "requests": [
+    {
+      "slot": 0,
+      "prompt_id": 0,
+      "ttft_s": 2.329,
+      "wall_s": 19.13,
+      "finish": "stop",
+      "error": null,
+      "text": "The source code defines a series of exported functions, `rule0` through `rule59`, each following a consistent pattern: they accept a single argument `x` and return `x + (n + 1)` if `x` is strictly equ"
+    },
+    {
+      "slot": 1,
+      "prompt_id": 1,
+      "ttft_s": 6.257,
+      "wall_s": 21.69,
+      "finish": "length",
+      "error": null,
+      "text": "### Summary\n\nThis module defines a collection of 80 exported functions (`rule0` through `rule79`). Each function accepts a single numeric argument `x` and applies a specific conditional logic:\n1.  If "
+    }
+  ],
+  "hung_slots": [],
+  "elapsed_s": 28.2,
+  "server_done": [
+    {
+      "tokens": 406,
+      "wall_s": 19.0,
+      "decode_tps": 24.2,
+      "finish": "stop",
+      "cancelled": "False"
+    },
+    {
+      "tokens": 500,
+      "wall_s": 22.0,
+      "decode_tps": 32.4,
+      "finish": "length",
+      "cancelled": "False"
+    }
+  ],
+  "aggregate_decode_tps": 56.6,
+  "engine_lines": [
+    {
+      "prompt_tokens": "1757",
+      "reused": "0",
+      "fresh": "1757",
+      "prefill_ms": "2285",
+      "prefill_tps": "768.9",
+      "generated": "1",
+      "decode_ms": "40",
+      "decode_tps": "24.8"
+    },
+    {
+      "prompt_tokens": "1758",
+      "reused": "1757",
+      "fresh": "1",
+      "prefill_ms": "1",
+      "prefill_tps": "1231.7",
+      "generated": "1",
+      "decode_ms": "26",
+      "decode_tps": "38.4"
+    },
+    {
+      "prompt_tokens": "2334",
+      "reused": "0",
+      "fresh": "2334",
+      "prefill_ms": "3721",
+      "prefill_tps": "627.2",
+      "generated": "1",
+      "decode_ms": "27",
+      "decode_tps": "36.9"
+    },
+    {
+      "prompt_tokens": "2710",
+      "reused": "2709",
+      "fresh": "1",
+      "prefill_ms": "106",
+      "prefill_tps": "9.4",
+      "generated": "124",
+      "decode_ms": "2362",
+      "decode_tps": "52.5"
+    }
+  ],
+  "engine_log_lines_found": 4
+}

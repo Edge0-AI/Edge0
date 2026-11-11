@@ -1,0 +1,24 @@
+{
+ "answers": {
+  "single": [
+   " Red",
+   "42",
+   "A red circle, the number 42, and a blue square are arranged on a white background."
+  ],
+  "same24": [
+   " Red",
+   "42",
+   "A red circle, the number 42, and a blue square are arranged on a white background."
+  ],
+  "x2": [
+   " Red",
+   "42",
+   "A red circle, the number 42, and a blue square are displayed on a white background."
+  ]
+ },
+ "correct": {
+  "single": true,
+  "same24": true,
+  "x2": true
+ }
+}

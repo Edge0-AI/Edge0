@@ -1,0 +1,36 @@
+# Standalone terminal distribution — verified in a clean environment
+# repo: 6c757783ea17c7dfa460a389a83e9fe081d1ba88
+
+artifact : /Users/nikoveit/Documents/deepseek-harness/strata-work/strata-rebuild/release/artifacts/strata-terminal-0.1.44.1-darwin-arm64.tar.gz
+bytes    : 42480892
+sha256   : fafa0076fd30f9fa3d3f1250d8afbf39225bddb80e07a3d818bae2b01e2814d8
+bundled  : python-build-standalone CPython 3.12.15 (pin verified against setup.sh's SHA-256)
+deps     : requirements.txt installed into the bundled interpreter
+
+# Test: extracted to an unrelated path, moved again, and run with
+#   env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME=$HOME
+# The only Python on that PATH is macOS's own 3.9, which the launcher correctly rejects as
+# below the 3.10 floor — so every command below ran on the BUNDLED interpreter.
+
+strata --help          -> full command set, including timeskip and tune
+strata status          -> exit 3 on a dead URL (the documented 'control unreachable' code)
+strata timeskip list   -> {"schema_version":1,"ok":true,"runs":[]}
+strata tune plan       -> read the real Metal engine's flags and planned the sweep
+serve (bundled python) -> /health ok, chat completion returned, CLI status showed LIVE
+
+# A second defect found by the same clean-environment work: the launcher's dependency probe ran for
+# --help as well as serve, so `strata --help` refused to run on an interpreter that could have
+# answered it. The CLI imports serve.* lazily, so --help, status, monitor, timeskip and tune plan
+# are stdlib-only and must work on a bare interpreter. The probe now covers only the API server.
+# Re-verified: --help exit 0 on a bare interpreter, serve exit 5 on the same one.
+
+# Rebuilt after  was added. Re-verified in the clean environment: the run
+# subcommand is present and performs a real sweep (plan -> baseline -> candidates -> report) using
+# only the bundled interpreter.
+
+# Rebuilt after the offline policy, component packages and the tool-flow work. Re-verified in the
+# clean environment: --help,  and  all run on the bundled interpreter.
+
+# Rebuilt after the offline policy, the component packages and the tool-flow work.
+# Re-verified in the clean environment: --help, `components backends` and `tune` all run on
+# the bundled interpreter.

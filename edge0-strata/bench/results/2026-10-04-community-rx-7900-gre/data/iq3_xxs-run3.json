@@ -1,0 +1,263 @@
+[
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "warmup",
+    "trial": 0,
+    "wall_s": 0.46500619600010396,
+    "metrics": {
+      "prompt_tokens": 15.0,
+      "reused": 0.0,
+      "fresh": 15.0,
+      "prefill_ms": 317.0,
+      "prefill_tps": 47.4,
+      "generated": 2.0,
+      "decode_ms": 132.0,
+      "decode_tps": 15.1
+    },
+    "usage": {
+      "prompt_tokens": 15,
+      "completion_tokens": 2,
+      "total_tokens": 17,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "stop",
+    "message": {
+      "role": "assistant",
+      "content": "READY"
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "fresh",
+    "trial": 1,
+    "wall_s": 6.491011669999352,
+    "metrics": {
+      "prompt_tokens": 4210.0,
+      "reused": 0.0,
+      "fresh": 4210.0,
+      "prefill_ms": 3755.0,
+      "prefill_tps": 1121.3,
+      "generated": 128.0,
+      "decode_ms": 2723.0,
+      "decode_tps": 47.0
+    },
+    "usage": {
+      "prompt_tokens": 4210,
+      "completion_tokens": 128,
+      "total_tokens": 4338,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 140 exported functions, named `rule0` through `rule139`, each implementing a specific conditional arithmetic transformation on an input number `x`. Each function `ruleN` checks if the input `x` is strictly equal to its index `N`; if true, it returns `x + (N + 1)`, effectively incrementing the value by one more than its index. If the input `x` is not equal to `N`, the function returns `x - N`, subtracting the index value from the input. Consequently, for any given function `ruleN"
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "followup",
+    "trial": 1,
+    "wall_s": 3.550956855999175,
+    "metrics": {
+      "prompt_tokens": 4451.0,
+      "reused": 4203.0,
+      "fresh": 248.0,
+      "prefill_ms": 1034.0,
+      "prefill_tps": 239.8,
+      "generated": 128.0,
+      "decode_ms": 2503.0,
+      "decode_tps": 51.1
+    },
+    "usage": {
+      "prompt_tokens": 4451,
+      "completion_tokens": 128,
+      "total_tokens": 4579,
+      "prompt_tokens_details": {
+        "cached_tokens": 4203
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the strict integer equality check `x === N`, which fails for any input that is not exactly the index value, including negative numbers, floating-point numbers, or non-numeric types. For example, calling `rule0(-1)` returns `-1 - 0 = -1`, while `rule0(0.5)` returns `0.5 - 0 = 0.5`, demonstrating that the function does not validate input types or ranges. The smallest useful regression test should verify the core conditional logic for a representative rule, such as `rule0`, by asserting that `rule0(0"
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "fresh",
+    "trial": 2,
+    "wall_s": 10.004178667000815,
+    "metrics": {
+      "prompt_tokens": 8830.0,
+      "reused": 0.0,
+      "fresh": 8830.0,
+      "prefill_ms": 7730.0,
+      "prefill_tps": 1142.2,
+      "generated": 128.0,
+      "decode_ms": 2250.0,
+      "decode_tps": 56.9
+    },
+    "usage": {
+      "prompt_tokens": 8830,
+      "completion_tokens": 128,
+      "total_tokens": 8958,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 280 exported functions, named `rule0` through `rule279`, each implementing a specific conditional arithmetic transformation on a single input parameter `x`. Each function `ruleN` (where `N` is an integer from 0 to 279) checks if the input `x` is strictly equal to its index `N`; if true, it returns `x + N + 1`, otherwise it returns `x - N`. Consequently, for any given input value `x`, the function `ruleX` will return `2x + 1` (since"
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "followup",
+    "trial": 2,
+    "wall_s": 3.5378553819991794,
+    "metrics": {
+      "prompt_tokens": 9071.0,
+      "reused": 8823.0,
+      "fresh": 248.0,
+      "prefill_ms": 1019.0,
+      "prefill_tps": 243.3,
+      "generated": 128.0,
+      "decode_ms": 2493.0,
+      "decode_tps": 51.3
+    },
+    "usage": {
+      "prompt_tokens": 9071,
+      "completion_tokens": 128,
+      "total_tokens": 9199,
+      "prompt_tokens_details": {
+        "cached_tokens": 8823
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the **exact integer equality** condition (`x === N`), which acts as a strict switch between two distinct arithmetic behaviors: incrementing by `N+1` or decrementing by `N`. For example, in `rule0`, the boundary is `x === 0`; if `x` is `0`, the result is `1` (`0 + 1`), but if `x` is `1`, the result is `1` (`1 - 0`), creating a collision where different inputs yield the same output, while `x = -1` yields `-1`"
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "fresh",
+    "trial": 3,
+    "wall_s": 5.713562631000968,
+    "metrics": {
+      "prompt_tokens": 4210.0,
+      "reused": 0.0,
+      "fresh": 4210.0,
+      "prefill_ms": 3584.0,
+      "prefill_tps": 1174.7,
+      "generated": 128.0,
+      "decode_ms": 2117.0,
+      "decode_tps": 60.5
+    },
+    "usage": {
+      "prompt_tokens": 4210,
+      "completion_tokens": 128,
+      "total_tokens": 4338,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 140 exported functions, named `rule0` through `rule139`, each implementing a specific conditional arithmetic transformation on a single input parameter `x`. Each function follows a consistent pattern: it checks if the input `x` is strictly equal to the integer value corresponding to the function's index (e.g., `rule5` checks if `x === 5`). If the condition is true, the function returns `x` incremented by the index plus one (e.g., `x + 6` for `rule5`); if the condition is false, it returns `"
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "followup",
+    "trial": 3,
+    "wall_s": 3.462491248999868,
+    "metrics": {
+      "prompt_tokens": 4451.0,
+      "reused": 4203.0,
+      "fresh": 248.0,
+      "prefill_ms": 1030.0,
+      "prefill_tps": 240.9,
+      "generated": 128.0,
+      "decode_ms": 2418.0,
+      "decode_tps": 52.9
+    },
+    "usage": {
+      "prompt_tokens": 4451,
+      "completion_tokens": 128,
+      "total_tokens": 4579,
+      "prompt_tokens_details": {
+        "cached_tokens": 4203
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the strict integer equality check (`x === n`) within each rule, which creates a discontinuity in behavior: for any input `x` equal to the rule's index `n`, the function returns `x + n + 1` (a positive jump), whereas for any other input, it returns `x - n` (a subtraction). This makes the behavior highly sensitive to exact integer matches; for example, `rule0(0)` returns `1`, but `rule0(1)` returns `1` as well (since `1 !== 0`, so `1 - 0 ="
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "fresh",
+    "trial": 4,
+    "wall_s": 9.847645589999956,
+    "metrics": {
+      "prompt_tokens": 8830.0,
+      "reused": 0.0,
+      "fresh": 8830.0,
+      "prefill_ms": 7757.0,
+      "prefill_tps": 1138.4,
+      "generated": 128.0,
+      "decode_ms": 2068.0,
+      "decode_tps": 61.9
+    },
+    "usage": {
+      "prompt_tokens": 8830,
+      "completion_tokens": 128,
+      "total_tokens": 8958,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 280 exported functions, named `rule0` through `rule279`, each implementing a specific conditional arithmetic transformation on a single input parameter `x`. Each function follows a consistent pattern: it checks if the input `x` is strictly equal to the integer value corresponding to the function's index (e.g., `rule5` checks if `x === 5`). If the condition is true, the function returns `x` incremented by the index plus one (e.g., `x + 6` for `rule5`); if the condition is false, it returns `"
+    }
+  },
+  {
+    "label": "iq3_xxs-run3",
+    "kind": "followup",
+    "trial": 4,
+    "wall_s": 3.212902072998986,
+    "metrics": {
+      "prompt_tokens": 9071.0,
+      "reused": 8823.0,
+      "fresh": 248.0,
+      "prefill_ms": 1030.0,
+      "prefill_tps": 240.8,
+      "generated": 128.0,
+      "decode_ms": 2158.0,
+      "decode_tps": 59.3
+    },
+    "usage": {
+      "prompt_tokens": 9071,
+      "completion_tokens": 128,
+      "total_tokens": 9199,
+      "prompt_tokens_details": {
+        "cached_tokens": 8823
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the strict integer equality check (`x === n`) within each `ruleN` function, which creates a discontinuity in behavior: for the specific input `x === n`, the function returns `n + (n + 1)` (effectively `2n + 1`), while for any other input, it returns `x - n`. This means the function is not a simple linear transformation but a piecewise function with a single \"spike\" at `x = n`. For example, `rule0(0)` returns `1` (since `0 === 0` is true"
+    }
+  }
+]

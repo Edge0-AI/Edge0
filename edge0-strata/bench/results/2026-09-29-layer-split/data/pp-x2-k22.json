@@ -1,0 +1,81 @@
+{
+ "label": "x2-k22",
+ "extra": [
+  "--layer-split",
+  "22"
+ ],
+ "gpus": "0,2",
+ "needles": [
+  {
+   "tokens": 2726,
+   "prompt_ms": 2537.7,
+   "pp_tok_s": 1074.2,
+   "found": true,
+   "answer": "meadow-254<|im_end|>"
+  },
+  {
+   "tokens": 8379,
+   "prompt_ms": 4440.0,
+   "pp_tok_s": 1887.2,
+   "found": true,
+   "answer": "juniper-766<|im_end|>"
+  },
+  {
+   "tokens": 16066,
+   "prompt_ms": 7872.5,
+   "pp_tok_s": 2040.8,
+   "found": true,
+   "answer": "falcon-174<|im_end|>"
+  },
+  {
+   "tokens": 27743,
+   "prompt_ms": 13405.0,
+   "pp_tok_s": 2069.6,
+   "found": true,
+   "answer": "willow-474<|im_end|>"
+  }
+ ],
+ "chat": {
+  "turn1_tokens": 6584,
+  "turn1_ms": 3610.4,
+  "turn2_tokens": 6660,
+  "reused": 6632,
+  "turn2_ms": 236.0,
+  "answer": "lantern-417<|im_end|>",
+  "ok": true
+ },
+ "decode": [
+  {
+   "name": "story",
+   "tok_s": 78.1,
+   "hit_rate": 0.9851122208995093,
+   "text": "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with salt and age. He was seventy-three years old, and he had been the keeper of the Blackwood Point Light for forty of those years. The other thirty-three had been spent in a hospital bed, waiting for the end.\n\nEvery night, Elias climbed the one hundred and twelve steps of the spiral staircase. His knees, worn smooth by the friction of his own boots over decades, protested with a sharp ache. He counted them. *One, two, three\u2026* The rhythm was his heartbeat. If he lost the count, he lost the light.\n\nAt the top, the lantern room hummed with the low, electric thrum of the Fresnel lens. It was a cathedral of glass and brass, a machine that had never failed him. Not once. Not in four decades.\n\nHe polished the brass railing with a rag that smelled of lemon and"
+  },
+  {
+   "name": "code",
+   "tok_s": 104.3,
+   "hit_rate": 0.9842543225870746,
+   "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+  }
+ ],
+ "engine_lines": [
+  "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 22)",
+  "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+  "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+  "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+  "strata generate: expert cache 4640 slots, 8.29 GiB of VRAM; policy is",
+  "strata generate: layer split: CUDA1 runs layers 22-47, expert cache 6656 slots (13.34 GiB), 6656 of its 6656 profiled pairs; slot 0 verified",
+  "strata generate: layer split: CUDA0 runs layers 0-21",
+  "strata serve: the prompt path allocates its own buffers (too few cache slots to borrow)",
+  "strata serve: layer split: layers 0-21 (CUDA0), 22-47 (CUDA1), one hand-off per window",
+  "strata serve: decode expert cache hit rate: 97.7% (5609 hits / 5739 lookups)",
+  "strata serve: decode expert cache hit rate: 98.5% (4241 hits / 4306 lookups)",
+  "strata serve: decode expert cache hit rate: 98.9% (4262 hits / 4309 lookups)",
+  "strata serve: decode expert cache hit rate: 99.4% (4290 hits / 4315 lookups)",
+  "strata serve: decode expert cache hit rate: 99.6% (4303 hits / 4319 lookups)",
+  "strata serve: decode expert cache hit rate: 98.8% (28379 hits / 28721 lookups)",
+  "strata serve: decode expert cache hit rate: 99.3% (4285 hits / 4314 lookups)",
+  "strata serve: decode expert cache hit rate: 98.5% (135713 hits / 137764 lookups)",
+  "strata serve: decode expert cache hit rate: 98.4% (118518 hits / 120414 lookups)"
+ ]
+}

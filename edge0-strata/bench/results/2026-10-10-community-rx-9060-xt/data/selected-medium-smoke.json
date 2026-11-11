@@ -1,0 +1,123 @@
+{
+  "reasoning": "medium",
+  "output_allowance": 8192,
+  "completed": true,
+  "results": [
+    {
+      "case": "quote_math",
+      "run": 1,
+      "wall_seconds": 6.87,
+      "first_token_seconds": 6.8701013999998395,
+      "first_answer_seconds": 6.870102199998655,
+      "usage": {
+        "prompt_tokens": 146,
+        "completion_tokens": 253,
+        "total_tokens": 399,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 146,
+        "prompt_ms": 2124.6,
+        "prompt_per_token_ms": 14.552,
+        "prompt_per_second": 68.7,
+        "predicted_n": 253,
+        "predicted_ms": 4741.9,
+        "predicted_per_token_ms": 18.743,
+        "predicted_per_second": 53.4,
+        "draft_n": 210,
+        "draft_n_accepted": 172
+      },
+      "finish_reason": "stop",
+      "answer": "{\"subtotal\":780,\"discounted\":702,\"tax\":91.26,\"total\":793.26}",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.529060363769531,
+      "minimum_available_ram_GiB": 9.504161834716797,
+      "available_ram_after_GiB": 9.565986633300781,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": true
+    },
+    {
+      "case": "validation_logic",
+      "run": 1,
+      "wall_seconds": 5.343,
+      "first_token_seconds": 5.342779599999631,
+      "first_answer_seconds": 5.342780200000561,
+      "usage": {
+        "prompt_tokens": 146,
+        "completion_tokens": 179,
+        "total_tokens": 325,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 146,
+        "prompt_ms": 2001.6,
+        "prompt_per_token_ms": 13.71,
+        "prompt_per_second": 72.9,
+        "predicted_n": 179,
+        "predicted_ms": 3326.8,
+        "predicted_per_token_ms": 18.585,
+        "predicted_per_second": 53.8,
+        "draft_n": 161,
+        "draft_n_accepted": 120
+      },
+      "finish_reason": "stop",
+      "answer": "{\"accepted\":[0,1.5,3],\"rejected\":[null,\"4\",-2]}",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.549999237060547,
+      "minimum_available_ram_GiB": 9.549999237060547,
+      "available_ram_after_GiB": 9.562705993652344,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": true
+    },
+    {
+      "case": "tool_call",
+      "run": 1,
+      "wall_seconds": 4.367,
+      "first_token_seconds": 3.68360599999869,
+      "first_answer_seconds": null,
+      "usage": {
+        "prompt_tokens": 304,
+        "completion_tokens": 37,
+        "total_tokens": 341,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 304,
+        "prompt_ms": 3640.3,
+        "prompt_per_token_ms": 11.975,
+        "prompt_per_second": 83.5,
+        "predicted_n": 37,
+        "predicted_ms": 707.3,
+        "predicted_per_token_ms": 19.116,
+        "predicted_per_second": 52.3,
+        "draft_n": 29,
+        "draft_n_accepted": 26
+      },
+      "finish_reason": "tool_calls",
+      "answer": "",
+      "tool_calls": [
+        {
+          "name": "read_file",
+          "arguments": "{\"path\":\"package.json\"}"
+        }
+      ],
+      "available_ram_before_GiB": 9.57065200805664,
+      "minimum_available_ram_GiB": 9.528636932373047,
+      "available_ram_after_GiB": 9.528636932373047,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": true
+    }
+  ]
+}

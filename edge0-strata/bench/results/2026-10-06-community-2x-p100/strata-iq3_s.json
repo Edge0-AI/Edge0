@@ -1,0 +1,55 @@
+{
+ "exe": "/home/lech/Strata/engine-cuda12/strata",
+ "args": [
+  "--pack",
+  "/home/lech/Strata-data/packs/iq3_s",
+  "--native",
+  "/shared/lmstudio/models/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/shared/lmstudio/models/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--expert-profile",
+  "/home/lech/Strata/data/expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "/home/lech/Strata-data/mtp/rt",
+  "--max-context",
+  "128000",
+  "--kv",
+  "int8",
+  "--kv-resident",
+  "32768",
+  "--vision",
+  "--vram-reserve-mib",
+  "700",
+  "--remote-expert-opt"
+ ],
+ "cwd": "/home/lech/Strata",
+ "tokenizer": "/home/lech/Strata-data/packs/iq3_s/tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3_s",
+ "log": "/home/lech/Strata/strata-iq3_s.log",
+ "lib_dirs": [
+  "/home/lech/Strata/cuda-toolkit/bin"
+ ],
+ "port": 8080,
+ "cuda": 12,
+ "gpu": [
+  1,
+  2
+ ],
+ "gpus_asked": true,
+ "layer_split": "auto",
+ "vision": {
+  "exe": "/home/lech/Strata/engine-cuda12/strata-vision",
+  "mmproj": "/shared/lmstudio/models/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+  "model": "/shared/lmstudio/models/ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "gpu": true,
+  "max_tokens": 1024
+ }
+}

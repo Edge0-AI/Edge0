@@ -1,0 +1,682 @@
+[
+  {
+    "task_id": "HumanEval/0",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 7,
+      "passed_inputs": 7
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 999,
+      "passed_inputs": 999
+    },
+    "solution_sha256": "9297fdb48edaa644479cc1bae2ab5c1ead01c6eb7715b0ce7db9ed2920e6c1e2",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/1",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 4,
+      "passed_inputs": 4
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 83,
+      "passed_inputs": 83
+    },
+    "solution_sha256": "2e7b6fdbfcb4333d56e546b35efaa56aa517ae39f40c6d30336bf77337017dd0",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/2",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 971,
+      "passed_inputs": 971
+    },
+    "solution_sha256": "36561e96371c0d1d161c418029a5f862f8b52af0eb5a5ad06734b85bfeeb4144",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/3",
+    "base": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "plus": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "solution_sha256": "960c0a22f5240b8ebda954cc9630ee57f92e8877f2d251fad449c041ab079960",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": false
+  },
+  {
+    "task_id": "HumanEval/4",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 785,
+      "passed_inputs": 785
+    },
+    "solution_sha256": "096809911a88390b59706eeec55a137fd58968e850d62cb53f48893525d6f58a",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/5",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 153,
+      "passed_inputs": 153
+    },
+    "solution_sha256": "cbb0b189b5c9a453b971bc3ff4bb35905e679e641bb3185d8ba07d807a6a81db",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/6",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 66,
+      "passed_inputs": 66
+    },
+    "solution_sha256": "5ace55573ea8bcf21e0d1b59803a2f76d10ed243c6f3b670bf262e8e02480511",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/7",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 4,
+      "passed_inputs": 4
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 178,
+      "passed_inputs": 178
+    },
+    "solution_sha256": "53da47158eaa40ea405bcd0524788f218e1fef9fc574eefc2a95f281b08905bd",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/8",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 1000,
+      "passed_inputs": 1000
+    },
+    "solution_sha256": "3d2c79c7d96b2bbea53657de7e33d251a5e3c07d6ad665535b8d9a3c259d2394",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/9",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 4,
+      "passed_inputs": 4
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 959,
+      "passed_inputs": 959
+    },
+    "solution_sha256": "d2920a16fc7658c26dbc08cb751bda8270b02cbbae7f4a3247494ad6172e7903",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/10",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 780,
+      "passed_inputs": 780
+    },
+    "solution_sha256": "c2d0bbc630fae55f55eefa807a11017d210c930a291c1d07dadd6a087f4724cb",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/11",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 405,
+      "passed_inputs": 405
+    },
+    "solution_sha256": "5ebb87d700e517cf63a383887a482a6424b23fa74bce408576f46b903b51b745",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/12",
+    "base": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "plus": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "solution_sha256": "bd9b38d03f5c0678de983529c9d382ab2fc5d8b57856b75512a131b282c36089",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": false
+  },
+  {
+    "task_id": "HumanEval/13",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 4,
+      "passed_inputs": 4
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 987,
+      "passed_inputs": 987
+    },
+    "solution_sha256": "c76bee247af6433fd67f462daa4ad4f76f067fa591a070043a5d4673630db344",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/14",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 903,
+      "passed_inputs": 903
+    },
+    "solution_sha256": "07a4abe562708f2ff5318256290f2f809304238333b76faa715390e52bf2b4b4",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/15",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 134,
+      "passed_inputs": 134
+    },
+    "solution_sha256": "347b87c2e7ad489360e11b0d373b59e940eaa2a2cab36bdeea3d2a56b320a006",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/16",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 1000,
+      "passed_inputs": 1000
+    },
+    "solution_sha256": "bd8bbf2fb61f74a953bb69696b1080e9f52c7ee3ebd1e1ff89d6e12824316c51",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/17",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 215,
+      "passed_inputs": 215
+    },
+    "solution_sha256": "2e3cac85da8772c0a5d315095167467375ac4b4e5c0104e60d3beee9eee4e77c",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/18",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 4,
+      "passed_inputs": 4
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 1000,
+      "passed_inputs": 1000
+    },
+    "solution_sha256": "67b4a14a2237bf63a8c2b37c8cd3565d60bb3a1c252b29812105d7903278393e",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/19",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 128,
+      "passed_inputs": 128
+    },
+    "solution_sha256": "015225773522221a740556835e51fda2585e7be17d33dc67d2f1b860230b060c",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/20",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 1000,
+      "passed_inputs": 1000
+    },
+    "solution_sha256": "40fa314f2b1fe42fbe76112552456d2eadfd96a259a566e72517067e81cae380",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/21",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 999,
+      "passed_inputs": 999
+    },
+    "solution_sha256": "4094d5b80b5a0fe555857d73cb9086eb294e4555632a710db2bd139607557b0a",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/22",
+    "base": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "plus": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "solution_sha256": "1a2cd56f69eb8858368176ed690da96d11e878d2b870a8f37b415ad51e239cfa",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": false
+  },
+  {
+    "task_id": "HumanEval/23",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 964,
+      "passed_inputs": 964
+    },
+    "solution_sha256": "831c4d6a608f99826ae7fb5dc85b3f25a5aebf7643e2dec1468c8a442c7f751b",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/24",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 5,
+      "passed_inputs": 5
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 168,
+      "passed_inputs": 168
+    },
+    "solution_sha256": "5208b078c8db516ac076e9a448ee04fe38914f2c16fa5d9e44368914e73be321",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/25",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 8,
+      "passed_inputs": 8
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 138,
+      "passed_inputs": 138
+    },
+    "solution_sha256": "1ff16e02df34447b6af20833d5e204a2909d26cc065fa4644d042e5165f3712d",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/26",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 862,
+      "passed_inputs": 862
+    },
+    "solution_sha256": "b4337bd649d326104c3055fcd7da8e6197e9f6fbe6b873c8e21915ea4bb02638",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/27",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 973,
+      "passed_inputs": 973
+    },
+    "solution_sha256": "c8b2cecdd4063121805a0f01a26d2721e7d3de2c086cc0eabcda9495fb6e3d49",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/28",
+    "base": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "plus": {
+      "status": "fail",
+      "tested_inputs": 0,
+      "passed_inputs": 0
+    },
+    "solution_sha256": "613e99b229de0417d721f8fa9b2b259671f08c6d67bb68a442a32e9cc7754d93",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": false
+  },
+  {
+    "task_id": "HumanEval/29",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 2,
+      "passed_inputs": 2
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 996,
+      "passed_inputs": 996
+    },
+    "solution_sha256": "d0e068dd6e10f48e2e5d51a8c0e6a234afc36e7dbbfad20245f25d71a062ee0f",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/30",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 4,
+      "passed_inputs": 4
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 999,
+      "passed_inputs": 999
+    },
+    "solution_sha256": "6c4739d427079261cbe033406c842c74dd0e86b7dce3549c81d8fcdb69598fce",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/31",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 13,
+      "passed_inputs": 13
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 154,
+      "passed_inputs": 154
+    },
+    "solution_sha256": "0890075bc922fd7d4ceb27273e6451bbcd5feb8445abe10bc7cbd1a45a658478",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/32",
+    "base": {
+      "status": "fail",
+      "tested_inputs": 1,
+      "passed_inputs": 0
+    },
+    "plus": {
+      "status": "fail",
+      "tested_inputs": 1,
+      "passed_inputs": 0
+    },
+    "solution_sha256": "496a47a27b5d0d421820f3ff31f192d3cf5ea0669fef0484b86f75eaf716e400",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": false
+  },
+  {
+    "task_id": "HumanEval/33",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 10,
+      "passed_inputs": 10
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 955,
+      "passed_inputs": 955
+    },
+    "solution_sha256": "9e106b2a70b3b8564d228c28c70427786090b041a96aa4ab63c57508f074bea1",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/34",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 1,
+      "passed_inputs": 1
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 903,
+      "passed_inputs": 903
+    },
+    "solution_sha256": "6879b1f990ca9aa92c16720a1737f498da720969899bc656185185e273f4905a",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/35",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 2,
+      "passed_inputs": 2
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 938,
+      "passed_inputs": 938
+    },
+    "solution_sha256": "0a4e9d243342be6386d6e342cdb208ad5435625c052a73620a8025cdf81570df",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/36",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 8,
+      "passed_inputs": 8
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 148,
+      "passed_inputs": 148
+    },
+    "solution_sha256": "eaab3e3c08abf4180930031ad5adbd951e069b89136dc61b1d04ad6d9302049d",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/37",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 3,
+      "passed_inputs": 3
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 974,
+      "passed_inputs": 974
+    },
+    "solution_sha256": "bbfa69091754f911d65782abe4aa7abb4535af57623cfa774e60f9ac1cd01f5a",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/38",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 100,
+      "passed_inputs": 100
+    },
+    "plus": {
+      "status": "pass",
+      "tested_inputs": 999,
+      "passed_inputs": 999
+    },
+    "solution_sha256": "671e2fb1c77f9b37a9526e02546454f5c8dc7ac54d1ceef3480822d2869048fc",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": true
+  },
+  {
+    "task_id": "HumanEval/39",
+    "base": {
+      "status": "pass",
+      "tested_inputs": 10,
+      "passed_inputs": 10
+    },
+    "plus": {
+      "status": "fail",
+      "tested_inputs": 2,
+      "passed_inputs": 1
+    },
+    "solution_sha256": "bd3a04815ed4f84f912076ffe5feb5404695ba41470570b3d15840dfa5647c8e",
+    "dataset_hash": "fe585eb4df8c88d844eeb463ea4d0302",
+    "evalplus_version": "0.3.1",
+    "base_and_plus_pass": false
+  }
+]

@@ -1,0 +1,263 @@
+[
+  {
+    "label": "iq2_xs-run2",
+    "kind": "warmup",
+    "trial": 0,
+    "wall_s": 0.4041240970000217,
+    "metrics": {
+      "prompt_tokens": 15.0,
+      "reused": 0.0,
+      "fresh": 15.0,
+      "prefill_ms": 275.0,
+      "prefill_tps": 54.5,
+      "generated": 2.0,
+      "decode_ms": 113.0,
+      "decode_tps": 17.7
+    },
+    "usage": {
+      "prompt_tokens": 15,
+      "completion_tokens": 2,
+      "total_tokens": 17,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "stop",
+    "message": {
+      "role": "assistant",
+      "content": "READY"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "fresh",
+    "trial": 1,
+    "wall_s": 6.099054887999955,
+    "metrics": {
+      "prompt_tokens": 4210.0,
+      "reused": 0.0,
+      "fresh": 4210.0,
+      "prefill_ms": 3757.0,
+      "prefill_tps": 1120.7,
+      "generated": 128.0,
+      "decode_ms": 2328.0,
+      "decode_tps": 55.0
+    },
+    "usage": {
+      "prompt_tokens": 4210,
+      "completion_tokens": 128,
+      "total_tokens": 4338,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 140 exported functions, named `rule0` through `rule139`, each of which accepts a single numeric argument `x`. Each function implements a specific conditional transformation based on whether the input `x` matches the function's index `n` (where `n` corresponds to the number in the function name). If `x` is strictly equal to `n`, the function returns `x + (n + 1)`; otherwise, it returns `x - n`. Consequently, for any given function `ruleN`, the behavior is: if the input equals `N`,"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "followup",
+    "trial": 1,
+    "wall_s": 2.6963370150006085,
+    "metrics": {
+      "prompt_tokens": 4451.0,
+      "reused": 4203.0,
+      "fresh": 248.0,
+      "prefill_ms": 861.0,
+      "prefill_tps": 288.1,
+      "generated": 128.0,
+      "decode_ms": 1821.0,
+      "decode_tps": 70.3
+    },
+    "usage": {
+      "prompt_tokens": 4451,
+      "completion_tokens": 128,
+      "total_tokens": 4579,
+      "prompt_tokens_details": {
+        "cached_tokens": 4203
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is `rule0(0)`, which returns `1` (since `0 === 0` triggers the `x + 1` branch), whereas `rule0(-1)` returns `-1` (since `-1 !== 0` triggers the `x - 0` branch, which is effectively `x`). This highlights the asymmetry: the \"match\" branch adds `n+1`, while the \"non-match\" branch subtracts `n`. For `n=0`, the non-match branch is a no-op (`x - 0`), making `rule0` the only"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "fresh",
+    "trial": 2,
+    "wall_s": 9.542797206000614,
+    "metrics": {
+      "prompt_tokens": 8830.0,
+      "reused": 0.0,
+      "fresh": 8830.0,
+      "prefill_ms": 7643.0,
+      "prefill_tps": 1155.3,
+      "generated": 128.0,
+      "decode_ms": 1877.0,
+      "decode_tps": 68.2
+    },
+    "usage": {
+      "prompt_tokens": 8830,
+      "completion_tokens": 128,
+      "total_tokens": 8958,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 280 exported functions, named `rule0` through `rule279`, each implementing a specific conditional arithmetic transformation on an input integer `x`. Each function `ruleN` checks if the input `x` is exactly equal to `N`; if true, it returns `x + (N + 1)`, effectively incrementing the value by `N + 1`. If `x` is not equal to `N`, the function returns `x - N`, subtracting `N` from the input. This pattern creates a series of functions where the behavior depends entirely on"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "followup",
+    "trial": 2,
+    "wall_s": 2.497057708000284,
+    "metrics": {
+      "prompt_tokens": 9071.0,
+      "reused": 8958.0,
+      "fresh": 113.0,
+      "prefill_ms": 605.0,
+      "prefill_tps": 186.8,
+      "generated": 128.0,
+      "decode_ms": 1868.0,
+      "decode_tps": 68.5
+    },
+    "usage": {
+      "prompt_tokens": 9071,
+      "completion_tokens": 128,
+      "total_tokens": 9199,
+      "prompt_tokens_details": {
+        "cached_tokens": 8958
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is `rule0(0)`, which returns `1` (since `0 === 0` triggers the `x + 1` branch), whereas `rule0(-1)` returns `-1` (since `-1 !== 0` triggers the `x - 0` branch, which is effectively `x`). This highlights the asymmetry: the \"special\" case adds `N+1`, while the \"default\" case subtracts `N`. For `N=0`, the default case is a no-op (`x - 0`), making `rule0` the only function where"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "fresh",
+    "trial": 3,
+    "wall_s": 5.484019585999704,
+    "metrics": {
+      "prompt_tokens": 4210.0,
+      "reused": 0.0,
+      "fresh": 4210.0,
+      "prefill_ms": 3609.0,
+      "prefill_tps": 1166.5,
+      "generated": 128.0,
+      "decode_ms": 1862.0,
+      "decode_tps": 68.7
+    },
+    "usage": {
+      "prompt_tokens": 4210,
+      "completion_tokens": 128,
+      "total_tokens": 4338,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 140 exported functions, named `rule0` through `rule139`, each implementing a specific conditional arithmetic transformation on an input number `x`. Each function `ruleN` checks if the input `x` is exactly equal to `N`; if true, it returns `x + (N + 1)`, effectively incrementing the value by `N + 1`. If `x` is not equal to `N`, the function returns `x - N`, subtracting `N` from the input. Consequently, for any given function `ruleN`, the behavior is"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "followup",
+    "trial": 3,
+    "wall_s": 2.620138856000267,
+    "metrics": {
+      "prompt_tokens": 4451.0,
+      "reused": 4337.0,
+      "fresh": 114.0,
+      "prefill_ms": 614.0,
+      "prefill_tps": 185.5,
+      "generated": 128.0,
+      "decode_ms": 1992.0,
+      "decode_tps": 64.3
+    },
+    "usage": {
+      "prompt_tokens": 4451,
+      "completion_tokens": 128,
+      "total_tokens": 4579,
+      "prompt_tokens_details": {
+        "cached_tokens": 4337
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the strict integer equality check `x === N`, which distinguishes the \"special\" branch (returning `x + N + 1`) from the \"default\" branch (returning `x - N`). For `rule0`, the boundary is `x === 0`: if `x` is `0`, it returns `1` (since `0 + 1`), but if `x` is any other integer, including negative numbers or non-integers, it returns `x - 0` (which is `x`). This highlights that `rule0` is effectively an identity"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "fresh",
+    "trial": 4,
+    "wall_s": 9.65751403700051,
+    "metrics": {
+      "prompt_tokens": 8830.0,
+      "reused": 0.0,
+      "fresh": 8830.0,
+      "prefill_ms": 7655.0,
+      "prefill_tps": 1153.5,
+      "generated": 128.0,
+      "decode_ms": 1975.0,
+      "decode_tps": 64.8
+    },
+    "usage": {
+      "prompt_tokens": 8830,
+      "completion_tokens": 128,
+      "total_tokens": 8958,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 280 exported functions, named `rule0` through `rule279`, each implementing a specific conditional arithmetic transformation on an input integer `x`. The behavior of each function follows a consistent pattern based on its index `n`: if the input `x` is exactly equal to `n`, the function returns `x + (n + 1)`; otherwise, it returns `x - n`. Essentially, each function acts as a specialized \"rule\" that adds a value one greater than its own index when the input matches that index, and subtracts its own index from the input"
+    }
+  },
+  {
+    "label": "iq2_xs-run2",
+    "kind": "followup",
+    "trial": 4,
+    "wall_s": 2.3421890460012946,
+    "metrics": {
+      "prompt_tokens": 9071.0,
+      "reused": 8958.0,
+      "fresh": 113.0,
+      "prefill_ms": 607.0,
+      "prefill_tps": 186.3,
+      "generated": 128.0,
+      "decode_ms": 1711.0,
+      "decode_tps": 74.8
+    },
+    "usage": {
+      "prompt_tokens": 9071,
+      "completion_tokens": 128,
+      "total_tokens": 9199,
+      "prompt_tokens_details": {
+        "cached_tokens": 8958
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is `rule0(0)`, which returns `1` (since `0 === 0` triggers the `x + 1` branch), whereas `rule0(-1)` returns `-1` (since `-1 !== 0` triggers the `x - 0` branch, which is effectively `x`). This highlights the asymmetry: the \"match\" branch adds `n+1`, while the \"non-match\" branch subtracts `n`. For `n=0`, the non-match branch is a no-op (`x - 0`), making `rule0` the only"
+    }
+  }
+]

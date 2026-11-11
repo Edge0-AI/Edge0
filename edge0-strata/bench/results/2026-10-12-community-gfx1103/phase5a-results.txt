@@ -1,0 +1,12 @@
+thp-off-1	RC=0
+thp-on-1	RC=0
+thp-off-2	RC=0
+thp-on-2	RC=0
+thp-off-3	RC=0
+thp-on-3	RC=0
+thp-off-4	RC=0
+thp-on-4	RC=0
+thp-off-5	RC=0
+thp-on-5	RC=0
+thp-off-6	RC=0
+thp-on-6	RC=0

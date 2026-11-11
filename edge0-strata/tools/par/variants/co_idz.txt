@@ -1,0 +1,2 @@
+coz_ref | 0,1 | 8 |   | STRATA_ROUTE_TAIL_SKIP=0;STRATA_PREFILL_CPU_SHARE=0 | --vram-reserve-later-mib 1536 --adapt-every 100000 --pcie-frac 0 --suffix-draft 0 --expert-cache 1500 | w2:4@--nonce idz --keep-text --max-tokens 48 --rounds 1
+coz_on  | 0,1 | 8 |   | STRATA_ROUTE_TAIL_SKIP=0;STRATA_PREFILL_CPU_SHARE=0;STRATA_COALESCE_PREFILL=8;STRATA_CRASH_BT=/data/par29/res/co/crash.txt | --vram-reserve-later-mib 1536 --adapt-every 100000 --pcie-frac 0 --suffix-draft 0 --expert-cache 1500 | w2:4@--nonce idz --keep-text --max-tokens 48 --rounds 1

@@ -1,0 +1,56 @@
+# Tool execution, approval and cancellation (checklist A03, A04, A05)
+# repo: f7980024bf203512ad12d702b68a0d5a85cb889a
+# command: python integrations/harness/tool_flow_e2e.py --dsh <dsh> --base-port <p>
+
+working in <tmp>
+[A03] a read/edit/test workflow: the tool runs once, in the Harness
+  turn ended as 'completed'; 2 tool-related event(s)
+  the workspace marker has 1 line(s)
+  the peer answered 1 of 1 approval(s): ['allowed-once']
+  the worker recorded 2 request(s) and executed nothing itself
+  PASS A03
+
+[A04] with no answerer that decides, the approval fails closed and the tool does not run
+  turn ended as 'completed'
+  the marker file exists: False
+  the escalation was asked 1 time(s) and decided ['unavailable']
+  PASS A04 (the escalation was decided 'unavailable' and the tool did not run)
+
+[A05] Stop settles the turn without the tool having run
+  cancel acknowledged as {"accepted": true}
+  turn ended as 'aborted'
+  PASS A05 (a live turn was stopped and settled as 'aborted')
+
+PASS
+{
+  "A03": {
+    "approval_outcomes": [
+      "allowed-once"
+    ],
+    "approvals_answered": 1,
+    "approvals_asked": 1,
+    "executions": 1,
+    "marker_lines": 1,
+    "tool_events": 2,
+    "turn_end": "completed",
+    "worker_requests": 2
+  },
+  "A04": {
+    "answerer": false,
+    "approval_outcomes": [
+      "unavailable"
+    ],
+    "approvals_asked": 1,
+    "grants": 0,
+    "marker_created": false,
+    "turn_end": "completed"
+  },
+  "A05": {
+    "acknowledgement": {
+      "accepted": true
+    },
+    "marker_created": false,
+    "turn_end": "aborted",
+    "turn_was_live": true
+  }
+}

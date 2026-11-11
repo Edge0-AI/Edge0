@@ -1,0 +1,1 @@
+Explain in three sentences what a software container is.

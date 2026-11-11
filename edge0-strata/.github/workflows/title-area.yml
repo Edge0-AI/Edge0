@@ -1,0 +1,28 @@
+name: Title area
+
+# Checks that a pull request or issue title starts with its area: [Engine], [GUI], [TUI], [Benchmark], [Docs] or [Other].
+# It reads the title only: no checkout, no labels, no comments, no write access.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+  issues:
+    types: [opened, edited, reopened]
+
+permissions: {}
+
+jobs:
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the title
+        env:
+          TITLE: ${{ github.event.pull_request.title || github.event.issue.title }}
+        run: |
+          case "$TITLE" in
+            "[Engine] "?*|"[GUI] "?*|"[TUI] "?*|"[Benchmark] "?*|"[Docs] "?*|"[Other] "?*)
+              echo "Title OK: $TITLE" ;;
+            *)
+              echo "::error::The title must start with its area and then a short description. Allowed areas: [Engine], [GUI], [TUI], [Benchmark], [Docs], [Other]. Example: \"[Engine] fix decode stop on long prompts\". Your title: $TITLE"
+              exit 1 ;;
+          esac

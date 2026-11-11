@@ -1,0 +1,56 @@
+{
+ "exe": "/home/fio/strata/engine/strata",
+ "args": [
+  "--pack",
+  "/home/fio/Strata-data/packs/unsloth-ud-iq4_xs",
+  "--native",
+  "/home/fio/qwen-flash-next/unsloth/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf",
+  "--expert-profile",
+  "/home/fio/strata/data/expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--mtp",
+  "/home/fio/Strata-data/mtp/rt-it",
+  "--max-context",
+  "131072",
+  "--kv",
+  "int8",
+  "--remote-expert-opt",
+  "--pcie-frac",
+  "0.00",
+  "--spec-min-p",
+  "0.50",
+  "--kv-resident",
+  "32768",
+  "--vision",
+  "--vram-reserve-mib",
+  "700"
+ ],
+ "cwd": "/home/fio/strata",
+ "tokenizer": "/home/fio/Strata-data/packs/unsloth-ud-iq4_xs/tokenizer",
+ "model_name": "qwen3.8-flash-next-unsloth-ud-iq4_xs",
+ "log": "/home/fio/strata-bench/2026-10-05-community-2x-rtx-4060ti/prod/engine.log",
+ "lib_dirs": [
+  "/usr/local/cuda-12.6/bin",
+  "/usr/local/cuda-12.6/lib64"
+ ],
+ "port": 8080,
+ "gpu": [
+  0,
+  1
+ ],
+ "gpus_asked": true,
+ "layer_split": "auto",
+ "vision": {
+  "exe": "/home/fio/strata/engine/strata-vision",
+  "mmproj": "/home/fio/Strata-data/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+  "model": "/home/fio/qwen-flash-next/unsloth/Qwen3.8-Flash-Next-GGUF/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf",
+  "gpu": false,
+  "max_tokens": 300,
+  "threads": 32
+ }
+}

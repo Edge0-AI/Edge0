@@ -1,0 +1,19 @@
+{
+  "returncode": 0,
+  "bitwise_qualification": "1: QUALIFIED cases=35 expected_thread_cases=26 scores=223664777 ids=11895800 bitwise_scores=true bitwise_ids=true guards=true",
+  "dispatch_observed": true,
+  "timings": [
+    "1: TIMING ctx=131072 nq=256 baseline_ms=3.065300 candidate_ms=0.742917 speedup=4.126034 trials=4 repeats_per_trial=10",
+    "1: TIMING ctx=240000 nq=256 baseline_ms=5.264949 candidate_ms=1.389344 speedup=3.789521 trials=4 repeats_per_trial=10",
+    "1: TIMING ctx=140000 nq=1024 baseline_ms=13.833862 candidate_ms=3.112324 speedup=4.444866 trials=4 repeats_per_trial=10",
+    "1: TIMING ctx=240000 nq=1024 baseline_ms=25.035099 candidate_ms=4.841821 speedup=5.170596 trials=4 repeats_per_trial=10"
+  ],
+  "resource_pass": true,
+  "cases": 35,
+  "scores_checked": 223664777,
+  "id_entries_checked": 11895800,
+  "numeric_scope": "Synthetic scores/selected IDs, including padding and allocation guards",
+  "real_model_state_scope": "4K/131K prefill and first token byte-exact against tuned control; longer MTP sequences may have different internal speculative states even on original binary",
+  "continuation_scope": "64-token original/candidate output and STOP/resend output match; not full-state equality after64MTPtokens",
+  "unsupported_architecture_runtime_tested": false
+}

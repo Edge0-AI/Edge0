@@ -1,0 +1,4 @@
+zf_b1_1  | 0,1 | 8 |   |  | | w1;w2:4@--nonce zf --max-tokens 128 --rounds 2;w2:8@--nonce zf --max-tokens 128 --rounds 2
+zf_best_1| 0,1 | 8 |   | STRATA_CKPT_POOL=1;STRATA_CKPT_POOL_READY=4;STRATA_CKPT_THREADS=1;STRATA_SLOT_CKPT_MOVE=1;STRATA_SLOT_COPY_DIRECT=1;STRATA_SLOT_COPY_BATCHSYNC=1;STRATA_COALESCE_PREFILL=8;STRATA_COALESCE_WAIT_MS=100 | --vram-reserve-mib 2500 --max-context 8192 | w1;w2:4@--nonce zf --max-tokens 128 --rounds 2;w2:8@--nonce zf --max-tokens 128 --rounds 2
+zf_b1_2  | 0,1 | 8 |   |  | | w1;w2:4@--nonce zf --max-tokens 128 --rounds 2;w2:8@--nonce zf --max-tokens 128 --rounds 2
+zf_best_2| 0,1 | 8 |   | STRATA_CKPT_POOL=1;STRATA_CKPT_POOL_READY=4;STRATA_CKPT_THREADS=1;STRATA_SLOT_CKPT_MOVE=1;STRATA_SLOT_COPY_DIRECT=1;STRATA_SLOT_COPY_BATCHSYNC=1;STRATA_COALESCE_PREFILL=8;STRATA_COALESCE_WAIT_MS=100 | --vram-reserve-mib 2500 --max-context 8192 | w1;w2:4@--nonce zf --max-tokens 128 --rounds 2;w2:8@--nonce zf --max-tokens 128 --rounds 2

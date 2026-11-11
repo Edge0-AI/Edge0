@@ -1,0 +1,44 @@
+{
+  "cpu": {
+    "Name": "12th Gen Intel(R) Core(TM) i7-12700",
+    "NumberOfCores": 12,
+    "NumberOfLogicalProcessors": 20
+  },
+  "ram": [
+    {
+      "Capacity": 34359738368,
+      "ConfiguredClockSpeed": 3200,
+      "Speed": 3200,
+      "Manufacturer": "Micron Technology"
+    },
+    {
+      "Capacity": 34359738368,
+      "ConfiguredClockSpeed": 3200,
+      "Speed": 3200,
+      "Manufacturer": "Micron Technology"
+    }
+  ],
+  "os": {
+    "Caption": "Microsoft Windows 11 Pro",
+    "Version": "10.0.26300",
+    "BuildNumber": "26300",
+    "TotalVisibleMemorySize": 66876660
+  },
+  "disks": [
+    {
+      "Model": "CT480BX500SSD1",
+      "InterfaceType": "IDE",
+      "Size": 2000396321280
+    },
+    {
+      "Model": "Logitec  SCSI Disk Device",
+      "InterfaceType": "SCSI",
+      "Size": 4000784417280
+    },
+    {
+      "Model": "TS2TMTE250S",
+      "InterfaceType": "SCSI",
+      "Size": 2000396321280
+    }
+  ]
+}

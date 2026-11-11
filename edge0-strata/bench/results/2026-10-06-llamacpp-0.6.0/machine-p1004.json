@@ -1,0 +1,88 @@
+{
+ "gguf": "/data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+ "llama_server": "/data/1402-h/llama.cpp-src/build/bin/llama-server",
+ "strata_cfg": "/data/cfg/strata-iq3_xxs-140.json",
+ "serve": "/data/strata/serve",
+ "cwd": "/data/strata",
+ "configs": [
+  {
+   "name": "strata-setup",
+   "kind": "strata",
+   "args": [
+    "--kv",
+    "int8",
+    "--kv-resident",
+    "32768"
+   ],
+   "override": {
+    "--max-context": "36864"
+   }
+  },
+  {
+   "name": "llama-fit-nomtp",
+   "kind": "llama",
+   "args": [
+    "--fit",
+    "on",
+    "-c",
+    "36864",
+    "-ctk",
+    "q8_0",
+    "-ctv",
+    "q8_0",
+    "-fa",
+    "on"
+   ]
+  },
+  {
+   "name": "llama-tuned-nomtp",
+   "kind": "llama",
+   "args": [
+    "-ngl",
+    "99",
+    "-ncmoe",
+    "38",
+    "-b",
+    "2048",
+    "-ub",
+    "2048",
+    "-c",
+    "36864",
+    "-ctk",
+    "q8_0",
+    "-ctv",
+    "q8_0",
+    "-fa",
+    "on"
+   ]
+  },
+  {
+   "name": "llama-tuned-mtp3",
+   "kind": "llama",
+   "args": [
+    "-ngl",
+    "99",
+    "-ncmoe",
+    "46",
+    "-b",
+    "1024",
+    "-ub",
+    "1024",
+    "-c",
+    "36864",
+    "-ctk",
+    "q8_0",
+    "-ctv",
+    "q8_0",
+    "-fa",
+    "on",
+    "--spec-type",
+    "draft-mtp",
+    "--spec-draft-n-max",
+    "3",
+    "-md",
+    "/data/1402-h/mtp-self-Q8_0.gguf"
+   ]
+  }
+ ]
+}

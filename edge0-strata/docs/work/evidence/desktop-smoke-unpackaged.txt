@@ -1,0 +1,14 @@
+  "windowOpen": true
+}
+
+  PASS  host-spawned
+  PASS  host-healthy
+  PASS  renderer-loaded
+  PASS  ui-rendered
+  PASS  renderer-can-reach-api
+  PASS  preload-bridge-present
+
+  app 0.1.0 · electron 44.7.0 · packaged=false
+  platform darwin/arm64
+
+RESULT: PASS

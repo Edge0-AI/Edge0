@@ -1,0 +1,9 @@
+# Trimmed files
+
+Ported from PR #1432 for 0.1.41. Raw dumps over 100 KB and binary files were left out to keep the repository small; the README, summaries, configs and per-run results are unchanged. The files below were in the original PR.
+
+1 files, 0.3 MB:
+
+| file | bytes | why |
+|---|---:|---|
+| `results.json` | 282,662 | raw dump over 100 KB |

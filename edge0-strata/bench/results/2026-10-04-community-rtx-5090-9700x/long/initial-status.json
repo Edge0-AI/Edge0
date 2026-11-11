@@ -1,0 +1,61 @@
+{
+  "service": "strata",
+  "model": "qwen3.8-flash-next-iq3_xxs",
+  "loaded": true,
+  "auto_load": true,
+  "structured_output": {
+    "formats": [
+      "json_object",
+      "json_schema"
+    ],
+    "method": "prompt_and_validate",
+    "constrained_decoding": false,
+    "stream_buffered": true
+  },
+  "engine": "0.1.39",
+  "started": 1791123933,
+  "uptime_s": 0,
+  "cache_max_tokens": 262144,
+  "context": {
+    "native": 262144,
+    "max_positions": 262144
+  },
+  "concurrency": {
+    "serving": 2,
+    "requested": 2
+  },
+  "dialects": [
+    "/v1/chat/completions",
+    "/v1/messages",
+    "/v1/responses"
+  ],
+  "vision": {
+    "enabled": true,
+    "available": true,
+    "error": null
+  },
+  "activity": {
+    "requests": 0,
+    "in_flight": 0,
+    "last_request_at": null
+  },
+  "last_timings": null,
+  "vram": {
+    "elastic": false
+  },
+  "machine": {
+    "at": 1791123934,
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 5090",
+      "used_mib": 31792.0,
+      "total_mib": 32607.0,
+      "util_pct": 1,
+      "temp_c": 34,
+      "power_w": 87.097
+    },
+    "ram": {
+      "used_gib": 71.6,
+      "total_gib": 93.7
+    }
+  }
+}

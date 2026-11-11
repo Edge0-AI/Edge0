@@ -1,0 +1,281 @@
+[
+ {
+  "run": 1,
+  "timestamp": "2026-10-06T16:33:00",
+  "ttft": {
+   "ttft_s": 2.811,
+   "first_token_is_reasoning": true,
+   "generated_tokens": 419,
+   "decode_tok_s_stream": 79.2,
+   "note": "TTFT = primo token reasoning (modello ibrido), streaming, keep-alive esclusi"
+  },
+  "prefill_2600": {
+   "wall_s": 9.94,
+   "prompt_tokens": 1748,
+   "reused_tokens": 0,
+   "generated_tokens": 65,
+   "fresh_prompt_tokens": 1748,
+   "prompt_tok_s": 188.3,
+   "decode_tok_s": 106.2,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "prefill_10000": {
+   "wall_s": 12.41,
+   "prompt_tokens": 6490,
+   "reused_tokens": 0,
+   "generated_tokens": 74,
+   "fresh_prompt_tokens": 6490,
+   "prompt_tok_s": 560.0,
+   "decode_tok_s": 97.0,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "prefill_42000": {
+   "wall_s": 44.4,
+   "prompt_tokens": 26989,
+   "reused_tokens": 0,
+   "generated_tokens": 62,
+   "fresh_prompt_tokens": 26989,
+   "prompt_tok_s": 618.3,
+   "decode_tok_s": 115.2,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "parallel": {
+   "clients": 3,
+   "total_wall_s": 14.23,
+   "per_request": [
+    {
+     "wall_s": 4.97,
+     "prompt_tokens": 95,
+     "reused_tokens": 0,
+     "generated_tokens": 256,
+     "fresh_prompt_tokens": 95,
+     "prompt_tok_s": 48.7,
+     "decode_tok_s": 85.0,
+     "ttft_s": null,
+     "finish": "length"
+    },
+    {
+     "wall_s": 10.34,
+     "prompt_tokens": 94,
+     "reused_tokens": 0,
+     "generated_tokens": 256,
+     "fresh_prompt_tokens": 94,
+     "prompt_tok_s": 50.5,
+     "decode_tok_s": 73.6,
+     "ttft_s": null,
+     "finish": "length"
+    },
+    {
+     "wall_s": 14.23,
+     "prompt_tokens": 92,
+     "reused_tokens": 0,
+     "generated_tokens": 172,
+     "fresh_prompt_tokens": 92,
+     "prompt_tok_s": 47.0,
+     "decode_tok_s": 89.1,
+     "ttft_s": null,
+     "finish": "stop"
+    }
+   ],
+   "note": "server single-slot: le richieste vengono accodate; wall include attesa in coda"
+  },
+  "needle": {
+   "needle": "ZEBRA-DCD2",
+   "found": true,
+   "prompt_tokens": 25741,
+   "reused_tokens": 0,
+   "prompt_tok_s": 591.6,
+   "decode_tok_s": 82.0,
+   "note": "codice segreto in testa a ~42K token; found=True se il codice compare nella risposta"
+  }
+ },
+ {
+  "run": 2,
+  "timestamp": "2026-10-06T16:35:14",
+  "ttft": {
+   "ttft_s": 2.069,
+   "first_token_is_reasoning": true,
+   "generated_tokens": 261,
+   "decode_tok_s_stream": 81.1,
+   "note": "TTFT = primo token reasoning (modello ibrido), streaming, keep-alive esclusi"
+  },
+  "prefill_2600": {
+   "wall_s": 9.92,
+   "prompt_tokens": 1747,
+   "reused_tokens": 0,
+   "generated_tokens": 67,
+   "fresh_prompt_tokens": 1747,
+   "prompt_tok_s": 188.2,
+   "decode_tok_s": 112.2,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "prefill_10000": {
+   "wall_s": 12.25,
+   "prompt_tokens": 6488,
+   "reused_tokens": 0,
+   "generated_tokens": 72,
+   "fresh_prompt_tokens": 6488,
+   "prompt_tok_s": 560.2,
+   "decode_tok_s": 114.8,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "prefill_42000": {
+   "wall_s": 44.53,
+   "prompt_tokens": 26990,
+   "reused_tokens": 0,
+   "generated_tokens": 63,
+   "fresh_prompt_tokens": 26990,
+   "prompt_tok_s": 617.6,
+   "decode_tok_s": 105.1,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "parallel": {
+   "clients": 3,
+   "total_wall_s": 13.5,
+   "per_request": [
+    {
+     "wall_s": 4.5,
+     "prompt_tokens": 93,
+     "reused_tokens": 0,
+     "generated_tokens": 227,
+     "fresh_prompt_tokens": 93,
+     "prompt_tok_s": 49.6,
+     "decode_tok_s": 86.8,
+     "ttft_s": null,
+     "finish": "stop"
+    },
+    {
+     "wall_s": 13.5,
+     "prompt_tokens": 94,
+     "reused_tokens": 0,
+     "generated_tokens": 190,
+     "fresh_prompt_tokens": 94,
+     "prompt_tok_s": 48.9,
+     "decode_tok_s": 82.0,
+     "ttft_s": null,
+     "finish": "stop"
+    },
+    {
+     "wall_s": 9.25,
+     "prompt_tokens": 88,
+     "reused_tokens": 0,
+     "generated_tokens": 256,
+     "fresh_prompt_tokens": 88,
+     "prompt_tok_s": 46.3,
+     "decode_tok_s": 89.7,
+     "ttft_s": null,
+     "finish": "length"
+    }
+   ],
+   "note": "server single-slot: le richieste vengono accodate; wall include attesa in coda"
+  },
+  "needle": {
+   "needle": "ZEBRA-2B12",
+   "found": true,
+   "prompt_tokens": 25740,
+   "reused_tokens": 0,
+   "prompt_tok_s": 591.4,
+   "decode_tok_s": 83.6,
+   "note": "codice segreto in testa a ~42K token; found=True se il codice compare nella risposta"
+  }
+ },
+ {
+  "run": 3,
+  "timestamp": "2026-10-06T16:37:24",
+  "ttft": {
+   "ttft_s": 2.171,
+   "first_token_is_reasoning": true,
+   "generated_tokens": 379,
+   "decode_tok_s_stream": 81.8,
+   "note": "TTFT = primo token reasoning (modello ibrido), streaming, keep-alive esclusi"
+  },
+  "prefill_2600": {
+   "wall_s": 9.55,
+   "prompt_tokens": 1750,
+   "reused_tokens": 0,
+   "generated_tokens": 28,
+   "fresh_prompt_tokens": 1750,
+   "prompt_tok_s": 188.8,
+   "decode_tok_s": 116.9,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "prefill_10000": {
+   "wall_s": 12.4,
+   "prompt_tokens": 6488,
+   "reused_tokens": 0,
+   "generated_tokens": 72,
+   "fresh_prompt_tokens": 6488,
+   "prompt_tok_s": 560.3,
+   "decode_tok_s": 101.1,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "prefill_42000": {
+   "wall_s": 44.43,
+   "prompt_tokens": 26992,
+   "reused_tokens": 0,
+   "generated_tokens": 65,
+   "fresh_prompt_tokens": 26992,
+   "prompt_tok_s": 618.1,
+   "decode_tok_s": 111.5,
+   "ttft_s": null,
+   "finish": "stop"
+  },
+  "parallel": {
+   "clients": 3,
+   "total_wall_s": 13.63,
+   "per_request": [
+    {
+     "wall_s": 4.34,
+     "prompt_tokens": 93,
+     "reused_tokens": 0,
+     "generated_tokens": 223,
+     "fresh_prompt_tokens": 93,
+     "prompt_tok_s": 49.5,
+     "decode_tok_s": 91.1,
+     "ttft_s": null,
+     "finish": "stop"
+    },
+    {
+     "wall_s": 8.69,
+     "prompt_tokens": 98,
+     "reused_tokens": 0,
+     "generated_tokens": 188,
+     "fresh_prompt_tokens": 98,
+     "prompt_tok_s": 50.6,
+     "decode_tok_s": 78.0,
+     "ttft_s": null,
+     "finish": "stop"
+    },
+    {
+     "wall_s": 13.63,
+     "prompt_tokens": 89,
+     "reused_tokens": 0,
+     "generated_tokens": 256,
+     "fresh_prompt_tokens": 89,
+     "prompt_tok_s": 44.4,
+     "decode_tok_s": 87.3,
+     "ttft_s": null,
+     "finish": "length"
+    }
+   ],
+   "note": "server single-slot: le richieste vengono accodate; wall include attesa in coda"
+  },
+  "needle": {
+   "needle": "ZEBRA-35CF",
+   "found": true,
+   "prompt_tokens": 25738,
+   "reused_tokens": 0,
+   "prompt_tok_s": 591.4,
+   "decode_tok_s": 86.0,
+   "note": "codice segreto in testa a ~42K token; found=True se il codice compare nella risposta"
+  }
+ }
+]

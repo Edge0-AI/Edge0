@@ -1,0 +1,68 @@
+# uname -a
+Linux lm-server 7.0.14-16-pve #1 SMP PREEMPT_DYNAMIC PMX 7.0.14-16 (2026-08-28T17:31Z) x86_64 x86_64 x86_64 GNU/Linux
+
+# /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+VERSION="24.04.5 LTS (Noble Numbat)"
+
+# nvidia-smi --query-gpu
+index, name, driver_version, memory.total [MiB], power.limit [W], power.default_limit [W], pcie.link.gen.max, pcie.link.width.max, pcie.link.gen.current, pcie.link.width.current
+0, NVIDIA GeForce RTX 3080, 615.71.09, 20480 MiB, 220.00 W, 320.00 W, 3, 16, 1, 16
+1, NVIDIA GeForce RTX 3080, 615.71.09, 20480 MiB, 220.00 W, 320.00 W, 3, 16, 1, 16
+
+# nvidia-smi header
+| NVIDIA-SMI 580.178.04             Driver Version: 615.71.09      CUDA Version: 13.4     |
++-----------------------------------------+------------------------+----------------------+
+
+# nvidia-smi topo -m
+	[4mGPU0	GPU1	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	PHB	2,4,6,8,10-11	0		N/A
+GPU1	PHB	 X 	2,4,6,8,10-11	0		N/A
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
+
+# nvcc used for the build (CMakeCache: CMAKE_CUDA_COMPILER, CMAKE_CUDA_ARCHITECTURES)
+Cuda compilation tools, release 13.3, V13.3.73
+Build cuda_13.3.r13.3/compiler.38244171_0
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_CUDA_ARCHITECTURES:UNINITIALIZED=86
+CMAKE_CUDA_COMPILER:STRING=/usr/local/cuda-13.3/bin/nvcc
+STRATA_BUILD_TESTS:BOOL=ON
+STRATA_ENABLE_CUDA:BOOL=ON
+
+# lscpu (selected)
+CPU(s):                                  44
+Model name:                              Intel(R) Xeon(R) CPU E5-2696 v4 @ 2.20GHz
+Thread(s) per core:                      2
+Core(s) per socket:                      22
+Socket(s):                               1
+CPU(s) scaling MHz:                      55%
+L3 cache:                                55 MiB (1 instance)
+avx2 flag present: 1
+avx512 flags: 0
+
+# memory (inside the container)
+MemTotal:       94371840 kB
+SwapTotal:       8388604 kB
+cgroup memory.max: max
+
+# model volume
+/dev/mapper/pve-vm--105--disk--0  147G  113G   27G  81% /opt/strata-ssd
+
+# model files (bytes)
+10946624 Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf
+49859583136 Qwen3.8-Flash-Next-UD-Q4_K_XL-00002-of-00004.gguf
+49376141504 Qwen3.8-Flash-Next-UD-Q4_K_XL-00003-of-00004.gguf
+12087983520 Qwen3.8-Flash-Next-UD-Q4_K_XL-00004-of-00004.gguf
+907543008 /opt/strata-ssd/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf
+
+# engine binary
+b1df9608295501f0c67f51bef3cfd2831c7e60fb7369866f00b980ff766a1283  /opt/strata-bmtp/build/strata-w7

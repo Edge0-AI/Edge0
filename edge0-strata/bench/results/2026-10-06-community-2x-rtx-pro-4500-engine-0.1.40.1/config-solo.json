@@ -1,0 +1,61 @@
+{
+ "exe": "/home/qni/ai/Strata-0.1.40.1/engine/strata",
+ "args": [
+  "--pack",
+  "/home/qni/ai/Strata-data/packs/swift-iq3_xxs",
+  "--native",
+  "/mnt/models/models/gguf/Swift-IQ3_XXS/Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/mnt/models/models/gguf/Swift-IQ3_XXS/Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+  "--expert-profile",
+  "/home/qni/ai/Strata-0.1.36/data/expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "5",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "/home/qni/ai/Strata-data/mtp/rt",
+  "--max-context",
+  "262144",
+  "--kv",
+  "k8v4",
+  "--vision",
+  "--vram-reserve-mib",
+  "700"
+ ],
+ "cwd": "/home/qni/ai/Strata-0.1.40.1",
+ "tokenizer": "/home/qni/ai/Strata-data/packs/swift-iq3_xxs/tokenizer",
+ "model_name": "swift-1.5-iq3_xxs",
+ "log": "/home/qni/messungen/2026-10-06-strata-0.1.40.1-dual/server-S-solo.log",
+ "lib_dirs": [
+  "/usr/local/cuda-13.4/bin",
+  "/usr/local/cuda-13.4/lib64"
+ ],
+ "port": 8080,
+ "gpu": [
+  0,
+  1
+ ],
+ "gpus_asked": true,
+ "layer_split": "25",
+ "vision": {
+  "exe": "/home/qni/ai/Strata-0.1.40.1/engine/strata-vision",
+  "mmproj": "/home/qni/ai/Strata-data/models/mmproj-Swift-Qwen3.8-Flash-Next-BF16.gguf",
+  "model": "/mnt/models/models/gguf/Swift-IQ3_XXS/Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+  "gpu": true,
+  "max_tokens": 1024
+ },
+ "host": "0.0.0.0",
+ "sampling": {
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "top_k": 20,
+  "min_p": 0.0,
+  "presence_penalty": 0.0,
+  "repetition_penalty": 1.0
+ }
+}

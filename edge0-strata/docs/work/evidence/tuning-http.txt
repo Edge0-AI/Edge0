@@ -1,0 +1,23 @@
+# Tuning through the App Host HTTP API
+# repo: 79ead84224f6b6d982b9ca71b02f6a4174cb55e3
+# The job contract is Strata Control's (strata_control/tuning.py), driven through 'strata tune'.
+# The plan is computed from the SELECTED ENGINE BINARY's own --help output, so a sweep cannot
+# be offered a dimension the engine would refuse.
+
+POST /api/tune/plan   {engine, backend, model, objective?, trials?, repeats?}
+GET  /api/tune/jobs   recorded jobs, newest state
+GET  /api/tune/job?id=<id>   one job's durable record and report
+
+# Observed, metal backend against the real built engine:
+#   searches: ple_io, kv, kv_grow, spec_min_p
+#   excluded: 7 dimensions, each with a reason
+#   flags read from the binary: true
+
+# Observed, cuda backend against the SAME (Metal) binary:
+#   vram_reserve -> the engine binary does not accept --vram-reserve-mib
+#   pcie_frac    -> the engine binary does not accept --pcie-frac
+#   (the remaining CUDA dimensions are offered because this binary does accept their flags,
+#    which is the check doing its job rather than trusting the backend label)
+
+# There is deliberately no run route: a sweep needs a measurement harness that boots the
+# engine per candidate, and a fabricated measurement is worse than none.

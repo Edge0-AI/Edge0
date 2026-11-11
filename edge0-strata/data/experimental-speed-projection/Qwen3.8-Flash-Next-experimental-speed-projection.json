@@ -1,0 +1,26 @@
+{
+ "mode": "project",
+ "dir": "per-layer",
+ "scale": 1.0,
+ "layer_range": [
+  4,
+  44
+ ],
+ "refusal_harmful_thinkoff": 2.0,
+ "refusal_harmful_thinkon": 2.0,
+ "refusal_harmless_thinkoff": 4.0,
+ "refusal_harmless_thinkon": 6.0,
+ "broken": 0,
+ "kl_mean": 0.18598,
+ "kl_max": 18.26549,
+ "kl_p99": 3.143571,
+ "decode_tps": 51.19,
+ "vector_file": "Qwen3.8-Flash-Next-experimental-speed-projection.gguf",
+ "base_model_gguf": "unsloth/Qwen3.8-Flash-Next-GGUF UD-Q2_K_XL",
+ "base_model_sha256_shard1": "a4f3b21e77353999829f2f767e9ac21ce9c71d29a74f2cc9eda48c9bf23c8b86",
+ "worktree_commit": "37e026e3b",
+ "criterion_status": "PASS",
+ "dirty_direction": false,
+ "note": "projection ablation h -= s*(h.v)*v, v unit-normalized per layer. dir=per-layer",
+ "branch": "cvec-hooks (github.com/Cudila/llama.cpp)"
+}

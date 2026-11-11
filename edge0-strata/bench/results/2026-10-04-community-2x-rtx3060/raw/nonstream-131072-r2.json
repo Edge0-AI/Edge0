@@ -1,0 +1,48 @@
+{
+ "request": {
+  "model": "qwen3.8-flash-next-iq3_s",
+  "max_tokens": 256,
+  "temperature": 0,
+  "stream": false
+ },
+ "prompt_chars": 511566,
+ "filler_repeats": 821,
+ "response": {
+  "id": "chatcmpl-4a97019c75e547f8afae8879",
+  "object": "chat.completion",
+  "created": 1791084380,
+  "model": "qwen3.8-flash-next-iq3_s",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "The repeated passage explains that mixture-of-experts layers increase model capacity by using many small experts with token-specific routing, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.",
+     "reasoning_content": "We need answer user's request. Need summarize text in exactly one sentence. User text is repeated many times same paragraph. Need likely output one sentence. Need ensure exactly one sentence. Could say: \"The repeated passage explains that mixture-of-experts layers increase model capacity by using many small experts with token-specific routing, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.\" Need one sentence. Maybe mention nonstream-131072-r2? The task: summarise the text above in exactly one sentence. Need no extra. Ensure one sentence. Could be concise. Need final only one sentence.\n"
+    },
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "prompt_tokens": 98599,
+   "completion_tokens": 185,
+   "total_tokens": 98784,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 98599,
+   "prompt_ms": 74512.3,
+   "prompt_per_token_ms": 0.756,
+   "prompt_per_second": 1323.3,
+   "predicted_n": 185,
+   "predicted_ms": 4990.3,
+   "predicted_per_token_ms": 26.975,
+   "predicted_per_second": 37.1,
+   "draft_n": 151,
+   "draft_n_accepted": 107
+  }
+ }
+}

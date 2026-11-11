@@ -1,0 +1,29 @@
+round 0 pos 0 arm 0 {}: 68.4
+round 0 pos 1 arm 1 {}: 78.5
+round 1 pos 0 arm 1 {}: 77.7
+round 1 pos 1 arm 0 {}: 91.2
+round 2 pos 0 arm 0 {}: 81.9
+round 2 pos 1 arm 1 {}: 81.6
+round 3 pos 0 arm 1 {}: 75.2
+round 3 pos 1 arm 0 {}: 88.7
+round 4 pos 0 arm 0 {}: 68.7
+round 4 pos 1 arm 1 {}: 78.3
+round 5 pos 0 arm 1 {}: 77.3
+round 5 pos 1 arm 0 {}: 84.4
+round 6 pos 0 arm 0 {}: 74.2
+round 6 pos 1 arm 1 {}: 75.5
+round 7 pos 0 arm 1 {}: 72.0
+round 7 pos 1 arm 0 {}: 85.0
+round 8 pos 0 arm 0 {}: 68.7
+round 8 pos 1 arm 1 {}: 78.3
+round 9 pos 0 arm 1 {}: 77.4
+round 9 pos 1 arm 0 {}: 91.6
+round 10 pos 0 arm 0 {}: 81.1
+round 10 pos 1 arm 1 {}: 85.6
+round 11 pos 0 arm 1 {}: 77.4
+round 11 pos 1 arm 0 {}: 92.1
+
+== solo: main metric ==
+arm 0 {}                                           median    83.2 mean    81.3 min    68.4 max    92.1
+arm 1 {}                                           median    77.6 mean    77.9 min    72.0 max    85.6 | vs A: median ratio 0.956 mean 0.970 (n=12)
+position bias (value / round mean): pos0: 0.942, pos1: 1.058

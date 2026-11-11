@@ -1,0 +1,164 @@
+{
+ "total_bytes": 889014272,
+ "tensors": [
+  {
+   "tensor": "mtp.fc_embedding.weight",
+   "format": "BF16",
+   "bytes": 13107200
+  },
+  {
+   "tensor": "mtp.fc_hidden.weight",
+   "format": "BF16",
+   "bytes": 13107200
+  },
+  {
+   "tensor": "mtp.hyper_connection_mixer.hc_norm.weight",
+   "format": "F32",
+   "bytes": 40960
+  },
+  {
+   "tensor": "mtp.hyper_connection_mixer.input_mix_weight_down.weight",
+   "format": "BF16",
+   "bytes": 6553600
+  },
+  {
+   "tensor": "mtp.hyper_connection_mixer.input_mix_weight_up.weight",
+   "format": "BF16",
+   "bytes": 6553600
+  },
+  {
+   "tensor": "mtp.layers.0.attn_hyper_connection.block_inject_weight.weight",
+   "format": "BF16",
+   "bytes": 81920
+  },
+  {
+   "tensor": "mtp.layers.0.attn_hyper_connection.hc_norm.weight",
+   "format": "F32",
+   "bytes": 40960
+  },
+  {
+   "tensor": "mtp.layers.0.attn_hyper_connection.input_mix_weight_down.weight",
+   "format": "BF16",
+   "bytes": 6553600
+  },
+  {
+   "tensor": "mtp.layers.0.attn_hyper_connection.input_mix_weight_up.weight",
+   "format": "BF16",
+   "bytes": 6553600
+  },
+  {
+   "tensor": "mtp.layers.0.mlp.experts.down_proj",
+   "format": "q2_0",
+   "bytes": 235929600,
+   "relative_rms_error_first_experts": 0.42363,
+   "seconds": 25.9
+  },
+  {
+   "tensor": "mtp.layers.0.mlp.experts.gate_up_proj",
+   "format": "q2_0",
+   "bytes": 471859200,
+   "relative_rms_error_first_experts": 0.42906,
+   "seconds": 52.8
+  },
+  {
+   "tensor": "mtp.layers.0.mlp.gate.weight",
+   "format": "BF16",
+   "bytes": 2621440
+  },
+  {
+   "tensor": "mtp.layers.0.mlp.shared_expert.down_proj.weight",
+   "format": "BF16",
+   "bytes": 3276800
+  },
+  {
+   "tensor": "mtp.layers.0.mlp.shared_expert.gate_proj.weight",
+   "format": "BF16",
+   "bytes": 3276800
+  },
+  {
+   "tensor": "mtp.layers.0.mlp.shared_expert.up_proj.weight",
+   "format": "BF16",
+   "bytes": 3276800
+  },
+  {
+   "tensor": "mtp.layers.0.mlp.shared_expert_gate.weight",
+   "format": "BF16",
+   "bytes": 5120
+  },
+  {
+   "tensor": "mtp.layers.0.mlp_hyper_connection.block_inject_weight.weight",
+   "format": "BF16",
+   "bytes": 81920
+  },
+  {
+   "tensor": "mtp.layers.0.mlp_hyper_connection.hc_norm.weight",
+   "format": "F32",
+   "bytes": 40960
+  },
+  {
+   "tensor": "mtp.layers.0.mlp_hyper_connection.input_mix_weight_down.weight",
+   "format": "BF16",
+   "bytes": 6553600
+  },
+  {
+   "tensor": "mtp.layers.0.mlp_hyper_connection.input_mix_weight_up.weight",
+   "format": "BF16",
+   "bytes": 6553600
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.indexer.index_qk_proj.weight",
+   "format": "BF16",
+   "bytes": 3276800
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.indexer.k_layernorm.weight",
+   "format": "F32",
+   "bytes": 512
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.indexer.q_layernorm.weight",
+   "format": "F32",
+   "bytes": 512
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.k_norm.weight",
+   "format": "F32",
+   "bytes": 1024
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.k_proj.weight",
+   "format": "BF16",
+   "bytes": 2621440
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.o_proj.weight",
+   "format": "BF16",
+   "bytes": 31457280
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.q_norm.weight",
+   "format": "F32",
+   "bytes": 1024
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.q_proj.weight",
+   "format": "BF16",
+   "bytes": 62914560
+  },
+  {
+   "tensor": "mtp.layers.0.self_attn.v_proj.weight",
+   "format": "BF16",
+   "bytes": 2621440
+  },
+  {
+   "tensor": "mtp.pre_fc_norm_embedding.weight",
+   "format": "F32",
+   "bytes": 10240
+  },
+  {
+   "tensor": "mtp.pre_fc_norm_hidden.weight",
+   "format": "F32",
+   "bytes": 40960
+  }
+ ]
+}

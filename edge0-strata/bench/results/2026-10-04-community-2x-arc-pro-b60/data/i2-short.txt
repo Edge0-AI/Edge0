@@ -1,0 +1,27 @@
+[fib run0] prompt_n=23 cache_n=0 prompt 50.4 tok/s | decode 112 tok 58.6 tok/s | drafts 84/88 | wall 2.4s | finish stop
+[fib run1] prompt_n=7 cache_n=16 prompt 81.7 tok/s | decode 112 tok 61.3 tok/s | drafts 84/89 | wall 1.9s | finish stop
+```python
+def fibonacci(n):
+    """Return the n-th Fibonacci number (0-indexed)."""
+    if n < 0:
+        raise ValueError("n must be a non-negative integer")
+    if n == 0:
+        return 0
+    if n == 1:
+        return 1
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+```
+fib tests: PASS
+[gcd] prompt_n=37 cache_n=0 prompt 73.3 tok/s | decode 32 tok 61.8 tok/s | drafts 23/24 | wall 1.0s | finish stop
+```python
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+```
+gcd tests: PASS
+[known] prompt_n=42 cache_n=0 prompt 71.1 tok/s | decode 4 tok 25.4 tok/s | drafts 4/6 | wall 0.7s | finish stop
+385 (expected 385)

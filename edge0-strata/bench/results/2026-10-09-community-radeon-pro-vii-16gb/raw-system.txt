@@ -1,0 +1,49 @@
+### 系统环境  （2026-10-09T21:29:46+08:00）
+### uname -a
+Linux R7-SERVER 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux
+
+### /etc/os-release
+NAME="Ubuntu"
+VERSION="22.04.5 LTS (Jammy Jellyfish)"
+
+### CPU
+model name	: Intel(R) Xeon(R) CPU E5-2666 v3 @ 2.90GHz
+logical CPUs: 20
+physical cores:  x 
+AVX2: yes   AVX-512: no
+
+### RAM
+MemTotal:       131800488 kB
+SwapTotal:       2097148 kB
+
+### 磁盘
+NAME        TRAN   ROTA   SIZE MODEL                       MOUNTPOINT
+sda         sata      0 111.8G GALAX TA1D0120A             
+├─sda1                0   300M                             
+├─sda2                0    16M                             
+└─sda3                0 111.5G                             /media/user/新加卷
+nvme0n1     nvme      0 238.5G GLOWAY Basic256GNVMe-M.2/80 
+├─nvme0n1p1 nvme      0   512M                             /boot/efi
+└─nvme0n1p2 nvme      0   238G                             /
+
+### 系统盘类型
+  /dev/nvme0n1 rotational=0 model=GLOWAY Basic256GNVMe-M.2/80             
+  /dev/sda rotational=0 model=GALAX TA1D0120A 
+
+### hipcc --version
+HIP version: 6.2.41133-dd7f95766
+AMD clang version 18.0.0git (https://github.com/RadeonOpenCompute/llvm-project roc-6.2.0 24292 26466ce804ac523b398608f17388eb6d605a3f09)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+
+### ROCm 版本
+6.2.0-66
+
+### rocm-smi --showdriverversion
+Driver version: 6.8.0-138-generic
+
+### DDR/内存插槽（EDAC 视角）
+  CPU_SrcID#0_Ha#0_Chan#1_DIMM#0:  MB
+  CPU_SrcID#0_Ha#0_Chan#1_DIMM#1:  MB
+  CPU_SrcID#0_Ha#1_Chan#1_DIMM#0:  MB
+  CPU_SrcID#0_Ha#1_Chan#1_DIMM#1:  MB

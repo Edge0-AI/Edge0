@@ -1,0 +1,338 @@
+{
+  "schema_version": 1,
+  "status": "verified_from_archived_remote_per_run_records",
+  "measured_date": "2026-10-08",
+  "host": {
+    "hostname": "redacted",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "vram_total_mib": 12282,
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12600KF",
+    "ram_installed_gib_nominal": 32,
+    "os": "Microsoft Windows 11 build 26200",
+    "nvidia_driver": "591.86",
+    "cuda_runtime_reported_by_nvidia_smi": "13.1"
+  },
+  "source": {
+    "repository": "Hcl192088/Strata",
+    "commit": "9ec3806058cf32ab27a55e4377daf7cf0d087dec",
+    "commit_subject": "docs/fork: C11 cerrada sin adoptar; cola reordenada (C14a-C17, C8, C18)",
+    "binary_sha256": "E67EB500C2F43B0E75D3956A17BA71C425830B6D56E2C7C5C7A96559CDEEFA74",
+    "binary_bytes": 35676160,
+    "binary_role": "locally built Adrian-derived Strata executable",
+    "exact_source_snapshot_branch": "benchmark-iq2-source-9ec3806",
+    "exact_source_tree_sha": "90346cf6af4fb642ff7847327e0f3456ed90799a",
+    "exact_source_url": "https://github.com/Hcl192088/Strata/tree/benchmark-iq2-source-9ec3806",
+    "historical_origin": "AdrianBM96/Strata3060",
+    "exact_build_toolchain_identified": false
+  },
+  "model": {
+    "family": "Qwen3.8-Flash-Next-GSQ-RCO",
+    "quantization": "IQ2_XS",
+    "native_shards": [
+      {
+        "path": "models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+        "bytes": 39225954592,
+        "sha256": "92CEE27AE5BBADCD732416A0F7A7F0ACC092399DBBE8F5A5EFA707C2EC0A49D7"
+      },
+      {
+        "path": "models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+        "bytes": 28800138432,
+        "sha256": "316B46F3A2DBD68C900F43136AB9449F9DCC3725DFD8C794847C204BC161E113"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "role": "pack/conversions",
+      "path": "packs/iq2_xs/conversions.json",
+      "bytes": 324,
+      "sha256": "020BB147E315424EF94E736C74DC6CAB3A1BCAA3C87FA7E14795C8C93091DF1C"
+    },
+    {
+      "role": "pack/dense",
+      "path": "packs/iq2_xs/dense.bin",
+      "bytes": 1538035200,
+      "sha256": "D2AF3D8331E5C7A1985D1D589747230F9D56719A6D33C7CDDC9EE6B81CDE6B13"
+    },
+    {
+      "role": "pack/experts",
+      "path": "packs/iq2_xs/experts.bin",
+      "bytes": 35454976000,
+      "sha256": "00CFAF10284A838E15E6F95277BE7EDAC516909860D1D19074E77A375C4939C9"
+    },
+    {
+      "role": "pack/experts-source",
+      "path": "packs/iq2_xs/experts.bin.src.json",
+      "bytes": 390,
+      "sha256": "FCFDB141EC8B026328B4E7F5B588FFC06D01ADB98D38BA6675C7C034EFCD858A"
+    },
+    {
+      "role": "pack/index",
+      "path": "packs/iq2_xs/index.txt",
+      "bytes": 93686,
+      "sha256": "19E781AF360CA3B83FD90FE09E757AC9AA2A9DCADA26810DDC9E933BDB112091"
+    },
+    {
+      "role": "pack/native-experts",
+      "path": "packs/iq2_xs/native_experts.txt",
+      "bytes": 3289,
+      "sha256": "48DF605ACB89C7E8C3176A51CEC777C2ED344EA439E8F3A37E5CE4F9DCB6946C"
+    },
+    {
+      "role": "tokenizer/chat-template",
+      "path": "packs/iq2_xs/tokenizer/chat_template.jinja",
+      "bytes": 9993,
+      "sha256": "12827F24B742EA4E80CDC12DBCF9622227056B9F797252A3149263D4F9AAADCE"
+    },
+    {
+      "role": "tokenizer/merges",
+      "path": "packs/iq2_xs/tokenizer/merges.txt",
+      "bytes": 3600844,
+      "sha256": "080CF95432173729D160346B7882BD2A644B07F7A3813A3EB73F4E66787BFDE9"
+    },
+    {
+      "role": "tokenizer/token-type",
+      "path": "packs/iq2_xs/tokenizer/token_type.json",
+      "bytes": 744960,
+      "sha256": "5088C8C298FC06AF8382DDB3B76C888703AC2634E82263B97EEDCC2AD202738B"
+    },
+    {
+      "role": "tokenizer/tokenizer",
+      "path": "packs/iq2_xs/tokenizer/tokenizer.json",
+      "bytes": 554,
+      "sha256": "87BE2AC47D8BC7393B7435DF6CCD276740019A393941A2585D5EDCE59F450C54"
+    },
+    {
+      "role": "tokenizer/vocab",
+      "path": "packs/iq2_xs/tokenizer/vocab.json",
+      "bytes": 5737005,
+      "sha256": "4BA64F0332ABCFB0B600B7DF1537D1E836E68009D5FB7CDB77339738DC6365C4"
+    },
+    {
+      "role": "mtp/dense",
+      "path": "mtp/rt/dense.bin",
+      "bytes": 116099072,
+      "sha256": "C724DC0B0822ADA5D2977BF5BDE821605FEABAA64EA2E0045B67CA656329070A"
+    },
+    {
+      "role": "mtp/dense-metadata",
+      "path": "mtp/rt/dense.txt",
+      "bytes": 1880,
+      "sha256": "8773C81EBB0986E37FE94A8A9933E87BE48B1FABC6889A0106BCDAB179D1C2AC"
+    },
+    {
+      "role": "mtp/draft-vocab",
+      "path": "mtp/rt/draft_vocab.bin",
+      "bytes": 425196,
+      "sha256": "B1E1D3A7A9E4BF862DCD5923CE661FB59BBD07907E594DF5CF86A62AC235CB91"
+    },
+    {
+      "role": "mtp/experts",
+      "path": "mtp/rt/experts.bin",
+      "bytes": 707788800,
+      "sha256": "09398406BE61F1F54C93861F449E48B8DF0BFCCBC9EC9B2B7636775A6EA9244F"
+    },
+    {
+      "role": "mtp/format",
+      "path": "mtp/rt/experts.format",
+      "bytes": 6,
+      "sha256": "0BE8A4F5832FA75415DE176675DA133658F9171E1071A2BDAE4ABD145A127199"
+    },
+    {
+      "role": "expert-profile",
+      "path": "profiles/learned-heart.bin",
+      "bytes": 196632,
+      "sha256": "AA28BA0800A598DE0D83EBD83E918E2736BB2F4AB6750DB8AA72461E5829510F"
+    },
+    {
+      "role": "prompt-tokens",
+      "path": "prompts/neuro.tokens",
+      "bytes": 161896,
+      "sha256": "9350584440AD92D3FCE3BA024CAD33BB55BD950CAED12823F8B89E69CCA718BA"
+    }
+  ],
+  "primary_command": {
+    "args": [
+      "--pack",
+      "packs/iq2_xs",
+      "--native",
+      "models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+      "--ple-gguf",
+      "models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+      "--mtp",
+      "mtp/rt",
+      "--spec",
+      "6",
+      "--spec-min-p",
+      "0.75",
+      "--max-context",
+      "100000",
+      "--kv",
+      "q4_0",
+      "--kv-resident",
+      "20480",
+      "--expert-profile",
+      "profiles/learned-heart.bin",
+      "--expert-cache",
+      "3796",
+      "--pool-workers",
+      "9",
+      "--prefill",
+      "auto",
+      "--stats",
+      "--tokens-file",
+      "prompts/neuro.tokens",
+      "--max-new",
+      "1024",
+      "--suffix-draft",
+      "3",
+      "--resident-budget-gib",
+      "20",
+      "--mtp-max-t",
+      "3",
+      "--pool-affinity",
+      "all",
+      "--adapt-every",
+      "4",
+      "--adapt-swaps",
+      "24"
+    ],
+    "environment": {
+      "STRATA_FETCH_ADMIT": "0",
+      "STRATA_RESIDENT_HEADROOM_GIB": "3",
+      "STRATA_ADAPT_IF_MISS": "1",
+      "STRATA_EXPERT_FILE_CACHE": "1",
+      "STRATA_PF_FUSED": "1",
+      "STRATA_LOOKAHEAD": "0"
+    },
+    "output_tokens": 1024,
+    "sampling": "greedy as reported by the raw logs; no explicit seed",
+    "resident_policy": "record_only",
+    "actual_prompt_tokens": 28912
+  },
+  "runtime_reported_memory": {
+    "expert_cache_vram": "5.34 GiB; 3977 slots",
+    "mtp_vram": "820 MiB; experts 675 MiB, dense 111 MiB",
+    "verify_device_buffers": "57.0 MiB",
+    "kv_host_ram": "0.64 GiB pinned RAM",
+    "resident_expert_host_ram": "20.00 GiB; pinned 0.00 GiB; page-locking refused; 20479 MiB via working-set minimum + VirtualLock",
+    "nvidia_smi_boundary_snapshot_mib": {
+      "before": {
+        "free": 11349,
+        "used": 662,
+        "total": 12282
+      },
+      "after": {
+        "free": 11349,
+        "used": 662,
+        "total": 12282
+      }
+    },
+    "peak_vram_sampled_during_decode": false
+  },
+  "run_sets": {
+    "primary_e4_s24": {
+      "configuration": "phase3-adaptive-es/E4-S24",
+      "runs": [
+        {
+          "run": 1,
+          "decode_tok_s": 48.23,
+          "output_tokens": 1024,
+          "exit_code": 0,
+          "residual_processes": 0,
+          "evidence_path": "strata_current_best_phases_20261008/phase3-adaptive-es/E4-S24/run-1-attempt-1"
+        },
+        {
+          "run": 2,
+          "decode_tok_s": 47.98,
+          "output_tokens": 1024,
+          "exit_code": 0,
+          "residual_processes": 0,
+          "evidence_path": "strata_current_best_phases_20261008/phase3-adaptive-es/E4-S24/run-2-attempt-1"
+        },
+        {
+          "run": 3,
+          "decode_tok_s": 49.44,
+          "output_tokens": 1024,
+          "exit_code": 0,
+          "residual_processes": 0,
+          "evidence_path": "strata_current_best_phases_20261008/phase3-adaptive-es/E4-S24/run-3-attempt-1"
+        },
+        {
+          "run": 4,
+          "decode_tok_s": 48.83,
+          "output_tokens": 1024,
+          "exit_code": 0,
+          "residual_processes": 0,
+          "evidence_path": "strata_current_best_phases_20261008/phase3-adaptive-es/E4-S24/run-4-attempt-1"
+        },
+        {
+          "run": 5,
+          "decode_tok_s": 46.92,
+          "output_tokens": 1024,
+          "exit_code": 0,
+          "residual_processes": 0,
+          "evidence_path": "strata_current_best_phases_20261008/phase3-adaptive-es/E4-S24/run-5-attempt-1"
+        }
+      ],
+      "n": 5,
+      "median_tok_s": 48.23,
+      "mean_tok_s": 48.28,
+      "raw_files_per_run": [
+        "command.json",
+        "summary.json",
+        "stdout.log",
+        "stderr.log",
+        "exit.txt",
+        "gpu-before.txt",
+        "gpu-after.txt",
+        "process-before.json",
+        "process-after.json"
+      ]
+    },
+    "frozen_current_best_reference": {
+      "configuration": "final-audit-winner",
+      "runs": [
+        45.94,
+        47.22,
+        50.04,
+        47.76,
+        49.37
+      ],
+      "n": 5,
+      "median_tok_s": 47.76,
+      "mean_tok_s": 48.07,
+      "launch_delta_from_primary": "--adapt-swaps 32 instead of 24",
+      "evidence_root": "rtx4070_exact_benchmark_20261008/final-audit-winner-r1..r5",
+      "raw_files_per_run": [
+        "command.json",
+        "stdout.log",
+        "stderr.log",
+        "exit.txt",
+        "gpu-before.txt",
+        "gpu-after.txt"
+      ]
+    }
+  },
+  "evidence_boundary": {
+    "raw_logs_published": false,
+    "raw_logs_retained_on_test_desktop": true,
+    "public_file_is": "a sanitized index of the original desktop records, not a replacement for the raw logs",
+    "comparison_rows_not_covered_here": [
+      "E5/S32",
+      "earlier E4/S32",
+      "earlier E8/S96"
+    ],
+    "original_prompt_tokens_published": false,
+    "original_expert_profile_published": false,
+    "source_code_public_snapshot_available": true,
+    "reproduce_script_public": true,
+    "independent_exact_reproduction_possible_with_public_files_alone": false,
+    "reproduction_document": "REPRODUCE.md",
+    "independent_method_reproduction_without_original_prompt_or_profile": true,
+    "prompt_policy": "original prompt is private; generate a 28,912-token personal input with make_local_prompt.py",
+    "profile_policy": "generate your own expert profile using Strata --expert-profile-save in --serve mode or tools/make_profile.py; original hash kept only for history",
+    "local_reproducer_supports_prompt_profile_overrides": true,
+    "method_vs_exact": "source/build/benchmark method comparable; individual tok/s depends on prompt and learned expert profile"
+  }
+}

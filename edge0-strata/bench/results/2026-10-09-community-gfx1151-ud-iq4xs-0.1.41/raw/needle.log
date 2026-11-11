@@ -1,0 +1,8 @@
+  32k depth  10%: FOUND  (33,286 prompt tokens, 52 s)
+  32k depth  50%: FOUND  (33,286 prompt tokens, 50 s)
+  32k depth  90%: FOUND  (33,287 prompt tokens, 27 s)
+ 128k depth  10%: FOUND  (126,640 prompt tokens, 205 s)
+ 128k depth  50%: FOUND  (126,638 prompt tokens, 206 s)
+ 128k depth  90%: FOUND  (126,638 prompt tokens, 183 s)
+ 262k: skipped (the server's context is 262144)
+6 of 6 found

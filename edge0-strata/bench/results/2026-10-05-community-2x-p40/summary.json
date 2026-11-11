@@ -1,0 +1,138 @@
+{
+ "single P40 (GPU1)": {
+  "speed-short": {
+   "prompt_tok_s": {
+    "median": 52.8,
+    "min": 15.6,
+    "max": 53.2
+   },
+   "decode_tok_s": {
+    "median": 19.6,
+    "min": 11.9,
+    "max": 20.1
+   },
+   "ttft_s_client": {
+    "median": 0.69,
+    "min": 0.68,
+    "max": 2.3
+   },
+   "total_s_client": {
+    "median": 21.0,
+    "min": 20.6,
+    "max": 35.9
+   }
+  },
+  "speed-prefill-4k": {
+   "prompt_tok_s": {
+    "median": 348.4,
+    "min": 124.3,
+    "max": 348.7
+   },
+   "decode_tok_s": {
+    "median": 16.1,
+    "min": 10.7,
+    "max": 20.0
+   },
+   "ttft_s_client": {
+    "median": 11.54,
+    "min": 11.54,
+    "max": 32.24
+   },
+   "total_s_client": {
+    "median": 15.5,
+    "min": 14.7,
+    "max": 38.2
+   }
+  },
+  "speed-prefill-16k": {
+   "prompt_tok_s": {
+    "median": 388.4,
+    "min": 314.5,
+    "max": 388.6
+   },
+   "decode_tok_s": {
+    "median": 23.7,
+    "min": 15.5,
+    "max": 35.6
+   },
+   "ttft_s_client": {
+    "median": 41.11,
+    "min": 41.1,
+    "max": 50.75
+   },
+   "total_s_client": {
+    "median": 43.8,
+    "min": 42.9,
+    "max": 54.8
+   }
+  }
+ },
+ "both P40s": {
+  "speed-short": {
+   "prompt_tok_s": {
+    "median": 54.8,
+    "min": 15.0,
+    "max": 55.1
+   },
+   "decode_tok_s": {
+    "median": 34.8,
+    "min": 10.4,
+    "max": 34.9
+   },
+   "ttft_s_client": {
+    "median": 0.66,
+    "min": 0.66,
+    "max": 2.39
+   },
+   "total_s_client": {
+    "median": 12.1,
+    "min": 12.1,
+    "max": 40.7
+   }
+  },
+  "speed-prefill-4k": {
+   "prompt_tok_s": {
+    "median": 352.9,
+    "min": 120.2,
+    "max": 353.2
+   },
+   "decode_tok_s": {
+    "median": 37.8,
+    "min": 11.9,
+    "max": 37.9
+   },
+   "ttft_s_client": {
+    "median": 11.4,
+    "min": 11.4,
+    "max": 33.34
+   },
+   "total_s_client": {
+    "median": 13.0,
+    "min": 13.0,
+    "max": 38.7
+   }
+  },
+  "speed-prefill-16k": {
+   "prompt_tok_s": {
+    "median": 500.7,
+    "min": 376.0,
+    "max": 501.1
+   },
+   "decode_tok_s": {
+    "median": 37.2,
+    "min": 13.4,
+    "max": 37.2
+   },
+   "ttft_s_client": {
+    "median": 31.93,
+    "min": 31.9,
+    "max": 42.47
+   },
+   "total_s_client": {
+    "median": 33.6,
+    "min": 33.6,
+    "max": 47.2
+   }
+  }
+ }
+}

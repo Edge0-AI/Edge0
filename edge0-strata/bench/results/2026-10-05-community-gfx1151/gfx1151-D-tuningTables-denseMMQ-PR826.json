@@ -1,0 +1,263 @@
+[
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "warmup",
+    "trial": 0,
+    "wall_s": 0.29094833400449716,
+    "metrics": {
+      "prompt_tokens": 15.0,
+      "reused": 0.0,
+      "fresh": 15.0,
+      "prefill_ms": 184.0,
+      "prefill_tps": 81.4,
+      "generated": 2.0,
+      "decode_ms": 96.0,
+      "decode_tps": 20.9
+    },
+    "usage": {
+      "prompt_tokens": 15,
+      "completion_tokens": 2,
+      "total_tokens": 17,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "stop",
+    "message": {
+      "role": "assistant",
+      "content": "READY"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "fresh",
+    "trial": 1,
+    "wall_s": 10.09736910200445,
+    "metrics": {
+      "prompt_tokens": 4210.0,
+      "reused": 0.0,
+      "fresh": 4210.0,
+      "prefill_ms": 7419.0,
+      "prefill_tps": 567.4,
+      "generated": 128.0,
+      "decode_ms": 2665.0,
+      "decode_tps": 48.0
+    },
+    "usage": {
+      "prompt_tokens": 4210,
+      "completion_tokens": 128,
+      "total_tokens": 4338,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 140 exported functions, named `rule0` through `rule139`, each designed to perform a specific conditional arithmetic operation on an input value `x`. The behavior of each function follows a consistent pattern: if the input `x` is exactly equal to the function's index `n` (e.g., `rule5` checks if `x === 5`), the function returns `x + (n + 1)`; otherwise, it returns `x - n`. Essentially, each function acts as a specialized transformation that increments the input by one more than its index when"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "followup",
+    "trial": 1,
+    "wall_s": 3.7713713759876555,
+    "metrics": {
+      "prompt_tokens": 4451.0,
+      "reused": 4203.0,
+      "fresh": 248.0,
+      "prefill_ms": 1092.0,
+      "prefill_tps": 227.2,
+      "generated": 128.0,
+      "decode_ms": 2653.0,
+      "decode_tps": 48.3
+    },
+    "usage": {
+      "prompt_tokens": 4451,
+      "completion_tokens": 128,
+      "total_tokens": 4579,
+      "prompt_tokens_details": {
+        "cached_tokens": 4203
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the **exact match condition** (`x === n`), which defines the transition between the \"increment\" branch (`x + n + 1`) and the \"decrement\" branch (`x - n`). For any function `ruleN`, the critical boundary is the integer `N` itself. If `x` is exactly `N`, the output is `2N + 1`; if `x` is `N + 1` or `N - 1`, the output is `1` or `-1` respectively (for small `N`). This sharp discontinuity makes integer equality the"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "fresh",
+    "trial": 2,
+    "wall_s": 19.566681934986264,
+    "metrics": {
+      "prompt_tokens": 8830.0,
+      "reused": 0.0,
+      "fresh": 8830.0,
+      "prefill_ms": 16755.0,
+      "prefill_tps": 527.0,
+      "generated": 128.0,
+      "decode_ms": 2771.0,
+      "decode_tps": 46.2
+    },
+    "usage": {
+      "prompt_tokens": 8830,
+      "completion_tokens": 128,
+      "total_tokens": 8958,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The source code defines a collection of 280 exported functions, named `rule0` through `rule279`, each designed to perform a specific conditional arithmetic operation on an input value `x`. Each function `ruleN` follows a consistent pattern: it checks if the input `x` is exactly equal to the integer `N`. If `x` equals `N`, the function returns `x + (N + 1)`; otherwise, it returns `x - N`. This behavior effectively creates a set of specialized transformations where the output depends entirely on whether the input matches the function's index, adding a specific offset"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "followup",
+    "trial": 2,
+    "wall_s": 3.5080075720034074,
+    "metrics": {
+      "prompt_tokens": 9071.0,
+      "reused": 8957.0,
+      "fresh": 114.0,
+      "prefill_ms": 679.0,
+      "prefill_tps": 167.9,
+      "generated": 128.0,
+      "decode_ms": 2793.0,
+      "decode_tps": 45.8
+    },
+    "usage": {
+      "prompt_tokens": 9071,
+      "completion_tokens": 128,
+      "total_tokens": 9199,
+      "prompt_tokens_details": {
+        "cached_tokens": 8957
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the **exact match condition** (`x === N`), which defines the function's unique behavior. For any `ruleN`, if `x` equals `N`, the output is `N + (N + 1)` (e.g., `rule5(5)` returns `11`). If `x` is any other value, the output is `x - N`. This creates a discontinuity at `x = N`.\n\n**Smallest Useful Regression Test:**\nA minimal test suite should verify the three critical paths for a representative function, e.g., `rule5`:\n1"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "fresh",
+    "trial": 3,
+    "wall_s": 10.708732433995465,
+    "metrics": {
+      "prompt_tokens": 4210.0,
+      "reused": 0.0,
+      "fresh": 4210.0,
+      "prefill_ms": 7979.0,
+      "prefill_tps": 527.6,
+      "generated": 128.0,
+      "decode_ms": 2706.0,
+      "decode_tps": 47.3
+    },
+    "usage": {
+      "prompt_tokens": 4210,
+      "completion_tokens": 128,
+      "total_tokens": 4338,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "This source code defines a collection of 140 exported functions, named `rule0` through `rule139`, each designed to perform a specific conditional arithmetic operation on an input value `x`. The behavior of each function follows a consistent pattern: if the input `x` is exactly equal to the function's index `n` (e.g., `rule5` checks if `x === 5`), the function returns `x + (n + 1)`; otherwise, it returns `x - n`. Essentially, each function acts as a specialized transformation that increments the input by one more than its index when"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "followup",
+    "trial": 3,
+    "wall_s": 3.6828360530053033,
+    "metrics": {
+      "prompt_tokens": 4451.0,
+      "reused": 4203.0,
+      "fresh": 248.0,
+      "prefill_ms": 1084.0,
+      "prefill_tps": 228.8,
+      "generated": 128.0,
+      "decode_ms": 2572.0,
+      "decode_tps": 49.8
+    },
+    "usage": {
+      "prompt_tokens": 4451,
+      "completion_tokens": 128,
+      "total_tokens": 4579,
+      "prompt_tokens_details": {
+        "cached_tokens": 4203
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the **exact match condition** (`x === n`), which defines the transition between the \"increment\" branch (`x + n + 1`) and the \"decrement\" branch (`x - n`). For any function `ruleN`, the critical boundary is the integer `N` itself. If `x` is exactly `N`, the output is `2N + 1`; if `x` is `N + 1` or `N - 1`, the output is `1` or `-1` respectively (for `N > 0`). This sharp discontinuity makes integer"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "fresh",
+    "trial": 4,
+    "wall_s": 19.732052121005836,
+    "metrics": {
+      "prompt_tokens": 8830.0,
+      "reused": 0.0,
+      "fresh": 8830.0,
+      "prefill_ms": 16830.0,
+      "prefill_tps": 524.7,
+      "generated": 128.0,
+      "decode_ms": 2862.0,
+      "decode_tps": 44.7
+    },
+    "usage": {
+      "prompt_tokens": 8830,
+      "completion_tokens": 128,
+      "total_tokens": 8958,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The source code defines a collection of 280 exported functions, named `rule0` through `rule279`, each designed to perform a specific conditional arithmetic operation on an input value `x`. Each function `ruleN` follows a consistent pattern: it checks if the input `x` is exactly equal to the integer `N`. If `x` equals `N`, the function returns `x + (N + 1)`; otherwise, it returns `x - N`. This behavior effectively creates a set of specialized transformations where the output depends entirely on whether the input matches the function's index, resulting in either an"
+    }
+  },
+  {
+    "label": "hipblaslt-tuned-dense-mmq-sh-stream-on",
+    "kind": "followup",
+    "trial": 4,
+    "wall_s": 3.5992928439954994,
+    "metrics": {
+      "prompt_tokens": 9071.0,
+      "reused": 8957.0,
+      "fresh": 114.0,
+      "prefill_ms": 691.0,
+      "prefill_tps": 165.0,
+      "generated": 128.0,
+      "decode_ms": 2872.0,
+      "decode_tps": 44.6
+    },
+    "usage": {
+      "prompt_tokens": 9071,
+      "completion_tokens": 128,
+      "total_tokens": 9199,
+      "prompt_tokens_details": {
+        "cached_tokens": 8957
+      }
+    },
+    "finish_reason": "length",
+    "message": {
+      "role": "assistant",
+      "content": "The most relevant boundary case is the **exact match** condition (`x === N`), which defines the function's unique behavior. For any function `ruleN`, if the input `x` is exactly `N`, the output is `N + (N + 1) = 2N + 1`. If `x` is any other value (including `N-1`, `N+1`, `0`, or negative numbers), the output is `x - N`.\n\nThe smallest useful regression test should verify this dichotomy for a representative function, such as `rule0`:\n1. **Equality Case**:"
+    }
+  }
+]

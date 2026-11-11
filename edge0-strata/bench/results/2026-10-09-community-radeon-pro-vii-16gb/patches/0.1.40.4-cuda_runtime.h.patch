@@ -1,0 +1,49 @@
+--- pristine-0.1.40.4/include/strata/hip_compat/cuda_runtime.h	2026-10-08 13:23:15.000000000 +0800
++++ /home/user/Strata/.bench/0.1.40.4/include/strata/hip_compat/cuda_runtime.h	2026-10-09 21:09:25.988281321 +0800
+@@ -144,3 +144,46 @@
+ #define cudaMemcpyToSymbol(symbol, ...) hipMemcpyToSymbol(HIP_SYMBOL(symbol), __VA_ARGS__)
+ 
+ #include "intrinsics.hpp"
++
++// --- 本地补丁（社区基准报告）：ROCm 6.2 / gfx906 -------------------------------------------
++// 0.1.40.x 把兼容头搬到了 include/strata/hip_compat/，但相比 0.1.39 的
++// include/strata/platform/hip_compat/strata_hip.h 少了下面 24 个映射，gfx906 构建会报
++// "use of undeclared identifier" / "unknown type name"。映射逐条取自那个（已在 gfx906 上
++// 验证可用的）旧头。
++#define cudaDevAttrGlobalMemoryBusWidth hipDeviceAttributeMemoryBusWidth
++#define cudaDevAttrMemoryClockRate hipDeviceAttributeMemoryClockRate
++#define cudaDeviceMapHost hipDeviceMapHost
++#define cudaDeviceScheduleBlockingSync hipDeviceScheduleBlockingSync
++#define cudaDeviceScheduleSpin hipDeviceScheduleSpin
++#define cudaDeviceScheduleYield hipDeviceScheduleYield
++#define cudaEventDefault hipEventDefault
++#define cudaGetErrorName hipGetErrorName
++#define cudaGraphKernelNodeGetParams hipGraphKernelNodeGetParams
++#define cudaGraphNodeGetType hipGraphNodeGetType
++#define cudaGraphNodeType hipGraphNodeType
++#define cudaGraphNodeTypeKernel hipGraphNodeTypeKernel
++#define cudaGraphNodeTypeMemcpy hipGraphNodeTypeMemcpy
++#define cudaGraphNodeTypeMemset hipGraphNodeTypeMemset
++#define cudaGraphNode_t hipGraphNode_t
++#define cudaHostAllocWriteCombined hipHostMallocWriteCombined
++#define cudaHostRegisterDefault hipHostRegisterDefault
++#define cudaKernelNodeParams hipKernelNodeParams
++#define cudaMemcpyKind hipMemcpyKind
++#define cudaSetDeviceFlags hipSetDeviceFlags
++#define cudaSharedmemCarveoutMaxShared 100
++#define cudaStreamCaptureModeGlobal hipStreamCaptureModeGlobal
++#define cudaStreamCaptureModeRelaxed hipStreamCaptureModeRelaxed
++#define cudaStreamCaptureStatusActive hipStreamCaptureStatusActive
++
++// 本地补丁（社区基准报告）：CUDA 12 的 cudaInitDevice(dev, deviceFlags, flags) —— 初始化设备及其调度
++// 标志，但**不改变当前设备**（分层多卡依赖这个语义）。实现逐字取自 0.1.39 的
++// include/strata/platform/hip_compat/strata_hip.h（已在 gfx906 上验证可用）。
++inline hipError_t cudaInitDevice(int device, unsigned int device_flags, unsigned int /*flags*/) {
++    int prev = 0;
++    hipError_t e = hipGetDevice(&prev);
++    if (e != hipSuccess) return e;
++    e = hipSetDevice(device);
++    if (e != hipSuccess) return e;
++    if (hipSetDeviceFlags(device_flags) != hipSuccess) (void) hipGetLastError();   // context already active
++    return hipSetDevice(prev);
++}

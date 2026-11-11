@@ -1,0 +1,21 @@
+arm | metric | median | vs base | pairs faster (higher) | rounds
+default | batch:tok_s | 77.95 | 1.000 | 0/5 | 5
+bg2 | batch:tok_s | 66.01 | 0.847 | 0/5 | 5
+default2 | batch:tok_s | 77.64 | 0.996 | 1/5 | 5
+default | batch:steady | 88.16 | 1.000 | 0/5 | 5
+bg2 | batch:steady | 76.06 | 0.863 | 0/5 | 5
+default2 | batch:steady | 87.73 | 0.995 | 1/5 | 5
+default | batch:ttft | 0.19 | 1.000 | 0/5 | 5
+bg2 | batch:ttft | 0.27 | 1.439 | 0/5 | 5
+default2 | batch:ttft | 0.19 | 0.989 | 5/5 | 5
+
+arm | window | mean util per card % (median over runs) | mean power W per card | idle% (mean over cards)
+default | batch | gpu0 46, gpu1 51 | 107, 111 | 51
+bg2 | batch | gpu0 95, gpu1 94 | 122, 129 | 5
+default2 | batch | gpu0 48, gpu1 51 | 106, 112 | 51
+
+answer hashes per window kind (distinct values over all runs of all arms; 1 = byte-identical)
+batch: 8 distinct -> f9509e296a80d736:default,default2; ce65eead50472c3c:default,default2; 66445d8a8a2d9dc8:bg2; c9642d43b526aab4:bg2; 7ec7067b58152abb:bg2; 37587ab3cbfff7e7:bg2; b6530189bf624d76:default; eeaef1ea68605966:default
+default: expert-cache slots ['5924']
+bg2: expert-cache slots ['5924']
+default2: expert-cache slots ['5924']

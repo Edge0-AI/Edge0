@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {summarizeOrders} from './orders.ts';
+const o=(customer:string,priceCents=100,quantity=1,cancelled=false)=>({customer,priceCents,quantity,cancelled});
+test('empty',()=>assert.deepEqual(summarizeOrders([]),[]));
+test('single',()=>assert.deepEqual(summarizeOrders([o('a',125,2)]),[{customer:'a',totalCents:250,units:2}]));
+test('grouping',()=>assert.deepEqual(summarizeOrders([o('b',100,2),o('a',50,3),o('b',25,1)]),[{customer:'a',totalCents:150,units:3},{customer:'b',totalCents:225,units:3}]));
+test('trim and group',()=>assert.deepEqual(summarizeOrders([o(' a ',30),o('a',20)]),[{customer:'a',totalCents:50,units:2}]));
+test('cancelled ignored',()=>assert.deepEqual(summarizeOrders([o('a',100,1,true)]),[]));
+test('case sensitive',()=>assert.deepEqual(summarizeOrders([o('a'),o('A')]).map(x=>x.customer),['A','a']));
+test('zero price',()=>assert.equal(summarizeOrders([o('a',0,4)])[0].units,4));
+test('frozen input',()=>{const a=Object.freeze([Object.freeze(o(' b ')),Object.freeze(o('a'))]);assert.equal(summarizeOrders(a as any)[1].customer,'b');});
+test('unchanged input',()=>{const a=[o(' b '),o('a')];const old=structuredClone(a);summarizeOrders(a);assert.deepEqual(a,old);});
+test('invalid array',()=>assert.throws(()=>summarizeOrders(null as any),RangeError));
+for(const invalid of [o(''),o(' '),o('a',-1),o('a',1.5),o('a',NaN),o('a',Infinity),o('a',100,0),o('a',100,-1),o('a',100,1.5),{...o('a'),cancelled:'yes'},null]) test('invalid '+JSON.stringify(invalid),()=>assert.throws(()=>summarizeOrders([invalid] as any),RangeError));
+test('invalid cancelled record still rejected',()=>assert.throws(()=>summarizeOrders([o('a',-1,1,true)]),RangeError));
+test('exported validation helper',async()=>{const {validateOrders}=await import('./validation.ts');const a=[o(' a ',2,3)];const r=validateOrders(a);assert.equal(r[0].customer,'a');assert.notEqual(r[0],a[0]);assert.equal(a[0].customer,' a ');assert.throws(()=>validateOrders([o('',1)]),RangeError);});
+test('exported aggregation helper',async()=>{const {aggregateOrders}=await import('./aggregation.ts');const a=Object.freeze([Object.freeze(o('b',2,3)),Object.freeze(o('a',4)),Object.freeze(o('a',10,1,true))]);assert.deepEqual(aggregateOrders(a as any),[{customer:'a',totalCents:4,units:1},{customer:'b',totalCents:6,units:3}]);});

@@ -1,0 +1,45 @@
+{
+ "exe": "D:\\AI\\Strata\\engine\\strata.exe",
+ "args": [
+  "--pack",
+  "D:\\AI\\Strata-data\\packs\\iq3_s",
+  "--native",
+  "D:\\AI\\Strata-data\\models\\IQ3_S\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "D:\\AI\\Strata-data\\models\\IQ3_S\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--expert-profile",
+  "D:\\AI\\Strata\\data\\expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto:32768",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "D:\\AI\\Strata-data\\mtp\\rt",
+  "--max-context",
+  "262144",
+  "--kv",
+  "int8",
+  "--kv-resident",
+   "32768",
+   "--conversation-cache-mib",
+   "8192"
+ ],
+ "cwd": "D:\\AI\\Strata",
+ "tokenizer": "D:\\AI\\Strata-data\\packs\\iq3_s\\tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3_s",
+ "log": "D:\\AI\\Strata\\strata-iq3_s.log",
+ "lib_dirs": [
+  "D:\\AI\\Strata\\engine\\rocm\\bin"
+ ],
+ "port": 8080,
+ "backend": "hip",
+ "env": {
+  "STRATA_HIPBLASLT_TUNING": "D:\\AI\\Strata\\tools\\hip\\gfx1100-hipblaslt-100500.txt"
+ },
+ "gpu": 0,
+ "gpus_asked": true
+}

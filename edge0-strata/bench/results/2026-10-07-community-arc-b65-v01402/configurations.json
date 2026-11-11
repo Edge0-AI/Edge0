@@ -1,0 +1,23 @@
+{
+  "8k-512": {
+    "native_context": 8192,
+    "usable_api_context": 8184,
+    "prefill": 512,
+    "reserve_mib": 3072,
+    "profile": "profile-8k-512.json"
+  },
+  "8k-4096": {
+    "native_context": 8192,
+    "usable_api_context": 8184,
+    "prefill": 4096,
+    "reserve_mib": 3072,
+    "profile": "profile-8k-4096.json"
+  },
+  "262k-512": {
+    "native_context": 262152,
+    "usable_api_context": 262144,
+    "prefill": 512,
+    "reserve_mib": 4096,
+    "profile": "profile-262k-512.json"
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "started": "2026-10-10 08:02:22",
+  "url": "http://127.0.0.1:8080/v1/chat/completions",
+  "model": "qwen3.8-flash-next-iq3_xxs",
+  "engine_log": "D:/Dev/Strata/strata-iq3_xxs.log",
+  "cap_tokens": 256,
+  "reps": 3,
+  "speed": [
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 154.094,
+      "total_s": 158.761,
+      "answer_len": 1272,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 129970,
+        "completion_tokens": 256,
+        "total_tokens": 130226,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 129970,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 129970,
+      "read_ms": 153976,
+      "read_tok_s": 844.1,
+      "generated_tokens": 256,
+      "gen_ms": 4690,
+      "decode_tok_s": 54.6,
+      "pairing_ok": true,
+      "target": 126640,
+      "rep": 1,
+      "chars": 319210
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 156.386,
+      "total_s": 160.555,
+      "answer_len": 1208,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 129972,
+        "completion_tokens": 256,
+        "total_tokens": 130228,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 129972,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 129972,
+      "read_ms": 156259,
+      "read_tok_s": 831.8,
+      "generated_tokens": 256,
+      "gen_ms": 4199,
+      "decode_tok_s": 61.0,
+      "pairing_ok": true,
+      "target": 126640,
+      "rep": 2,
+      "chars": 319210
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 156.18,
+      "total_s": 160.571,
+      "answer_len": 1234,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 129973,
+        "completion_tokens": 256,
+        "total_tokens": 130229,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 129973,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 129973,
+      "read_ms": 156054,
+      "read_tok_s": 832.9,
+      "generated_tokens": 256,
+      "gen_ms": 4423,
+      "decode_tok_s": 57.9,
+      "pairing_ok": true,
+      "target": 126640,
+      "rep": 3,
+      "chars": 319210
+    }
+  ],
+  "needles": [
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 156.268,
+      "total_s": 156.677,
+      "text": "7-BLUE-MAGNET-4417",
+      "answer_len": 18,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 130018,
+        "completion_tokens": 13,
+        "total_tokens": 130031,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 130018,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 130018,
+      "read_ms": 156120,
+      "read_tok_s": 832.8,
+      "generated_tokens": 13,
+      "gen_ms": 445,
+      "decode_tok_s": 29.2,
+      "pairing_ok": true,
+      "target": 126640,
+      "depth": 10,
+      "needle_found": true,
+      "chars": 319348
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 155.707,
+      "total_s": 156.119,
+      "text": "7-BLUE-MAGNET-4417",
+      "answer_len": 18,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 130018,
+        "completion_tokens": 13,
+        "total_tokens": 130031,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 130018,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 130018,
+      "read_ms": 155580,
+      "read_tok_s": 835.7,
+      "generated_tokens": 13,
+      "gen_ms": 444,
+      "decode_tok_s": 29.3,
+      "pairing_ok": true,
+      "target": 126640,
+      "depth": 50,
+      "needle_found": true,
+      "chars": 319348
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 156.536,
+      "total_s": 156.779,
+      "text": "7-BLUE-MAGNET-4417",
+      "answer_len": 18,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 130018,
+        "completion_tokens": 13,
+        "total_tokens": 130031,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 130018,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 130018,
+      "read_ms": 156403,
+      "read_tok_s": 831.3,
+      "generated_tokens": 13,
+      "gen_ms": 268,
+      "decode_tok_s": 48.5,
+      "pairing_ok": true,
+      "target": 126640,
+      "depth": 90,
+      "needle_found": true,
+      "chars": 319348
+    }
+  ],
+  "notes": [],
+  "calibration": {
+    "ok": true,
+    "payload_variant": 0,
+    "thinking_off": true,
+    "ttft_s": 6.812,
+    "total_s": 8.048,
+    "answer_len": 389,
+    "reasoning_len": 0,
+    "reasoning_text": "",
+    "finish_reason": "length",
+    "usage": {
+      "prompt_tokens": 3216,
+      "completion_tokens": 64,
+      "total_tokens": 3280,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "engine_prompt_tokens": 3216,
+    "reused_tokens": 0,
+    "new_prompt_tokens": 3216,
+    "read_ms": 6777,
+    "read_tok_s": 474.5,
+    "generated_tokens": 64,
+    "gen_ms": 1265,
+    "decode_tok_s": 50.6,
+    "pairing_ok": true
+  },
+  "chars_per_token": 2.5188916876574305,
+  "warmup": {
+    "ok": true,
+    "payload_variant": 0,
+    "thinking_off": true,
+    "ttft_s": 6.246,
+    "total_s": 6.777,
+    "answer_len": 94,
+    "reasoning_len": 0,
+    "reasoning_text": "",
+    "finish_reason": "length",
+    "usage": {
+      "prompt_tokens": 2082,
+      "completion_tokens": 32,
+      "total_tokens": 2114,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "engine_prompt_tokens": 2082,
+    "reused_tokens": 0,
+    "new_prompt_tokens": 2082,
+    "read_ms": 6212,
+    "read_tok_s": 335.2,
+    "generated_tokens": 32,
+    "gen_ms": 552,
+    "decode_tok_s": 58.0,
+    "pairing_ok": true
+  },
+  "finished": "2026-10-10 08:18:27",
+  "tag": "128k"
+}

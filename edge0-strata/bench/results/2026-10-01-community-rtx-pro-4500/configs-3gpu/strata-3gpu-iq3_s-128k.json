@@ -1,0 +1,41 @@
+{
+  "exe": "build/strata",
+  "args": [
+    "--pack",
+    "packs/iq3_s",
+    "--native",
+    "/mnt/fast/models/Qwen3.8-Flash-Next-GGUF-IQ3_S/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+    "--expert-profile",
+    "data/expert-profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--spec-min-p",
+    "0.5",
+    "--mtp",
+    "mtp/rt",
+    "--max-context",
+    "139264",
+    "--kv",
+    "int8",
+    "--vram-reserve-mib",
+    "1536",
+    "--serve",
+    "--layer-split",
+    "auto",
+    "--split-device",
+    "1,2"
+  ],
+  "cwd": ".",
+  "tokenizer": "packs/iq3_s/tokenizer",
+  "model_name": "qwen3.8-flash-next-iq3_s",
+  "log": "strata-3gpu-iq3_s-128k.log",
+  "host": "127.0.0.1",
+  "port": 8080,
+  "env": {
+    "CUDA_VISIBLE_DEVICES": "GPU-627db4bb-f09b-e5d8-1911-a7cde5605dcc,GPU-7fb40c58-cc03-1fcf-3bd2-5541e9121a76,GPU-11f65dfc-bbba-dcda-7402-95656914e229"
+  }
+}

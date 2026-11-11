@@ -1,0 +1,7 @@
+### rocminfo | grep -i gfx  （2026-10-09T21:29:45+08:00）
+### 命令: rocminfo | grep -i -E 'gfx|Marketing Name|Name:'
+  Name:                    Intel(R) Xeon(R) CPU E5-2666 v3 @ 2.90GHz
+  Marketing Name:          Intel(R) Xeon(R) CPU E5-2666 v3 @ 2.90GHz
+  Name:                    gfx906                             
+  Marketing Name:          AMD Radeon Pro VII                 
+      Name:                    amdgcn-amd-amdhsa--gfx906:sramecc+:xnack-

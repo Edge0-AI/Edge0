@@ -1,0 +1,38 @@
+name: Reopen
+
+# An author comments /reopen on their closed issue or pull request. The check runs and the item is reopened,
+# or the bot replies with what is still missing. GitHub does not let authors reopen items a maintainer closed,
+# so this workflow does it for them.
+#
+# issue_comment always runs the workflow file from the default branch with a write-capable token, which is what
+# we need for fork authors too. It never checks out or executes the pull request's code: it reads the live
+# title and description through the REST API. Only the author of the item or a maintainer can trigger it.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: reopen-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  reopen:
+    if: startsWith(github.event.comment.body, '/reopen') && github.event.comment.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const bot = require('./.github/scripts/reset-bot.js');
+            await bot.reopen({ github, context, core });

@@ -1,0 +1,85 @@
+{
+ "label": "ks-k23",
+ "extra": [
+  "--layer-split",
+  "23"
+ ],
+ "gpus": "0,2",
+ "needles": [
+  {
+   "tokens": 16066,
+   "prompt_ms": 8742.6,
+   "pp_tok_s": 1837.7,
+   "found": true,
+   "answer": "meadow-254<|im_end|>"
+  },
+  {
+   "tokens": 27743,
+   "prompt_ms": 13084.2,
+   "pp_tok_s": 2120.3,
+   "found": true,
+   "answer": "juniper-766<|im_end|>"
+  }
+ ],
+ "chat": {
+  "turn1_tokens": 6584,
+  "turn1_ms": 3566.1,
+  "turn2_tokens": 6660,
+  "reused": 6631,
+  "turn2_ms": 238.0,
+  "answer": "lantern-417<|im_end|>",
+  "ok": true
+ },
+ "decode": [
+  {
+   "name": "story",
+   "tok_s": 81.0,
+   "reps": [
+    76.8,
+    85.2,
+    81.1
+   ],
+   "hit_rate": 0.9961302681992337,
+   "text": "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference between a gale and a hurricane by the way the glass rattled in its frame. Tonight, it was the latter. The sea was a churning black void, swallowing the horizon, throwing white foam against the granite base like a tantrum.\n\nInside the lantern room, the air was thick with the smell of kerosene and old brass. Elias wiped his hands on his wool trousers, the fabric stiff with salt and grease. He checked the clockwork mechanism that turned the lens. It was a beast of a thing, a Fresnel lens of eight feet in diameter, a cathedral of glass and crystal that focused the beam of the lamp into a single, piercing needle of light.\n\nHe wound the weights. *Click, click, click.* The gears engaged. The massive lens began its slow, hypnotic rotation.\n\nFor a moment, the"
+  },
+  {
+   "name": "code",
+   "tok_s": 108.4,
+   "reps": [
+    105.1,
+    109.0,
+    111.1
+   ],
+   "hit_rate": 0.9961698810290479,
+   "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+  }
+ ],
+ "stage_timing": [
+  "strata serve: stage 0: 537 windows; per window: wait for the GPU 7.423 ms, pool + plan 0.953 ms, host staging 0.542 ms, commit 0.237 ms",
+  "strata serve: stage 1: 537 windows; per window: wait for the GPU 12.223 ms, pool + plan 0.236 ms, host staging 0.000 ms, commit 0.324 ms",
+  "strata serve: stage 0: 606 windows; per window: wait for the GPU 7.519 ms, pool + plan 0.904 ms, host staging 0.483 ms, commit 0.239 ms",
+  "strata serve: stage 1: 606 windows; per window: wait for the GPU 12.395 ms, pool + plan 0.242 ms, host staging 0.000 ms, commit 0.326 ms"
+ ],
+ "engine_lines": [
+  "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 23)",
+  "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+  "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+  "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+  "strata generate: expert cache 4609 slots, 8.29 GiB of VRAM; policy is",
+  "strata generate: layer split: CUDA1 runs layers 23-47, expert cache 6400 slots (12.82 GiB), 6400 of its 6400 profiled pairs; slot 0 verified",
+  "strata generate: layer split: CUDA0 runs layers 0-22",
+  "strata serve: the prompt path allocates its own buffers (too few cache slots to borrow)",
+  "strata serve: layer split: layers 0-22 (CUDA0), 23-47 (CUDA1), one hand-off per window",
+  "strata serve: decode expert cache hit rate: 96.8% (5528 hits / 5709 lookups)",
+  "strata serve: decode expert cache hit rate: 98.4% (4235 hits / 4303 lookups)",
+  "strata serve: decode expert cache hit rate: 98.9% (4260 hits / 4308 lookups)",
+  "strata serve: decode expert cache hit rate: 98.6% (30643 hits / 31089 lookups)",
+  "strata serve: decode expert cache hit rate: 98.6% (4248 hits / 4309 lookups)",
+  "strata serve: decode expert cache hit rate: 98.3% (134776 hits / 137143 lookups)",
+  "strata serve: decode expert cache hit rate: 99.4% (133024 hits / 133766 lookups)",
+  "strata serve: decode expert cache hit rate: 99.6% (129995 hits / 130500 lookups)",
+  "strata serve: decode expert cache hit rate: 97.9% (115782 hits / 118287 lookups)",
+  "strata serve: decode expert cache hit rate: 99.6% (117953 hits / 118464 lookups)",
+  "strata serve: decode expert cache hit rate: 99.6% (117560 hits / 118012 lookups)"
+ ]
+}

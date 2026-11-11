@@ -1,0 +1,53 @@
+[
+ {
+  "model": "Q2_0",
+  "off": {
+   "prefill_tok_s": 541.31,
+   "decode_tok_s": 90.74,
+   "vram_slots": 4464,
+   "spec_accept": 0.846
+  },
+  "on": {
+   "prefill_tok_s": 530.64,
+   "decode_tok_s": 86.92,
+   "vram_slots": 3402,
+   "spec_accept": 0.858
+  },
+  "flag_identical": true,
+  "on_identical": false
+ },
+ {
+  "model": "IQ2_XS",
+  "off": {
+   "prefill_tok_s": 468.17,
+   "decode_tok_s": 77.14,
+   "vram_slots": 4568,
+   "spec_accept": 0.856
+  },
+  "on": {
+   "prefill_tok_s": 457.61,
+   "decode_tok_s": 73.96,
+   "vram_slots": 3542,
+   "spec_accept": 0.866
+  },
+  "flag_identical": true,
+  "on_identical": false
+ },
+ {
+  "model": "IQ3_XXS",
+  "off": {
+   "prefill_tok_s": 411.3,
+   "decode_tok_s": 64.7,
+   "vram_slots": 3511,
+   "spec_accept": 0.863
+  },
+  "on": {
+   "prefill_tok_s": 401.48,
+   "decode_tok_s": 59.46,
+   "vram_slots": 2662,
+   "spec_accept": 0.868
+  },
+  "flag_identical": true,
+  "on_identical": true
+ }
+]

@@ -1,0 +1,37 @@
+{
+  "expected": "K7QX-4291",
+  "answer": "K7QX-4291",
+  "found": true,
+  "usage": {
+    "prompt_tokens": 261,
+    "completion_tokens": 10,
+    "total_tokens": 271,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "engine": {
+    "projection": null,
+    "time": 1791413264.0592318,
+    "duration_s": 1.1,
+    "finish": "stop",
+    "prompt_tokens": 261,
+    "reused": 0,
+    "output_tokens": 10,
+    "prompt_total": 261,
+    "prompt_read": 261,
+    "reasoning_recoveries": 0,
+    "reasoning_repeat_coverage": 0.0,
+    "engine_generated": 10,
+    "prompt_ms": 920.3,
+    "decode_ms": 152.9,
+    "decode_tok_s": 65.4,
+    "hit_rate": 0.716,
+    "pcie_share": 0.144,
+    "ram_blobs": 0,
+    "file_blobs": 0,
+    "file_mb": 0,
+    "drafts_offered": 9,
+    "drafts_accepted": 7
+  }
+}

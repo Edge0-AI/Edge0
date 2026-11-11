@@ -1,0 +1,96 @@
+Source of the binary I measured: every commit of branch repro/w7 on noon-at-cgn/Strata that is not in upstream v0.1.40.3 (d5ea713).
+repro/w7 is my branch up-merge (9098e89) plus the one commit of branch opt/04-split-batched-draft-kv (ac5fc3f). The wrong author
+e-mail on my own commits is corrected; every tree is identical to the earlier id, only the author and committer lines differ
+(commits by other people keep their author; the three commits by Evan keep both).
+
+78 commits that are not merges and 9 merge commits, oldest first.
+States are as I read them on 2026-10-08.
+Columns: id on repro/w7 (earlier id) | author | date | feature number F01-F26 | state against upstream main fb58e0d | subject
+
+39708ae (earlier 39708ae) | Evan | 2026-10-06 | F03 | open PR #1190 (not mine) | resident split: a test that the RAM copy keeps each stage's lend region (red: FileExpertSource has no stage_lend_regions, and no append_stage_lend_regions)
+3ba11b1 (earlier 3ba11b1) | Evan | 2026-10-06 | F03 | open PR #1190 (not mine) | resident split: pin_cache_complement keeps each stage's lend region in the RAM copy too (stage_lend_regions, append_stage_lend_regions) - the experts the prompt path borrows under a split streamed from the mapped files through page faults (3.7 GiB read for one 73K prompt, 1.5 s of a 3.9 s chunk on host staging, 2026-10-06 rig); one budget caps complement and regions, experts past it keep the file fallback
+6b6277a (earlier 6b6277a) | Evan | 2026-10-06 | F03 | open PR #1190 (not mine) | generate: size every part's lend region for a layer split by the serve scan's own arithmetic (auto ceiling or the explicit chunk, the 128-slot floor, the auto percentage cap), #340's own-buffer rule deciding which parts lend nothing - and hand them to the resident copy before it pins
+c83af2a (earlier 3273bd0) | Danny | 2026-10-05 | F01 | not in main (no kv pool upstream) | kv: one pinned KV pool shared by the sessions (--kv-pool-tokens)
+8f5141d (earlier bf6395e) | Danny | 2026-10-05 | F01 | not in main (no kv pool upstream) | kv: a conversation moves between the main session and a slot by swapping pool chunks
+c281c87 (earlier 939af26) | Danny | 2026-10-05 | F08 | in main as ef6c18a (#1059) | serve: a request the engine refuses (ERR) ends at once
+41f668d (earlier 7dd65f1) | Danny | 2026-10-05 | F01 | not in main (no kv pool upstream) | kv: two comments say what the pool-full paths do
+e5272a1 (earlier 455689b) | Danny | 2026-10-05 | F01 | not in main (no kv pool upstream) | kv: pool review fixes - drafter host copy, upload order, eviction, 503 paths
+fe91069 (earlier f5397b8) | noon-at-cgn | 2026-10-06 | F01 | not in main (no kv pool upstream) | kv pool: K8V4 halves and the session file's K/V reader carry the chunk table; a session RESTORE reserves its chunks
+c42c58c (earlier fda484f) | noon-at-cgn | 2026-10-06 | F02 | in main as 35435e3 (#1188/#1264) | verify: the batched K8V4 K/V append writes the streamed layer's host copy too
+f058325 (earlier d786779) | noon-at-cgn | 2026-10-06 | F01 | not in main (no kv pool upstream) | kv pool: one chunk table across the stages of a layer split
+094dcb7 (earlier 041b4a2) | noon-at-cgn | 2026-10-06 | F01 | not in main (no kv pool upstream) | kv pool: the eviction order is a tested function; CPU test for the chunk tables
+386adc7 (earlier 85694b5) | noon-at-cgn | 2026-10-06 | F01 | not in main (no kv pool upstream) | kv_stream.hpp: std::size_t for_each_piece (a few parity tests include the header before <cstddef>)
+8c6ee0f (earlier 2540ce6) | noon-at-cgn | 2026-10-06 | F01 | not in main (no kv pool upstream) | serve tests: the KV pool's 503 paths, truncated, the POOL line (serve/test_kv_pool.py)
+7d0286e (earlier f47cec6) | noon-at-cgn | 2026-10-06 | F01 | not in main (no kv pool upstream) | docs: --kv-pool-tokens (BATCHING.md, DETAILS.md, MULTI_GPU.md)
+5525d62 (earlier 72b91fb) | noon-at-cgn | 2026-10-06 | F01 | not in main (no kv pool upstream) | kv pool: pipelined windows back the whole context first; slot sessions borrow RoPE only from a stage that has QSA layers
+b176641 (earlier 61bb01c) | noon-at-cgn | 2026-10-06 | F07 | docs, no equivalent in main | docs: UD-Q4_K_XL on 2x RTX 3080 20 GB - resident experts, 512k shared KV pool, no disk reads; KV in RAM vs VRAM A/B
+ad030cd (earlier 859bec4) | noon-at-cgn | 2026-10-06 | F07 | docs, no equivalent in main | docs/config: two lanes of 256k sharing the 512k pool (parallel 2); say which numbers came from a 4-lane build
+c18cead (earlier e23f395) | noon-at-cgn | 2026-10-06 | F07 | docs, no equivalent in main | docs/config: images on UD-Q4_K_XL via the CPU strata-vision encoder (--vision + vision block), tested
+b346dd6 (earlier 9c533de) | noon-at-cgn | 2026-10-06 | F07 | docs, no equivalent in main | docs: production benchmark of the shipped dual-3080 UD-Q4_K_XL config (2 lanes, vision on)
+c0e5898 (earlier 63be998) | noon-at-cgn | 2026-10-06 | F04 | not in main; #1253 open | batch-mtp: work with a layer split (slot drafters on the last stage's GPU, grouped slot rows through every stage)
+ff20895 (earlier f4852c6) | noon-at-cgn | 2026-10-06 | F04 | not in main; #1253 open | batch-mtp: log the accepted proposals in the batch summary
+189b63a (earlier f197c62) | noon-at-cgn | 2026-10-06 | F05 | type line in main (569c094); vocab line dead in main | mtp: a shared (slot) drafter inherits the draft head's ggml type and host vocab map
+0aec553 (earlier 384d67e) | noon-at-cgn | 2026-10-06 | F04 | not in main; #1253 open | docs/config: batch MTP on the 2-GPU split - measured on the test model and production
+822a0d3 (earlier 347420d) | noon-at-cgn | 2026-10-06 | F06 | not in main (main refuses with --batch) | batch: the adaptive VRAM expert tier keeps adapting in batch windows; per-stage timing in the strata batch line
+c2ce009 (earlier 3e9cecb) | noon-at-cgn | 2026-10-06 | F06 | not in main (main refuses with --batch) | batch: tick the asynchronous adaptive tier (--adapt-async 1) between batch windows; --adapt-min-gain
+839e1a9 (earlier a7a59e6) | Chen Cheng | 2026-10-06 | F08 | in main as 3bcfd8f (#1185) | verify: a window graph that finds no VRAM frees older batch slot layouts' graphs instead of failing (#997)
+8dc64e2 (earlier eab374a) | BlueKingMuch | 2026-10-02 | F12 | open PR #1163 (not mine) | conversation cache: a conversation parked again keeps at most an eighth of each K/V buffer in reserve (was up to 16 MiB per buffer, 0.4-0.5 GB per conversation)
+c55444d (earlier 460b0a7) | noon-at-cgn | 2026-10-07 | F12 | same fix open as #1503 | conversation cache: a retained K/V reuse image is tied to the conversation it describes
+4eed678 (earlier c4e0b52) | win10ogod | 2026-10-06 | F08 | in main as 7ef55e1 (#1201/#1118) | fix: honor refreshed residency in batch host paths
+0b37be8 (earlier 7b517aa) | noon-at-cgn | 2026-10-07 | F13 | open PR #1601 (290cf3a squash) | memory guard: available_host_bytes() = min(MemAvailable, cgroup headroom, operator cap)
+2c91e3f (earlier aea2185) | noon-at-cgn | 2026-10-07 | F13 | open PR #1601 | serve: --memory-limit-mib / STRATA_MEMORY_LIMIT_MIB; parking and session save/restore use available_host_bytes()
+7c011e0 (earlier 8d0c106) | noon-at-cgn | 2026-10-07 | F13 | open PR #1601 | memory guard: credit clean inactive file cache (memory.stat inactive_file) in the cgroup and operator-cap terms
+12b4b89 (earlier d8d707e) | Alex | 2026-10-05 | F09 | open PR #1242 (not mine) | Isolate concurrent multimodal positions and batch-MTP draft paths
+762395a (earlier 73f6950) | noon-at-cgn | 2026-10-07 | F09 | not in main (#1242 open) | verify: batch private-position rope: one launch per run of a slot's rows
+26678aa (earlier 878f335) | Hulk | 2026-10-06 | F08 | superseded by main 48d2e6c (#1252) | spec: re-probe stale lookup window costs
+11c5964 (earlier 7db79e8) | Francesco Albano | 2026-10-05 | F08 | in main as 5208b32 (#851) | cpu experts: an AVX2 Q8_K activation quantizer for the native i-quant layers
+2a8eec8 (earlier d4234dc) | Zhong Uncle | 2026-10-06 | F11 | open PR #1181 (not mine) | perf(plan): the verify window's GPU plan in O(n) instead of O(n^2)
+2393fab (earlier b5a48ec) | noon-at-cgn | 2026-10-07 | F21 | switch not in main | cpu experts: q8k_avx2 per-request switch for the AVX2 Q8_K quantizer
+d739507 (earlier eb8c003) | noon-at-cgn | 2026-10-07 | F20 | not in main | tests: expert_window_plan_test: value-initialise the sink instead of memset (-Wclass-memaccess)
+fcf810c (earlier 7bb8540) | noon-at-cgn | 2026-10-07 | F20 | not in main | batch: --batch-overlap, launch every stage's commit then sync once; slot drafts back to back (default off)
+b5ac367 (earlier 88b007d) | noon-at-cgn | 2026-10-07 | F09 | not in main (#1242 open) | docs: batching: per-slot vision tables' VRAM, and the switches that can be flipped per request
+b9610c5 (earlier ce4d833) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge opt-picks: per-slot mrope, #1316, AVX2 Q8_K quantizer, O(n) window plan, --batch-overlap
+12207fa (earlier ffddd39) | Jackwwg83 | 2026-10-07 | F10 | open PR #1288 (not mine) | serve: a long read gives way by what is left to read, not prompt length (#656)
+689f0c7 (earlier 6de760f) | noon-at-cgn | 2026-10-07 | F20 | not in main | batch: STRATA_PREFILL_PIPE_K / prefill_pipe_k - k prompt chunks per run beside decoding slots
+b5d1863 (earlier 3d8a098) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge opt-interleave: #656 read yielding, STRATA_PREFILL_PIPE_K
+c3b5b7e (earlier 674a0af) | noon-at-cgn | 2026-10-07 | F17 | not in main; #1548 open (same env name) | pcie-balance: per-layer PCIe share from measured costs (header-only choice + estimator, CPU test)
+bbec990 (earlier 7254d27) | noon-at-cgn | 2026-10-07 | F17 | not in main; #1548 open (same env name) | expert pool: use the balanced PCIe share when a stage's PcieBalance is on; Verifier::probe_pcie_ms_per_mib
+c1dde40 (earlier ad574a3) | noon-at-cgn | 2026-10-07 | F17 | not in main; #1548 open (same env name) | serve: --pcie-balance / STRATA_PCIE_BALANCE, per-request strata_tune pcie_balance, balance log lines
+2894bf8 (earlier 903af0d) | noon-at-cgn | 2026-10-07 | F17 | not in main; #1548 open (same env name) | docs: PCIE_BALANCE.md
+9ff9797 (earlier 9ccf61e) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge opt-pcie: balanced PCIe share (--pcie-balance)
+cd9565f (earlier 14e66a4) | noon-at-cgn | 2026-10-07 | F17 | not in main; #1548 open (same env name) | docs: OPTIMIZATION_KNOBS.md (every new knob: default, strata_tune key, effect, log line); expert_window_plan_test header notes the balance cases
+ac5b980 (earlier 1244892) | Francesco Albano | 2026-10-06 | F08 | in main as 13eee45 (#905) | pipeline-windows beside the asynchronous adaptive tier: copies queued from the decode loop at a card's gap (#905)
+b3b1d72 (earlier acf426b) | noon-at-cgn | 2026-10-07 | F19 | not in main (gate: not with --batch) | pipeline_gate.hpp: the serial-reason table and the KV pool's reserve-at-a-drain-point plan for --pipeline-windows 2 beside --batch (header-only, CPU test)
+9fd4dd7 (earlier 166e5ec) | noon-at-cgn | 2026-10-07 | - | merge commit | merge opt-gate: pipeline_gate.hpp
+6a1b592 (earlier d84da29) | noon-at-cgn | 2026-10-07 | F19 | not in main (gate: not with --batch) | --pipeline-windows 2 beside --batch: runtime gates (pipeline_serial_reason), KV pool backed at drain points (pipeline_kv_plan), pl_drain syncs the snapshot stream, per-request strata_tune pipeline_windows 0|2, one start-up line with the MiB kept out of each card's cache and the measured pinned RAM, docs
+ec9ec37 (earlier 94cfdf1) | noon-at-cgn | 2026-10-07 | F19 | not in main (gate: not with --batch) | pipelined decode: serve the verified window's pool layers first (Verifier::service max_layers; stage 0 windows one layer per turn); STRATA_PIPELINE_PRIO=0 keeps the old order
+6a75967 (earlier 5f645b0) | noon-at-cgn | 2026-10-07 | F19 | not in main (gate: not with --batch) | verify: print the words and breadcrumbs before the timeout release in service() (from PR #1122's head, ad4eaaa)
+a48f52c (earlier 530afec) | noon-at-cgn | 2026-10-07 | F18 | not in main | verify: the window plan reads nothing over PCIe when the graph has no PCIe part (GpuPlanSink::no_pcie); variant decisions as a CPU-tested header
+1194892 (earlier d68cf5e) | noon-at-cgn | 2026-10-07 | F18 | not in main | verify: capture and run the window graph without flag B's wait and the PCIe group when the PCIe share is 0
+5d3dac2 (earlier 1485da0) | noon-at-cgn | 2026-10-07 | F18 | not in main | docs: the PCIe share's window graph variant and flag B's fold into A (knobs, A/B recipe, memory); test that pcie_frac 0 reaches the engine
+e1cd3fc (earlier 68afab9) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge w2-pathb (PCIe-share-0 window graph variant)
+70d5108 (earlier 8c37027) | noon-at-cgn | 2026-10-07 | F14 | open PR #1598 (91f6238) | aux-cpus: --aux-cpus LIST|auto|off puts the engine's non-pool, non-host threads on spare CPUs
+724fbf2 (earlier f97fe9b) | noon-at-cgn | 2026-10-07 | F15 | not in main | verify: doorbell -> flag A latency per stage, min/avg/p99/max in STRATA_SPLIT_TIMING
+e8ef6d2 (earlier 1dfa3dd) | noon-at-cgn | 2026-10-07 | F15 | not in main | lookahead recall: STRATA_LOOKAHEAD_RECALL=1|2 measures what a router lookahead would catch (no prefetch, off by default)
+1942bca (earlier 546d98c) | noon-at-cgn | 2026-10-07 | F15 | not in main | docs: OPTIMIZATION_KNOBS - --aux-cpus, the doorbell -> flag A line, STRATA_LOOKAHEAD_RECALL, and the draft-vocab / --mtp-q4 production lines with their A/B protocol
+cfb47ab (earlier 72eec3c) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge w2-affinity (aux-cpus, doorbell histogram, lookahead recall)
+2f0e021 (earlier c21c44e) | noon-at-cgn | 2026-10-07 | F22 | not in main | cpu experts: row-interleaved AVX2 Q4_K/Q5_1 kernels (STRATA_KQ_KERNEL=fast), bit-identical to ggml's vec_dot; kq_fast_parity (CPU parity + GB/s/core bench)
+6010fde (earlier 067b4d8) | noon-at-cgn | 2026-10-07 | F23 | not in main (#733 closed, unported) | cpu pool: barrier-free per-expert-counter layer drain (ExpertPool::LayerDrain::Counters), STRATA_POOL_DRAIN; pool_layer_test
+d8cd1ff (earlier 7689e8a) | noon-at-cgn | 2026-10-07 | F23 | not in main (#733 closed, unported) | pool Counters drain: tickets from head_ (epoch-tagged claims) instead of a parked-wait, so a late/sleeping worker can never join a rewritten layer; engine flags and per-request keys
+4c21f29 (earlier 4bfd2ff) | noon-at-cgn | 2026-10-07 | F23 | not in main (#733 closed, unported) | pool Counters drain: 20/80-row chunks by default (measured at 2.3, 3.3 and 5.5 experts per layer); keep the unroll pragma GNU-only
+6f3b8a5 (earlier 7e42aea) | noon-at-cgn | 2026-10-07 | F23 | not in main (#733 closed, unported) | pool: counters drain tail figure described as it is measured
+4043026 (earlier 0642067) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge w2-kernel (fast KQ kernel, counters drain)
+07a47a0 (earlier 1d32fe1) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | docs: OPTIMIZATION_KNOBS for opt-w2 - restart-only vs per-request keys, start-up lines, independence of the settings
+5c609c3 (earlier 00d791e) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | hc_q8_numeric_test: what STRATA_HC_Q8=1 changes in the weights (CPU only)
+5387ef4 (earlier 9588cc2) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | hc read: STRATA_HC_FUSED=1 - the Q8_0 hyper-connection read as ONE launch (bit for bit the two launches), with a CPU emulation test
+a0b41d9 (earlier 4e7ad11) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | hc read: STRATA_HC_FUSED=1 also for the BF16 read - the staged read's three launches as one, bit for bit
+bbf2811 (earlier c6ac365) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | docs/OPTIMIZATION_KNOBS.md: the dense-chain knobs (STRATA_HC_Q8, STRATA_HC_FUSED), what they change, how to read them, which tests cover them
+c70f91f (earlier 77fea7e) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | hc_q8_parity: the BF16 read's one-launch form too (direct, in graphs, with the SMs held), and lo compared for it
+f61d99f (earlier c46d0bb) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | STRATA_HC_FUSED=1 now means the no-wait forms; the one-launch kernels stay behind STRATA_HC_FUSED_ONE_LAUNCH=1 (measured slower)
+7c547c9 (earlier e3d7963) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge w2-dense (STRATA_HC_Q8 audit, STRATA_HC_FUSED)
+28de53a (earlier 999e78c) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | docs: OPTIMIZATION_KNOBS row for STRATA_HC_FUSED_ONE_LAUNCH
+54111a8 (earlier c45d854) | noon-at-cgn | 2026-10-07 | F24 | HC_FUSED not in main | STRATA_HC_FUSED start-up check: one range per poisoned set (the memset over separate cudaMallocs failed with 'invalid argument' and the stale error made fused_gr_read_multi exit); check errors disable the fusion instead of exiting; a fused launch that fails is repeated as the plain read
+f0bc638 (earlier 2c8b650) | noon-at-cgn | 2026-10-07 | - | merge commit | Merge upstream/main (v0.1.40.3, d5ea713) into w2-dense-fix
+ecbc236 (earlier 4098153) | noon-at-cgn | 2026-10-07 | F26 | mine (docs) | docs: UPSTREAM_MERGE_NOTES (conflict resolutions, new upstream knobs for the dual 3080 box, A/B order, tests)
+f0187e2 (earlier 9098e89) | noon-at-cgn | 2026-10-07 | F26 | mine (docs) | docs: UPSTREAM_MERGE_NOTES conversation test results
+428d991 (earlier ac5fc3f) | noon-at-cgn | 2026-10-07 | F16 | open PR #1599 (69fa861) | split: batched draft-layer prompt K/V on the last stage (STRATA_SPLIT_MTP_BATCH=1, default off); draft_kv decline reasons; live parity script

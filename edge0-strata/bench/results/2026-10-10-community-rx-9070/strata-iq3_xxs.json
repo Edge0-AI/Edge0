@@ -1,0 +1,41 @@
+{
+ "exe": "D:\\Dev\\Strata\\engine\\strata.exe",
+ "args": [
+  "--pack",
+  "D:\\Dev\\Strata-data\\packs\\iq3_xxs",
+  "--native",
+  "D:\\Dev\\Strata-data\\models\\IQ3_XXS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+  "--ple-gguf",
+  "D:\\Dev\\Strata-data\\models\\IQ3_XXS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+  "--expert-profile",
+  "D:\\Dev\\Strata\\data\\expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "D:\\Dev\\Strata-data\\mtp\\rt",
+  "--max-context",
+  "131072",
+  "--kv",
+  "int8",
+  "--kv-resident",
+  "32768"
+ ],
+ "cwd": "D:\\Dev\\Strata",
+ "tokenizer": "D:\\Dev\\Strata-data\\packs\\iq3_xxs\\tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3_xxs",
+ "log": "D:\\Dev\\Strata\\strata-iq3_xxs.log",
+ "lib_dirs": [
+  "D:\\Dev\\Strata\\engine\\rocm\\bin"
+ ],
+ "port": 8080,
+ "backend": "hip",
+ "env": {
+  "STRATA_HIPBLASLT_TUNING": "D:\\Dev\\Strata\\tools\\hip\\gfx1201-hipblaslt-100500.txt"
+ }
+}

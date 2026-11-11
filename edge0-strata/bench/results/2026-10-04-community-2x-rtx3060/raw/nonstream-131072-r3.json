@@ -1,0 +1,48 @@
+{
+ "request": {
+  "model": "qwen3.8-flash-next-iq3_s",
+  "max_tokens": 256,
+  "temperature": 0,
+  "stream": false
+ },
+ "prompt_chars": 511566,
+ "filler_repeats": 821,
+ "response": {
+  "id": "chatcmpl-97188c4bb87146ffae9c2178",
+  "object": "chat.completion",
+  "created": 1791084460,
+  "model": "qwen3.8-flash-next-iq3_s",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "The repeated passage explains that mixture-of-experts layers increase model capacity by using many small experts with per-token routing, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.",
+     "reasoning_content": "We need answer user's request. User provided huge repeated text and task: summarise the text above in exactly one sentence. Need output exactly one sentence. Need likely concise. Need ensure one sentence. Could say: \"The repeated passage explains that mixture-of-experts layers increase model capacity by using many small experts with per-token routing, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.\" Need exactly one sentence. No extra. Ensure no semicolon? Semicolon okay but one sentence. Maybe simpler. Need final only one sentence.\n"
+    },
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "prompt_tokens": 98599,
+   "completion_tokens": 170,
+   "total_tokens": 98769,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 98599,
+   "prompt_ms": 74638.9,
+   "prompt_per_token_ms": 0.757,
+   "prompt_per_second": 1321.0,
+   "predicted_n": 170,
+   "predicted_ms": 4252.4,
+   "predicted_per_token_ms": 25.014,
+   "predicted_per_second": 40.0,
+   "draft_n": 143,
+   "draft_n_accepted": 107
+  }
+ }
+}

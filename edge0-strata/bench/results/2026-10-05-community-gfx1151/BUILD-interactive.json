@@ -1,0 +1,14 @@
+{
+ "source": "local-hip",
+ "backend": "hip",
+ "version": "0.1.39",
+ "archs": [
+  "gfx1151"
+ ],
+ "vision": "cpu",
+ "lib_dirs": [
+  "/home/$USER/rocm-10.1-venv/lib/python3.14/site-packages/_rocm_sdk_devel/lib"
+ ],
+ "src": "0f13a782672a3284",
+ "vision_src": "4d89409b228a1daa"
+}

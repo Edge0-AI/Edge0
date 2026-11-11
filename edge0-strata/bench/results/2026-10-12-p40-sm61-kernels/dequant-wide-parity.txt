@@ -1,0 +1,25 @@
+BENCH Q4_K    10240x2560   per-group    1.671 ms ( 40.2 GB/s) | wide    0.323 ms (208.0 GB/s) | 5.18x
+BENCH Q4_K     6144x2560   per-group    1.083 ms ( 37.2 GB/s) | wide    0.194 ms (207.4 GB/s) | 5.57x
+BENCH Q4_K     2560x6144   per-group    1.074 ms ( 37.5 GB/s) | wide    0.194 ms (207.5 GB/s) | 5.53x
+BENCH Q4_K    12288x2560   per-group    1.933 ms ( 41.7 GB/s) | wide    0.385 ms (209.1 GB/s) | 5.02x
+BENCH Q4_K      512x2560   per-group    0.070 ms ( 48.3 GB/s) | wide    0.019 ms (179.2 GB/s) | 3.71x
+BENCH Q4_K     2560x4096   per-group    0.753 ms ( 35.7 GB/s) | wide    0.130 ms (206.0 GB/s) | 5.77x
+BENCH Q5_K    10240x2560   per-group    1.238 ms ( 56.9 GB/s) | wide    0.330 ms (213.4 GB/s) | 3.75x
+BENCH Q5_K     6144x2560   per-group    0.747 ms ( 56.6 GB/s) | wide    0.199 ms (212.1 GB/s) | 3.75x
+BENCH Q5_K     2560x6144   per-group    0.746 ms ( 56.6 GB/s) | wide    0.199 ms (211.9 GB/s) | 3.74x
+BENCH Q5_K    12288x2560   per-group    1.482 ms ( 57.0 GB/s) | wide    0.396 ms (213.7 GB/s) | 3.75x
+BENCH Q5_K      512x2560   per-group    0.069 ms ( 50.8 GB/s) | wide    0.019 ms (182.5 GB/s) | 3.59x
+BENCH Q5_K     2560x4096   per-group    0.502 ms ( 56.1 GB/s) | wide    0.134 ms (210.2 GB/s) | 3.75x
+BENCH Q6_K    10240x2560   per-group    7.248 ms ( 10.2 GB/s) | wide    0.326 ms (227.0 GB/s) | 22.25x
+BENCH Q6_K     6144x2560   per-group    4.448 ms ( 10.0 GB/s) | wide    0.197 ms (224.7 GB/s) | 22.53x
+BENCH Q6_K     2560x6144   per-group    4.450 ms ( 10.0 GB/s) | wide    0.198 ms (224.5 GB/s) | 22.51x
+BENCH Q6_K    12288x2560   per-group    8.667 ms ( 10.2 GB/s) | wide    0.392 ms (226.6 GB/s) | 22.14x
+BENCH Q6_K      512x2560   per-group    0.085 ms ( 43.6 GB/s) | wide    0.020 ms (187.5 GB/s) | 4.30x
+BENCH Q6_K     2560x4096   per-group    2.908 ms ( 10.2 GB/s) | wide    0.133 ms (222.2 GB/s) | 21.86x
+BENCH IQ4_XS  10240x2560   per-group    1.209 ms ( 54.9 GB/s) | wide    0.337 ms (197.2 GB/s) | 3.59x
+BENCH IQ4_XS   6144x2560   per-group    0.732 ms ( 54.4 GB/s) | wide    0.204 ms (195.6 GB/s) | 3.60x
+BENCH IQ4_XS   2560x6144   per-group    0.732 ms ( 54.4 GB/s) | wide    0.204 ms (195.5 GB/s) | 3.59x
+BENCH IQ4_XS  12288x2560   per-group    1.448 ms ( 55.0 GB/s) | wide    0.403 ms (197.7 GB/s) | 3.60x
+BENCH IQ4_XS    512x2560   per-group    0.068 ms ( 48.9 GB/s) | wide    0.021 ms (160.0 GB/s) | 3.27x
+BENCH IQ4_XS   2560x4096   per-group    0.494 ms ( 53.7 GB/s) | wide    0.137 ms (193.4 GB/s) | 3.60x
+dequant_wide_parity: 360 cases, OK (bitwise)

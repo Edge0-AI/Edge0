@@ -1,0 +1,92 @@
+[
+ {
+  "name": "greedy story 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 88,
+  "drafts_offered": 171,
+  "tok_s": 62.5,
+  "text": "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his woolen collar up to his chin, the rough fabric scratching against his stubble. Outside the thick, salt-crusted glass of the lantern room, the Atlantic was a churning cauldron of black and white foam. Rain lashed against the panes in horizontal sheets, blurring the world into a smear of gray and shadow.\n\nInside, however, it was warm. The smell of kerosene and old wood hung heavy in the air, a scent that had defined his life for thirty years.\n\nElias was not a man of many words. He was a man of many tasks. His hands, mapped with scars from broken glass and rusted iron, moved with a rhythm that predated his memory. He checked the clockwork mechanism of the Fresnel lens, ensuring the rotation was smooth, silent, and precise. *Tick. Tick. Tick.* The sound was the heartbeat of the coast."
+ },
+ {
+  "name": "greedy code 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 135,
+  "drafts_offered": 184,
+  "tok_s": 85.2,
+  "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+ },
+ {
+  "name": "greedy sanity",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 78.1,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy, no penalty (sanity)",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 80.5,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64",
+  "tokens": 59,
+  "repeats": 0,
+  "drafts_accepted": 13,
+  "drafts_offered": 48,
+  "tok_s": 46.6,
+  "text": "Aardvark  \nAlbatross  \n\nAlligator   \nAntelope    \nBaboon      \nBadger     \nBeaver       \nBear        \nBird         \nBuffalo     \n\nCat          \nCheetah      \n\nChimpanzee \nClam         \n\n\nCrocodile   \n\n\n\nDolphin      \n\n\n\n\nDonkey       <|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64 story",
+  "tokens": 160,
+  "repeats": 0,
+  "drafts_accepted": 30,
+  "drafts_offered": 101,
+  "tok_s": 51.3,
+  "text": "The wind didn\u2019t just blow; it screamed against the glass of Lantern House 42, rattling like chains in an empty cathedral vaults below Elias\u2019s boots smelled faintly brine and old coffee as he climbed spiral stairs worn smooth by decades feet his hands were calloused from gripping iron railings that had been polished to a dull shine\n\nElias was not merely keeping light alive; He kept order intact. Every night, at precisely 18:07 hours local time\u2014adjusted for leap seconds and magnetic drift\u2014he wound the clockwork mechanism inside brass housing behind Fresnel lens This wasn\u2019t vanity It\u2019s necessity The rotation speed must remain constant or ships lose their bearing in fog where compasses fail\n\nHe spoke softly to himself while working, murmuring numbers aloud because silence made him"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 3",
+  "tokens": 67,
+  "repeats": 0,
+  "drafts_accepted": 14,
+  "drafts_offered": 68,
+  "tok_s": 41.2,
+  "text": "The wind didn\u2019t just blow at Blackwood Rock; it screamed through the gaps in his teeth, like he had no mouth to hold back its fury anymore that night.\u201d Elara pulled her wool coat tighter around herself as she climbed spiral staircase of **Blackrock Lighthouse**. Her boots were slick with salt spray from previous days.<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 11",
+  "tokens": 91,
+  "repeats": 0,
+  "drafts_accepted": 26,
+  "drafts_offered": 54,
+  "tok_s": 48.8,
+  "text": "Lion  \nTiger   \nElephant \nGiraffe    \nZebra     \nPanda       \nKoala      \nKangaroo        \nHippopotamus          \nRhinoceros            \nCamel                 \nCheetah               \nLeopard                \nJaguar                  \nBear                    \nWolf                     \nFox                      \nDog                       \nCat                        \nMouse                   \nRat                         \nSquirrel              \nDeer                      \n\nAntelope                \n\nBuffalo                 \n\n\nBison                   \n\n\n\nElk                    \n\n\n\n\nMoose                  <|im_end|>"
+ },
+ {
+  "name": "greedy frequency=100 last_n=16",
+  "tokens": 11,
+  "repeats": 0,
+  "drafts_accepted": 5,
+  "drafts_offered": 11,
+  "tok_s": 68.8,
+  "text": "1 to 50, separated by commas:<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=4096 (8-row windows)",
+  "tokens": 300,
+  "repeats": 0,
+  "drafts_accepted": 32,
+  "drafts_offered": 107,
+  "tok_s": 52.3,
+  "text": "The ocean is not merely water; it has been, and remains to this day one giant storybook that weaves together geology with biology as wellas human culture into an epic narrative spanning billions years from its earliest beginnings in primordial times through modern-day ecological crises The vast expanse covers more than seventy percent Earth\u2019s surface area making up nearly all life support systems on our planet yet despite being so large humans have only explored less five thousand square kilometers out total 361 million km\u00b2 which means over ninety-nine point nine eight six per cent unexplored territory This makes oceans arguably larger unknown territories compared space exploration where NASA estimates they\u2019ve mapped roughly ten billion stars versus current marine surveys covering just two hundred fifty-six species documented globally against estimated millions undiscovered organisms including deep-sea creatures like anglerfish or vampire squid whose existence was first recorded centuries ago but still remain poorly understood due extreme pressures depths exceeding eleven miles below Pacific Trenches Mariana located near Guam island chain reaching maximum depth known today at approximately thirty-seven feet under pressure equivalent atmospheric levels causing structural collapse if unprotected by specialized vessels capable handling such conditions without failure mechanisms designed specifically for submersible operations operating within these zones require titanium hulls rated withstand forces greater gravity acting upon objects falling vertically downward acceleration rates calculated using Newtonian physics principles applied universally across gravitational fields regardless medium density variations present throughout different layers stratosphere troposphere mesospheres thermoclines etceterally speaking however when discussing aquatic environments instead air masses replace gases dissolved oxygen nitrogen arg"
+ }
+]

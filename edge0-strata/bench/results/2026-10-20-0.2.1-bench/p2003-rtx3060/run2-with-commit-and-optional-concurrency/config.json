@@ -1,0 +1,33 @@
+{
+  "engine_options": {
+    "--pack": "iq3_xxs",
+    "--native": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "--ple-gguf": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+    "--expert-profile": "expert-profile.bin",
+    "--expert-cache": "auto",
+    "--prefill": "auto",
+    "--spec": "4",
+    "--spec-min-p": "0.5",
+    "--mtp": "rt",
+    "--max-context": "32768",
+    "--kv": "int8",
+    "--resident-experts": true,
+    "--pool-workers": "13"
+  },
+  "other_engine_options": {
+    "--pack": "iq3_xxs",
+    "--native": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "--ple-gguf": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+    "--max-context": "32768",
+    "--resident-experts": true
+  },
+  "server_defaults": {
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "top_k": 20,
+    "n_predict": -1
+  },
+  "total_slots": 1,
+  "context": 32768,
+  "source": "effective engine arguments of the profile"
+}

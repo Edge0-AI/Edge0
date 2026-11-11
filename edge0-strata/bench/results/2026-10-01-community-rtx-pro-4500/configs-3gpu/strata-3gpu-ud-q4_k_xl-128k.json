@@ -1,0 +1,41 @@
+{
+  "exe": "build/strata",
+  "args": [
+    "--pack",
+    "packs/ud-q4_k_xl",
+    "--native",
+    "/mnt/fast/models/Qwen3.8-Flash-Next/UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+    "--expert-profile",
+    "data/expert-profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--spec-min-p",
+    "0.5",
+    "--mtp",
+    "mtp/rt",
+    "--max-context",
+    "139264",
+    "--kv",
+    "int8",
+    "--vram-reserve-mib",
+    "1536",
+    "--serve",
+    "--layer-split",
+    "auto",
+    "--split-device",
+    "1,2"
+  ],
+  "cwd": ".",
+  "tokenizer": "packs/ud-q4_k_xl/tokenizer",
+  "model_name": "qwen3.8-flash-next-ud-q4_k_xl",
+  "log": "strata-3gpu-ud-q4_k_xl-128k.log",
+  "host": "127.0.0.1",
+  "port": 8080,
+  "env": {
+    "CUDA_VISIBLE_DEVICES": "GPU-627db4bb-f09b-e5d8-1911-a7cde5605dcc,GPU-7fb40c58-cc03-1fcf-3bd2-5541e9121a76,GPU-11f65dfc-bbba-dcda-7402-95656914e229"
+  }
+}

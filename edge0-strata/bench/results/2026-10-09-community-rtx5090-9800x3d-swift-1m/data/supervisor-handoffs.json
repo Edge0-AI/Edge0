@@ -1,0 +1,1394 @@
+[
+  {
+    "number": 1,
+    "worker": {
+      "status": "ready",
+      "requested_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+      "switch_response": {
+        "requested_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+        "active_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+        "fallback_cause": null,
+        "ok": true
+      },
+      "first_event_id": 4,
+      "started_monotonic_s": 20321.641291153,
+      "ready_monotonic_s": 20337.921068112,
+      "elapsed_s": 16.27977710900086,
+      "startup_phases_seen": [
+        "ready",
+        "starting"
+      ],
+      "pending_write_observed": false,
+      "supervisor": {
+        "state": "running",
+        "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+        "preset": "balanced",
+        "port": 18091,
+        "backend": "NInfer native NVFP4 DFlash2",
+        "pid": 793769,
+        "approval": {
+          "state": "disabled",
+          "model": null,
+          "port": null,
+          "backend": null,
+          "pid": null,
+          "startup": null
+        },
+        "fallback_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-262k",
+        "recovery": null,
+        "lease": {
+          "holders": [],
+          "resume": null
+        },
+        "last_event": "switched",
+        "log_dir": "<MEASUREMENT_ROOT>/live-batches/live-supervisor-v3/daemon-logs",
+        "last_crash_log_dir": null,
+        "startup": {
+          "state": "ready",
+          "elapsed_ms": 6265,
+          "main_loop_ms": null,
+          "slots_idle_ms": null,
+          "ready_ms": 6265,
+          "last_marker": "ninfer /health ready",
+          "last_error": null,
+          "deadline_exceeded": false,
+          "prompt_cache": null
+        },
+        "configuration": {
+          "generation": 2,
+          "last_error": null,
+          "pending": false
+        },
+        "transition": {
+          "generation": 2,
+          "phase": "ready",
+          "requested_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "active_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "error": null,
+          "state": "idle",
+          "action": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv"
+        },
+        "degraded": null
+      },
+      "native_health": {
+        "status": "ok"
+      },
+      "native_models": {
+        "data": [
+          {
+            "created": 1791548464,
+            "id": "hermes-brain",
+            "max_model_len": 262144,
+            "object": "model",
+            "owned_by": "ninfer"
+          }
+        ],
+        "object": "list"
+      },
+      "events": [
+        {
+          "id": 5,
+          "timestamp_ms": 1791548456323,
+          "kind": "prompt_cache_saved",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=saved bytes=15514052760 elapsed_ms=7538 detail=staging unavailable: no qualified prior checkpoint; synchronous SAVE",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 7538
+        },
+        {
+          "id": 6,
+          "timestamp_ms": 1791548458025,
+          "kind": "backend_shutdown",
+          "severity": "info",
+          "message": "native shutdown: unloaded",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 1677
+        },
+        {
+          "id": 7,
+          "timestamp_ms": 1791548458400,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=792281 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=29006",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 2052
+        },
+        {
+          "id": 8,
+          "timestamp_ms": 1791548458412,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "29006 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 9,
+          "timestamp_ms": 1791548458416,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv preset=balanced port=18091 pid=793769",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 793769,
+          "duration_ms": null
+        },
+        {
+          "id": 10,
+          "timestamp_ms": 1791548464682,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=6265",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": null
+        }
+      ],
+      "events_before_submission": [
+        {
+          "id": 1,
+          "timestamp_ms": 1791548426865,
+          "kind": "daemon_started_idle",
+          "severity": "info",
+          "message": "daemon started without a model",
+          "model": null,
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 2,
+          "timestamp_ms": 1791548427183,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=792281",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": null
+        },
+        {
+          "id": 3,
+          "timestamp_ms": 1791548440688,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=13505",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 4,
+          "timestamp_ms": 1791548440689,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=skipped bytes=0 elapsed_ms=0 detail=no saved state",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 0
+        }
+      ],
+      "durable_parent_at_ready": {
+        "filename": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m.state",
+        "file": {
+          "bytes": 15514052760,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232074,
+          "mtime_ns": 1791548456015766150,
+          "ctime_ns": 1791548456321773994
+        },
+        "metadata_file": {
+          "bytes": 171,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232075,
+          "mtime_ns": 1791548456306773610,
+          "ctime_ns": 1791548456321773994
+        },
+        "metadata": {
+          "owner": "hermes-brain",
+          "model_key": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "fingerprint": "490d24667a83e9aa",
+          "saved_at_ms": 1791548456307,
+          "bytes": 15514052760
+        },
+        "native_token_ids": 1000386,
+        "native_header_hex": "535452534553530101000000400000000535eaf5d6d4e8ce5cb923e1193e27f748a8b59c0300000000000000000000000000000000000000e29b6b87449866ff"
+      }
+    },
+    "parent_return": {
+      "status": "ready",
+      "requested_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+      "switch_response": {
+        "requested_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "active_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "fallback_cause": null,
+        "ok": true
+      },
+      "first_event_id": 10,
+      "started_monotonic_s": 20337.931044575,
+      "ready_monotonic_s": 20358.439595027,
+      "elapsed_s": 20.50855058199886,
+      "startup_phases_seen": [
+        "ready",
+        "restoring_cache",
+        "starting"
+      ],
+      "pending_write_observed": false,
+      "supervisor": {
+        "state": "running",
+        "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "preset": "balanced",
+        "port": 18091,
+        "backend": "Strata native Swift IQ3_XXS MTP4",
+        "pid": 794201,
+        "approval": {
+          "state": "disabled",
+          "model": null,
+          "port": null,
+          "backend": null,
+          "pid": null,
+          "startup": null
+        },
+        "fallback_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-262k",
+        "recovery": null,
+        "lease": {
+          "holders": [],
+          "resume": null
+        },
+        "last_event": "switched",
+        "log_dir": "<MEASUREMENT_ROOT>/live-batches/live-supervisor-v3/daemon-logs",
+        "last_crash_log_dir": null,
+        "startup": {
+          "state": "ready",
+          "elapsed_ms": 13005,
+          "main_loop_ms": null,
+          "slots_idle_ms": null,
+          "ready_ms": 13005,
+          "last_marker": "strata /health loaded",
+          "last_error": null,
+          "deadline_exceeded": false,
+          "prompt_cache": {
+            "state": "restored",
+            "bytes": 15514052760,
+            "duration_ms": 6624,
+            "detail": null
+          }
+        },
+        "configuration": {
+          "generation": 2,
+          "last_error": null,
+          "pending": false
+        },
+        "transition": {
+          "generation": 3,
+          "phase": "ready",
+          "requested_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "active_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "error": null,
+          "state": "idle",
+          "action": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m"
+        },
+        "degraded": null
+      },
+      "native_health": {
+        "status": "ok",
+        "max_context": 1048576,
+        "model": "hermes-brain",
+        "images": true,
+        "api_key": false,
+        "loaded": true,
+        "service": "strata"
+      },
+      "native_models": {
+        "object": "list",
+        "data": [
+          {
+            "id": "hermes-brain",
+            "object": "model",
+            "status": {
+              "value": "loaded"
+            },
+            "meta": {
+              "n_ctx": 1048576
+            },
+            "architecture": {
+              "input_modalities": [
+                "text",
+                "image"
+              ],
+              "output_modalities": [
+                "text"
+              ]
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "id": 11,
+          "timestamp_ms": 1791548465610,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=793769 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=28764",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 793769,
+          "duration_ms": 525
+        },
+        {
+          "id": 12,
+          "timestamp_ms": 1791548465623,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "28764 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 13,
+          "timestamp_ms": 1791548465624,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=794201",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 794201,
+          "duration_ms": null
+        },
+        {
+          "id": 14,
+          "timestamp_ms": 1791548478630,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=13005",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 15,
+          "timestamp_ms": 1791548485256,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=restored bytes=15514052760 elapsed_ms=6624",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 6624
+        }
+      ],
+      "events_before_submission": [
+        {
+          "id": 1,
+          "timestamp_ms": 1791548426865,
+          "kind": "daemon_started_idle",
+          "severity": "info",
+          "message": "daemon started without a model",
+          "model": null,
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 2,
+          "timestamp_ms": 1791548427183,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=792281",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": null
+        },
+        {
+          "id": 3,
+          "timestamp_ms": 1791548440688,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=13505",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 4,
+          "timestamp_ms": 1791548440689,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=skipped bytes=0 elapsed_ms=0 detail=no saved state",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 0
+        },
+        {
+          "id": 5,
+          "timestamp_ms": 1791548456323,
+          "kind": "prompt_cache_saved",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=saved bytes=15514052760 elapsed_ms=7538 detail=staging unavailable: no qualified prior checkpoint; synchronous SAVE",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 7538
+        },
+        {
+          "id": 6,
+          "timestamp_ms": 1791548458025,
+          "kind": "backend_shutdown",
+          "severity": "info",
+          "message": "native shutdown: unloaded",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 1677
+        },
+        {
+          "id": 7,
+          "timestamp_ms": 1791548458400,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=792281 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=29006",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 2052
+        },
+        {
+          "id": 8,
+          "timestamp_ms": 1791548458412,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "29006 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 9,
+          "timestamp_ms": 1791548458416,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv preset=balanced port=18091 pid=793769",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 793769,
+          "duration_ms": null
+        },
+        {
+          "id": 10,
+          "timestamp_ms": 1791548464682,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=6265",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": null
+        }
+      ],
+      "durable_parent_at_ready": {
+        "filename": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m.state",
+        "file": {
+          "bytes": 15514052760,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232074,
+          "mtime_ns": 1791548456015766150,
+          "ctime_ns": 1791548478630345850
+        },
+        "metadata_file": {
+          "bytes": 171,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232075,
+          "mtime_ns": 1791548456306773610,
+          "ctime_ns": 1791548478630345850
+        },
+        "metadata": {
+          "owner": "hermes-brain",
+          "model_key": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "fingerprint": "490d24667a83e9aa",
+          "saved_at_ms": 1791548456307,
+          "bytes": 15514052760
+        },
+        "native_token_ids": 1000386,
+        "native_header_hex": "535452534553530101000000400000000535eaf5d6d4e8ce5cb923e1193e27f748a8b59c0300000000000000000000000000000000000000e29b6b87449866ff"
+      }
+    },
+    "durable_parent": {
+      "filename": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m.state",
+      "file": {
+        "bytes": 15514052760,
+        "mode": "0o600",
+        "uid": 1000,
+        "device": 57,
+        "inode": 63232074,
+        "mtime_ns": 1791548456015766150,
+        "ctime_ns": 1791548478630345850
+      },
+      "metadata_file": {
+        "bytes": 171,
+        "mode": "0o600",
+        "uid": 1000,
+        "device": 57,
+        "inode": 63232075,
+        "mtime_ns": 1791548456306773610,
+        "ctime_ns": 1791548478630345850
+      },
+      "metadata": {
+        "owner": "hermes-brain",
+        "model_key": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "fingerprint": "490d24667a83e9aa",
+        "saved_at_ms": 1791548456307,
+        "bytes": 15514052760
+      },
+      "native_token_ids": 1000386,
+      "native_header_hex": "535452534553530101000000400000000535eaf5d6d4e8ce5cb923e1193e27f748a8b59c0300000000000000000000000000000000000000e29b6b87449866ff"
+    },
+    "learned_profile": {
+      "path": "<MEASUREMENT_ROOT>/checkpoints/live-live-supervisor-v3/expert-profiles/qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m-4c85c7e2b03bb505.experts",
+      "file": {
+        "bytes": 196632,
+        "mode": "0o600",
+        "uid": 1000,
+        "device": 57,
+        "inode": 63232077,
+        "mtime_ns": 1791548456350551432,
+        "ctime_ns": 1791548456350551432
+      },
+      "sha256": "c2354d66eabebce4e1497ce0e561b689f6e7da7afacb09ed9c21bc324490184e"
+    },
+    "continuation": {
+      "grade": {
+        "exact_json": {
+          "passed": true,
+          "matched_fields": 8,
+          "expected_fields": 8,
+          "reason": "Exact JSON values, types and keys"
+        },
+        "previous_prefix_tokens": 1000166,
+        "reused_tokens": 1000210,
+        "previous_prefix_reuse_fraction": 1.0000439926972122,
+        "reuse_at_least_99_percent": true,
+        "fresh_tail_tokens": 7
+      },
+      "request_sha256": "9e161db3d702372d2f64a5b5b908f42320fbaf6ec601fd21e5141eb71c6f86ac",
+      "output_sha256": "ff982c41f9834770cebbb00649923fd3b650b0e449f96fea2b57cf3c3a58abfe"
+    },
+    "output_equal_to_initial": true,
+    "native_full_restore_validated": true,
+    "native_restore_log_observed": false,
+    "fresh_publication_before_parent_start": true,
+    "async_capture": false,
+    "pending_observed": false
+  },
+  {
+    "number": 2,
+    "worker": {
+      "status": "ready",
+      "requested_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+      "switch_response": {
+        "requested_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+        "active_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+        "fallback_cause": null,
+        "ok": true
+      },
+      "first_event_id": 15,
+      "started_monotonic_s": 20360.193873242,
+      "ready_monotonic_s": 20371.597723876,
+      "elapsed_s": 11.403850754002633,
+      "startup_phases_seen": [
+        "ready",
+        "starting"
+      ],
+      "pending_write_observed": true,
+      "supervisor": {
+        "state": "running",
+        "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+        "preset": "balanced",
+        "port": 18091,
+        "backend": "NInfer native NVFP4 DFlash2",
+        "pid": 795515,
+        "approval": {
+          "state": "disabled",
+          "model": null,
+          "port": null,
+          "backend": null,
+          "pid": null,
+          "startup": null
+        },
+        "fallback_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-262k",
+        "recovery": null,
+        "lease": {
+          "holders": [],
+          "resume": null
+        },
+        "last_event": "switched",
+        "log_dir": "<MEASUREMENT_ROOT>/live-batches/live-supervisor-v3/daemon-logs",
+        "last_crash_log_dir": null,
+        "startup": {
+          "state": "ready",
+          "elapsed_ms": 6650,
+          "main_loop_ms": null,
+          "slots_idle_ms": null,
+          "ready_ms": 6650,
+          "last_marker": "ninfer /health ready",
+          "last_error": null,
+          "deadline_exceeded": false,
+          "prompt_cache": null
+        },
+        "configuration": {
+          "generation": 2,
+          "last_error": null,
+          "pending": false
+        },
+        "transition": {
+          "generation": 4,
+          "phase": "ready",
+          "requested_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "active_model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "error": null,
+          "state": "idle",
+          "action": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv"
+        },
+        "degraded": null
+      },
+      "native_health": {
+        "status": "ok"
+      },
+      "native_models": {
+        "data": [
+          {
+            "created": 1791548498,
+            "id": "hermes-brain",
+            "max_model_len": 262144,
+            "object": "model",
+            "owned_by": "ninfer"
+          }
+        ],
+        "object": "list"
+      },
+      "events": [
+        {
+          "id": 16,
+          "timestamp_ms": 1791548489981,
+          "kind": "prompt_cache_staged",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=staged bytes=15514052760 elapsed_ms=2628 detail=rpc_saved_tokens=1000386 live_token_ids=1000386",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 2628
+        },
+        {
+          "id": 17,
+          "timestamp_ms": 1791548491409,
+          "kind": "backend_shutdown",
+          "severity": "info",
+          "message": "native shutdown: unloaded",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 794201,
+          "duration_ms": 1427
+        },
+        {
+          "id": 18,
+          "timestamp_ms": 1791548491534,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=794201 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=29004",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 794201,
+          "duration_ms": 1552
+        },
+        {
+          "id": 19,
+          "timestamp_ms": 1791548491553,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "29004 MiB of device memory came back after 15 ms",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 15
+        },
+        {
+          "id": 20,
+          "timestamp_ms": 1791548491557,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv preset=balanced port=18091 pid=795515",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 795515,
+          "duration_ms": null
+        },
+        {
+          "id": 21,
+          "timestamp_ms": 1791548498208,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=6650",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": null
+        }
+      ],
+      "events_before_submission": [
+        {
+          "id": 1,
+          "timestamp_ms": 1791548426865,
+          "kind": "daemon_started_idle",
+          "severity": "info",
+          "message": "daemon started without a model",
+          "model": null,
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 2,
+          "timestamp_ms": 1791548427183,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=792281",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": null
+        },
+        {
+          "id": 3,
+          "timestamp_ms": 1791548440688,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=13505",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 4,
+          "timestamp_ms": 1791548440689,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=skipped bytes=0 elapsed_ms=0 detail=no saved state",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 0
+        },
+        {
+          "id": 5,
+          "timestamp_ms": 1791548456323,
+          "kind": "prompt_cache_saved",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=saved bytes=15514052760 elapsed_ms=7538 detail=staging unavailable: no qualified prior checkpoint; synchronous SAVE",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 7538
+        },
+        {
+          "id": 6,
+          "timestamp_ms": 1791548458025,
+          "kind": "backend_shutdown",
+          "severity": "info",
+          "message": "native shutdown: unloaded",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 1677
+        },
+        {
+          "id": 7,
+          "timestamp_ms": 1791548458400,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=792281 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=29006",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 2052
+        },
+        {
+          "id": 8,
+          "timestamp_ms": 1791548458412,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "29006 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 9,
+          "timestamp_ms": 1791548458416,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv preset=balanced port=18091 pid=793769",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 793769,
+          "duration_ms": null
+        },
+        {
+          "id": 10,
+          "timestamp_ms": 1791548464682,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=6265",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 11,
+          "timestamp_ms": 1791548465610,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=793769 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=28764",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 793769,
+          "duration_ms": 525
+        },
+        {
+          "id": 12,
+          "timestamp_ms": 1791548465623,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "28764 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 13,
+          "timestamp_ms": 1791548465624,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=794201",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 794201,
+          "duration_ms": null
+        },
+        {
+          "id": 14,
+          "timestamp_ms": 1791548478630,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=13005",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 15,
+          "timestamp_ms": 1791548485256,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=restored bytes=15514052760 elapsed_ms=6624",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 6624
+        }
+      ],
+      "durable_parent_at_ready": {
+        "filename": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m.state",
+        "file": {
+          "bytes": 15514052760,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232074,
+          "mtime_ns": 1791548456015766150,
+          "ctime_ns": 1791548487351569382
+        },
+        "metadata_file": {
+          "bytes": 171,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232075,
+          "mtime_ns": 1791548456306773610,
+          "ctime_ns": 1791548478630345850
+        },
+        "metadata": {
+          "owner": "hermes-brain",
+          "model_key": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "fingerprint": "490d24667a83e9aa",
+          "saved_at_ms": 1791548456307,
+          "bytes": 15514052760
+        },
+        "native_token_ids": 1000386,
+        "native_header_hex": "535452534553530101000000400000000535eaf5d6d4e8ce5cb923e1193e27f748a8b59c0300000000000000000000000000000000000000e29b6b87449866ff"
+      }
+    },
+    "parent_return": {
+      "status": "ready",
+      "requested_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+      "switch_response": {
+        "requested_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "active_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "fallback_cause": null,
+        "ok": true
+      },
+      "first_event_id": 21,
+      "started_monotonic_s": 20371.600705248,
+      "ready_monotonic_s": 20391.716294719,
+      "elapsed_s": 20.11558966099983,
+      "startup_phases_seen": [
+        "ready",
+        "restoring_cache",
+        "starting"
+      ],
+      "pending_write_observed": false,
+      "supervisor": {
+        "state": "running",
+        "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "preset": "balanced",
+        "port": 18091,
+        "backend": "Strata native Swift IQ3_XXS MTP4",
+        "pid": 795971,
+        "approval": {
+          "state": "disabled",
+          "model": null,
+          "port": null,
+          "backend": null,
+          "pid": null,
+          "startup": null
+        },
+        "fallback_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-262k",
+        "recovery": null,
+        "lease": {
+          "holders": [],
+          "resume": null
+        },
+        "last_event": "switched",
+        "log_dir": "<MEASUREMENT_ROOT>/live-batches/live-supervisor-v3/daemon-logs",
+        "last_crash_log_dir": null,
+        "startup": {
+          "state": "ready",
+          "elapsed_ms": 12758,
+          "main_loop_ms": null,
+          "slots_idle_ms": null,
+          "ready_ms": 12758,
+          "last_marker": "strata /health loaded",
+          "last_error": null,
+          "deadline_exceeded": false,
+          "prompt_cache": {
+            "state": "restored",
+            "bytes": 15514052760,
+            "duration_ms": 6146,
+            "detail": null
+          }
+        },
+        "configuration": {
+          "generation": 2,
+          "last_error": null,
+          "pending": false
+        },
+        "transition": {
+          "generation": 5,
+          "phase": "ready",
+          "requested_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "active_model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "error": null,
+          "state": "idle",
+          "action": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m"
+        },
+        "degraded": null
+      },
+      "native_health": {
+        "status": "ok",
+        "max_context": 1048576,
+        "model": "hermes-brain",
+        "images": true,
+        "api_key": false,
+        "loaded": true,
+        "service": "strata"
+      },
+      "native_models": {
+        "object": "list",
+        "data": [
+          {
+            "id": "hermes-brain",
+            "object": "model",
+            "status": {
+              "value": "loaded"
+            },
+            "meta": {
+              "n_ctx": 1048576
+            },
+            "architecture": {
+              "input_modalities": [
+                "text",
+                "image"
+              ],
+              "output_modalities": [
+                "text"
+              ]
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "id": 22,
+          "timestamp_ms": 1791548499361,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=795515 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=28764",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 795515,
+          "duration_ms": 600
+        },
+        {
+          "id": 23,
+          "timestamp_ms": 1791548499364,
+          "kind": "prompt_cache_saved",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=saved bytes=15514052760 elapsed_ms=11577 detail=rpc_saved_tokens=1000386 live_token_ids=1000386",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 11577
+        },
+        {
+          "id": 24,
+          "timestamp_ms": 1791548499374,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "28764 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 25,
+          "timestamp_ms": 1791548499376,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=795971",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 795971,
+          "duration_ms": null
+        },
+        {
+          "id": 26,
+          "timestamp_ms": 1791548512135,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=12758",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 27,
+          "timestamp_ms": 1791548518282,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=restored bytes=15514052760 elapsed_ms=6146",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 6146
+        }
+      ],
+      "events_before_submission": [
+        {
+          "id": 1,
+          "timestamp_ms": 1791548426865,
+          "kind": "daemon_started_idle",
+          "severity": "info",
+          "message": "daemon started without a model",
+          "model": null,
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 2,
+          "timestamp_ms": 1791548427183,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=792281",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": null
+        },
+        {
+          "id": 3,
+          "timestamp_ms": 1791548440688,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=13505",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 4,
+          "timestamp_ms": 1791548440689,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=skipped bytes=0 elapsed_ms=0 detail=no saved state",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 0
+        },
+        {
+          "id": 5,
+          "timestamp_ms": 1791548456323,
+          "kind": "prompt_cache_saved",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=saved bytes=15514052760 elapsed_ms=7538 detail=staging unavailable: no qualified prior checkpoint; synchronous SAVE",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 7538
+        },
+        {
+          "id": 6,
+          "timestamp_ms": 1791548458025,
+          "kind": "backend_shutdown",
+          "severity": "info",
+          "message": "native shutdown: unloaded",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 1677
+        },
+        {
+          "id": 7,
+          "timestamp_ms": 1791548458400,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=792281 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=29006",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 792281,
+          "duration_ms": 2052
+        },
+        {
+          "id": 8,
+          "timestamp_ms": 1791548458412,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "29006 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 9,
+          "timestamp_ms": 1791548458416,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv preset=balanced port=18091 pid=793769",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 793769,
+          "duration_ms": null
+        },
+        {
+          "id": 10,
+          "timestamp_ms": 1791548464682,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=6265",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 11,
+          "timestamp_ms": 1791548465610,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=793769 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=28764",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 793769,
+          "duration_ms": 525
+        },
+        {
+          "id": 12,
+          "timestamp_ms": 1791548465623,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "28764 MiB of device memory came back after 10 ms",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": 10
+        },
+        {
+          "id": 13,
+          "timestamp_ms": 1791548465624,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m preset=balanced port=18091 pid=794201",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 794201,
+          "duration_ms": null
+        },
+        {
+          "id": 14,
+          "timestamp_ms": 1791548478630,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=13005",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": null
+        },
+        {
+          "id": 15,
+          "timestamp_ms": 1791548485256,
+          "kind": "prompt_cache_restored",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=restored bytes=15514052760 elapsed_ms=6624",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 6624
+        },
+        {
+          "id": 16,
+          "timestamp_ms": 1791548489981,
+          "kind": "prompt_cache_staged",
+          "severity": "info",
+          "message": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m state=staged bytes=15514052760 elapsed_ms=2628 detail=rpc_saved_tokens=1000386 live_token_ids=1000386",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 2628
+        },
+        {
+          "id": 17,
+          "timestamp_ms": 1791548491409,
+          "kind": "backend_shutdown",
+          "severity": "info",
+          "message": "native shutdown: unloaded",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 794201,
+          "duration_ms": 1427
+        },
+        {
+          "id": 18,
+          "timestamp_ms": 1791548491534,
+          "kind": "model_stopped",
+          "severity": "info",
+          "message": "stopped pid=794201 status=ExitStatus(unix_wait_status(0)) gpu_held_mib=29004",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": 794201,
+          "duration_ms": 1552
+        },
+        {
+          "id": 19,
+          "timestamp_ms": 1791548491553,
+          "kind": "gpu_memory_released",
+          "severity": "info",
+          "message": "29004 MiB of device memory came back after 15 ms",
+          "model": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "pid": null,
+          "duration_ms": 15
+        },
+        {
+          "id": 20,
+          "timestamp_ms": 1791548491557,
+          "kind": "model_started",
+          "severity": "info",
+          "message": "started model=qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv preset=balanced port=18091 pid=795515",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": 795515,
+          "duration_ms": null
+        },
+        {
+          "id": 21,
+          "timestamp_ms": 1791548498208,
+          "kind": "startup_marker",
+          "severity": "info",
+          "message": "startup_marker=ready elapsed_ms=6650",
+          "model": "qwen3.8-27b-ninfer-awq-gptq-dflash2-262k-nvfp4kv",
+          "pid": null,
+          "duration_ms": null
+        }
+      ],
+      "durable_parent_at_ready": {
+        "filename": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m.state",
+        "file": {
+          "bytes": 15514052760,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232123,
+          "mtime_ns": 1791548498741861303,
+          "ctime_ns": 1791548512134204503
+        },
+        "metadata_file": {
+          "bytes": 171,
+          "mode": "0o600",
+          "uid": 1000,
+          "device": 57,
+          "inode": 63232131,
+          "mtime_ns": 1791548498919865865,
+          "ctime_ns": 1791548512134204503
+        },
+        "metadata": {
+          "owner": "hermes-brain",
+          "model_key": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+          "fingerprint": "490d24667a83e9aa",
+          "saved_at_ms": 1791548491553,
+          "bytes": 15514052760
+        },
+        "native_token_ids": 1000386,
+        "native_header_hex": "535452534553530101000000400000000535eaf5d6d4e8ce5cb923e1193e27f748a8b59c0300000000000000000000000000000000000000e29b6b87449866ff"
+      }
+    },
+    "durable_parent": {
+      "filename": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m.state",
+      "file": {
+        "bytes": 15514052760,
+        "mode": "0o600",
+        "uid": 1000,
+        "device": 57,
+        "inode": 63232123,
+        "mtime_ns": 1791548498741861303,
+        "ctime_ns": 1791548512134204503
+      },
+      "metadata_file": {
+        "bytes": 171,
+        "mode": "0o600",
+        "uid": 1000,
+        "device": 57,
+        "inode": 63232131,
+        "mtime_ns": 1791548498919865865,
+        "ctime_ns": 1791548512134204503
+      },
+      "metadata": {
+        "owner": "hermes-brain",
+        "model_key": "qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m",
+        "fingerprint": "490d24667a83e9aa",
+        "saved_at_ms": 1791548491553,
+        "bytes": 15514052760
+      },
+      "native_token_ids": 1000386,
+      "native_header_hex": "535452534553530101000000400000000535eaf5d6d4e8ce5cb923e1193e27f748a8b59c0300000000000000000000000000000000000000e29b6b87449866ff"
+    },
+    "learned_profile": {
+      "path": "<MEASUREMENT_ROOT>/checkpoints/live-live-supervisor-v3/expert-profiles/qwen3.8-flash-next-swift-1.5-strata-iq3-xxs-yarn-1m-4c85c7e2b03bb505.experts",
+      "file": {
+        "bytes": 196632,
+        "mode": "0o600",
+        "uid": 1000,
+        "device": 57,
+        "inode": 63232118,
+        "mtime_ns": 1791548489984070073,
+        "ctime_ns": 1791548489984070073
+      },
+      "sha256": "7a27de708224cb58edf60b9494fb1083d89f46d9f76ee3ef99364b03e05d90fc"
+    },
+    "continuation": {
+      "grade": {
+        "exact_json": {
+          "passed": true,
+          "matched_fields": 8,
+          "expected_fields": 8,
+          "reason": "Exact JSON values, types and keys"
+        },
+        "previous_prefix_tokens": 1000166,
+        "reused_tokens": 1000210,
+        "previous_prefix_reuse_fraction": 1.0000439926972122,
+        "reuse_at_least_99_percent": true,
+        "fresh_tail_tokens": 7
+      },
+      "request_sha256": "9e161db3d702372d2f64a5b5b908f42320fbaf6ec601fd21e5141eb71c6f86ac",
+      "output_sha256": "ff982c41f9834770cebbb00649923fd3b650b0e449f96fea2b57cf3c3a58abfe"
+    },
+    "output_equal_to_initial": true,
+    "native_full_restore_validated": true,
+    "native_restore_log_observed": false,
+    "fresh_publication_before_parent_start": true,
+    "async_capture": true,
+    "pending_observed": true
+  }
+]

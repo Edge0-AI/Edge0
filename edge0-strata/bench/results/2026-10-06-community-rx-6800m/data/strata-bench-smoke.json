@@ -1,0 +1,58 @@
+{
+ "tag": "smoke",
+ "max_tokens": 256,
+ "runs_per_config": 1,
+ "warmup": true,
+ "configs": [
+  {
+   "requested_tokens": 512,
+   "prompt_n": 535,
+   "cache_n": [
+    0
+   ],
+   "generated_n": [
+    256
+   ],
+   "runs": 1,
+   "prompt_tok_s_median_range": "37.5 (single run)",
+   "decode_tok_s_median_range": "23.7 (single run)",
+   "ttft_s_median_range": "14.3 (single run)",
+   "wall_s": [
+    25.08
+   ],
+   "rows": [
+    {
+     "wall_s": 25.08,
+     "prompt_n": 535,
+     "cache_n": 0,
+     "prompt_ms": 14271.5,
+     "prompt_tok_s": 37.5,
+     "predicted_n": 256,
+     "predicted_ms": 10803.9,
+     "decode_tok_s": 23.7,
+     "draft_n": 212,
+     "draft_accepted": 142,
+     "finish": "length",
+     "answer_head": "The provided text is a documentation header for `tools/iq_pack.py`, a utility designed to create native packs for GGUF model files using i-quantization formats ",
+     "run": 1
+    }
+   ]
+  }
+ ],
+ "recall": {
+  "wall_s": 45.69,
+  "prompt_n": 2296,
+  "cache_n": 0,
+  "prompt_ms": 43946.4,
+  "prompt_tok_s": 52.2,
+  "predicted_n": 9,
+  "predicted_ms": 1671.6,
+  "decode_tok_s": 5.4,
+  "draft_n": 6,
+  "draft_accepted": 5,
+  "finish": "stop",
+  "answer_head": "XYLOPHONE-7742",
+  "needle": "XYLOPHONE-7742",
+  "needle_found": true
+ }
+}

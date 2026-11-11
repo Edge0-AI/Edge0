@@ -1,0 +1,78 @@
+{
+ "tag": "default8k",
+ "max_tokens": 256,
+ "runs_per_config": 3,
+ "warmup": false,
+ "configs": [
+  {
+   "requested_tokens": 8192,
+   "prompt_n": 8726,
+   "cache_n": [
+    0,
+    0,
+    0
+   ],
+   "generated_n": [
+    256,
+    256,
+    256
+   ],
+   "runs": 3,
+   "prompt_tok_s_median_range": "92.2 (89.7-95.6)",
+   "decode_tok_s_median_range": "14.7 (14.1-14.7)",
+   "ttft_s_median_range": "94.6 (91.3-97.2)",
+   "wall_s": [
+    114.85,
+    109.6,
+    112.06
+   ],
+   "rows": [
+    {
+     "wall_s": 114.85,
+     "prompt_n": 8726,
+     "cache_n": 0,
+     "prompt_ms": 97247.8,
+     "prompt_tok_s": 89.7,
+     "predicted_n": 256,
+     "predicted_ms": 17420.7,
+     "decode_tok_s": 14.7,
+     "draft_n": 195,
+     "draft_accepted": 150,
+     "finish": "length",
+     "answer_head": "This script converts GGUF model files into a specialized \"Strata\" pack format for efficient inference. It handles split model shards, validates metadata consist",
+     "run": 1
+    },
+    {
+     "wall_s": 109.6,
+     "prompt_n": 8727,
+     "cache_n": 0,
+     "prompt_ms": 91315.5,
+     "prompt_tok_s": 95.6,
+     "predicted_n": 256,
+     "predicted_ms": 18189.3,
+     "decode_tok_s": 14.1,
+     "draft_n": 202,
+     "draft_accepted": 134,
+     "finish": "length",
+     "answer_head": "This script (`tools/iq_pack.py`) converts GGUF model files into a specialized \"Strata\" pack format for efficient inference. It handles multi-shard models, valid",
+     "run": 2
+    },
+    {
+     "wall_s": 112.06,
+     "prompt_n": 8727,
+     "cache_n": 0,
+     "prompt_ms": 94624.5,
+     "prompt_tok_s": 92.2,
+     "predicted_n": 256,
+     "predicted_ms": 17361.5,
+     "decode_tok_s": 14.7,
+     "draft_n": 195,
+     "draft_accepted": 144,
+     "finish": "length",
+     "answer_head": "This script (`tools/iq_pack.py`) converts GGUF model files into a specialized \"Strata\" pack format for efficient inference. It handles split model shards, valid",
+     "run": 3
+    }
+   ]
+  }
+ ]
+}

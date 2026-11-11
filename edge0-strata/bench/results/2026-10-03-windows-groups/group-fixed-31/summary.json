@@ -1,0 +1,105 @@
+{
+  "url": "http://127.0.0.1:8086",
+  "cases": [
+    "short",
+    "4k"
+  ],
+  "runs_per_case": 3,
+  "request_settings": {
+    "max_tokens": 256,
+    "temperature": 0,
+    "reasoning_effort": "none",
+    "stream": true,
+    "warmup_excluded": true
+  },
+  "cache_note": "No server cache-clear API is used. Every measured prompt starts with a unique nonce; actual prefix reuse is taken from before/after engine history and API usage. The target size uses /v1/messages/count_tokens; completion usage is also retained for the actual OpenAI request.",
+  "case_results": {
+    "short": {
+      "runs": 3,
+      "prompt_tokens": {
+        "median": 94,
+        "min": 94,
+        "max": 94
+      },
+      "prefix_reused_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "completion_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256
+      },
+      "client_ttft_s": {
+        "median": 2.2053168999991613,
+        "min": 2.1930778000096325,
+        "max": 3.1711085999995703
+      },
+      "client_total_latency_s": {
+        "median": 9.524396900000283,
+        "min": 9.28977250000753,
+        "max": 10.836528599989833
+      },
+      "prompt_tok_s": {
+        "median": 43.55077835433655,
+        "min": 30.009896880886245,
+        "max": 43.86783647563934
+      },
+      "decode_tok_s": {
+        "median": 34.77504890241252,
+        "min": 33.264465494614015,
+        "max": 35.9924640778337
+      },
+      "finish_reasons": [
+        "length",
+        "length",
+        "length"
+      ]
+    },
+    "4k": {
+      "runs": 3,
+      "prompt_tokens": {
+        "median": 4022,
+        "min": 4022,
+        "max": 4022
+      },
+      "prefix_reused_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "completion_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256
+      },
+      "client_ttft_s": {
+        "median": 12.828954600001452,
+        "min": 12.767132599998149,
+        "max": 12.922846600005869
+      },
+      "client_total_latency_s": {
+        "median": 20.134751299992786,
+        "min": 19.91707630000019,
+        "max": 20.47054140000546
+      },
+      "prompt_tok_s": {
+        "median": 315.39161255920453,
+        "min": 313.14963756549906,
+        "max": 316.7452885910269
+      },
+      "decode_tok_s": {
+        "median": 34.60020543871979,
+        "min": 33.78289213228114,
+        "max": 35.957076240238216
+      },
+      "finish_reasons": [
+        "length",
+        "length",
+        "length"
+      ]
+    }
+  },
+  "raw_jsonl": "bench\\results\\2026-10-03-windows-groups\\group-fixed-31\\raw.jsonl"
+}

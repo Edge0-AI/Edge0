@@ -1,0 +1,412 @@
+{
+  "8k-512": {
+    "failure": null,
+    "passed": 24,
+    "requests": 24,
+    "authentication_checked": true,
+    "loopback_port": 18110,
+    "profile": {
+      "engine": "strata",
+      "exe": "$BENCH_ROOT/build-sycl/strata",
+      "args": [
+        "--pack",
+        "$PACK_DIR",
+        "--native",
+        "$MODEL_DIR/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+        "--ple-gguf",
+        "$MODEL_DIR/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+        "--expert-profile",
+        "$EXPERT_PROFILE",
+        "--expert-cache",
+        "auto",
+        "--stream-experts",
+        "--pcie-frac",
+        "1",
+        "--prefill",
+        "512",
+        "--spec",
+        "4",
+        "--mtp-max-t",
+        "4",
+        "--suffix-draft",
+        "0",
+        "--mtp",
+        "$MTP_DIR",
+        "--max-context",
+        "8192",
+        "--kv",
+        "int8",
+        "--vram-reserve-mib",
+        "3072",
+        "--adapt-every",
+        "0",
+        "--adapt-swaps",
+        "0",
+        "--pool-workers",
+        "4",
+        "--prompt-cache",
+        "0",
+        "--prompt-cache-every",
+        "0",
+        "--conversation-cache-mib",
+        "0",
+        "--short-read",
+        "0",
+        "--spec-min-p",
+        "0.5"
+      ],
+      "cwd": "$STRATA_ROOT",
+      "tokenizer": "$PACK_DIR/tokenizer",
+      "model_name": "qwen3.8-flash-next-strata-iq2-xs-8k",
+      "backend": "sycl",
+      "host": "127.0.0.1",
+      "parallel": 1,
+      "api_monitor": false,
+      "open_browser": false,
+      "sampling": {
+        "temperature": 0.0,
+        "seed": 17
+      },
+      "engine_silence_s": 180,
+      "cors_origins": [],
+      "allowed_hosts": [
+        "127.0.0.1",
+        "localhost"
+      ],
+      "log": "/run/strata-arc/v01402-api-512-1/content/engine.log"
+    },
+    "content_persisted": false
+  },
+  "8k-4096": {
+    "failure": null,
+    "passed": 24,
+    "requests": 24,
+    "authentication_checked": true,
+    "loopback_port": 18110,
+    "profile": {
+      "engine": "strata",
+      "exe": "$BENCH_ROOT/build-sycl/strata",
+      "args": [
+        "--pack",
+        "$PACK_DIR",
+        "--native",
+        "$MODEL_DIR/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+        "--ple-gguf",
+        "$MODEL_DIR/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+        "--expert-profile",
+        "$EXPERT_PROFILE",
+        "--expert-cache",
+        "auto",
+        "--stream-experts",
+        "--pcie-frac",
+        "1",
+        "--prefill",
+        "4096",
+        "--spec",
+        "4",
+        "--mtp-max-t",
+        "4",
+        "--suffix-draft",
+        "0",
+        "--mtp",
+        "$MTP_DIR",
+        "--max-context",
+        "8192",
+        "--kv",
+        "int8",
+        "--vram-reserve-mib",
+        "3072",
+        "--adapt-every",
+        "0",
+        "--adapt-swaps",
+        "0",
+        "--pool-workers",
+        "4",
+        "--prompt-cache",
+        "0",
+        "--prompt-cache-every",
+        "0",
+        "--conversation-cache-mib",
+        "0",
+        "--short-read",
+        "0",
+        "--spec-min-p",
+        "0.5"
+      ],
+      "cwd": "$STRATA_ROOT",
+      "tokenizer": "$PACK_DIR/tokenizer",
+      "model_name": "qwen3.8-flash-next-strata-iq2-xs-8k",
+      "backend": "sycl",
+      "host": "127.0.0.1",
+      "parallel": 1,
+      "api_monitor": false,
+      "open_browser": false,
+      "sampling": {
+        "temperature": 0.0,
+        "seed": 17
+      },
+      "engine_silence_s": 180,
+      "cors_origins": [],
+      "allowed_hosts": [
+        "127.0.0.1",
+        "localhost"
+      ],
+      "log": "/run/strata-arc/v01402-api-4096-1/content/engine.log"
+    },
+    "content_persisted": false
+  },
+  "262k-512": {
+    "run_id": "v01402-context-api-512-1",
+    "logical_context": 262144,
+    "internal_context": 262152,
+    "rows": [
+      {
+        "label": "short-sentinel",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 20,
+        "max_tokens": 32,
+        "usage": {
+          "prompt_tokens": 20,
+          "completion_tokens": 5,
+          "total_tokens": 25,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "45f978a5f0d3b223c3bdb74aebf770760138f0afc194b5dd3a025b48ccb97ed4",
+        "finish_reason": "stop",
+        "elapsed_s": 0.5871463259973098,
+        "ttft_s": 0.4991585909956484,
+        "output_span_s": 0.08707828800106654,
+        "post_first_tps": 45.93567572149567
+      },
+      {
+        "label": "short-arithmetic",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 30,
+        "max_tokens": 32,
+        "usage": {
+          "prompt_tokens": 30,
+          "completion_tokens": 3,
+          "total_tokens": 33,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "aea92132c4cbeb263e6ac2bf6c183b5d81737f179f21efdc5863739672f0f470",
+        "finish_reason": "stop",
+        "elapsed_s": 0.6474424050029484,
+        "ttft_s": 0.5297062690005987,
+        "output_span_s": 0.04115165399707621,
+        "model_math_expected_correct": false,
+        "post_first_tps": 48.600719673189765
+      },
+      {
+        "label": "short-code",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 39,
+        "max_tokens": 640,
+        "usage": {
+          "prompt_tokens": 39,
+          "completion_tokens": 640,
+          "total_tokens": 679,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "0cfefbf212bc9f281b7d6db86de0cff9837fa64d6418b94b9969dcc1257d824c",
+        "finish_reason": "length",
+        "elapsed_s": 14.12508190000517,
+        "ttft_s": 0.5644106310064672,
+        "output_span_s": 13.559835430998646,
+        "post_first_tps": 47.12446572465071
+      },
+      {
+        "label": "facts-8192",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 8064,
+        "max_tokens": 128,
+        "usage": {
+          "prompt_tokens": 8064,
+          "completion_tokens": 37,
+          "total_tokens": 8101,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "1f3e34f9d9c14266edfba45bb269ca494bea3da325e8f812dee3c313b6523241",
+        "finish_reason": "stop",
+        "elapsed_s": 23.95944005099591,
+        "ttft_s": 23.308079640999495,
+        "output_span_s": 0.6503994269951363,
+        "post_first_tps": 55.35060226962532
+      },
+      {
+        "label": "facts-32768",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 32640,
+        "max_tokens": 128,
+        "usage": {
+          "prompt_tokens": 32640,
+          "completion_tokens": 33,
+          "total_tokens": 32673,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "02713115b2fbcfabfb34ddfa72aa6350f79f0ffe15f51dcb82b8f8d36daa3d83",
+        "finish_reason": "stop",
+        "elapsed_s": 94.08873693899659,
+        "ttft_s": 93.41181218999554,
+        "output_span_s": 0.6758949190043495,
+        "post_first_tps": 47.34463760600348
+      },
+      {
+        "label": "facts-65536",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 65408,
+        "max_tokens": 128,
+        "usage": {
+          "prompt_tokens": 65408,
+          "completion_tokens": 30,
+          "total_tokens": 65438,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "ea747a073a28bc17437f6be4f78f56457b3b18046d58e7c42f31fa0c3bee8d86",
+        "finish_reason": "stop",
+        "elapsed_s": 193.14665208500082,
+        "ttft_s": 192.49806301100034,
+        "output_span_s": 0.647412133999751,
+        "post_first_tps": 44.79372331321049
+      },
+      {
+        "label": "facts-131072",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 130944,
+        "max_tokens": 128,
+        "usage": {
+          "prompt_tokens": 130944,
+          "completion_tokens": 37,
+          "total_tokens": 130981,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "b6b20328d40106eeb19cb637e6385ab3c8e45d0f58dcc5254f076cdc55605787",
+        "finish_reason": "stop",
+        "elapsed_s": 409.1125468879982,
+        "ttft_s": 408.2754174350048,
+        "output_span_s": 0.8361031969980104,
+        "post_first_tps": 43.05688595529394
+      },
+      {
+        "label": "facts-262144",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 262016,
+        "max_tokens": 128,
+        "usage": {
+          "prompt_tokens": 262016,
+          "completion_tokens": 128,
+          "total_tokens": 262144,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "c47479579e97aeb53463222f06d2734ec184ea2353a17f003465a5e65fb615a5",
+        "finish_reason": "length",
+        "elapsed_s": 914.6785091749989,
+        "ttft_s": 911.3639053750012,
+        "output_span_s": 3.3137420220009517,
+        "post_first_tps": 38.32525258659484
+      },
+      {
+        "label": "oversize-one-token",
+        "http": 400,
+        "valid": true,
+        "rendered_prompt_tokens": 262016,
+        "max_tokens": 129,
+        "usage": {},
+        "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "finish_reason": null,
+        "elapsed_s": 0.5764813370042248,
+        "post_first_tps": null
+      },
+      {
+        "label": "post-full-isolation",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 19,
+        "max_tokens": 32,
+        "usage": {
+          "prompt_tokens": 19,
+          "completion_tokens": 5,
+          "total_tokens": 24,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "7a9b0b11d402d62fd6fcaf7744aa26364b78669a5aa317c032ab397f2c77c699",
+        "finish_reason": "stop",
+        "elapsed_s": 0.4837543989997357,
+        "ttft_s": 0.41912436699931277,
+        "output_span_s": 0.06366241299838293,
+        "post_first_tps": 62.83142299525471
+      },
+      {
+        "label": "facts-full-repeat",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 262016,
+        "max_tokens": 128,
+        "usage": {
+          "prompt_tokens": 262016,
+          "completion_tokens": 128,
+          "total_tokens": 262144,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "e6c370273de79edf4cb6b606e2638af665a91455610efc15a4e320cb65d2d96f",
+        "finish_reason": "length",
+        "elapsed_s": 915.2546048380027,
+        "ttft_s": 911.3067076360021,
+        "output_span_s": 3.9470189030034817,
+        "post_first_tps": 32.176182359643484
+      },
+      {
+        "label": "history",
+        "http": 200,
+        "valid": true,
+        "rendered_prompt_tokens": 46,
+        "max_tokens": 32,
+        "usage": {
+          "prompt_tokens": 46,
+          "completion_tokens": 3,
+          "total_tokens": 49,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "output_sha256": "43aafb893521df3a8f416c74c452ce304ac9f272af8656b436ae40692e786d1b",
+        "finish_reason": "stop",
+        "elapsed_s": 0.6629222689953167,
+        "ttft_s": 0.5902045209950302,
+        "output_span_s": 0.07170939700154122,
+        "post_first_tps": 27.890347480637924
+      }
+    ],
+    "failure": null,
+    "api_exit": 0,
+    "content_saved": false
+  }
+}

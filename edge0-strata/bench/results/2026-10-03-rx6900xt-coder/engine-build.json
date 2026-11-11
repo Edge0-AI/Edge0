@@ -1,0 +1,20 @@
+{
+ "source": "prebuilt",
+ "backend": "hip",
+ "platform": "windows-x64",
+ "version": "0.1.38",
+ "archs": [
+  "gfx1100",
+  "gfx1101",
+  "gfx1102",
+  "gfx1200",
+  "gfx1201",
+  "gfx1030"
+ ],
+ "rocm": "10.2.0a20260930",
+ "hipblaslt_version": 100500,
+ "vision": "none",
+ "lib_dirs": [
+  "rocm/bin"
+ ]
+}

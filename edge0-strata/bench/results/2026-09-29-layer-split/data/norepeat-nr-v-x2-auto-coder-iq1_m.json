@@ -1,0 +1,92 @@
+[
+ {
+  "name": "greedy story 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 88,
+  "drafts_offered": 193,
+  "tok_s": 74.6,
+  "text": "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with salt and age. He was seventy years old, but he moved with the grace of a man who had spent decades on a narrow spiral staircase. His hands, rough as sandpaper, gripped the iron railing as he ascended the final flight of steps to the lantern room.\n\nBelow him, the Atlantic churned in a frenzy, whitecaps exploding against the black rocks like fireworks. Above, the sky was a bruised purple, heavy with rain that hadn\u2019t yet fallen.\n\nElias checked the clock. 11:42 PM. The light was due.\n\nHe didn\u2019t flip a switch. He didn\u2019t press a button. He reached for the heavy brass lever that had worn smooth by his palm over the years. With a grunt that matched the strain of his aging muscles, he pulled it down.\n\n*Clunk.*\n\nThe"
+ },
+ {
+  "name": "greedy code 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 136,
+  "drafts_offered": 181,
+  "tok_s": 105.5,
+  "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+ },
+ {
+  "name": "greedy sanity",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 85.8,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy, no penalty (sanity)",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 94.3,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64",
+  "tokens": 118,
+  "repeats": 0,
+  "drafts_accepted": 37,
+  "drafts_offered": 105,
+  "tok_s": 67.9,
+  "text": "Aardvark  \nAlbatross   \nAlligator    \nAntelope     \nBaboon       \nBadger      \nBeaver        \nBear          \nBird of Paradise \nBuffalo         \nCamel           \nCheetah            \nChimpanzee             \nCrane              \nCrocodile                \nDeer                 \nDolphin               \nDonkey                  \nElephant                   \nFlamingo                    \nFox                       \nGiraffe                     \nGoat                      \nHippopotamus  \nIguana       \nJaguar        \nKangaroo      \nKoala          \nLion         \nLeopard     \nMonkey    \nMoose   \nOstrich \nOtter\nPanda<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64 story",
+  "tokens": 147,
+  "repeats": 0,
+  "drafts_accepted": 26,
+  "drafts_offered": 103,
+  "tok_s": 63.2,
+  "text": "The wind didn\u2019t just blow; it screamed against the glass of Lantern House 42, rattling like chains in an empty cathedral hall outside my window at midnight on November third this year\u2014so I pulled up to that date and time for context because you asked me about a lighthouse keeper but gave no specifics beyond \u201cshort story,\u201d so let\u2019s set it: isolated coastal station off the Oregon coast during winter storm season, 1987.\n\nMy name is Elias Vane (I made this fictional; real keepers often kept journals signed with initials only), and I\u2019m writing from memory because my logbook got waterlogged when a rogue wave breached lower storage room at dawn\u2014so here\u2019s what happened:<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 3",
+  "tokens": 109,
+  "repeats": 0,
+  "drafts_accepted": 13,
+  "drafts_offered": 56,
+  "tok_s": 54.1,
+  "text": "The wind didn\u2019t just blow at Cape Hollow; it screamed through the gaps in my cottage\u2019s shutters, rattling them like loose teeth until they settled into silence with every storm break out of three hundred days here being storms that broke something else again but mostly kept me warm because I burned coal and wood whenever we had any left over from last winter when even then if you\u2019re lucky enough to get through it all without freezing yourself so hard your own thoughts become ice too\n\nBut Elias knew better than anyone: fear was useful only until dawn<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 11",
+  "tokens": 92,
+  "repeats": 0,
+  "drafts_accepted": 26,
+  "drafts_offered": 48,
+  "tok_s": 64.7,
+  "text": "Lion  \nTiger   \nElephant \nGiraffe    \nZebra     \nPanda       \nKoala      \nKangaroo        \nHippopotamus          \nRhinoceros            \nCamel              \nCheetah             \nLeopard           \nPanther         \nJaguar                \nBison               \nElk                 \nDeer                  \nFox                   \nWolf                    \nBear                     \nLlama                       \nDonkey                        \nGoat                      \nSheep                         \nCow                           \nPig                          \nRabbit                            \nCat                              \nDog<|im_end|>"
+ },
+ {
+  "name": "greedy frequency=100 last_n=16",
+  "tokens": 11,
+  "repeats": 0,
+  "drafts_accepted": 5,
+  "drafts_offered": 14,
+  "tok_s": 71.7,
+  "text": "1 to 50, separated by commas:<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=4096 (8-row windows)",
+  "tokens": 300,
+  "repeats": 0,
+  "drafts_accepted": 53,
+  "drafts_offered": 134,
+  "tok_s": 66.1,
+  "text": "The ocean is not merely water; it has been, and continues to be one with humanity\u2019s most profound narrative arc in human civilization: **the story we tell ourselves through our relationship** between landmasses separated by vast expansiveness that defines both isolation from other worlds (and thus their own unique evolutionary paths) as well than connection across them via currents wind patterns tides depth pressure temperature salinity biodiversity geology climate change economic trade routes ecological systems cultural exchange political boundaries scientific discovery technological advancement environmental degradation conservation efforts maritime archaeography historical cartographic evolution legal frameworks international law enforcement mechanisms insurance liability regimes regulatory compliance standards safety protocols navigation aids communication networks emergency response strategies search-and-rescue operations salvage rights ownership disputes heritage protection zones sustainable harvesting practices aquaculture development infrastructure engineering projects coastal management policies urban planning regulations zoning ordinances building codes architectural design guidelines aesthetic considerations functional requirements accessibility provisions energy efficiency measures thermal insulation techniques moisture control methods ventilation optimization lighting solutions acoustic soundproofing structural integrity assessments seismic resistance evaluations flood mitigation plans storm surge barriers levee construction seawall reinforcement breakwater installation harbor dredging channel maintenance buoy placement lighthouse automation radar monitoring sonar mapping bathymetric surveys hydrographic charts nautical almanacs tide tables current predictions weather forecasts marine meteorological models satellite imagery remote sensing data assimilation numerical simulations computational fluid dynamics finite element analysis partial differential equations tensor calculus linear algebra probability theory statistics stochastic processes Markov chains Bayesian inference machine learning artificial neural network deep convolutional recurrent transformer attention heads generative adversarial diffusion transformers large language model tokenization"
+ }
+]

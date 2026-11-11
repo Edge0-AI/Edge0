@@ -1,0 +1,17 @@
+{
+  "scope": "Whole-host available physical memory and whole-adapter GPU counters, including background applications; not per-process allocations.",
+  "coding_iq2": {
+    "samples": 482,
+    "minimum_free_GiB": 8.916801452636719,
+    "peak_dedicated_adapter_GiB": 14.882369995117188,
+    "peak_shared_adapter_GiB": 34.158538818359375
+  },
+  "coding_iq3": {
+    "samples": 594,
+    "minimum_free_GiB": 3.107921600341797,
+    "peak_dedicated_adapter_GiB": 15.036750793457031,
+    "peak_shared_adapter_GiB": 41.1239013671875
+  },
+  "windows_event_window_minutes": 72.34,
+  "relevant_windows_events": 0
+}

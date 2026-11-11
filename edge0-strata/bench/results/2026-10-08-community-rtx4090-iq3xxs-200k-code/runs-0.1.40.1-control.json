@@ -1,0 +1,460 @@
+{
+ "label": "rtx4090-iq3xxs-200k-code-01401",
+ "style": "code",
+ "env": {
+  "collected_at": "2026-10-06T15:18:17",
+  "gpu": {
+   "name": "NVIDIA GeForce RTX 4090",
+   "vram_mib": "23028",
+   "driver": "610.57.04",
+   "power_limit_w": "480.00",
+   "pci_bus": "00000000:01:00.0"
+  },
+  "gpu_link": "Failed to parse --display/-d flags",
+  "cpu": {
+   "model": "AMD Ryzen 9 7950X 16-Core Processor",
+   "logical_cpus": "32"
+  },
+  "ram_total_kib": "47579468",
+  "os": "Ubuntu 26.04.1 LTS",
+  "kernel": "7.0.0-38-generic",
+  "cuda": "release 13.4, V13.4.92",
+  "storage": "",
+  "strata_commit": "82f46a8c8f475f001ad76d92f58f4a4f8ffb0253",
+  "strata_branch": "main",
+  "engine_version": "0.1.40",
+  "model_name": "qwen3.8-flash-next-iq3_xxs",
+  "context": {
+   "native": 204800,
+   "max_positions": 204800
+  },
+  "cache_max_tokens": 204800,
+  "vision": {
+   "enabled": true,
+   "available": true,
+   "error": null
+  },
+  "engine_launch_command": "/home/dgbox/Strata/engine/strata --serve --pack /home/dgbox/Strata-data/packs/iq3_xxs --native /home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf --ple-gguf /home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf --expert-profile /home/dgbox/Strata/data/expert-profile-learned.bin --expert-cache auto --prefill auto --spec 4 --mtp /home/dgbox/Strata-data/mtp/rt --max-context 204800 --kv int8 --mmap-experts --vision --vram-reserve-mib 989 --control-vector-scaled /home/dgbox/Strata/data/experimental-speed-projection/Qwen3.8-Flash-Next-experimental-speed-projection.gguf:1.0 --control-vector-layer-range 4 44 --cvec-mode project --cvec-dir per-layer --pcie-frac 0.00 --spec-min-p 0.50 --pool-workers 10 --expert-profile-save /home/dgbox/Strata/data/expert-profile-learned.bin --expert-profile-save-every 10",
+  "model_files": [
+   {
+    "flag": "--pack",
+    "path": "/home/dgbox/Strata-data/packs/iq3_xxs",
+    "kind": "dir"
+   },
+   {
+    "flag": "--native",
+    "path": "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "size_bytes": 47039860096,
+    "mtime": "2026-09-30T17:39:46"
+   },
+   {
+    "flag": "--ple-gguf",
+    "path": "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+    "size_bytes": 28800138432,
+    "mtime": "2026-09-30T17:44:33"
+   },
+   {
+    "flag": "--expert-profile",
+    "path": "/home/dgbox/Strata/data/expert-profile-learned.bin",
+    "size_bytes": 196632,
+    "mtime": "2026-10-06T15:15:21"
+   },
+   {
+    "flag": "--mtp",
+    "path": "/home/dgbox/Strata-data/mtp/rt",
+    "kind": "dir"
+   },
+   {
+    "flag": "--control-vector-scaled",
+    "path": "/home/dgbox/Strata/data/experimental-speed-projection/Qwen3.8-Flash-Next-experimental-speed-projection.gguf",
+    "size_bytes": 483520,
+    "mtime": "2026-09-30T17:07:53"
+   },
+   {
+    "flag": "--expert-profile-save",
+    "path": "/home/dgbox/Strata/data/expert-profile-learned.bin",
+    "size_bytes": 196632,
+    "mtime": "2026-10-06T15:15:21"
+   }
+  ],
+  "server_config_path": "/home/dgbox/Strata/strata-200k.json",
+  "server_config": {
+   "exe": "/home/dgbox/Strata/engine/strata",
+   "args": [
+    "--pack",
+    "/home/dgbox/Strata-data/packs/iq3_xxs",
+    "--native",
+    "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "--ple-gguf",
+    "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+    "--expert-profile",
+    "/home/dgbox/Strata/data/expert-profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--mtp",
+    "/home/dgbox/Strata-data/mtp/rt",
+    "--max-context",
+    "204800",
+    "--kv",
+    "int8",
+    "--mmap-experts",
+    "--vision",
+    "--vram-reserve-mib",
+    "989",
+    "--control-vector-scaled",
+    "/home/dgbox/Strata/data/experimental-speed-projection/Qwen3.8-Flash-Next-experimental-speed-projection.gguf:1.0",
+    "--control-vector-layer-range",
+    "4",
+    "44",
+    "--cvec-mode",
+    "project",
+    "--cvec-dir",
+    "per-layer",
+    "--pcie-frac",
+    "0.00",
+    "--spec-min-p",
+    "0.50",
+    "--pool-workers",
+    "10"
+   ],
+   "cwd": "/home/dgbox/Strata",
+   "tokenizer": "/home/dgbox/Strata-data/packs/iq3_xxs/tokenizer",
+   "model_name": "qwen3.8-flash-next-iq3_xxs",
+   "draft_vocab": "cyrillic",
+   "expert_profile_save": "/home/dgbox/Strata/data/expert-profile-learned.bin",
+   "expert_profile_save_every": 10,
+   "env": {
+    "STRATA_PF_FUSED": "1"
+   },
+   "log": "/home/dgbox/Strata/strata-200k.log",
+   "lib_dirs": [
+    "/usr/local/cuda/bin",
+    "/usr/local/cuda/lib64"
+   ],
+   "port": 8080,
+   "host": "0.0.0.0",
+   "gpu": 0,
+   "gpus_asked": true,
+   "vision": {
+    "exe": "/home/dgbox/Strata/engine/strata-vision",
+    "mmproj": "/home/dgbox/Strata-data/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+    "model": "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "gpu": true,
+    "max_tokens": 1024
+   },
+   "mcp_servers": {
+    "crawl4ai": {
+     "command": "/home/dgbox/.local/share/pi-node/node-v22.22.3-linux-x64/bin/node",
+     "args": [
+      "/home/dgbox/.local/share/pi-node/node-v22.22.3-linux-x64/lib/node_modules/crawl4ai-mcp-sse-stdio/bin/crawl4ai-mcp.js",
+      "--stdio"
+     ],
+     "env": {
+      "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+      "CRAWL4AI_ENDPOINT": "https://192.168.2.162/crawl4ai/",
+      "CRAWL4AI_BEARER_TOKEN": "removed"
+     }
+    },
+    "search": {
+     "command": "/usr/bin/python3",
+     "args": [
+      "/home/dgbox/scripts/searxng-mcp.py"
+     ]
+    }
+   },
+   "reasoning_effort": "low",
+   "fit_max_tokens": true
+  }
+ },
+ "memory": {
+  "start_snapshot": {
+   "vram_used_mib": 22024,
+   "ram_used_kib": 5990292
+  },
+  "peak_vram_used_mib": 22024,
+  "peak_ram_used_kib": 6717768,
+  "note": "пик — максимум опросов каждые 2 с во время замеров"
+ },
+ "results": [
+  {
+   "case": "4096-prompt",
+   "target_prompt_tokens": 4096,
+   "max_tokens": 256,
+   "prompt_tok_s": {
+    "median": 1943.4,
+    "min": 1589.5,
+    "max": 1949.7,
+    "n": 3
+   },
+   "gen_tok_s": {
+    "median": 123.6,
+    "min": 109.8,
+    "max": 128.6,
+    "n": 3
+   },
+   "ttft": {
+    "median": 2.07,
+    "min": 2.06,
+    "max": 2.52,
+    "n": 3
+   },
+   "wall": {
+    "median": 4.38,
+    "min": 4.13,
+    "max": 4.5,
+    "n": 3
+   },
+   "draft_ok": 496,
+   "draft_n": 672,
+   "all": [
+    {
+     "prompt_n": 3971,
+     "prompt_s": 1949.7,
+     "gen_n": 256,
+     "gen_s": 109.8,
+     "draft_n": 229,
+     "draft_ok": 164,
+     "cached": 0,
+     "ttft_s": 2.06,
+     "wall_s": 4.38,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    },
+    {
+     "prompt_n": 3971,
+     "prompt_s": 1943.4,
+     "gen_n": 256,
+     "gen_s": 123.6,
+     "draft_n": 220,
+     "draft_ok": 166,
+     "cached": 0,
+     "ttft_s": 2.066,
+     "wall_s": 4.13,
+     "text": "Based on the description provided, here is a Rust implementation of the `parse_r"
+    },
+    {
+     "prompt_n": 3971,
+     "prompt_s": 1589.5,
+     "gen_n": 256,
+     "gen_s": 128.6,
+     "draft_n": 223,
+     "draft_ok": 166,
+     "cached": 0,
+     "ttft_s": 2.522,
+     "wall_s": 4.5,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    }
+   ]
+  },
+  {
+   "case": "32768-prompt",
+   "target_prompt_tokens": 32768,
+   "max_tokens": 256,
+   "prompt_tok_s": {
+    "median": 3072.4,
+    "min": 2984.3,
+    "max": 3093.0,
+    "n": 3
+   },
+   "gen_tok_s": {
+    "median": 131.8,
+    "min": 129.2,
+    "max": 133.4,
+    "n": 3
+   },
+   "ttft": {
+    "median": 10.28,
+    "min": 10.21,
+    "max": 10.58,
+    "n": 3
+   },
+   "wall": {
+    "median": 12.25,
+    "min": 12.14,
+    "max": 12.49,
+    "n": 3
+   },
+   "draft_ok": 499,
+   "draft_n": 652,
+   "all": [
+    {
+     "prompt_n": 31307,
+     "prompt_s": 3072.4,
+     "gen_n": 256,
+     "gen_s": 129.2,
+     "draft_n": 212,
+     "draft_ok": 166,
+     "cached": 0,
+     "ttft_s": 10.279,
+     "wall_s": 12.25,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    },
+    {
+     "prompt_n": 31307,
+     "prompt_s": 2984.3,
+     "gen_n": 256,
+     "gen_s": 133.4,
+     "draft_n": 217,
+     "draft_ok": 167,
+     "cached": 0,
+     "ttft_s": 10.582,
+     "wall_s": 12.49,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    },
+    {
+     "prompt_n": 31307,
+     "prompt_s": 3093.0,
+     "gen_n": 256,
+     "gen_s": 131.8,
+     "draft_n": 223,
+     "draft_ok": 166,
+     "cached": 0,
+     "ttft_s": 10.212,
+     "wall_s": 12.14,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    }
+   ]
+  },
+  {
+   "case": "131072-prompt",
+   "target_prompt_tokens": 131072,
+   "max_tokens": 256,
+   "prompt_tok_s": {
+    "median": 3083.8,
+    "min": 3029.8,
+    "max": 3087.1,
+    "n": 3
+   },
+   "gen_tok_s": {
+    "median": 117.2,
+    "min": 107.6,
+    "max": 123.1,
+    "n": 3
+   },
+   "ttft": {
+    "median": 40.85,
+    "min": 40.81,
+    "max": 41.57,
+    "n": 3
+   },
+   "wall": {
+    "median": 43.02,
+    "min": 42.12,
+    "max": 43.64,
+    "n": 3
+   },
+   "draft_ok": 407,
+   "draft_n": 559,
+   "all": [
+    {
+     "prompt_n": 125011,
+     "prompt_s": 3087.1,
+     "gen_n": 142,
+     "gen_s": 107.6,
+     "draft_n": 120,
+     "draft_ok": 86,
+     "cached": 0,
+     "ttft_s": 40.808,
+     "wall_s": 42.12,
+     "text": "Based on the text provided, here is a summary of the function `parse_record`:\n\n*"
+    },
+    {
+     "prompt_n": 125011,
+     "prompt_s": 3029.8,
+     "gen_n": 256,
+     "gen_s": 123.1,
+     "draft_n": 219,
+     "draft_ok": 165,
+     "cached": 0,
+     "ttft_s": 41.572,
+     "wall_s": 43.64,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    },
+    {
+     "prompt_n": 125011,
+     "prompt_s": 3083.8,
+     "gen_n": 256,
+     "gen_s": 117.2,
+     "draft_n": 220,
+     "draft_ok": 156,
+     "cached": 0,
+     "ttft_s": 40.853,
+     "wall_s": 43.02,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    }
+   ]
+  },
+  {
+   "case": "gen-only",
+   "target_prompt_tokens": 120,
+   "max_tokens": 1024,
+   "prompt_tok_s": {
+    "median": 198.4,
+    "min": 181.6,
+    "max": 209.5,
+    "n": 3
+   },
+   "gen_tok_s": {
+    "median": 138.7,
+    "min": 134.6,
+    "max": 142.0,
+    "n": 3
+   },
+   "ttft": {
+    "median": 0.84,
+    "min": 0.8,
+    "max": 0.92,
+    "n": 3
+   },
+   "wall": {
+    "median": 8.16,
+    "min": 8.04,
+    "max": 8.51,
+    "n": 3
+   },
+   "draft_ok": 2050,
+   "draft_n": 2631,
+   "all": [
+    {
+     "prompt_n": 163,
+     "prompt_s": 198.4,
+     "gen_n": 1024,
+     "gen_s": 142.0,
+     "draft_n": 862,
+     "draft_ok": 699,
+     "cached": 0,
+     "ttft_s": 0.841,
+     "wall_s": 8.04,
+     "text": "Based on the description provided, here is a Rust implementation of the `parse_r"
+    },
+    {
+     "prompt_n": 163,
+     "prompt_s": 181.6,
+     "gen_n": 1024,
+     "gen_s": 134.6,
+     "draft_n": 875,
+     "draft_ok": 675,
+     "cached": 0,
+     "ttft_s": 0.916,
+     "wall_s": 8.51,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    },
+    {
+     "prompt_n": 163,
+     "prompt_s": 209.5,
+     "gen_n": 1024,
+     "gen_s": 138.7,
+     "draft_n": 894,
+     "draft_ok": 676,
+     "cached": 0,
+     "ttft_s": 0.796,
+     "wall_s": 8.16,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    }
+   ]
+  }
+ ]
+}

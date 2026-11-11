@@ -1,0 +1,237 @@
+{
+ "summary": {
+  "4096": {
+   "prompt_tps": {
+    "runs": [
+     886.8,
+     922.6,
+     922.8
+    ],
+    "median": 922.6,
+    "min": 886.8,
+    "max": 922.8
+   },
+   "decode_tps": {
+    "runs": [
+     75.4,
+     65.1,
+     80.3
+    ],
+    "median": 75.4,
+    "min": 65.1,
+    "max": 80.3
+   },
+   "ttft_s": {
+    "runs": [
+     3.46,
+     3.33,
+     3.32
+    ],
+    "median": 3.33
+   }
+  },
+  "32768": {
+   "prompt_tps": {
+    "runs": [
+     1647.2,
+     1638.8,
+     1642.1
+    ],
+    "median": 1642.1,
+    "min": 1638.8,
+    "max": 1647.2
+   },
+   "decode_tps": {
+    "runs": [
+     63.9,
+     83.0,
+     80.2
+    ],
+    "median": 80.2,
+    "min": 63.9,
+    "max": 83.0
+   },
+   "ttft_s": {
+    "runs": [
+     15.07,
+     15.14,
+     15.12
+    ],
+    "median": 15.12
+   }
+  },
+  "128000": {
+   "prompt_tps": {
+    "runs": [
+     1856.8,
+     1852.8,
+     1853.6
+    ],
+    "median": 1853.6,
+    "min": 1852.8,
+    "max": 1856.8
+   },
+   "decode_tps": {
+    "runs": [
+     70.6,
+     66.9,
+     72.2
+    ],
+    "median": 70.6,
+    "min": 66.9,
+    "max": 72.2
+   },
+   "ttft_s": {
+    "runs": [
+     52.21,
+     52.32,
+     52.31
+    ],
+    "median": 52.31
+   }
+  }
+ },
+ "runs": {
+  "4096": [
+   {
+    "prompt_n": 3040,
+    "prompt_ms": 3427.9,
+    "prompt_tps": 886.8,
+    "gen_n": 256,
+    "gen_ms": 3393.1,
+    "gen_tps": 75.4,
+    "ttft_s": 3.46,
+    "total_s": 6.85,
+    "usage_prompt": 3040,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 0,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   },
+   {
+    "prompt_n": 3040,
+    "prompt_ms": 3295.0,
+    "prompt_tps": 922.6,
+    "gen_n": 256,
+    "gen_ms": 3930.0,
+    "gen_tps": 65.1,
+    "ttft_s": 3.33,
+    "total_s": 7.26,
+    "usage_prompt": 3040,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 1,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   },
+   {
+    "prompt_n": 3040,
+    "prompt_ms": 3294.2,
+    "prompt_tps": 922.8,
+    "gen_n": 256,
+    "gen_ms": 3186.4,
+    "gen_tps": 80.3,
+    "ttft_s": 3.32,
+    "total_s": 6.51,
+    "usage_prompt": 3040,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 2,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   }
+  ],
+  "32768": [
+   {
+    "prompt_n": 24537,
+    "prompt_ms": 14896.5,
+    "prompt_tps": 1647.2,
+    "gen_n": 256,
+    "gen_ms": 4005.1,
+    "gen_tps": 63.9,
+    "ttft_s": 15.07,
+    "total_s": 19.07,
+    "usage_prompt": 24537,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 0,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   },
+   {
+    "prompt_n": 24537,
+    "prompt_ms": 14972.1,
+    "prompt_tps": 1638.8,
+    "gen_n": 256,
+    "gen_ms": 3085.5,
+    "gen_tps": 83.0,
+    "ttft_s": 15.14,
+    "total_s": 18.23,
+    "usage_prompt": 24537,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 1,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   },
+   {
+    "prompt_n": 24537,
+    "prompt_ms": 14942.5,
+    "prompt_tps": 1642.1,
+    "gen_n": 256,
+    "gen_ms": 3193.4,
+    "gen_tps": 80.2,
+    "ttft_s": 15.12,
+    "total_s": 18.32,
+    "usage_prompt": 24537,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 2,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   }
+  ],
+  "128000": [
+   {
+    "prompt_n": 95751,
+    "prompt_ms": 51569.0,
+    "prompt_tps": 1856.8,
+    "gen_n": 256,
+    "gen_ms": 3626.3,
+    "gen_tps": 70.6,
+    "ttft_s": 52.21,
+    "total_s": 55.84,
+    "usage_prompt": 95751,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 0,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   },
+   {
+    "prompt_n": 95751,
+    "prompt_ms": 51678.5,
+    "prompt_tps": 1852.8,
+    "gen_n": 256,
+    "gen_ms": 3824.7,
+    "gen_tps": 66.9,
+    "ttft_s": 52.32,
+    "total_s": 56.14,
+    "usage_prompt": 95751,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 1,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   },
+   {
+    "prompt_n": 95751,
+    "prompt_ms": 51657.3,
+    "prompt_tps": 1853.6,
+    "gen_n": 256,
+    "gen_ms": 3546.9,
+    "gen_tps": 72.2,
+    "ttft_s": 52.31,
+    "total_s": 55.85,
+    "usage_prompt": 95751,
+    "usage_completion": 256,
+    "finish": "length",
+    "variant": 2,
+    "pcie_during": "0, 3, 16; 1, 3, 16"
+   }
+  ]
+ }
+}

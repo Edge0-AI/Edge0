@@ -1,0 +1,167 @@
+[
+ {
+  "run": "boot-post-8k",
+  "prompt_tokens": 8192,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 8116.6,
+  "prompt_tok_s": 1009.16,
+  "decode_ms": 4357.7,
+  "decode_tok_s": 58.45,
+  "speculation": "speculation              68 rounds of 7, drafts accepted 188 of 239 (0.787), 3.76 tokens per round"
+ },
+ {
+  "run": "boot-post-32k",
+  "prompt_tokens": 32768,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 31482.1,
+  "prompt_tok_s": 1040.81,
+  "decode_ms": 4426.3,
+  "decode_tok_s": 57.13,
+  "speculation": "speculation              70 rounds of 7, drafts accepted 188 of 247 (0.761), 3.69 tokens per round"
+ },
+ {
+  "run": "boot-post-128k",
+  "prompt_tokens": 131072,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 125633.2,
+  "prompt_tok_s": 1043.28,
+  "decode_ms": 6744.4,
+  "decode_tok_s": 37.96,
+  "speculation": "speculation              98 rounds of 7, drafts accepted 158 of 249 (0.635), 2.61 tokens per round"
+ },
+ {
+  "run": "boot-post-8k",
+  "prompt_tokens": 8192,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 8329.1,
+  "prompt_tok_s": 983.42,
+  "decode_ms": 4357.7,
+  "decode_tok_s": 58.75,
+  "speculation": "speculation              68 rounds of 7, drafts accepted 188 of 239 (0.787), 3.76 tokens per round"
+ },
+ {
+  "run": "boot-post-32k",
+  "prompt_tokens": 32768,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 30706.4,
+  "prompt_tok_s": 1067.11,
+  "decode_ms": 4426.3,
+  "decode_tok_s": 57.84,
+  "speculation": "speculation              70 rounds of 7, drafts accepted 188 of 247 (0.761), 3.69 tokens per round"
+ },
+ {
+  "run": "boot-post-128k-b",
+  "prompt_tokens": 131072,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 125619.1,
+  "prompt_tok_s": 1043.4,
+  "decode_ms": 5737.7,
+  "decode_tok_s": 44.62,
+  "speculation": "speculation              98 rounds of 7, drafts accepted 158 of 258 (0.612), 2.61 tokens per round"
+ },
+ {
+  "run": "boot-post-128k-c",
+  "prompt_tokens": 131072,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 128604.4,
+  "prompt_tok_s": 1019.18,
+  "decode_ms": 5883.4,
+  "decode_tok_s": 43.51,
+  "speculation": "speculation              98 rounds of 7, drafts accepted 158 of 258 (0.612), 2.61 tokens per round"
+ },
+ {
+  "run": "gap-A-8k-1",
+  "prompt_tokens": 8192,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 8635.8,
+  "prompt_tok_s": 948.49,
+  "decode_ms": 4300.6,
+  "decode_tok_s": 59.5,
+  "speculation": "speculation              68 rounds of 7, drafts accepted 188 of 239 (0.787), 3.76 tokens per round"
+ },
+ {
+  "run": "gap-A-8k-1",
+  "prompt_tokens": 8192,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 8587.3,
+  "prompt_tok_s": 953.85,
+  "decode_ms": 4300.6,
+  "decode_tok_s": 59.53,
+  "speculation": "speculation              68 rounds of 7, drafts accepted 188 of 239 (0.787), 3.76 tokens per round"
+ },
+ {
+  "run": "gap-A-32k-1",
+  "prompt_tokens": 32768,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 30721.4,
+  "prompt_tok_s": 1066.59,
+  "decode_ms": 4370.8,
+  "decode_tok_s": 58.57,
+  "speculation": "speculation              70 rounds of 7, drafts accepted 188 of 247 (0.761), 3.69 tokens per round"
+ },
+ {
+  "run": "gap-A-8k-2",
+  "prompt_tokens": 8192,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 9792.6,
+  "prompt_tok_s": 836.45,
+  "decode_ms": 4349.1,
+  "decode_tok_s": 58.86,
+  "speculation": "speculation              68 rounds of 7, drafts accepted 188 of 239 (0.787), 3.76 tokens per round"
+ },
+ {
+  "run": "gap-A-32k-2",
+  "prompt_tokens": 32768,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 31400.7,
+  "prompt_tok_s": 1043.51,
+  "decode_ms": 4428.1,
+  "decode_tok_s": 57.81,
+  "speculation": "speculation              70 rounds of 7, drafts accepted 188 of 249 (0.755), 3.69 tokens per round"
+ },
+ {
+  "run": "gap-A-8k-3",
+  "prompt_tokens": 8192,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 8312.0,
+  "prompt_tok_s": 985.45,
+  "decode_ms": 4292.1,
+  "decode_tok_s": 59.64,
+  "speculation": "speculation              68 rounds of 7, drafts accepted 188 of 239 (0.787), 3.76 tokens per round"
+ },
+ {
+  "run": "gap-A-32k-3",
+  "prompt_tokens": 32768,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 30701.0,
+  "prompt_tok_s": 1067.29,
+  "decode_ms": 4359.0,
+  "decode_tok_s": 58.73,
+  "speculation": "speculation              70 rounds of 7, drafts accepted 188 of 247 (0.761), 3.69 tokens per round"
+ },
+ {
+  "run": "gap-A-128k-1",
+  "prompt_tokens": 131072,
+  "reused_tokens": 0,
+  "generated_tokens": 256,
+  "prompt_ms": 130449.4,
+  "prompt_tok_s": 1004.77,
+  "decode_ms": 6332.4,
+  "decode_tok_s": 40.43,
+  "speculation": "speculation              99 rounds of 7, drafts accepted 157 of 259 (0.606), 2.59 tokens per round"
+ }
+]

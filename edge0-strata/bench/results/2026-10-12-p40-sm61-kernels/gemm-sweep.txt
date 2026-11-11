@@ -1,0 +1,923 @@
+SWEEP gdn qkv        N 10240 K  2560 T     1 | f16    0.209 ms  0.25 TFLOPS | f32    0.353 ms  0.15 TFLOPS |  0.59x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T     2 | f16    0.801 ms  0.13 TFLOPS | f32    0.354 ms  0.30 TFLOPS |  2.26x | DIFFERENT
+       19441 of 20480 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T     3 | f16    0.801 ms  0.20 TFLOPS | f32    0.359 ms  0.44 TFLOPS |  2.23x | DIFFERENT
+       29148 of 30720 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T     4 | f16    0.806 ms  0.26 TFLOPS | f32    0.359 ms  0.58 TFLOPS |  2.24x | DIFFERENT
+       38889 of 40960 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T     5 | f16    0.806 ms  0.33 TFLOPS | f32    0.408 ms  0.64 TFLOPS |  1.98x | DIFFERENT
+       48823 of 51200 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T     6 | f16    0.809 ms  0.39 TFLOPS | f32    0.406 ms  0.77 TFLOPS |  1.99x | DIFFERENT
+       58559 of 61440 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T     7 | f16    0.807 ms  0.45 TFLOPS | f32    0.409 ms  0.90 TFLOPS |  1.97x | DIFFERENT
+       68325 of 71680 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T     8 | f16    0.811 ms  0.52 TFLOPS | f32    0.408 ms  1.03 TFLOPS |  1.99x | DIFFERENT
+       78113 of 81920 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T     9 | f16    0.809 ms  0.58 TFLOPS | f32    0.411 ms  1.15 TFLOPS |  1.97x | DIFFERENT
+       87823 of 92160 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    10 | f16    0.812 ms  0.65 TFLOPS | f32    0.412 ms  1.27 TFLOPS |  1.97x | DIFFERENT
+       97570 of 102400 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    11 | f16    0.810 ms  0.71 TFLOPS | f32    0.412 ms  1.40 TFLOPS |  1.97x | DIFFERENT
+       107330 of 112640 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    12 | f16    0.812 ms  0.77 TFLOPS | f32    0.411 ms  1.53 TFLOPS |  1.98x | DIFFERENT
+       117091 of 122880 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    13 | f16    0.815 ms  0.84 TFLOPS | f32    0.414 ms  1.65 TFLOPS |  1.97x | DIFFERENT
+       126834 of 133120 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    14 | f16    0.811 ms  0.91 TFLOPS | f32    0.413 ms  1.78 TFLOPS |  1.97x | DIFFERENT
+       136599 of 143360 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    15 | f16    0.816 ms  0.96 TFLOPS | f32    0.415 ms  1.90 TFLOPS |  1.97x | DIFFERENT
+       146342 of 153600 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    16 | f16    0.818 ms  1.03 TFLOPS | f32    0.413 ms  2.03 TFLOPS |  1.98x | DIFFERENT
+       156116 of 163840 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    24 | f16    0.824 ms  1.53 TFLOPS | f32    0.417 ms  3.01 TFLOPS |  1.97x | DIFFERENT
+       234191 of 245760 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    48 | f16    0.848 ms  2.97 TFLOPS | f32    0.577 ms  4.36 TFLOPS |  1.47x | DIFFERENT
+       468355 of 491520 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    72 | f16    0.979 ms  3.86 TFLOPS | f32    0.749 ms  5.04 TFLOPS |  1.31x | DIFFERENT
+       713353 of 737280 outputs differ
+SWEEP gdn qkv        N 10240 K  2560 T    96 | f16    0.985 ms  5.11 TFLOPS | f32    1.167 ms  4.31 TFLOPS |  0.84x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   120 | f16    0.993 ms  6.33 TFLOPS | f32    1.168 ms  5.38 TFLOPS |  0.85x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   144 | f16    1.650 ms  4.58 TFLOPS | f32    1.591 ms  4.74 TFLOPS |  1.04x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   168 | f16    1.701 ms  5.18 TFLOPS | f32    1.598 ms  5.51 TFLOPS |  1.06x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   192 | f16    1.748 ms  5.76 TFLOPS | f32    1.599 ms  6.29 TFLOPS |  1.09x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   216 | f16    2.471 ms  4.58 TFLOPS | f32    1.599 ms  7.08 TFLOPS |  1.54x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   240 | f16    2.450 ms  5.13 TFLOPS | f32    1.610 ms  7.82 TFLOPS |  1.52x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   264 | f16    3.160 ms  4.38 TFLOPS | f32    2.030 ms  6.82 TFLOPS |  1.56x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   288 | f16    3.349 ms  4.51 TFLOPS | f32    2.005 ms  7.53 TFLOPS |  1.67x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   312 | f16    3.253 ms  5.03 TFLOPS | f32    2.006 ms  8.16 TFLOPS |  1.62x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   336 | f16    2.589 ms  6.81 TFLOPS | f32    2.010 ms  8.76 TFLOPS |  1.29x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   360 | f16    2.604 ms  7.25 TFLOPS | f32    2.015 ms  9.37 TFLOPS |  1.29x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   384 | f16    2.609 ms  7.72 TFLOPS | f32    2.017 ms  9.98 TFLOPS |  1.29x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   408 | f16    4.736 ms  4.52 TFLOPS | f32    3.098 ms  6.90 TFLOPS |  1.53x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   432 | f16    4.748 ms  4.77 TFLOPS | f32    3.113 ms  7.28 TFLOPS |  1.53x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   456 | f16    3.568 ms  6.70 TFLOPS | f32    3.108 ms  7.69 TFLOPS |  1.15x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   480 | f16    3.568 ms  7.05 TFLOPS | f32    3.099 ms  8.12 TFLOPS |  1.15x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   504 | f16    3.555 ms  7.43 TFLOPS | f32    3.077 ms  8.59 TFLOPS |  1.16x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   560 | f16    6.419 ms  4.57 TFLOPS | f32    3.508 ms  8.37 TFLOPS |  1.83x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T   813 | f16    9.309 ms  4.58 TFLOPS | f32    4.864 ms  8.76 TFLOPS |  1.91x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  1066 | f16   12.582 ms  4.44 TFLOPS | f32    6.066 ms  9.21 TFLOPS |  2.07x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  1319 | f16   15.526 ms  4.45 TFLOPS | f32    7.433 ms  9.30 TFLOPS |  2.09x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  1572 | f16   18.767 ms  4.39 TFLOPS | f32    8.946 ms  9.21 TFLOPS |  2.10x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  1825 | f16   21.878 ms  4.37 TFLOPS | f32   10.099 ms  9.47 TFLOPS |  2.17x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  2078 | f16   25.000 ms  4.36 TFLOPS | f32   11.779 ms  9.25 TFLOPS |  2.12x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  2331 | f16   27.976 ms  4.37 TFLOPS | f32   13.072 ms  9.35 TFLOPS |  2.14x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  2584 | f16   31.126 ms  4.35 TFLOPS | f32   14.557 ms  9.31 TFLOPS |  2.14x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  2837 | f16   34.188 ms  4.35 TFLOPS | f32   16.194 ms  9.19 TFLOPS |  2.11x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  3090 | f16   37.229 ms  4.35 TFLOPS | f32   17.510 ms  9.25 TFLOPS |  2.13x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  3343 | f16   40.426 ms  4.34 TFLOPS | f32   18.750 ms  9.35 TFLOPS |  2.16x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  3596 | f16   43.510 ms  4.33 TFLOPS | f32   19.900 ms  9.47 TFLOPS |  2.19x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  3849 | f16   46.542 ms  4.34 TFLOPS | f32   21.923 ms  9.20 TFLOPS |  2.12x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  4102 | f16   49.769 ms  4.32 TFLOPS | f32   23.697 ms  9.08 TFLOPS |  2.10x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  4355 | f16   52.902 ms  4.32 TFLOPS | f32   24.159 ms  9.45 TFLOPS |  2.19x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  4608 | f16   32.192 ms  7.50 TFLOPS | f32   26.342 ms  9.17 TFLOPS |  1.22x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  4861 | f16   58.311 ms  4.37 TFLOPS | f32   27.092 ms  9.41 TFLOPS |  2.15x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  5114 | f16   35.660 ms  7.52 TFLOPS | f32   29.580 ms  9.06 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  5367 | f16   37.326 ms  7.54 TFLOPS | f32   30.610 ms  9.19 TFLOPS |  1.22x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  5620 | f16   67.616 ms  4.36 TFLOPS | f32   32.514 ms  9.06 TFLOPS |  2.08x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  5873 | f16   41.055 ms  7.50 TFLOPS | f32   34.574 ms  8.91 TFLOPS |  1.19x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  6126 | f16   42.943 ms  7.48 TFLOPS | f32   35.717 ms  8.99 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  6379 | f16   77.034 ms  4.34 TFLOPS | f32   35.650 ms  9.38 TFLOPS |  2.16x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  6632 | f16   46.361 ms  7.50 TFLOPS | f32   38.757 ms  8.97 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  6885 | f16   47.899 ms  7.54 TFLOPS | f32   40.561 ms  8.90 TFLOPS |  1.18x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7138 | f16   86.139 ms  4.34 TFLOPS | f32   38.988 ms  9.60 TFLOPS |  2.21x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7391 | f16   51.377 ms  7.54 TFLOPS | f32   42.681 ms  9.08 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7644 | f16   53.817 ms  7.45 TFLOPS | f32   44.008 ms  9.11 TFLOPS |  1.22x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7897 | f16   95.323 ms  4.34 TFLOPS | f32   42.952 ms  9.64 TFLOPS |  2.22x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  8150 | f16   57.011 ms  7.49 TFLOPS | f32   47.212 ms  9.05 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7030 | f16   49.224 ms  7.49 TFLOPS | f32   40.679 ms  9.06 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7031 | f16   48.852 ms  7.55 TFLOPS | f32   40.577 ms  9.08 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7032 | f16   49.059 ms  7.52 TFLOPS | f32   40.921 ms  9.01 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7033 | f16   49.237 ms  7.49 TFLOPS | f32   41.437 ms  8.90 TFLOPS |  1.19x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7034 | f16   49.261 ms  7.49 TFLOPS | f32   40.890 ms  9.02 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7035 | f16   49.157 ms  7.50 TFLOPS | f32   41.090 ms  8.98 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7036 | f16   49.085 ms  7.52 TFLOPS | f32   40.726 ms  9.06 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7037 | f16   49.310 ms  7.48 TFLOPS | f32   41.708 ms  8.85 TFLOPS |  1.18x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7038 | f16   48.699 ms  7.58 TFLOPS | f32   41.955 ms  8.79 TFLOPS |  1.16x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7039 | f16   48.866 ms  7.55 TFLOPS | f32   41.359 ms  8.92 TFLOPS |  1.18x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7040 | f16   49.526 ms  7.45 TFLOPS | f32   40.867 ms  9.03 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7041 | f16   85.275 ms  4.33 TFLOPS | f32   38.479 ms  9.59 TFLOPS |  2.22x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7042 | f16   85.359 ms  4.33 TFLOPS | f32   41.483 ms  8.90 TFLOPS |  2.06x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7043 | f16   85.352 ms  4.33 TFLOPS | f32   40.122 ms  9.20 TFLOPS |  2.13x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7044 | f16   85.364 ms  4.33 TFLOPS | f32   39.345 ms  9.39 TFLOPS |  2.17x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7045 | f16   85.272 ms  4.33 TFLOPS | f32   38.839 ms  9.51 TFLOPS |  2.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7046 | f16   85.290 ms  4.33 TFLOPS | f32   41.416 ms  8.92 TFLOPS |  2.06x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7047 | f16   85.354 ms  4.33 TFLOPS | f32   38.478 ms  9.60 TFLOPS |  2.22x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7048 | f16   85.274 ms  4.33 TFLOPS | f32   38.356 ms  9.63 TFLOPS |  2.22x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7049 | f16   85.369 ms  4.33 TFLOPS | f32   38.954 ms  9.49 TFLOPS |  2.19x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7050 | f16   85.317 ms  4.33 TFLOPS | f32   38.858 ms  9.51 TFLOPS |  2.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7051 | f16   85.311 ms  4.33 TFLOPS | f32   38.705 ms  9.55 TFLOPS |  2.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7052 | f16   85.330 ms  4.33 TFLOPS | f32   39.215 ms  9.43 TFLOPS |  2.18x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7053 | f16   85.274 ms  4.34 TFLOPS | f32   39.633 ms  9.33 TFLOPS |  2.15x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7054 | f16   85.237 ms  4.34 TFLOPS | f32   39.067 ms  9.47 TFLOPS |  2.18x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7055 | f16   85.353 ms  4.33 TFLOPS | f32   39.108 ms  9.46 TFLOPS |  2.18x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  7056 | f16   85.305 ms  4.34 TFLOPS | f32   40.664 ms  9.10 TFLOPS |  2.10x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  1024 | f16   11.759 ms  4.57 TFLOPS | f32    5.605 ms  9.58 TFLOPS |  2.10x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  2048 | f16   14.232 ms  7.54 TFLOPS | f32   11.841 ms  9.07 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  4096 | f16   48.902 ms  4.39 TFLOPS | f32   22.556 ms  9.52 TFLOPS |  2.17x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  8192 | f16   57.580 ms  7.46 TFLOPS | f32   48.122 ms  8.93 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  1000 | f16   11.811 ms  4.44 TFLOPS | f32    5.890 ms  8.90 TFLOPS |  2.01x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  3000 | f16   35.762 ms  4.40 TFLOPS | f32   16.589 ms  9.48 TFLOPS |  2.16x | bitwise equal
+SWEEP gdn qkv        N 10240 K  2560 T  5000 | f16   60.547 ms  4.33 TFLOPS | f32   27.531 ms  9.52 TFLOPS |  2.20x | bitwise equal
+SUMMARY gdn qkv       : 84 of 102 T values bitwise equal; f16 below 6 TFLOPS at 47 of the T >= 256; total f16 3514 ms, f32 2037 ms
+SWEEP gdn gate z     N  6144 K  2560 T     1 | f16    0.127 ms  0.25 TFLOPS | f32    0.216 ms  0.15 TFLOPS |  0.59x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T     2 | f16    0.468 ms  0.13 TFLOPS | f32    0.217 ms  0.29 TFLOPS |  2.15x | DIFFERENT
+       11505 of 12288 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T     3 | f16    0.472 ms  0.20 TFLOPS | f32    0.232 ms  0.41 TFLOPS |  2.03x | DIFFERENT
+       17299 of 18432 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T     4 | f16    0.470 ms  0.27 TFLOPS | f32    0.226 ms  0.56 TFLOPS |  2.08x | DIFFERENT
+       23089 of 24576 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T     5 | f16    0.472 ms  0.33 TFLOPS | f32    0.281 ms  0.56 TFLOPS |  1.68x | DIFFERENT
+       29112 of 30720 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T     6 | f16    0.471 ms  0.40 TFLOPS | f32    0.280 ms  0.68 TFLOPS |  1.68x | DIFFERENT
+       34930 of 36864 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T     7 | f16    0.473 ms  0.47 TFLOPS | f32    0.281 ms  0.78 TFLOPS |  1.68x | DIFFERENT
+       40751 of 43008 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T     8 | f16    0.475 ms  0.53 TFLOPS | f32    0.283 ms  0.89 TFLOPS |  1.68x | DIFFERENT
+       46546 of 49152 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T     9 | f16    0.471 ms  0.60 TFLOPS | f32    0.283 ms  1.00 TFLOPS |  1.67x | DIFFERENT
+       52336 of 55296 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    10 | f16    0.476 ms  0.66 TFLOPS | f32    0.273 ms  1.15 TFLOPS |  1.74x | DIFFERENT
+       58127 of 61440 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    11 | f16    0.474 ms  0.73 TFLOPS | f32    0.283 ms  1.22 TFLOPS |  1.68x | DIFFERENT
+       63924 of 67584 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    12 | f16    0.475 ms  0.79 TFLOPS | f32    0.276 ms  1.37 TFLOPS |  1.72x | DIFFERENT
+       69744 of 73728 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    13 | f16    0.477 ms  0.86 TFLOPS | f32    0.281 ms  1.46 TFLOPS |  1.70x | DIFFERENT
+       75537 of 79872 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    14 | f16    0.476 ms  0.92 TFLOPS | f32    0.278 ms  1.58 TFLOPS |  1.71x | DIFFERENT
+       81332 of 86016 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    15 | f16    0.478 ms  0.99 TFLOPS | f32    0.284 ms  1.66 TFLOPS |  1.69x | DIFFERENT
+       87148 of 92160 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    16 | f16    0.481 ms  1.05 TFLOPS | f32    0.283 ms  1.78 TFLOPS |  1.70x | DIFFERENT
+       92934 of 98304 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    24 | f16    0.488 ms  1.55 TFLOPS | f32    0.287 ms  2.63 TFLOPS |  1.70x | DIFFERENT
+       139354 of 147456 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    48 | f16    0.569 ms  2.65 TFLOPS | f32    0.354 ms  4.26 TFLOPS |  1.61x | DIFFERENT
+       278655 of 294912 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    72 | f16    0.670 ms  3.38 TFLOPS | f32    1.459 ms  1.55 TFLOPS |  0.46x | DIFFERENT
+       420017 of 442368 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T    96 | f16    0.676 ms  4.47 TFLOPS | f32    1.452 ms  2.08 TFLOPS |  0.47x | DIFFERENT
+       560081 of 589824 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T   120 | f16    0.701 ms  5.38 TFLOPS | f32    1.535 ms  2.46 TFLOPS |  0.46x | DIFFERENT
+       699975 of 737280 outputs differ
+SWEEP gdn gate z     N  6144 K  2560 T   144 | f16    0.904 ms  5.01 TFLOPS | f32    1.027 ms  4.41 TFLOPS |  0.88x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   168 | f16    0.903 ms  5.85 TFLOPS | f32    1.019 ms  5.19 TFLOPS |  0.89x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   192 | f16    0.922 ms  6.55 TFLOPS | f32    1.020 ms  5.92 TFLOPS |  0.90x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   216 | f16    1.142 ms  5.95 TFLOPS | f32    1.021 ms  6.66 TFLOPS |  1.12x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   240 | f16    1.158 ms  6.52 TFLOPS | f32    1.019 ms  7.41 TFLOPS |  1.14x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   264 | f16    1.156 ms  7.19 TFLOPS | f32    1.355 ms  6.13 TFLOPS |  0.85x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   288 | f16    1.134 ms  7.99 TFLOPS | f32    1.488 ms  6.09 TFLOPS |  0.76x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   312 | f16    1.154 ms  8.51 TFLOPS | f32    1.496 ms  6.56 TFLOPS |  0.77x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   336 | f16    1.615 ms  6.55 TFLOPS | f32    1.493 ms  7.08 TFLOPS |  1.08x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   360 | f16    1.622 ms  6.98 TFLOPS | f32    1.495 ms  7.58 TFLOPS |  1.08x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   384 | f16    1.620 ms  7.46 TFLOPS | f32    1.369 ms  8.82 TFLOPS |  1.18x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   408 | f16    1.788 ms  7.18 TFLOPS | f32    1.895 ms  6.77 TFLOPS |  0.94x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   432 | f16    1.786 ms  7.61 TFLOPS | f32    1.893 ms  7.18 TFLOPS |  0.94x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   456 | f16    2.243 ms  6.39 TFLOPS | f32    1.894 ms  7.57 TFLOPS |  1.18x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   480 | f16    2.248 ms  6.72 TFLOPS | f32    1.929 ms  7.83 TFLOPS |  1.17x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   504 | f16    2.269 ms  6.99 TFLOPS | f32    1.939 ms  8.17 TFLOPS |  1.17x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   560 | f16    2.421 ms  7.28 TFLOPS | f32    2.030 ms  8.68 TFLOPS |  1.19x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T   813 | f16    3.290 ms  7.77 TFLOPS | f32    3.020 ms  8.47 TFLOPS |  1.09x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  1066 | f16    4.787 ms  7.01 TFLOPS | f32    3.993 ms  8.40 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  1319 | f16    6.759 ms  6.14 TFLOPS | f32    4.530 ms  9.16 TFLOPS |  1.49x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  1572 | f16    8.585 ms  5.76 TFLOPS | f32    5.427 ms  9.11 TFLOPS |  1.58x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  1825 | f16   10.684 ms  5.37 TFLOPS | f32    6.015 ms  9.54 TFLOPS |  1.78x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  2078 | f16   12.284 ms  5.32 TFLOPS | f32    7.050 ms  9.27 TFLOPS |  1.74x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  2331 | f16   13.863 ms  5.29 TFLOPS | f32    7.968 ms  9.20 TFLOPS |  1.74x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  2584 | f16   15.839 ms  5.13 TFLOPS | f32    8.648 ms  9.40 TFLOPS |  1.83x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  2837 | f16   17.468 ms  5.11 TFLOPS | f32    9.696 ms  9.20 TFLOPS |  1.80x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  3090 | f16   19.539 ms  4.97 TFLOPS | f32   10.458 ms  9.29 TFLOPS |  1.87x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  3343 | f16   21.398 ms  4.91 TFLOPS | f32   11.179 ms  9.41 TFLOPS |  1.91x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  3596 | f16   23.285 ms  4.86 TFLOPS | f32   12.208 ms  9.27 TFLOPS |  1.91x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  3849 | f16   24.975 ms  4.85 TFLOPS | f32   12.843 ms  9.43 TFLOPS |  1.94x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  4102 | f16   26.638 ms  4.84 TFLOPS | f32   13.631 ms  9.47 TFLOPS |  1.95x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  4355 | f16   29.001 ms  4.72 TFLOPS | f32   14.635 ms  9.36 TFLOPS |  1.98x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  4608 | f16   30.270 ms  4.79 TFLOPS | f32   14.923 ms  9.71 TFLOPS |  2.03x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  4861 | f16   20.340 ms  7.52 TFLOPS | f32   16.945 ms  9.02 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  5114 | f16   21.333 ms  7.54 TFLOPS | f32   17.430 ms  9.23 TFLOPS |  1.22x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  5367 | f16   36.094 ms  4.68 TFLOPS | f32   17.717 ms  9.53 TFLOPS |  2.04x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  5620 | f16   23.568 ms  7.50 TFLOPS | f32   19.618 ms  9.01 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  5873 | f16   39.197 ms  4.71 TFLOPS | f32   19.130 ms  9.66 TFLOPS |  2.05x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  6126 | f16   25.696 ms  7.50 TFLOPS | f32   21.248 ms  9.07 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  6379 | f16   26.952 ms  7.45 TFLOPS | f32   21.928 ms  9.15 TFLOPS |  1.23x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  6632 | f16   45.445 ms  4.59 TFLOPS | f32   22.211 ms  9.39 TFLOPS |  2.05x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  6885 | f16   29.148 ms  7.43 TFLOPS | f32   23.917 ms  9.06 TFLOPS |  1.22x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7138 | f16   48.927 ms  4.59 TFLOPS | f32   23.386 ms  9.60 TFLOPS |  2.09x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7391 | f16   31.163 ms  7.46 TFLOPS | f32   25.913 ms  8.97 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7644 | f16   32.521 ms  7.39 TFLOPS | f32   26.809 ms  8.97 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7897 | f16   54.826 ms  4.53 TFLOPS | f32   25.800 ms  9.63 TFLOPS |  2.13x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  8150 | f16   34.492 ms  7.43 TFLOPS | f32   28.776 ms  8.91 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7030 | f16   29.559 ms  7.48 TFLOPS | f32   24.813 ms  8.91 TFLOPS |  1.19x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7031 | f16   29.608 ms  7.47 TFLOPS | f32   24.933 ms  8.87 TFLOPS |  1.19x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7032 | f16   29.695 ms  7.45 TFLOPS | f32   24.653 ms  8.97 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7033 | f16   29.637 ms  7.46 TFLOPS | f32   24.519 ms  9.02 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7034 | f16   29.617 ms  7.47 TFLOPS | f32   24.590 ms  9.00 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7035 | f16   29.599 ms  7.48 TFLOPS | f32   24.661 ms  8.97 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7036 | f16   29.772 ms  7.43 TFLOPS | f32   24.496 ms  9.04 TFLOPS |  1.22x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7037 | f16   29.577 ms  7.48 TFLOPS | f32   24.373 ms  9.08 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7038 | f16   29.678 ms  7.46 TFLOPS | f32   24.677 ms  8.97 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7039 | f16   29.580 ms  7.49 TFLOPS | f32   24.598 ms  9.00 TFLOPS |  1.20x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7040 | f16   29.336 ms  7.55 TFLOPS | f32   24.580 ms  9.01 TFLOPS |  1.19x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7041 | f16   47.772 ms  4.64 TFLOPS | f32   23.830 ms  9.29 TFLOPS |  2.00x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7042 | f16   48.404 ms  4.58 TFLOPS | f32   23.114 ms  9.58 TFLOPS |  2.09x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7043 | f16   48.344 ms  4.58 TFLOPS | f32   23.252 ms  9.53 TFLOPS |  2.08x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7044 | f16   47.593 ms  4.66 TFLOPS | f32   23.245 ms  9.53 TFLOPS |  2.05x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7045 | f16   48.683 ms  4.55 TFLOPS | f32   23.072 ms  9.61 TFLOPS |  2.11x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7046 | f16   48.025 ms  4.62 TFLOPS | f32   23.043 ms  9.62 TFLOPS |  2.08x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7047 | f16   47.845 ms  4.63 TFLOPS | f32   23.237 ms  9.54 TFLOPS |  2.06x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7048 | f16   48.769 ms  4.55 TFLOPS | f32   24.179 ms  9.17 TFLOPS |  2.02x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7049 | f16   48.384 ms  4.58 TFLOPS | f32   23.429 ms  9.46 TFLOPS |  2.07x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7050 | f16   48.373 ms  4.58 TFLOPS | f32   23.260 ms  9.53 TFLOPS |  2.08x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7051 | f16   47.833 ms  4.64 TFLOPS | f32   23.142 ms  9.58 TFLOPS |  2.07x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7052 | f16   47.778 ms  4.64 TFLOPS | f32   23.510 ms  9.44 TFLOPS |  2.03x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7053 | f16   48.603 ms  4.56 TFLOPS | f32   23.573 ms  9.41 TFLOPS |  2.06x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7054 | f16   48.781 ms  4.55 TFLOPS | f32   23.892 ms  9.29 TFLOPS |  2.04x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7055 | f16   47.913 ms  4.63 TFLOPS | f32   23.586 ms  9.41 TFLOPS |  2.03x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  7056 | f16   48.427 ms  4.58 TFLOPS | f32   23.382 ms  9.49 TFLOPS |  2.07x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  1024 | f16    4.221 ms  7.63 TFLOPS | f32    3.611 ms  8.92 TFLOPS |  1.17x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  2048 | f16   12.361 ms  5.21 TFLOPS | f32    6.837 ms  9.42 TFLOPS |  1.81x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  4096 | f16   26.501 ms  4.86 TFLOPS | f32   13.621 ms  9.46 TFLOPS |  1.95x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  8192 | f16   34.441 ms  7.48 TFLOPS | f32   28.453 ms  9.06 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  1000 | f16    4.386 ms  7.17 TFLOPS | f32    3.812 ms  8.25 TFLOPS |  1.15x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  3000 | f16   17.455 ms  5.41 TFLOPS | f32   10.764 ms  8.77 TFLOPS |  1.62x | bitwise equal
+SWEEP gdn gate z     N  6144 K  2560 T  5000 | f16   33.920 ms  4.64 TFLOPS | f32   16.712 ms  9.41 TFLOPS |  2.03x | bitwise equal
+SUMMARY gdn gate z    : 82 of 102 T values bitwise equal; f16 below 6 TFLOPS at 38 of the T >= 256; total f16 2005 ms, f32 1221 ms
+SWEEP qsa q          N 12288 K  2560 T     1 | f16    0.231 ms  0.27 TFLOPS | f32    0.421 ms  0.15 TFLOPS |  0.55x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T     2 | f16    0.895 ms  0.14 TFLOPS | f32    0.425 ms  0.30 TFLOPS |  2.11x | DIFFERENT
+       23327 of 24576 outputs differ
+SWEEP qsa q          N 12288 K  2560 T     3 | f16    0.888 ms  0.21 TFLOPS | f32    0.428 ms  0.44 TFLOPS |  2.07x | DIFFERENT
+       34986 of 36864 outputs differ
+SWEEP qsa q          N 12288 K  2560 T     4 | f16    0.899 ms  0.28 TFLOPS | f32    0.430 ms  0.59 TFLOPS |  2.09x | DIFFERENT
+       46665 of 49152 outputs differ
+SWEEP qsa q          N 12288 K  2560 T     5 | f16    0.891 ms  0.35 TFLOPS | f32    0.497 ms  0.63 TFLOPS |  1.79x | DIFFERENT
+       58589 of 61440 outputs differ
+SWEEP qsa q          N 12288 K  2560 T     6 | f16    0.894 ms  0.42 TFLOPS | f32    0.498 ms  0.76 TFLOPS |  1.80x | DIFFERENT
+       70266 of 73728 outputs differ
+SWEEP qsa q          N 12288 K  2560 T     7 | f16    0.901 ms  0.49 TFLOPS | f32    0.501 ms  0.88 TFLOPS |  1.80x | DIFFERENT
+       81983 of 86016 outputs differ
+SWEEP qsa q          N 12288 K  2560 T     8 | f16    0.893 ms  0.56 TFLOPS | f32    0.499 ms  1.01 TFLOPS |  1.79x | DIFFERENT
+       93731 of 98304 outputs differ
+SWEEP qsa q          N 12288 K  2560 T     9 | f16    0.897 ms  0.63 TFLOPS | f32    0.502 ms  1.13 TFLOPS |  1.79x | DIFFERENT
+       105400 of 110592 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    10 | f16    0.910 ms  0.69 TFLOPS | f32    0.503 ms  1.25 TFLOPS |  1.81x | DIFFERENT
+       117094 of 122880 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    11 | f16    0.903 ms  0.77 TFLOPS | f32    0.505 ms  1.37 TFLOPS |  1.79x | DIFFERENT
+       128787 of 135168 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    12 | f16    0.913 ms  0.83 TFLOPS | f32    0.505 ms  1.50 TFLOPS |  1.81x | DIFFERENT
+       140507 of 147456 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    13 | f16    0.905 ms  0.90 TFLOPS | f32    0.504 ms  1.62 TFLOPS |  1.80x | DIFFERENT
+       152206 of 159744 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    14 | f16    0.911 ms  0.97 TFLOPS | f32    0.505 ms  1.74 TFLOPS |  1.81x | DIFFERENT
+       163944 of 172032 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    15 | f16    0.911 ms  1.04 TFLOPS | f32    0.507 ms  1.86 TFLOPS |  1.80x | DIFFERENT
+       175646 of 184320 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    16 | f16    0.907 ms  1.11 TFLOPS | f32    0.507 ms  1.99 TFLOPS |  1.79x | DIFFERENT
+       187364 of 196608 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    24 | f16    0.920 ms  1.64 TFLOPS | f32    0.508 ms  2.97 TFLOPS |  1.81x | DIFFERENT
+       281071 of 294912 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    48 | f16    0.957 ms  3.15 TFLOPS | f32    0.645 ms  4.68 TFLOPS |  1.48x | DIFFERENT
+       562108 of 589824 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    72 | f16    1.598 ms  2.83 TFLOPS | f32    0.855 ms  5.30 TFLOPS |  1.87x | DIFFERENT
+       855977 of 884736 outputs differ
+SWEEP qsa q          N 12288 K  2560 T    96 | f16    1.606 ms  3.76 TFLOPS | f32    1.154 ms  5.23 TFLOPS |  1.39x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   120 | f16    1.641 ms  4.60 TFLOPS | f32    1.165 ms  6.48 TFLOPS |  1.41x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   144 | f16    2.493 ms  3.63 TFLOPS | f32    1.870 ms  4.85 TFLOPS |  1.33x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   168 | f16    2.525 ms  4.19 TFLOPS | f32    1.880 ms  5.62 TFLOPS |  1.34x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   192 | f16    2.568 ms  4.70 TFLOPS | f32    2.006 ms  6.02 TFLOPS |  1.28x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   216 | f16    2.234 ms  6.08 TFLOPS | f32    1.894 ms  7.17 TFLOPS |  1.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   240 | f16    2.239 ms  6.74 TFLOPS | f32    1.893 ms  7.97 TFLOPS |  1.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   264 | f16    4.351 ms  3.82 TFLOPS | f32    2.486 ms  6.68 TFLOPS |  1.75x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   288 | f16    4.344 ms  4.17 TFLOPS | f32    2.493 ms  7.27 TFLOPS |  1.74x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   312 | f16    4.376 ms  4.49 TFLOPS | f32    2.495 ms  7.87 TFLOPS |  1.75x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   336 | f16    5.254 ms  4.02 TFLOPS | f32    2.496 ms  8.47 TFLOPS |  2.10x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   360 | f16    5.273 ms  4.30 TFLOPS | f32    2.500 ms  9.06 TFLOPS |  2.11x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   384 | f16    5.265 ms  4.59 TFLOPS | f32    2.506 ms  9.64 TFLOPS |  2.10x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   408 | f16    6.203 ms  4.14 TFLOPS | f32    3.546 ms  7.24 TFLOPS |  1.75x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   432 | f16    6.227 ms  4.36 TFLOPS | f32    3.546 ms  7.66 TFLOPS |  1.76x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   456 | f16    4.168 ms  6.88 TFLOPS | f32    3.548 ms  8.09 TFLOPS |  1.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   480 | f16    4.243 ms  7.12 TFLOPS | f32    3.630 ms  8.32 TFLOPS |  1.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   504 | f16    4.306 ms  7.36 TFLOPS | f32    3.717 ms  8.53 TFLOPS |  1.16x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   560 | f16    8.105 ms  4.35 TFLOPS | f32    4.162 ms  8.46 TFLOPS |  1.95x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T   813 | f16   11.839 ms  4.32 TFLOPS | f32    5.954 ms  8.59 TFLOPS |  1.99x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  1066 | f16   15.540 ms  4.32 TFLOPS | f32    7.448 ms  9.00 TFLOPS |  2.09x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  1319 | f16   19.195 ms  4.32 TFLOPS | f32    9.004 ms  9.22 TFLOPS |  2.13x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  1572 | f16   22.952 ms  4.31 TFLOPS | f32   10.715 ms  9.23 TFLOPS |  2.14x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  1825 | f16   26.671 ms  4.30 TFLOPS | f32   12.299 ms  9.34 TFLOPS |  2.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  2078 | f16   30.319 ms  4.31 TFLOPS | f32   14.193 ms  9.21 TFLOPS |  2.14x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  2331 | f16   34.130 ms  4.30 TFLOPS | f32   16.269 ms  9.01 TFLOPS |  2.10x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  2584 | f16   37.851 ms  4.30 TFLOPS | f32   17.218 ms  9.44 TFLOPS |  2.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  2837 | f16   41.534 ms  4.30 TFLOPS | f32   19.594 ms  9.11 TFLOPS |  2.12x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  3090 | f16   45.244 ms  4.30 TFLOPS | f32   21.199 ms  9.17 TFLOPS |  2.13x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  3343 | f16   48.907 ms  4.30 TFLOPS | f32   22.612 ms  9.30 TFLOPS |  2.16x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  3596 | f16   52.671 ms  4.30 TFLOPS | f32   24.905 ms  9.08 TFLOPS |  2.11x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  3849 | f16   56.385 ms  4.29 TFLOPS | f32   27.053 ms  8.95 TFLOPS |  2.08x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  4102 | f16   60.076 ms  4.30 TFLOPS | f32   27.552 ms  9.37 TFLOPS |  2.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  4355 | f16   63.858 ms  4.29 TFLOPS | f32   29.210 ms  9.38 TFLOPS |  2.19x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  4608 | f16   66.660 ms  4.35 TFLOPS | f32   30.324 ms  9.56 TFLOPS |  2.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  4861 | f16   70.430 ms  4.34 TFLOPS | f32   31.215 ms  9.80 TFLOPS |  2.26x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  5114 | f16   43.612 ms  7.38 TFLOPS | f32   36.364 ms  8.85 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  5367 | f16   45.582 ms  7.41 TFLOPS | f32   38.119 ms  8.86 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  5620 | f16   47.891 ms  7.38 TFLOPS | f32   40.712 ms  8.68 TFLOPS |  1.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  5873 | f16   85.218 ms  4.34 TFLOPS | f32   38.242 ms  9.66 TFLOPS |  2.23x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  6126 | f16   89.061 ms  4.33 TFLOPS | f32   43.400 ms  8.88 TFLOPS |  2.05x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  6379 | f16   54.101 ms  7.42 TFLOPS | f32   45.317 ms  8.86 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  6632 | f16   56.306 ms  7.41 TFLOPS | f32   47.576 ms  8.77 TFLOPS |  1.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  6885 | f16   58.460 ms  7.41 TFLOPS | f32   48.579 ms  8.92 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7138 | f16  103.832 ms  4.33 TFLOPS | f32   47.606 ms  9.43 TFLOPS |  2.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7391 | f16  107.581 ms  4.32 TFLOPS | f32   50.603 ms  9.19 TFLOPS |  2.13x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7644 | f16   64.961 ms  7.40 TFLOPS | f32   54.347 ms  8.85 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7897 | f16   67.523 ms  7.36 TFLOPS | f32   56.408 ms  8.81 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  8150 | f16   68.677 ms  7.47 TFLOPS | f32   59.803 ms  8.57 TFLOPS |  1.15x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7030 | f16   59.469 ms  7.44 TFLOPS | f32   49.591 ms  8.92 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7031 | f16   59.758 ms  7.40 TFLOPS | f32   50.225 ms  8.81 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7032 | f16   59.675 ms  7.41 TFLOPS | f32   49.957 ms  8.86 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7033 | f16   59.649 ms  7.42 TFLOPS | f32   50.305 ms  8.80 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7034 | f16   59.689 ms  7.41 TFLOPS | f32   49.204 ms  8.99 TFLOPS |  1.21x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7035 | f16   59.647 ms  7.42 TFLOPS | f32   50.858 ms  8.70 TFLOPS |  1.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7036 | f16   59.565 ms  7.43 TFLOPS | f32   50.340 ms  8.79 TFLOPS |  1.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7037 | f16   59.186 ms  7.48 TFLOPS | f32   50.705 ms  8.73 TFLOPS |  1.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7038 | f16   59.678 ms  7.42 TFLOPS | f32   49.815 ms  8.89 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7039 | f16   59.658 ms  7.42 TFLOPS | f32   49.638 ms  8.92 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7040 | f16   59.692 ms  7.42 TFLOPS | f32   49.935 ms  8.87 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7041 | f16  102.860 ms  4.31 TFLOPS | f32   48.731 ms  9.09 TFLOPS |  2.11x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7042 | f16  102.935 ms  4.30 TFLOPS | f32   49.690 ms  8.92 TFLOPS |  2.07x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7043 | f16  102.900 ms  4.31 TFLOPS | f32   48.379 ms  9.16 TFLOPS |  2.13x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7044 | f16  102.850 ms  4.31 TFLOPS | f32   50.537 ms  8.77 TFLOPS |  2.04x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7045 | f16  102.848 ms  4.31 TFLOPS | f32   47.425 ms  9.35 TFLOPS |  2.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7046 | f16  102.791 ms  4.31 TFLOPS | f32   47.316 ms  9.37 TFLOPS |  2.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7047 | f16  102.816 ms  4.31 TFLOPS | f32   47.852 ms  9.27 TFLOPS |  2.15x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7048 | f16  102.785 ms  4.31 TFLOPS | f32   47.336 ms  9.37 TFLOPS |  2.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7049 | f16  102.857 ms  4.31 TFLOPS | f32   47.433 ms  9.35 TFLOPS |  2.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7050 | f16  102.920 ms  4.31 TFLOPS | f32   46.811 ms  9.48 TFLOPS |  2.20x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7051 | f16  102.764 ms  4.32 TFLOPS | f32   47.087 ms  9.42 TFLOPS |  2.18x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7052 | f16  102.897 ms  4.31 TFLOPS | f32   49.484 ms  8.97 TFLOPS |  2.08x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7053 | f16  102.807 ms  4.32 TFLOPS | f32   50.444 ms  8.80 TFLOPS |  2.04x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7054 | f16  102.871 ms  4.31 TFLOPS | f32   50.258 ms  8.83 TFLOPS |  2.05x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7055 | f16  102.851 ms  4.32 TFLOPS | f32   48.771 ms  9.10 TFLOPS |  2.11x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  7056 | f16  102.857 ms  4.32 TFLOPS | f32   47.643 ms  9.32 TFLOPS |  2.16x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  1024 | f16   14.599 ms  4.41 TFLOPS | f32    6.719 ms  9.59 TFLOPS |  2.17x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  2048 | f16   29.473 ms  4.37 TFLOPS | f32   13.282 ms  9.70 TFLOPS |  2.22x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  4096 | f16   34.717 ms  7.42 TFLOPS | f32   28.596 ms  9.01 TFLOPS |  1.21x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  8192 | f16   69.171 ms  7.45 TFLOPS | f32   61.231 ms  8.42 TFLOPS |  1.13x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  1000 | f16   14.614 ms  4.30 TFLOPS | f32    6.873 ms  9.15 TFLOPS |  2.13x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  3000 | f16   43.462 ms  4.34 TFLOPS | f32   20.385 ms  9.26 TFLOPS |  2.13x | bitwise equal
+SWEEP qsa q          N 12288 K  2560 T  5000 | f16   73.131 ms  4.30 TFLOPS | f32   33.639 ms  9.35 TFLOPS |  2.17x | bitwise equal
+SUMMARY qsa q         : 84 of 102 T values bitwise equal; f16 below 6 TFLOPS at 51 of the T >= 256; total f16 4272 ms, f32 2489 ms
+SWEEP gdn out        N  2560 K  6144 T     1 | f16    0.132 ms  0.24 TFLOPS | f32    0.240 ms  0.13 TFLOPS |  0.55x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T     2 | f16    0.423 ms  0.15 TFLOPS | f32    0.244 ms  0.26 TFLOPS |  1.74x | DIFFERENT
+       4858 of 5120 outputs differ
+SWEEP gdn out        N  2560 K  6144 T     3 | f16    0.425 ms  0.22 TFLOPS | f32    0.245 ms  0.39 TFLOPS |  1.73x | DIFFERENT
+       7276 of 7680 outputs differ
+SWEEP gdn out        N  2560 K  6144 T     4 | f16    0.424 ms  0.30 TFLOPS | f32    0.244 ms  0.52 TFLOPS |  1.74x | DIFFERENT
+       9688 of 10240 outputs differ
+SWEEP gdn out        N  2560 K  6144 T     5 | f16    0.427 ms  0.37 TFLOPS | f32    0.260 ms  0.60 TFLOPS |  1.64x | DIFFERENT
+       12263 of 12800 outputs differ
+SWEEP gdn out        N  2560 K  6144 T     6 | f16    0.429 ms  0.44 TFLOPS | f32    0.261 ms  0.72 TFLOPS |  1.64x | DIFFERENT
+       14707 of 15360 outputs differ
+SWEEP gdn out        N  2560 K  6144 T     7 | f16    0.423 ms  0.52 TFLOPS | f32    0.260 ms  0.85 TFLOPS |  1.63x | DIFFERENT
+       17142 of 17920 outputs differ
+SWEEP gdn out        N  2560 K  6144 T     8 | f16    0.426 ms  0.59 TFLOPS | f32    0.261 ms  0.96 TFLOPS |  1.63x | DIFFERENT
+       19605 of 20480 outputs differ
+SWEEP gdn out        N  2560 K  6144 T     9 | f16    0.430 ms  0.66 TFLOPS | f32    0.262 ms  1.08 TFLOPS |  1.64x | DIFFERENT
+       22060 of 23040 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    10 | f16    0.423 ms  0.74 TFLOPS | f32    0.260 ms  1.21 TFLOPS |  1.62x | DIFFERENT
+       24512 of 25600 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    11 | f16    0.431 ms  0.80 TFLOPS | f32    0.260 ms  1.33 TFLOPS |  1.66x | DIFFERENT
+       26960 of 28160 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    12 | f16    0.433 ms  0.87 TFLOPS | f32    0.262 ms  1.44 TFLOPS |  1.65x | DIFFERENT
+       29409 of 30720 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    13 | f16    0.434 ms  0.94 TFLOPS | f32    0.263 ms  1.56 TFLOPS |  1.65x | DIFFERENT
+       31860 of 33280 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    14 | f16    0.430 ms  1.02 TFLOPS | f32    0.263 ms  1.67 TFLOPS |  1.63x | DIFFERENT
+       34306 of 35840 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    15 | f16    0.431 ms  1.10 TFLOPS | f32    0.263 ms  1.79 TFLOPS |  1.64x | DIFFERENT
+       36775 of 38400 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    16 | f16    0.437 ms  1.15 TFLOPS | f32    0.266 ms  1.89 TFLOPS |  1.64x | DIFFERENT
+       39226 of 40960 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    24 | f16    0.440 ms  1.71 TFLOPS | f32    0.264 ms  2.86 TFLOPS |  1.67x | DIFFERENT
+       58815 of 61440 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    48 | f16    0.494 ms  3.06 TFLOPS | f32    0.342 ms  4.41 TFLOPS |  1.44x | DIFFERENT
+       117618 of 122880 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    72 | f16    0.756 ms  3.00 TFLOPS | f32    1.017 ms  2.23 TFLOPS |  0.74x | DIFFERENT
+       178529 of 184320 outputs differ
+SWEEP gdn out        N  2560 K  6144 T    96 | f16    0.764 ms  3.96 TFLOPS | f32    1.053 ms  2.87 TFLOPS |  0.73x | DIFFERENT
+       238062 of 245760 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   120 | f16    0.769 ms  4.91 TFLOPS | f32    1.091 ms  3.46 TFLOPS |  0.70x | DIFFERENT
+       297560 of 307200 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   144 | f16    0.672 ms  6.74 TFLOPS | f32    1.534 ms  2.95 TFLOPS |  0.44x | DIFFERENT
+       357032 of 368640 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   168 | f16    0.666 ms  7.93 TFLOPS | f32    1.488 ms  3.55 TFLOPS |  0.45x | DIFFERENT
+       416540 of 430080 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   192 | f16    0.681 ms  8.87 TFLOPS | f32    1.525 ms  3.96 TFLOPS |  0.45x | DIFFERENT
+       476101 of 491520 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   216 | f16    1.140 ms  5.96 TFLOPS | f32    1.538 ms  4.42 TFLOPS |  0.74x | DIFFERENT
+       535739 of 552960 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   240 | f16    1.125 ms  6.71 TFLOPS | f32    1.549 ms  4.87 TFLOPS |  0.73x | DIFFERENT
+       595208 of 614400 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   264 | f16    1.253 ms  6.63 TFLOPS | f32    1.407 ms  5.90 TFLOPS |  0.89x | DIFFERENT
+       654681 of 675840 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   288 | f16    1.280 ms  7.08 TFLOPS | f32    1.430 ms  6.33 TFLOPS |  0.89x | DIFFERENT
+       714176 of 737280 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   312 | f16    1.274 ms  7.71 TFLOPS | f32    1.458 ms  6.73 TFLOPS |  0.87x | DIFFERENT
+       773722 of 798720 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   336 | f16    1.464 ms  7.22 TFLOPS | f32    1.477 ms  7.16 TFLOPS |  0.99x | DIFFERENT
+       841382 of 860160 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   360 | f16    1.462 ms  7.74 TFLOPS | f32    1.506 ms  7.52 TFLOPS |  0.97x | DIFFERENT
+       901458 of 921600 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   384 | f16    1.496 ms  8.07 TFLOPS | f32    1.541 ms  7.84 TFLOPS |  0.97x | DIFFERENT
+       961528 of 983040 outputs differ
+SWEEP gdn out        N  2560 K  6144 T   408 | f16    1.996 ms  6.43 TFLOPS | f32    2.109 ms  6.08 TFLOPS |  0.95x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T   432 | f16    2.023 ms  6.72 TFLOPS | f32    2.115 ms  6.43 TFLOPS |  0.96x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T   456 | f16    2.237 ms  6.41 TFLOPS | f32    2.114 ms  6.79 TFLOPS |  1.06x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T   480 | f16    2.234 ms  6.76 TFLOPS | f32    2.118 ms  7.13 TFLOPS |  1.05x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T   504 | f16    2.245 ms  7.06 TFLOPS | f32    2.123 ms  7.47 TFLOPS |  1.06x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T   560 | f16    2.467 ms  7.14 TFLOPS | f32    2.450 ms  7.19 TFLOPS |  1.01x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T   813 | f16    3.156 ms  8.10 TFLOPS | f32    3.302 ms  7.75 TFLOPS |  0.96x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  1066 | f16    3.670 ms  9.14 TFLOPS | f32    3.611 ms  9.29 TFLOPS |  1.02x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  1319 | f16    4.955 ms  8.37 TFLOPS | f32    4.927 ms  8.42 TFLOPS |  1.01x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  1572 | f16    5.688 ms  8.69 TFLOPS | f32    6.180 ms  8.00 TFLOPS |  0.92x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  1825 | f16    6.382 ms  9.00 TFLOPS | f32    6.254 ms  9.18 TFLOPS |  1.02x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  2078 | f16    7.592 ms  8.61 TFLOPS | f32    7.501 ms  8.71 TFLOPS |  1.01x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  2331 | f16    8.440 ms  8.69 TFLOPS | f32    8.876 ms  8.26 TFLOPS |  0.95x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  2584 | f16    8.910 ms  9.12 TFLOPS | f32    9.283 ms  8.76 TFLOPS |  0.96x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  2837 | f16   11.476 ms  7.78 TFLOPS | f32   10.430 ms  8.56 TFLOPS |  1.10x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  3090 | f16   12.175 ms  7.98 TFLOPS | f32   11.609 ms  8.37 TFLOPS |  1.05x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  3343 | f16   14.133 ms  7.44 TFLOPS | f32   11.618 ms  9.05 TFLOPS |  1.22x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  3596 | f16   14.027 ms  8.06 TFLOPS | f32   12.800 ms  8.84 TFLOPS |  1.10x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  3849 | f16   17.151 ms  7.06 TFLOPS | f32   14.220 ms  8.51 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  4102 | f16   17.164 ms  7.52 TFLOPS | f32   14.794 ms  8.72 TFLOPS |  1.16x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  4355 | f16   22.184 ms  6.18 TFLOPS | f32   15.327 ms  8.94 TFLOPS |  1.45x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  4608 | f16   18.064 ms  8.02 TFLOPS | f32   15.977 ms  9.07 TFLOPS |  1.13x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  4861 | f16   26.058 ms  5.87 TFLOPS | f32   17.343 ms  8.82 TFLOPS |  1.50x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  5114 | f16   20.382 ms  7.89 TFLOPS | f32   18.723 ms  8.59 TFLOPS |  1.09x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  5367 | f16   21.436 ms  7.88 TFLOPS | f32   18.907 ms  8.93 TFLOPS |  1.13x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  5620 | f16   34.136 ms  5.18 TFLOPS | f32   19.367 ms  9.13 TFLOPS |  1.76x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  5873 | f16   23.856 ms  7.74 TFLOPS | f32   21.787 ms  8.48 TFLOPS |  1.09x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  6126 | f16   24.751 ms  7.79 TFLOPS | f32   21.973 ms  8.77 TFLOPS |  1.13x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  6379 | f16   36.689 ms  5.47 TFLOPS | f32   22.604 ms  8.88 TFLOPS |  1.62x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  6632 | f16   27.043 ms  7.71 TFLOPS | f32   25.141 ms  8.30 TFLOPS |  1.08x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  6885 | f16   28.238 ms  7.67 TFLOPS | f32   25.631 ms  8.45 TFLOPS |  1.10x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7138 | f16   48.719 ms  4.61 TFLOPS | f32   26.032 ms  8.63 TFLOPS |  1.87x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7391 | f16   30.148 ms  7.71 TFLOPS | f32   27.407 ms  8.48 TFLOPS |  1.10x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7644 | f16   31.076 ms  7.74 TFLOPS | f32   28.435 ms  8.46 TFLOPS |  1.09x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7897 | f16   55.494 ms  4.48 TFLOPS | f32   28.076 ms  8.85 TFLOPS |  1.98x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  8150 | f16   34.057 ms  7.53 TFLOPS | f32   29.751 ms  8.62 TFLOPS |  1.14x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7030 | f16   28.590 ms  7.74 TFLOPS | f32   25.361 ms  8.72 TFLOPS |  1.13x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7031 | f16   28.606 ms  7.73 TFLOPS | f32   26.592 ms  8.32 TFLOPS |  1.08x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7032 | f16   28.625 ms  7.73 TFLOPS | f32   25.736 ms  8.60 TFLOPS |  1.11x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7033 | f16   28.619 ms  7.73 TFLOPS | f32   25.252 ms  8.76 TFLOPS |  1.13x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7034 | f16   28.588 ms  7.74 TFLOPS | f32   26.150 ms  8.46 TFLOPS |  1.09x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7035 | f16   28.611 ms  7.73 TFLOPS | f32   26.057 ms  8.49 TFLOPS |  1.10x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7036 | f16   29.350 ms  7.54 TFLOPS | f32   25.072 ms  8.83 TFLOPS |  1.17x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7037 | f16   28.611 ms  7.74 TFLOPS | f32   26.780 ms  8.27 TFLOPS |  1.07x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7038 | f16   28.605 ms  7.74 TFLOPS | f32   25.626 ms  8.64 TFLOPS |  1.12x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7039 | f16   28.823 ms  7.68 TFLOPS | f32   25.842 ms  8.57 TFLOPS |  1.12x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7040 | f16   28.906 ms  7.66 TFLOPS | f32   26.181 ms  8.46 TFLOPS |  1.10x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7041 | f16   48.473 ms  4.57 TFLOPS | f32   25.036 ms  8.85 TFLOPS |  1.94x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7042 | f16   49.709 ms  4.46 TFLOPS | f32   26.096 ms  8.49 TFLOPS |  1.90x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7043 | f16   48.097 ms  4.61 TFLOPS | f32   25.185 ms  8.80 TFLOPS |  1.91x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7044 | f16   43.843 ms  5.05 TFLOPS | f32   24.807 ms  8.93 TFLOPS |  1.77x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7045 | f16   49.106 ms  4.51 TFLOPS | f32   25.630 ms  8.65 TFLOPS |  1.92x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7046 | f16   50.561 ms  4.38 TFLOPS | f32   25.341 ms  8.75 TFLOPS |  2.00x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7047 | f16   46.851 ms  4.73 TFLOPS | f32   25.758 ms  8.61 TFLOPS |  1.82x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7048 | f16   47.575 ms  4.66 TFLOPS | f32   25.340 ms  8.75 TFLOPS |  1.88x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7049 | f16   47.115 ms  4.71 TFLOPS | f32   24.701 ms  8.98 TFLOPS |  1.91x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7050 | f16   47.151 ms  4.70 TFLOPS | f32   26.556 ms  8.35 TFLOPS |  1.78x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7051 | f16   47.789 ms  4.64 TFLOPS | f32   25.043 ms  8.86 TFLOPS |  1.91x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7052 | f16   49.345 ms  4.50 TFLOPS | f32   25.609 ms  8.66 TFLOPS |  1.93x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7053 | f16   46.835 ms  4.74 TFLOPS | f32   24.960 ms  8.89 TFLOPS |  1.88x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7054 | f16   46.682 ms  4.75 TFLOPS | f32   25.798 ms  8.60 TFLOPS |  1.81x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7055 | f16   48.006 ms  4.62 TFLOPS | f32   25.839 ms  8.59 TFLOPS |  1.86x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  7056 | f16   46.022 ms  4.82 TFLOPS | f32   25.126 ms  8.83 TFLOPS |  1.83x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  1024 | f16    3.771 ms  8.54 TFLOPS | f32    3.743 ms  8.61 TFLOPS |  1.01x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  2048 | f16    8.301 ms  7.76 TFLOPS | f32    7.303 ms  8.82 TFLOPS |  1.14x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  4096 | f16   21.549 ms  5.98 TFLOPS | f32   14.073 ms  9.16 TFLOPS |  1.53x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  8192 | f16   33.480 ms  7.70 TFLOPS | f32   29.797 ms  8.65 TFLOPS |  1.12x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  1000 | f16    4.047 ms  7.77 TFLOPS | f32    3.974 ms  7.92 TFLOPS |  1.02x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  3000 | f16   12.551 ms  7.52 TFLOPS | f32   10.412 ms  9.06 TFLOPS |  1.21x | bitwise equal
+SWEEP gdn out        N  2560 K  6144 T  5000 | f16   30.297 ms  5.19 TFLOPS | f32   17.915 ms  8.78 TFLOPS |  1.69x | bitwise equal
+SUMMARY gdn out       : 71 of 102 T values bitwise equal; f16 below 6 TFLOPS at 23 of the T >= 256; total f16 1846 ms, f32 1304 ms
+SWEEP qsa out        N  2560 K  4096 T     1 | f16    0.092 ms  0.23 TFLOPS | f32    0.157 ms  0.13 TFLOPS |  0.59x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T     2 | f16    0.180 ms  0.23 TFLOPS | f32    0.155 ms  0.27 TFLOPS |  1.16x | DIFFERENT
+       4786 of 5120 outputs differ
+SWEEP qsa out        N  2560 K  4096 T     3 | f16    0.182 ms  0.34 TFLOPS | f32    0.161 ms  0.39 TFLOPS |  1.14x | DIFFERENT
+       7163 of 7680 outputs differ
+SWEEP qsa out        N  2560 K  4096 T     4 | f16    0.180 ms  0.47 TFLOPS | f32    0.159 ms  0.53 TFLOPS |  1.14x | DIFFERENT
+       9568 of 10240 outputs differ
+SWEEP qsa out        N  2560 K  4096 T     5 | f16    0.182 ms  0.58 TFLOPS | f32    0.158 ms  0.66 TFLOPS |  1.16x | DIFFERENT
+       12089 of 12800 outputs differ
+SWEEP qsa out        N  2560 K  4096 T     6 | f16    0.184 ms  0.68 TFLOPS | f32    0.158 ms  0.80 TFLOPS |  1.17x | DIFFERENT
+       14509 of 15360 outputs differ
+SWEEP qsa out        N  2560 K  4096 T     7 | f16    0.182 ms  0.81 TFLOPS | f32    0.157 ms  0.94 TFLOPS |  1.16x | DIFFERENT
+       16932 of 17920 outputs differ
+SWEEP qsa out        N  2560 K  4096 T     8 | f16    0.184 ms  0.91 TFLOPS | f32    0.160 ms  1.05 TFLOPS |  1.15x | DIFFERENT
+       19346 of 20480 outputs differ
+SWEEP qsa out        N  2560 K  4096 T     9 | f16    0.182 ms  1.04 TFLOPS | f32    0.157 ms  1.20 TFLOPS |  1.16x | DIFFERENT
+       21779 of 23040 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    10 | f16    0.182 ms  1.15 TFLOPS | f32    0.157 ms  1.34 TFLOPS |  1.16x | DIFFERENT
+       24204 of 25600 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    11 | f16    0.184 ms  1.25 TFLOPS | f32    0.160 ms  1.44 TFLOPS |  1.15x | DIFFERENT
+       26628 of 28160 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    12 | f16    0.184 ms  1.37 TFLOPS | f32    0.158 ms  1.60 TFLOPS |  1.17x | DIFFERENT
+       29038 of 30720 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    13 | f16    0.186 ms  1.46 TFLOPS | f32    0.159 ms  1.71 TFLOPS |  1.17x | DIFFERENT
+       31448 of 33280 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    14 | f16    0.187 ms  1.57 TFLOPS | f32    0.158 ms  1.85 TFLOPS |  1.18x | DIFFERENT
+       33874 of 35840 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    15 | f16    0.185 ms  1.70 TFLOPS | f32    0.159 ms  1.97 TFLOPS |  1.16x | DIFFERENT
+       36302 of 38400 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    16 | f16    0.185 ms  1.81 TFLOPS | f32    0.160 ms  2.10 TFLOPS |  1.16x | DIFFERENT
+       38739 of 40960 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    24 | f16    0.189 ms  2.66 TFLOPS | f32    0.159 ms  3.16 TFLOPS |  1.19x | DIFFERENT
+       58184 of 61440 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    48 | f16    0.203 ms  4.95 TFLOPS | f32    0.219 ms  4.59 TFLOPS |  0.93x | DIFFERENT
+       116400 of 122880 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    72 | f16    0.419 ms  3.61 TFLOPS | f32    0.372 ms  4.06 TFLOPS |  1.13x | DIFFERENT
+       177026 of 184320 outputs differ
+SWEEP qsa out        N  2560 K  4096 T    96 | f16    0.424 ms  4.75 TFLOPS | f32    0.393 ms  5.13 TFLOPS |  1.08x | DIFFERENT
+       236087 of 245760 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   120 | f16    0.430 ms  5.86 TFLOPS | f32    0.394 ms  6.38 TFLOPS |  1.09x | DIFFERENT
+       295169 of 307200 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   144 | f16    0.441 ms  6.85 TFLOPS | f32    0.635 ms  4.76 TFLOPS |  0.69x | DIFFERENT
+       354111 of 368640 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   168 | f16    0.439 ms  8.02 TFLOPS | f32    0.646 ms  5.46 TFLOPS |  0.68x | DIFFERENT
+       413021 of 430080 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   192 | f16    0.445 ms  9.05 TFLOPS | f32    0.650 ms  6.19 TFLOPS |  0.68x | DIFFERENT
+       471998 of 491520 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   216 | f16    0.684 ms  6.62 TFLOPS | f32    0.662 ms  6.85 TFLOPS |  1.03x | DIFFERENT
+       530991 of 552960 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   240 | f16    0.685 ms  7.35 TFLOPS | f32    0.667 ms  7.55 TFLOPS |  1.03x | DIFFERENT
+       589942 of 614400 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   264 | f16    0.837 ms  6.62 TFLOPS | f32    0.868 ms  6.38 TFLOPS |  0.96x | DIFFERENT
+       648923 of 675840 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   288 | f16    0.834 ms  7.24 TFLOPS | f32    0.871 ms  6.93 TFLOPS |  0.96x | DIFFERENT
+       707948 of 737280 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   312 | f16    0.834 ms  7.85 TFLOPS | f32    0.883 ms  7.41 TFLOPS |  0.94x | DIFFERENT
+       766891 of 798720 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   336 | f16    0.955 ms  7.38 TFLOPS | f32    0.894 ms  7.88 TFLOPS |  1.07x | DIFFERENT
+       836661 of 860160 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   360 | f16    0.957 ms  7.89 TFLOPS | f32    0.908 ms  8.32 TFLOPS |  1.05x | DIFFERENT
+       896450 of 921600 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   384 | f16    0.988 ms  8.15 TFLOPS | f32    0.951 ms  8.47 TFLOPS |  1.04x | DIFFERENT
+       956289 of 983040 outputs differ
+SWEEP qsa out        N  2560 K  4096 T   408 | f16    1.214 ms  7.05 TFLOPS | f32    1.606 ms  5.33 TFLOPS |  0.76x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T   432 | f16    1.316 ms  6.89 TFLOPS | f32    1.395 ms  6.50 TFLOPS |  0.94x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T   456 | f16    1.485 ms  6.44 TFLOPS | f32    1.606 ms  5.96 TFLOPS |  0.92x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T   480 | f16    1.486 ms  6.77 TFLOPS | f32    1.391 ms  7.24 TFLOPS |  1.07x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T   504 | f16    1.450 ms  7.29 TFLOPS | f32    1.366 ms  7.74 TFLOPS |  1.06x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T   560 | f16    1.430 ms  8.22 TFLOPS | f32    1.591 ms  7.38 TFLOPS |  0.90x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T   813 | f16    2.083 ms  8.19 TFLOPS | f32    2.361 ms  7.22 TFLOPS |  0.88x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  1066 | f16    2.398 ms  9.32 TFLOPS | f32    2.411 ms  9.27 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  1319 | f16    3.056 ms  9.05 TFLOPS | f32    3.266 ms  8.47 TFLOPS |  0.94x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  1572 | f16    3.742 ms  8.81 TFLOPS | f32    4.029 ms  8.18 TFLOPS |  0.93x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  1825 | f16    4.076 ms  9.39 TFLOPS | f32    4.097 ms  9.34 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  2078 | f16    4.737 ms  9.20 TFLOPS | f32    4.866 ms  8.96 TFLOPS |  0.97x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  2331 | f16    5.425 ms  9.01 TFLOPS | f32    5.453 ms  8.97 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  2584 | f16    5.770 ms  9.39 TFLOPS | f32    5.765 ms  9.40 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  2837 | f16    6.599 ms  9.02 TFLOPS | f32    6.685 ms  8.90 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  3090 | f16    7.402 ms  8.75 TFLOPS | f32    7.244 ms  8.95 TFLOPS |  1.02x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  3343 | f16    7.628 ms  9.19 TFLOPS | f32    7.518 ms  9.32 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  3596 | f16    8.365 ms  9.02 TFLOPS | f32    8.379 ms  9.00 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  3849 | f16    9.423 ms  8.57 TFLOPS | f32    9.149 ms  8.82 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  4102 | f16    9.652 ms  8.91 TFLOPS | f32    9.515 ms  9.04 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  4355 | f16   10.370 ms  8.81 TFLOPS | f32   10.222 ms  8.94 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  4608 | f16   13.146 ms  7.35 TFLOPS | f32   10.815 ms  8.94 TFLOPS |  1.22x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  4861 | f16   11.738 ms  8.68 TFLOPS | f32   11.391 ms  8.95 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  5114 | f16   14.623 ms  7.33 TFLOPS | f32   12.432 ms  8.63 TFLOPS |  1.18x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  5367 | f16   16.164 ms  6.96 TFLOPS | f32   13.309 ms  8.46 TFLOPS |  1.21x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  5620 | f16   14.314 ms  8.23 TFLOPS | f32   13.713 ms  8.59 TFLOPS |  1.04x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  5873 | f16   17.403 ms  7.08 TFLOPS | f32   14.636 ms  8.42 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  6126 | f16   18.188 ms  7.06 TFLOPS | f32   14.874 ms  8.64 TFLOPS |  1.22x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  6379 | f16   15.897 ms  8.42 TFLOPS | f32   15.383 ms  8.70 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  6632 | f16   19.491 ms  7.14 TFLOPS | f32   16.409 ms  8.48 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  6885 | f16   20.060 ms  7.20 TFLOPS | f32   16.662 ms  8.67 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7138 | f16   17.559 ms  8.53 TFLOPS | f32   17.064 ms  8.77 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7391 | f16   21.445 ms  7.23 TFLOPS | f32   18.161 ms  8.53 TFLOPS |  1.18x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7644 | f16   22.261 ms  7.20 TFLOPS | f32   18.365 ms  8.73 TFLOPS |  1.21x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7897 | f16   19.482 ms  8.50 TFLOPS | f32   18.711 ms  8.85 TFLOPS |  1.04x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  8150 | f16   23.279 ms  7.34 TFLOPS | f32   19.534 ms  8.75 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7030 | f16   19.845 ms  7.43 TFLOPS | f32   16.620 ms  8.87 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7031 | f16   20.348 ms  7.25 TFLOPS | f32   16.908 ms  8.72 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7032 | f16   19.847 ms  7.43 TFLOPS | f32   16.458 ms  8.96 TFLOPS |  1.21x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7033 | f16   20.001 ms  7.37 TFLOPS | f32   16.645 ms  8.86 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7034 | f16   19.845 ms  7.43 TFLOPS | f32   16.637 ms  8.87 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7035 | f16   20.031 ms  7.37 TFLOPS | f32   16.714 ms  8.83 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7036 | f16   20.011 ms  7.37 TFLOPS | f32   16.464 ms  8.96 TFLOPS |  1.22x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7037 | f16   20.431 ms  7.22 TFLOPS | f32   17.201 ms  8.58 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7038 | f16   20.524 ms  7.19 TFLOPS | f32   16.969 ms  8.70 TFLOPS |  1.21x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7039 | f16   20.398 ms  7.24 TFLOPS | f32   17.132 ms  8.62 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7040 | f16   20.609 ms  7.16 TFLOPS | f32   17.319 ms  8.52 TFLOPS |  1.19x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7041 | f16   17.639 ms  8.37 TFLOPS | f32   17.087 ms  8.64 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7042 | f16   17.878 ms  8.26 TFLOPS | f32   17.200 ms  8.59 TFLOPS |  1.04x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7043 | f16   17.778 ms  8.31 TFLOPS | f32   17.445 ms  8.47 TFLOPS |  1.02x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7044 | f16   18.811 ms  7.85 TFLOPS | f32   18.474 ms  8.00 TFLOPS |  1.02x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7045 | f16   19.067 ms  7.75 TFLOPS | f32   18.462 ms  8.00 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7046 | f16   18.397 ms  8.03 TFLOPS | f32   18.020 ms  8.20 TFLOPS |  1.02x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7047 | f16   18.406 ms  8.03 TFLOPS | f32   18.183 ms  8.13 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7048 | f16   18.325 ms  8.07 TFLOPS | f32   17.757 ms  8.32 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7049 | f16   18.378 ms  8.04 TFLOPS | f32   17.809 ms  8.30 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7050 | f16   18.668 ms  7.92 TFLOPS | f32   17.667 ms  8.37 TFLOPS |  1.06x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7051 | f16   17.948 ms  8.24 TFLOPS | f32   17.254 ms  8.57 TFLOPS |  1.04x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7052 | f16   17.802 ms  8.31 TFLOPS | f32   17.568 ms  8.42 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7053 | f16   17.549 ms  8.43 TFLOPS | f32   17.194 ms  8.60 TFLOPS |  1.02x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7054 | f16   17.981 ms  8.23 TFLOPS | f32   17.202 ms  8.60 TFLOPS |  1.05x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7055 | f16   17.511 ms  8.45 TFLOPS | f32   17.350 ms  8.53 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  7056 | f16   17.502 ms  8.45 TFLOPS | f32   17.171 ms  8.62 TFLOPS |  1.02x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  1024 | f16    2.751 ms  7.81 TFLOPS | f32    2.731 ms  7.86 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  2048 | f16    6.135 ms  7.00 TFLOPS | f32    5.481 ms  7.84 TFLOPS |  1.12x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  4096 | f16   10.376 ms  8.28 TFLOPS | f32   10.281 ms  8.36 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  8192 | f16   24.831 ms  6.92 TFLOPS | f32   20.740 ms  8.28 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  1000 | f16    2.777 ms  7.55 TFLOPS | f32    2.756 ms  7.61 TFLOPS |  1.01x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  3000 | f16    7.415 ms  8.49 TFLOPS | f32    7.482 ms  8.41 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa out        N  2560 K  4096 T  5000 | f16   12.930 ms  8.11 TFLOPS | f32   12.965 ms  8.09 TFLOPS |  1.00x | bitwise equal
+SUMMARY qsa out       : 71 of 102 T values bitwise equal; f16 below 6 TFLOPS at 0 of the T >= 256; total f16 956 ms, f32 873 ms
+SWEEP qsa k/v        N   512 K  2560 T     1 | f16    0.027 ms  0.10 TFLOPS | f32    0.032 ms  0.08 TFLOPS |  0.84x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T     2 | f16    0.033 ms  0.16 TFLOPS | f32    0.030 ms  0.18 TFLOPS |  1.10x | DIFFERENT
+       876 of 1024 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T     3 | f16    0.033 ms  0.24 TFLOPS | f32    0.032 ms  0.25 TFLOPS |  1.03x | DIFFERENT
+       1326 of 1536 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T     4 | f16    0.033 ms  0.31 TFLOPS | f32    0.032 ms  0.33 TFLOPS |  1.05x | DIFFERENT
+       1779 of 2048 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T     5 | f16    0.037 ms  0.36 TFLOPS | f32    0.067 ms  0.20 TFLOPS |  0.55x | DIFFERENT
+       2311 of 2560 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T     6 | f16    0.034 ms  0.47 TFLOPS | f32    0.068 ms  0.23 TFLOPS |  0.50x | DIFFERENT
+       2781 of 3072 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T     7 | f16    0.035 ms  0.53 TFLOPS | f32    0.068 ms  0.27 TFLOPS |  0.51x | DIFFERENT
+       3257 of 3584 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T     8 | f16    0.034 ms  0.62 TFLOPS | f32    0.067 ms  0.31 TFLOPS |  0.50x | DIFFERENT
+       3722 of 4096 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T     9 | f16    0.040 ms  0.59 TFLOPS | f32    0.068 ms  0.34 TFLOPS |  0.58x | DIFFERENT
+       4203 of 4608 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    10 | f16    0.035 ms  0.75 TFLOPS | f32    0.069 ms  0.38 TFLOPS |  0.51x | DIFFERENT
+       4676 of 5120 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    11 | f16    0.034 ms  0.85 TFLOPS | f32    0.070 ms  0.41 TFLOPS |  0.49x | DIFFERENT
+       5151 of 5632 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    12 | f16    0.037 ms  0.86 TFLOPS | f32    0.069 ms  0.46 TFLOPS |  0.53x | DIFFERENT
+       5617 of 6144 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    13 | f16    0.034 ms  1.01 TFLOPS | f32    0.069 ms  0.50 TFLOPS |  0.49x | DIFFERENT
+       6087 of 6656 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    14 | f16    0.035 ms  1.05 TFLOPS | f32    0.069 ms  0.53 TFLOPS |  0.51x | DIFFERENT
+       6554 of 7168 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    15 | f16    0.035 ms  1.13 TFLOPS | f32    0.069 ms  0.57 TFLOPS |  0.51x | DIFFERENT
+       7029 of 7680 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    16 | f16    0.036 ms  1.17 TFLOPS | f32    0.071 ms  0.59 TFLOPS |  0.51x | DIFFERENT
+       7500 of 8192 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    24 | f16    0.036 ms  1.76 TFLOPS | f32    0.071 ms  0.89 TFLOPS |  0.51x | DIFFERENT
+       11241 of 12288 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    48 | f16    0.047 ms  2.67 TFLOPS | f32    0.073 ms  1.73 TFLOPS |  0.65x | DIFFERENT
+       22634 of 24576 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    72 | f16    0.057 ms  3.29 TFLOPS | f32    0.074 ms  2.56 TFLOPS |  0.78x | DIFFERENT
+       34088 of 36864 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T    96 | f16    0.058 ms  4.31 TFLOPS | f32    0.074 ms  3.41 TFLOPS |  0.79x | DIFFERENT
+       45471 of 49152 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   120 | f16    0.087 ms  3.62 TFLOPS | f32    0.077 ms  4.09 TFLOPS |  1.13x | DIFFERENT
+       57002 of 61440 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   144 | f16    0.084 ms  4.50 TFLOPS | f32    0.081 ms  4.67 TFLOPS |  1.04x | DIFFERENT
+       68912 of 73728 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   168 | f16    0.100 ms  4.40 TFLOPS | f32    0.137 ms  3.22 TFLOPS |  0.73x | DIFFERENT
+       80587 of 86016 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   192 | f16    0.093 ms  5.40 TFLOPS | f32    0.139 ms  3.61 TFLOPS |  0.67x | DIFFERENT
+       92080 of 98304 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   216 | f16    0.128 ms  4.42 TFLOPS | f32    0.143 ms  3.95 TFLOPS |  0.89x | DIFFERENT
+       103580 of 110592 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   240 | f16    0.151 ms  4.18 TFLOPS | f32    0.143 ms  4.38 TFLOPS |  1.05x | DIFFERENT
+       115570 of 122880 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   264 | f16    0.163 ms  4.25 TFLOPS | f32    0.149 ms  4.63 TFLOPS |  1.09x | DIFFERENT
+       127141 of 135168 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   288 | f16    0.163 ms  4.64 TFLOPS | f32    0.149 ms  5.06 TFLOPS |  1.09x | DIFFERENT
+       138708 of 147456 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   312 | f16    0.146 ms  5.59 TFLOPS | f32    0.151 ms  5.43 TFLOPS |  0.97x | DIFFERENT
+       149387 of 159744 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   336 | f16    0.160 ms  5.49 TFLOPS | f32    0.152 ms  5.81 TFLOPS |  1.06x | DIFFERENT
+       161061 of 172032 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   360 | f16    0.161 ms  5.87 TFLOPS | f32    0.209 ms  4.52 TFLOPS |  0.77x | DIFFERENT
+       172489 of 184320 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   384 | f16    0.163 ms  6.18 TFLOPS | f32    0.209 ms  4.82 TFLOPS |  0.78x | DIFFERENT
+       184001 of 196608 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   408 | f16    0.223 ms  4.79 TFLOPS | f32    0.202 ms  5.30 TFLOPS |  1.11x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T   432 | f16    0.224 ms  5.05 TFLOPS | f32    0.200 ms  5.67 TFLOPS |  1.12x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T   456 | f16    0.239 ms  5.01 TFLOPS | f32    0.241 ms  4.97 TFLOPS |  0.99x | DIFFERENT
+       217395 of 233472 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   480 | f16    0.239 ms  5.26 TFLOPS | f32    0.221 ms  5.70 TFLOPS |  1.08x | DIFFERENT
+       228852 of 245760 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   504 | f16    0.242 ms  5.45 TFLOPS | f32    0.219 ms  6.03 TFLOPS |  1.11x | DIFFERENT
+       240302 of 258048 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   560 | f16    0.268 ms  5.47 TFLOPS | f32    0.240 ms  6.13 TFLOPS |  1.12x | DIFFERENT
+       266927 of 286720 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T   813 | f16    0.384 ms  5.55 TFLOPS | f32    0.327 ms  6.53 TFLOPS |  1.18x | DIFFERENT
+       395262 of 416256 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T  1066 | f16    0.449 ms  6.22 TFLOPS | f32    0.390 ms  7.16 TFLOPS |  1.15x | DIFFERENT
+       518307 of 545792 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T  1319 | f16    0.506 ms  6.84 TFLOPS | f32    0.485 ms  7.12 TFLOPS |  1.04x | DIFFERENT
+       641391 of 675328 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T  1572 | f16    0.576 ms  7.16 TFLOPS | f32    0.575 ms  7.16 TFLOPS |  1.00x | DIFFERENT
+       764341 of 804864 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T  1825 | f16    0.656 ms  7.29 TFLOPS | f32    0.597 ms  8.01 TFLOPS |  1.10x | DIFFERENT
+       892861 of 934400 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T  2078 | f16    0.822 ms  6.63 TFLOPS | f32    0.992 ms  5.49 TFLOPS |  0.83x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  2331 | f16    1.047 ms  5.84 TFLOPS | f32    1.020 ms  5.99 TFLOPS |  1.03x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  2584 | f16    1.048 ms  6.47 TFLOPS | f32    1.178 ms  5.75 TFLOPS |  0.89x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  2837 | f16    1.019 ms  7.30 TFLOPS | f32    1.161 ms  6.41 TFLOPS |  0.88x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  3090 | f16    1.036 ms  7.82 TFLOPS | f32    1.172 ms  6.91 TFLOPS |  0.88x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  3343 | f16    1.078 ms  8.13 TFLOPS | f32    1.107 ms  7.92 TFLOPS |  0.97x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  3596 | f16    1.088 ms  8.66 TFLOPS | f32    1.103 ms  8.55 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  3849 | f16    1.312 ms  7.69 TFLOPS | f32    1.466 ms  6.88 TFLOPS |  0.90x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  4102 | f16    1.362 ms  7.90 TFLOPS | f32    1.495 ms  7.19 TFLOPS |  0.91x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  4355 | f16    1.632 ms  7.00 TFLOPS | f32    1.544 ms  7.39 TFLOPS |  1.06x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  4608 | f16    1.641 ms  7.36 TFLOPS | f32    1.484 ms  8.14 TFLOPS |  1.11x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  4861 | f16    1.511 ms  8.43 TFLOPS | f32    1.650 ms  7.72 TFLOPS |  0.92x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  5114 | f16    1.693 ms  7.92 TFLOPS | f32    1.707 ms  7.85 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  5367 | f16    1.702 ms  8.27 TFLOPS | f32    1.715 ms  8.20 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  5620 | f16    1.734 ms  8.50 TFLOPS | f32    1.744 ms  8.45 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  5873 | f16    2.024 ms  7.60 TFLOPS | f32    2.096 ms  7.35 TFLOPS |  0.97x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  6126 | f16    2.404 ms  6.68 TFLOPS | f32    2.104 ms  7.63 TFLOPS |  1.14x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  6379 | f16    2.406 ms  6.95 TFLOPS | f32    2.267 ms  7.38 TFLOPS |  1.06x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  6632 | f16    2.416 ms  7.19 TFLOPS | f32    2.285 ms  7.61 TFLOPS |  1.06x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  6885 | f16    2.174 ms  8.30 TFLOPS | f32    2.284 ms  7.90 TFLOPS |  0.95x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7138 | f16    2.289 ms  8.17 TFLOPS | f32    2.281 ms  8.20 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7391 | f16    2.279 ms  8.50 TFLOPS | f32    2.282 ms  8.49 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7644 | f16    2.748 ms  7.29 TFLOPS | f32    2.293 ms  8.74 TFLOPS |  1.20x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7897 | f16    2.987 ms  6.93 TFLOPS | f32    2.650 ms  7.81 TFLOPS |  1.13x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  8150 | f16    3.054 ms  7.00 TFLOPS | f32    2.646 ms  8.07 TFLOPS |  1.15x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7030 | f16    2.250 ms  8.19 TFLOPS | f32    2.313 ms  7.97 TFLOPS |  0.97x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7031 | f16    2.257 ms  8.17 TFLOPS | f32    2.291 ms  8.05 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7032 | f16    2.254 ms  8.18 TFLOPS | f32    2.265 ms  8.14 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7033 | f16    2.234 ms  8.25 TFLOPS | f32    2.265 ms  8.14 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7034 | f16    2.139 ms  8.62 TFLOPS | f32    2.267 ms  8.13 TFLOPS |  0.94x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7035 | f16    2.236 ms  8.25 TFLOPS | f32    2.278 ms  8.09 TFLOPS |  0.98x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7036 | f16    2.236 ms  8.25 TFLOPS | f32    2.271 ms  8.12 TFLOPS |  0.98x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7037 | f16    2.233 ms  8.26 TFLOPS | f32    2.274 ms  8.11 TFLOPS |  0.98x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7038 | f16    2.130 ms  8.66 TFLOPS | f32    2.282 ms  8.08 TFLOPS |  0.93x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7039 | f16    2.230 ms  8.27 TFLOPS | f32    2.295 ms  8.04 TFLOPS |  0.97x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7040 | f16    2.231 ms  8.27 TFLOPS | f32    2.277 ms  8.10 TFLOPS |  0.98x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7041 | f16    2.233 ms  8.27 TFLOPS | f32    2.247 ms  8.22 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7042 | f16    2.236 ms  8.25 TFLOPS | f32    2.251 ms  8.20 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7043 | f16    2.228 ms  8.29 TFLOPS | f32    2.268 ms  8.14 TFLOPS |  0.98x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7044 | f16    2.241 ms  8.24 TFLOPS | f32    2.248 ms  8.22 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7045 | f16    2.234 ms  8.27 TFLOPS | f32    2.252 ms  8.20 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7046 | f16    2.234 ms  8.27 TFLOPS | f32    2.245 ms  8.23 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7047 | f16    2.236 ms  8.26 TFLOPS | f32    2.254 ms  8.20 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7048 | f16    2.238 ms  8.25 TFLOPS | f32    2.256 ms  8.19 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7049 | f16    2.231 ms  8.28 TFLOPS | f32    2.251 ms  8.21 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7050 | f16    2.233 ms  8.28 TFLOPS | f32    2.248 ms  8.22 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7051 | f16    2.238 ms  8.26 TFLOPS | f32    2.262 ms  8.17 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7052 | f16    2.232 ms  8.28 TFLOPS | f32    2.258 ms  8.19 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7053 | f16    2.309 ms  8.01 TFLOPS | f32    2.332 ms  7.93 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7054 | f16    2.327 ms  7.95 TFLOPS | f32    2.337 ms  7.91 TFLOPS |  1.00x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7055 | f16    2.327 ms  7.95 TFLOPS | f32    2.348 ms  7.88 TFLOPS |  0.99x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  7056 | f16    2.190 ms  8.44 TFLOPS | f32    2.317 ms  7.98 TFLOPS |  0.95x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  1024 | f16    0.467 ms  5.75 TFLOPS | f32    0.403 ms  6.65 TFLOPS |  1.16x | DIFFERENT
+       497905 of 524288 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T  2048 | f16    0.842 ms  6.37 TFLOPS | f32    0.991 ms  5.42 TFLOPS |  0.85x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  4096 | f16    1.474 ms  7.29 TFLOPS | f32    1.558 ms  6.89 TFLOPS |  0.95x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  8192 | f16    3.113 ms  6.90 TFLOPS | f32    2.846 ms  7.55 TFLOPS |  1.09x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  1000 | f16    0.440 ms  5.96 TFLOPS | f32    0.385 ms  6.81 TFLOPS |  1.14x | DIFFERENT
+       486258 of 512000 outputs differ
+SWEEP qsa k/v        N   512 K  2560 T  3000 | f16    1.035 ms  7.60 TFLOPS | f32    1.164 ms  6.75 TFLOPS |  0.89x | bitwise equal
+SWEEP qsa k/v        N   512 K  2560 T  5000 | f16    1.606 ms  8.16 TFLOPS | f32    1.738 ms  7.54 TFLOPS |  0.92x | bitwise equal
+SUMMARY qsa k/v       : 60 of 102 T values bitwise equal; f16 below 6 TFLOPS at 15 of the T >= 256; total f16 120 ms, f32 121 ms
+SWEEP shexp gate/up  N   640 K  2560 T     1 | f16    0.029 ms  0.11 TFLOPS | f32    0.035 ms  0.09 TFLOPS |  0.82x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T     2 | f16    0.039 ms  0.17 TFLOPS | f32    0.034 ms  0.20 TFLOPS |  1.16x | DIFFERENT
+       1111 of 1280 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T     3 | f16    0.038 ms  0.26 TFLOPS | f32    0.035 ms  0.28 TFLOPS |  1.08x | DIFFERENT
+       1673 of 1920 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T     4 | f16    0.038 ms  0.35 TFLOPS | f32    0.034 ms  0.39 TFLOPS |  1.12x | DIFFERENT
+       2243 of 2560 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T     5 | f16    0.040 ms  0.41 TFLOPS | f32    0.067 ms  0.25 TFLOPS |  0.60x | DIFFERENT
+       2945 of 3200 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T     6 | f16    0.039 ms  0.51 TFLOPS | f32    0.067 ms  0.30 TFLOPS |  0.58x | DIFFERENT
+       3549 of 3840 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T     7 | f16    0.038 ms  0.60 TFLOPS | f32    0.067 ms  0.34 TFLOPS |  0.57x | DIFFERENT
+       4142 of 4480 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T     8 | f16    0.040 ms  0.66 TFLOPS | f32    0.067 ms  0.39 TFLOPS |  0.59x | DIFFERENT
+       4739 of 5120 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T     9 | f16    0.039 ms  0.76 TFLOPS | f32    0.067 ms  0.44 TFLOPS |  0.58x | DIFFERENT
+       5326 of 5760 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    10 | f16    0.039 ms  0.84 TFLOPS | f32    0.067 ms  0.49 TFLOPS |  0.58x | DIFFERENT
+       5911 of 6400 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    11 | f16    0.040 ms  0.90 TFLOPS | f32    0.069 ms  0.53 TFLOPS |  0.58x | DIFFERENT
+       6501 of 7040 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    12 | f16    0.041 ms  0.97 TFLOPS | f32    0.068 ms  0.58 TFLOPS |  0.60x | DIFFERENT
+       7098 of 7680 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    13 | f16    0.040 ms  1.07 TFLOPS | f32    0.069 ms  0.62 TFLOPS |  0.58x | DIFFERENT
+       7686 of 8320 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    14 | f16    0.040 ms  1.16 TFLOPS | f32    0.069 ms  0.67 TFLOPS |  0.58x | DIFFERENT
+       8278 of 8960 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    15 | f16    0.041 ms  1.20 TFLOPS | f32    0.070 ms  0.71 TFLOPS |  0.59x | DIFFERENT
+       8865 of 9600 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    16 | f16    0.045 ms  1.16 TFLOPS | f32    0.069 ms  0.76 TFLOPS |  0.65x | DIFFERENT
+       9456 of 10240 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    24 | f16    0.042 ms  1.88 TFLOPS | f32    0.071 ms  1.10 TFLOPS |  0.59x | DIFFERENT
+       14140 of 15360 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    48 | f16    0.054 ms  2.90 TFLOPS | f32    0.071 ms  2.20 TFLOPS |  0.76x | DIFFERENT
+       28413 of 30720 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    72 | f16    0.066 ms  3.55 TFLOPS | f32    0.073 ms  3.25 TFLOPS |  0.91x | DIFFERENT
+       42748 of 46080 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T    96 | f16    0.075 ms  4.21 TFLOPS | f32    0.075 ms  4.21 TFLOPS |  1.00x | DIFFERENT
+       57019 of 61440 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   120 | f16    0.084 ms  4.70 TFLOPS | f32    0.079 ms  4.99 TFLOPS |  1.06x | DIFFERENT
+       71688 of 76800 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   144 | f16    0.124 ms  3.82 TFLOPS | f32    0.135 ms  3.49 TFLOPS |  0.91x | DIFFERENT
+       86377 of 92160 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   168 | f16    0.108 ms  5.12 TFLOPS | f32    0.139 ms  3.95 TFLOPS |  0.77x | DIFFERENT
+       101128 of 107520 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   192 | f16    0.113 ms  5.59 TFLOPS | f32    0.146 ms  4.31 TFLOPS |  0.77x | DIFFERENT
+       115524 of 122880 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   216 | f16    0.153 ms  4.64 TFLOPS | f32    0.143 ms  4.94 TFLOPS |  1.06x | DIFFERENT
+       129984 of 138240 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   240 | f16    0.141 ms  5.58 TFLOPS | f32    0.148 ms  5.30 TFLOPS |  0.95x | DIFFERENT
+       143519 of 153600 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   264 | f16    0.193 ms  4.47 TFLOPS | f32    0.152 ms  5.71 TFLOPS |  1.28x | DIFFERENT
+       158235 of 168960 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   288 | f16    0.194 ms  4.88 TFLOPS | f32    0.154 ms  6.14 TFLOPS |  1.26x | DIFFERENT
+       172584 of 184320 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   312 | f16    0.196 ms  5.21 TFLOPS | f32    0.212 ms  4.83 TFLOPS |  0.93x | DIFFERENT
+       186928 of 199680 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   336 | f16    0.188 ms  5.84 TFLOPS | f32    0.210 ms  5.24 TFLOPS |  0.90x | DIFFERENT
+       202266 of 215040 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   360 | f16    0.186 ms  6.33 TFLOPS | f32    0.215 ms  5.49 TFLOPS |  0.87x | DIFFERENT
+       216677 of 230400 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   384 | f16    0.187 ms  6.73 TFLOPS | f32    0.216 ms  5.82 TFLOPS |  0.87x | DIFFERENT
+       231156 of 245760 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   408 | f16    0.258 ms  5.18 TFLOPS | f32    0.221 ms  6.05 TFLOPS |  1.17x | DIFFERENT
+       243212 of 261120 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   432 | f16    0.262 ms  5.40 TFLOPS | f32    0.233 ms  6.07 TFLOPS |  1.12x | DIFFERENT
+       257465 of 276480 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   456 | f16    0.301 ms  4.96 TFLOPS | f32    0.235 ms  6.37 TFLOPS |  1.28x | DIFFERENT
+       277137 of 291840 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   480 | f16    0.328 ms  4.80 TFLOPS | f32    0.234 ms  6.71 TFLOPS |  1.40x | DIFFERENT
+       291681 of 307200 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   504 | f16    0.333 ms  4.96 TFLOPS | f32    0.234 ms  7.04 TFLOPS |  1.42x | DIFFERENT
+       306259 of 322560 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   560 | f16    0.368 ms  4.99 TFLOPS | f32    0.259 ms  7.08 TFLOPS |  1.42x | DIFFERENT
+       340279 of 358400 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T   813 | f16    0.434 ms  6.14 TFLOPS | f32    0.378 ms  7.05 TFLOPS |  1.15x | DIFFERENT
+       494061 of 520320 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T  1066 | f16    0.492 ms  7.09 TFLOPS | f32    0.476 ms  7.34 TFLOPS |  1.03x | DIFFERENT
+       647873 of 682240 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T  1319 | f16    0.618 ms  6.99 TFLOPS | f32    0.594 ms  7.28 TFLOPS |  1.04x | DIFFERENT
+       801691 of 844160 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T  1572 | f16    0.817 ms  6.30 TFLOPS | f32    0.961 ms  5.36 TFLOPS |  0.85x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  1825 | f16    0.870 ms  6.87 TFLOPS | f32    1.047 ms  5.71 TFLOPS |  0.83x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  2078 | f16    1.017 ms  6.70 TFLOPS | f32    1.171 ms  5.81 TFLOPS |  0.87x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  2331 | f16    0.996 ms  7.67 TFLOPS | f32    1.133 ms  6.74 TFLOPS |  0.88x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  2584 | f16    1.124 ms  7.53 TFLOPS | f32    1.159 ms  7.31 TFLOPS |  0.97x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  2837 | f16    1.130 ms  8.22 TFLOPS | f32    1.138 ms  8.17 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  3090 | f16    1.380 ms  7.34 TFLOPS | f32    1.531 ms  6.61 TFLOPS |  0.90x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  3343 | f16    1.450 ms  7.55 TFLOPS | f32    1.585 ms  6.91 TFLOPS |  0.91x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  3596 | f16    1.658 ms  7.11 TFLOPS | f32    1.759 ms  6.70 TFLOPS |  0.94x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  3849 | f16    1.527 ms  8.26 TFLOPS | f32    1.789 ms  7.05 TFLOPS |  0.85x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  4102 | f16    1.645 ms  8.17 TFLOPS | f32    1.736 ms  7.74 TFLOPS |  0.95x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  4355 | f16    1.663 ms  8.58 TFLOPS | f32    1.718 ms  8.31 TFLOPS |  0.97x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  4608 | f16    1.991 ms  7.59 TFLOPS | f32    1.672 ms  9.03 TFLOPS |  1.19x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  4861 | f16    2.251 ms  7.08 TFLOPS | f32    2.152 ms  7.40 TFLOPS |  1.05x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  5114 | f16    2.450 ms  6.84 TFLOPS | f32    2.162 ms  7.75 TFLOPS |  1.13x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  5367 | f16    2.448 ms  7.18 TFLOPS | f32    2.299 ms  7.65 TFLOPS |  1.07x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  5620 | f16    2.290 ms  8.04 TFLOPS | f32    2.310 ms  7.97 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  5873 | f16    2.325 ms  8.28 TFLOPS | f32    2.314 ms  8.32 TFLOPS |  1.00x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  6126 | f16    2.789 ms  7.20 TFLOPS | f32    2.324 ms  8.64 TFLOPS |  1.20x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  6379 | f16    3.036 ms  6.88 TFLOPS | f32    2.695 ms  7.76 TFLOPS |  1.13x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  6632 | f16    3.119 ms  6.97 TFLOPS | f32    2.842 ms  7.65 TFLOPS |  1.10x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  6885 | f16    3.095 ms  7.29 TFLOPS | f32    2.836 ms  7.95 TFLOPS |  1.09x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7138 | f16    2.832 ms  8.26 TFLOPS | f32    2.843 ms  8.23 TFLOPS |  1.00x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7391 | f16    2.865 ms  8.45 TFLOPS | f32    2.857 ms  8.48 TFLOPS |  1.00x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7644 | f16    3.432 ms  7.30 TFLOPS | f32    2.854 ms  8.78 TFLOPS |  1.20x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7897 | f16    3.737 ms  6.93 TFLOPS | f32    3.212 ms  8.06 TFLOPS |  1.16x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  8150 | f16    3.735 ms  7.15 TFLOPS | f32    3.211 ms  8.32 TFLOPS |  1.16x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7030 | f16    2.712 ms  8.50 TFLOPS | f32    3.180 ms  7.25 TFLOPS |  0.85x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7031 | f16    2.696 ms  8.55 TFLOPS | f32    3.185 ms  7.23 TFLOPS |  0.85x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7032 | f16    2.702 ms  8.53 TFLOPS | f32    3.185 ms  7.24 TFLOPS |  0.85x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7033 | f16    2.676 ms  8.61 TFLOPS | f32    3.158 ms  7.30 TFLOPS |  0.85x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7034 | f16    2.678 ms  8.61 TFLOPS | f32    3.188 ms  7.23 TFLOPS |  0.84x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7035 | f16    2.754 ms  8.37 TFLOPS | f32    3.215 ms  7.17 TFLOPS |  0.86x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7036 | f16    2.737 ms  8.42 TFLOPS | f32    3.218 ms  7.16 TFLOPS |  0.85x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7037 | f16    2.742 ms  8.41 TFLOPS | f32    3.190 ms  7.23 TFLOPS |  0.86x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7038 | f16    2.755 ms  8.37 TFLOPS | f32    3.197 ms  7.21 TFLOPS |  0.86x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7039 | f16    2.835 ms  8.13 TFLOPS | f32    3.219 ms  7.16 TFLOPS |  0.88x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7040 | f16    2.690 ms  8.58 TFLOPS | f32    3.213 ms  7.18 TFLOPS |  0.84x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7041 | f16    2.714 ms  8.50 TFLOPS | f32    2.824 ms  8.17 TFLOPS |  0.96x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7042 | f16    2.697 ms  8.56 TFLOPS | f32    2.832 ms  8.15 TFLOPS |  0.95x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7043 | f16    2.786 ms  8.28 TFLOPS | f32    2.907 ms  7.94 TFLOPS |  0.96x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7044 | f16    2.891 ms  7.99 TFLOPS | f32    2.906 ms  7.94 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7045 | f16    2.859 ms  8.07 TFLOPS | f32    2.883 ms  8.01 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7046 | f16    2.883 ms  8.01 TFLOPS | f32    2.911 ms  7.93 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7047 | f16    2.896 ms  7.97 TFLOPS | f32    2.901 ms  7.96 TFLOPS |  1.00x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7048 | f16    2.892 ms  7.99 TFLOPS | f32    2.908 ms  7.94 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7049 | f16    2.755 ms  8.39 TFLOPS | f32    2.876 ms  8.03 TFLOPS |  0.96x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7050 | f16    2.863 ms  8.07 TFLOPS | f32    2.875 ms  8.03 TFLOPS |  1.00x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7051 | f16    2.854 ms  8.10 TFLOPS | f32    2.885 ms  8.01 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7052 | f16    2.783 ms  8.30 TFLOPS | f32    2.912 ms  7.93 TFLOPS |  0.96x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7053 | f16    2.794 ms  8.27 TFLOPS | f32    2.905 ms  7.96 TFLOPS |  0.96x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7054 | f16    2.785 ms  8.30 TFLOPS | f32    2.903 ms  7.96 TFLOPS |  0.96x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7055 | f16    2.882 ms  8.02 TFLOPS | f32    2.913 ms  7.94 TFLOPS |  0.99x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  7056 | f16    2.774 ms  8.33 TFLOPS | f32    2.917 ms  7.93 TFLOPS |  0.95x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  1024 | f16    0.506 ms  6.64 TFLOPS | f32    0.474 ms  7.08 TFLOPS |  1.07x | DIFFERENT
+       622353 of 655360 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T  2048 | f16    1.057 ms  6.35 TFLOPS | f32    1.150 ms  5.84 TFLOPS |  0.92x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  4096 | f16    1.608 ms  8.35 TFLOPS | f32    1.731 ms  7.76 TFLOPS |  0.93x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  8192 | f16    3.806 ms  7.05 TFLOPS | f32    3.279 ms  8.19 TFLOPS |  1.16x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  1000 | f16    0.506 ms  6.48 TFLOPS | f32    0.476 ms  6.88 TFLOPS |  1.06x | DIFFERENT
+       607813 of 640000 outputs differ
+SWEEP shexp gate/up  N   640 K  2560 T  3000 | f16    1.180 ms  8.33 TFLOPS | f32    1.178 ms  8.35 TFLOPS |  1.00x | bitwise equal
+SWEEP shexp gate/up  N   640 K  2560 T  5000 | f16    2.053 ms  7.98 TFLOPS | f32    2.127 ms  7.70 TFLOPS |  0.97x | bitwise equal
+SUMMARY shexp gate/up : 60 of 102 T values bitwise equal; f16 below 6 TFLOPS at 10 of the T >= 256; total f16 150 ms, f32 153 ms

@@ -1,0 +1,48 @@
+{
+ "request": {
+  "model": "qwen3.8-flash-next-iq3_s",
+  "max_tokens": 256,
+  "temperature": 0,
+  "stream": false
+ },
+ "prompt_chars": 511566,
+ "filler_repeats": 821,
+ "response": {
+  "id": "chatcmpl-c94128b4b0ce497aba36fa08",
+  "object": "chat.completion",
+  "created": 1791084301,
+  "model": "qwen3.8-flash-next-iq3_s",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "Mixture-of-experts layers increase model capacity by routing each token to a few small experts, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.",
+     "reasoning_content": "We need answer user's request. User provided huge repeated text and task: summarise the text above in exactly one sentence. Need produce exactly one sentence. Need likely concise. Need ensure one sentence only. Could say: \"Mixture-of-experts layers increase model capacity by routing each token to a few small experts, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.\" That's one sentence. Need maybe no extra. Ensure exactly one sentence. Final only that.\n"
+    },
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "prompt_tokens": 98599,
+   "completion_tokens": 152,
+   "total_tokens": 98751,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 98599,
+   "prompt_ms": 74431.8,
+   "prompt_per_token_ms": 0.755,
+   "prompt_per_second": 1324.7,
+   "predicted_n": 152,
+   "predicted_ms": 3746.1,
+   "predicted_per_token_ms": 24.645,
+   "predicted_per_second": 40.6,
+   "draft_n": 129,
+   "draft_n_accepted": 98
+  }
+ }
+}

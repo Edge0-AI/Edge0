@@ -1,0 +1,24 @@
+{
+  "variables": {
+    "ONEAPI_DEVICE_SELECTOR": "level_zero:0",
+    "SYCL_CACHE_PERSISTENT": "0",
+    "SYCL_PROGRAM_COMPILE_OPTIONS": "-cl-fp32-correctly-rounded-divide-sqrt",
+    "STRATA_MIRROR_MIB": "16384",
+    "STRATA_VERIFY_DEVICE_PLAN": "1",
+    "STRATA_VERIFY_NO_HOST": "1",
+    "STRATA_WARM_GRAPHS": "0",
+    "STRATA_STAGER_THREADS": "4",
+    "OMP_NUM_THREADS": "4",
+    "MKL_NUM_THREADS": "4"
+  },
+  "absent": [
+    "STRATA_DEBUG",
+    "STRATA_DBG_NAN",
+    "STRATA_VERIFY_EAGER",
+    "STRATA_QFUSE"
+  ],
+  "alias_check": "upstream default enabled",
+  "public_fixture_additional_variable": {
+    "STRATA_TRACE": "1"
+  }
+}

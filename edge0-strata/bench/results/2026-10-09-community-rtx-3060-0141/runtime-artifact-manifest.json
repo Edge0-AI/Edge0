@@ -1,0 +1,51 @@
+{
+  "hashed_utc": "2026-10-09T08:45:12.508648+00:00",
+  "hashing_overlapped_inference": false,
+  "mtp_source_repository": "Qwen/Qwen3.8-Flash-Next",
+  "mtp_source_revision": "de4b8e4d43b917e7706784d8bb445c9af86a3540",
+  "files": [
+    {
+      "file": "Strata\\data\\expert-profile.bin",
+      "bytes": 196632,
+      "mtime_ns": 1790898999603841700,
+      "sha256": "8f59b4aa8873209dff11c11e37bcda9529a1335b724a1afeea37bf6388975baf",
+      "hash_seconds": 0.005450400058180094
+    },
+    {
+      "file": "Strata\\data\\draft_vocab.bin",
+      "bytes": 425196,
+      "mtime_ns": 1790898999593544100,
+      "sha256": "b1e1d3a7a9e4bf862dcd5923ce661fb59bbd07907e594df5cf86a62ac235cb91",
+      "hash_seconds": 0.010241099982522428
+    },
+    {
+      "file": "Strata-data\\mtp\\rt\\dense.bin",
+      "bytes": 116099072,
+      "mtime_ns": 1790901390681486200,
+      "sha256": "c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a",
+      "hash_seconds": 0.10811199992895126
+    },
+    {
+      "file": "Strata-data\\mtp\\rt\\dense.txt",
+      "bytes": 1880,
+      "mtime_ns": 1790901390681486200,
+      "sha256": "8773c81ebb0986e37fe94a8a9933e87be48b1fabc6889a0106bcdab179d1c2ac",
+      "hash_seconds": 0.003716500010341406
+    },
+    {
+      "file": "Strata-data\\mtp\\rt\\draft_vocab.bin",
+      "bytes": 425196,
+      "mtime_ns": 1790901390781153600,
+      "sha256": "b1e1d3a7a9e4bf862dcd5923ce661fb59bbd07907e594df5cf86a62ac235cb91",
+      "hash_seconds": 0.0042779999785125256
+    },
+    {
+      "file": "Strata-data\\mtp\\rt\\experts.bin",
+      "bytes": 707788800,
+      "mtime_ns": 1790901389590353700,
+      "sha256": "09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f",
+      "hash_seconds": 0.53389020008035
+    }
+  ],
+  "draft_vocab_matches_shipped_cjk": true
+}

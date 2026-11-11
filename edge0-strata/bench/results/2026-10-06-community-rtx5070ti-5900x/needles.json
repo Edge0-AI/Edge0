@@ -1,0 +1,92 @@
+{
+  "note": "tools/needle_bench.py, 32k length, depths 10/50/90, one run per depth per model; all found.",
+  "results": {
+    "iq2_xs": [
+      {
+        "length": "32k",
+        "depth": 10,
+        "prompt_tokens": 32171,
+        "seconds": 12.0,
+        "found": true,
+        "word": "meadow-copper-504",
+        "answer": "meadow-copper-504"
+      },
+      {
+        "length": "32k",
+        "depth": 50,
+        "prompt_tokens": 32171,
+        "seconds": 11.7,
+        "found": true,
+        "word": "falcon-quartz-940",
+        "answer": "falcon-quartz-940"
+      },
+      {
+        "length": "32k",
+        "depth": 90,
+        "prompt_tokens": 32172,
+        "seconds": 6.2,
+        "found": true,
+        "word": "willow-cobalt-696",
+        "answer": "willow-cobalt-696"
+      }
+    ],
+    "iq3_xxs": [
+      {
+        "length": "32k",
+        "depth": 10,
+        "prompt_tokens": 32171,
+        "seconds": 13.4,
+        "found": true,
+        "word": "meadow-copper-504",
+        "answer": "meadow-copper-504"
+      },
+      {
+        "length": "32k",
+        "depth": 50,
+        "prompt_tokens": 32171,
+        "seconds": 13.1,
+        "found": true,
+        "word": "falcon-quartz-940",
+        "answer": "falcon-quartz-940"
+      },
+      {
+        "length": "32k",
+        "depth": 90,
+        "prompt_tokens": 32172,
+        "seconds": 6.8,
+        "found": true,
+        "word": "willow-cobalt-696",
+        "answer": "willow-cobalt-696"
+      }
+    ],
+    "iq3_s": [
+      {
+        "length": "32k",
+        "depth": 10,
+        "prompt_tokens": 32171,
+        "seconds": 15.0,
+        "found": true,
+        "word": "meadow-copper-504",
+        "answer": "meadow-copper-504"
+      },
+      {
+        "length": "32k",
+        "depth": 50,
+        "prompt_tokens": 32171,
+        "seconds": 14.6,
+        "found": true,
+        "word": "falcon-quartz-940",
+        "answer": "falcon-quartz-940"
+      },
+      {
+        "length": "32k",
+        "depth": 90,
+        "prompt_tokens": 32172,
+        "seconds": 7.7,
+        "found": true,
+        "word": "willow-cobalt-696",
+        "answer": "willow-cobalt-696"
+      }
+    ]
+  }
+}

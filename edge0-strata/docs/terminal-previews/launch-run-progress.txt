@@ -1,0 +1,36 @@
+# strata launch preview: the progress screen while it downloads and tunes
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Launch   Demo
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   ✓ Engine    Engine 0.1.45 (cuda) is installed.
+   ✓ Model     Model is ready.
+   ✓ Settings  Settings are saved.
+   > Tuning    █████████████████████████░░░░░░░░░░░░░░░ 62%  Tuning
+     Starting
+     Access
+
+
+   Tuning   measurement 5 of 8   about 7 min left
+     Default settings                    83.0 tokens/s
+     Keep more context on GPU            78.5 tokens/s
+     Longer prompt chunks                85.1 tokens/s
+   Close other heavy programs while it measures. You can stop it any time: nothing changes until it is done.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Strata is getting everything ready. This can take a while the first time (the model is large). Stopping is
+ safe: files already downloaded are kept and a download continues where it stopped.
+ s stop   q quit

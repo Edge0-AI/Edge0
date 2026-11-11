@@ -1,0 +1,58 @@
+{
+ "exe": "/home/r6djo/services/strata/engine/strata",
+ "args": [
+  "--pack",
+  "/home/r6djo/services/Strata-data/packs/iq3_xxs",
+  "--native",
+  "/mnt/data/strata_data/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/mnt/data/strata_data/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+  "--expert-profile",
+  "/home/r6djo/services/strata/data/expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--mtp",
+  "/home/r6djo/services/Strata-data/mtp/rt",
+  "--max-context",
+  "262144",
+  "--kv",
+  "int8",
+  "--kv-resident",
+  "32768",
+  "--remote-expert-opt",
+  "--pcie-frac",
+  "0.19",
+  "--spec-min-p",
+  "0.70",
+  "--conversation-cache-mib",
+  "8192",
+  "--trim-stage-weights"
+ ],
+ "cwd": "/home/r6djo/services/strata",
+ "tokenizer": "/home/r6djo/services/Strata-data/packs/iq3_xxs/tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3_xxs",
+ "log": "/home/r6djo/services/strata/strata-iq3_xxs.log",
+ "lib_dirs": [
+  "/usr/local/cuda-13.4/bin",
+  "/usr/local/cuda-13.4/lib64"
+ ],
+ "port": 8080,
+ "gpu": [
+  0,
+  1
+ ],
+ "gpus_asked": true,
+ "layer_split": "25",
+ "expert_profile_save": "expert-profile-learned.bin",
+ "aliases": [
+  "qwen3.8-flash-next"
+ ],
+ "env": {
+  "STRATA_PREFILL_HELP": "1",
+  "STRATA_TRACE": "1"
+ }
+}

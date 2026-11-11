@@ -1,0 +1,11 @@
+Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf
+Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf.done
+Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf
+Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf.done
+47039860096 /mnt/data/strata_data/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf
+28800138432 /mnt/data/strata_data/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf
+conversions.json
+dense.bin
+index.txt
+native_experts.txt
+tokenizer

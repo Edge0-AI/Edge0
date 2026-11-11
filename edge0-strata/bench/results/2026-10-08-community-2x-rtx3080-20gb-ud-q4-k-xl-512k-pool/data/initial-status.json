@@ -1,0 +1,74 @@
+{
+  "service": "strata",
+  "model": "qwen3.8-flash-next-ud-q4_k_xl",
+  "loaded": true,
+  "auto_load": true,
+  "structured_output": {
+    "formats": [
+      "json_object",
+      "json_schema"
+    ],
+    "method": "prompt_and_validate",
+    "constrained_decoding": false,
+    "stream_buffered": true
+  },
+  "engine": "0.1.40.3",
+  "started": 1791477660,
+  "uptime_s": 1951,
+  "cache_max_tokens": 262144,
+  "context": {
+    "native": 262144,
+    "max_positions": 262144
+  },
+  "concurrency": {
+    "serving": 2,
+    "requested": 2
+  },
+  "dialects": [
+    "/v1/chat/completions",
+    "/v1/messages",
+    "/v1/responses"
+  ],
+  "vision": {
+    "enabled": true,
+    "available": true,
+    "error": null
+  },
+  "activity": {
+    "requests": 4,
+    "in_flight": 0,
+    "last_request_at": 1791477692
+  },
+  "last_timings": {
+    "cache_n": 0,
+    "prompt_n": 29406,
+    "prompt_ms": 13059.3,
+    "prompt_per_token_ms": 0.444,
+    "prompt_per_second": 2251.7,
+    "predicted_n": 20,
+    "predicted_ms": 330.1,
+    "predicted_per_token_ms": 16.505,
+    "predicted_per_second": 60.6,
+    "draft_n": 19,
+    "draft_n_accepted": 13,
+    "at": 1791477692
+  },
+  "vram": {
+    "elastic": false
+  },
+  "machine": {
+    "at": 1791479611,
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 3080 + NVIDIA GeForce RTX 3080",
+      "used_mib": 39142.0,
+      "total_mib": 40960.0,
+      "util_pct": 0.0,
+      "temp_c": 30,
+      "power_w": 53.598
+    },
+    "ram": {
+      "used_gib": 74.8,
+      "total_gib": 90.0
+    }
+  }
+}

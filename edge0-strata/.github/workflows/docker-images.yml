@@ -1,0 +1,114 @@
+name: Docker images
+
+# Builds the Strata container images of one release from its engine packages and pushes them to ghcr.io.
+# Run by hand only (Actions tab -> Docker images -> Run workflow). Nothing starts it on its own.
+#
+# For each flavor the job downloads the engine package from the release and checks it against the signed update feed
+# (docker/fetch-engines.py: the feed's Ed25519 signature, the archive's SHA-256, the manifest hash, the package signature,
+# every file's hash), builds the image with docker/build.sh and, only when "push" is on, pushes
+#   ghcr.io/niko1221/strata:<version>-<flavor>   and   ghcr.io/niko1221/strata:latest-<flavor>
+# The first run with "push" off builds everything without publishing it (a dry run).
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag whose engine packages go into the images (for example v0.2.7)'
+        required: true
+        type: string
+      flavors:
+        description: 'Flavors to build, comma separated (empty: every flavor the release has a package for)'
+        required: false
+        default: ''
+        type: string
+      push:
+        description: 'Push the images to ghcr.io (off: build only, nothing is published)'
+        required: true
+        default: false
+        type: boolean
+      latest:
+        description: 'Also move the latest-<flavor> tags (turn off for a pre-release or a test)'
+        required: true
+        default: true
+        type: boolean
+      source_ref:
+        description: 'Git ref of the Dockerfile and the Terminal sources (empty: the release tag)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/niko1221/strata
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      flavors: ${{ steps.list.outputs.flavors }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || inputs.release_tag }}
+      - name: Which flavors does the release have a package for
+        id: list
+        env:
+          WANT: ${{ inputs.flavors }}
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          set -eu
+          args="--release-tag $TAG --list --skip-missing"
+          [ -n "$WANT" ] && args="$args --flavors $WANT"
+          python3 docker/fetch-engines.py $args > list.tsv
+          cat list.tsv
+          flavors=$(awk -F'\t' '$3 != "SKIP" {printf "%s\"%s\"", (n++ ? "," : ""), $1}' list.tsv)
+          [ -n "$flavors" ] || { echo "the release has no engine package for any requested flavor"; exit 1; }
+          echo "flavors=[$flavors]" >> "$GITHUB_OUTPUT"
+
+  image:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        flavor: ${{ fromJSON(needs.plan.outputs.flavors) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || inputs.release_tag }}
+      - name: Free disk space (the runner has about 14 GB; a package plus its image needs about 10 GB)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          docker system prune -af >/dev/null 2>&1 || true
+          df -h /
+      - name: Log in to ghcr.io
+        if: ${{ inputs.push }}
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
+      - name: Fetch, verify, build (and push when push is on)
+        env:
+          TAG: ${{ inputs.release_tag }}
+          FLAVOR: ${{ matrix.flavor }}
+          PUSH: ${{ inputs.push && '--push' || '' }}
+          LATEST: ${{ !inputs.latest && '--no-latest' || '' }}
+        run: |
+          docker/publish.sh --release-tag "$TAG" --flavors "$FLAVOR" --image "$IMAGE" $PUSH $LATEST
+      - name: Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### ${{ matrix.flavor }}"
+            echo "- release: ${{ inputs.release_tag }}, pushed: ${{ inputs.push }}"
+            echo "- image: \`$IMAGE:${INPUT_TAG#v}-${{ matrix.flavor }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          INPUT_TAG: ${{ inputs.release_tag }}

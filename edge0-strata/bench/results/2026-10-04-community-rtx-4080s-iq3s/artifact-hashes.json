@@ -1,0 +1,82 @@
+[
+    {
+        "file":  "E:/strata/engine/strata.exe",
+        "bytes":  112774144,
+        "sha256":  "d4c3a51f60d7a35abab8ab335fb20a0ff325c508a1e59d14a15f22c0d64afd0c"
+    },
+    {
+        "file":  "E:/strata/engine/strata-vision.exe",
+        "bytes":  108195328,
+        "sha256":  "c3a237999ff4f73309593ae409981f4ec8eb184902566d8a1b30622eeef8a4f8"
+    },
+    {
+        "file":  "E:/strata/engine/BUILD.json",
+        "bytes":  201,
+        "sha256":  "915e2e29bcd605be14f305c2028581e9d7b2c11082097bbad750e8823217ee16"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/dense.bin",
+        "bytes":  1538035200,
+        "sha256":  "d2af3d8331e5c7a1985d1d589747230f9d56719a6d33c7cddc9ee6b81cde6b13"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/index.txt",
+        "bytes":  93685,
+        "sha256":  "b2a014878c3b61d6a6f915e194055a5e68ede34f9465dd1cb13249d902f008ac"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/native_experts.txt",
+        "bytes":  3304,
+        "sha256":  "d9ac2dfa3ee63c55c9c6a6db26f72da0cec0ee41733f007e5cbbbba71617aa5d"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/tokenizer/chat_template.jinja",
+        "bytes":  9993,
+        "sha256":  "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/tokenizer/merges.txt",
+        "bytes":  3600844,
+        "sha256":  "080cf95432173729d160346b7882bd2a644b07f7a3813a3eb73f4e66787bfde9"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/tokenizer/tokenizer.json",
+        "bytes":  554,
+        "sha256":  "87be2ac47d8bc7393b7435df6ccd276740019a393941a2585d5edce59f450c54"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/tokenizer/token_type.json",
+        "bytes":  744960,
+        "sha256":  "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b"
+    },
+    {
+        "file":  "E:/Strata-data/packs/iq3_s/tokenizer/vocab.json",
+        "bytes":  5737005,
+        "sha256":  "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4"
+    },
+    {
+        "file":  "E:/Strata-data/mtp/rt/dense.bin",
+        "bytes":  116099072,
+        "sha256":  "c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a"
+    },
+    {
+        "file":  "E:/Strata-data/mtp/rt/dense.txt",
+        "bytes":  1880,
+        "sha256":  "8773c81ebb0986e37fe94a8a9933e87be48b1fabc6889a0106bcdab179d1c2ac"
+    },
+    {
+        "file":  "E:/Strata-data/mtp/rt/draft_vocab.bin",
+        "bytes":  425196,
+        "sha256":  "b1e1d3a7a9e4bf862dcd5923ce661fb59bbd07907e594df5cf86a62ac235cb91"
+    },
+    {
+        "file":  "E:/Strata-data/mtp/rt/experts.bin",
+        "bytes":  707788800,
+        "sha256":  "09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f"
+    },
+    {
+        "file":  "E:/strata/strata-iq3_s.json",
+        "bytes":  2125,
+        "sha256":  "a2797e15c6bd039e0f2b30fb25ecdc7364628f9d4136e3502c563ebe8ead8588"
+    }
+]

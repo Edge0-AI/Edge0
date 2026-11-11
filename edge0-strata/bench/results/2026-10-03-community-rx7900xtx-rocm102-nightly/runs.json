@@ -1,0 +1,127 @@
+{
+ "runs_rocm7_8081": [
+  {
+   "req": 1,
+   "decode_tok_s": 59.3,
+   "state": "warm-up"
+  },
+  {
+   "req": 2,
+   "decode_tok_s": 67.4,
+   "state": "warm-up"
+  },
+  {
+   "req": 3,
+   "decode_tok_s": 73.9,
+   "state": "warm-up"
+  },
+  {
+   "req": 4,
+   "decode_tok_s": 80.2,
+   "state": "warm"
+  },
+  {
+   "req": 5,
+   "decode_tok_s": 80.3,
+   "state": "warm"
+  },
+  {
+   "req": 6,
+   "decode_tok_s": 78.8,
+   "state": "warm"
+  },
+  {
+   "req": 7,
+   "decode_tok_s": 80.9,
+   "state": "warm"
+  },
+  {
+   "req": 8,
+   "decode_tok_s": 81.6,
+   "state": "warm"
+  },
+  {
+   "req": 9,
+   "decode_tok_s": 80.5,
+   "state": "warm"
+  }
+ ],
+ "runs_rocm102_nightly_8082": [
+  {
+   "req": 1,
+   "decode_tok_s": 58.6,
+   "state": "cold restart"
+  },
+  {
+   "req": 2,
+   "decode_tok_s": 29.0,
+   "state": "stall (background; excluded)"
+  },
+  {
+   "req": 3,
+   "decode_tok_s": 70.7,
+   "state": "warm-up"
+  },
+  {
+   "req": 4,
+   "decode_tok_s": 66.6,
+   "state": "warm-up"
+  },
+  {
+   "req": 5,
+   "decode_tok_s": 74.4,
+   "state": "warm-up"
+  },
+  {
+   "req": 6,
+   "decode_tok_s": 83.8,
+   "state": "warm"
+  },
+  {
+   "req": 7,
+   "decode_tok_s": 88.8,
+   "state": "warm"
+  },
+  {
+   "req": 8,
+   "decode_tok_s": 87.7,
+   "state": "warm"
+  },
+  {
+   "req": 9,
+   "decode_tok_s": 88.4,
+   "state": "warm"
+  },
+  {
+   "req": 10,
+   "decode_tok_s": 88.9,
+   "state": "warm"
+  }
+ ],
+ "summary": {
+  "rocm7_warm": {
+   "n": 6,
+   "median": 80.4,
+   "range": [
+    78.8,
+    81.6
+   ]
+  },
+  "rocm102_warm": {
+   "n": 5,
+   "median": 88.4,
+   "range": [
+    83.8,
+    88.9
+   ]
+  },
+  "delta_at_steady_state_pct": 10.0,
+  "one_shot_128k": {
+   "rocm7_0138_decode_tok_s": 62.02,
+   "rocm102_decode_tok_s": 60.99,
+   "rocm7_prefill_tok_s": 1535.1,
+   "rocm102_prefill_tok_s": 921.4,
+   "prefill_confound": "the nightly's hipBLASLt is 100500; no gfx1100 table ships for it (100100/100200 only) -> hipBLASEx fallback; prefill is table-confounded, decode is not"
+  }
+ }
+}

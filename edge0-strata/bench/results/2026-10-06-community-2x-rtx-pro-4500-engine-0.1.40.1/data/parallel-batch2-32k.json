@@ -1,0 +1,48 @@
+[
+ {
+  "streams": 2,
+  "round": 1,
+  "wall_s": 16.2,
+  "total_tokens": 600,
+  "total_tps": 37.0,
+  "per_stream": [
+   {
+    "ttft": 6.43,
+    "total_s": 16.18,
+    "tokens": 300,
+    "chunks": 300,
+    "decode_tps": 30.8
+   },
+   {
+    "ttft": 12.98,
+    "total_s": 16.2,
+    "tokens": 300,
+    "chunks": 300,
+    "decode_tps": 93.2
+   }
+  ]
+ },
+ {
+  "streams": 2,
+  "round": 2,
+  "wall_s": 16.5,
+  "total_tokens": 600,
+  "total_tps": 36.4,
+  "per_stream": [
+   {
+    "ttft": 13.23,
+    "total_s": 16.46,
+    "tokens": 300,
+    "chunks": 300,
+    "decode_tps": 92.9
+   },
+   {
+    "ttft": 6.62,
+    "total_s": 16.45,
+    "tokens": 300,
+    "chunks": 300,
+    "decode_tps": 30.5
+   }
+  ]
+ }
+]

@@ -1,0 +1,7 @@
+  25197 tok in   12.1 s =   2088 tok/s
+  25197 tok in   12.6 s =   2007 tok/s
+  51481 tok in   21.1 s =   2443 tok/s
+  51487 tok in   22.1 s =   2328 tok/s
+ 104067 tok in   39.0 s =   2670 tok/s
+ 104067 tok in   38.5 s =   2706 tok/s
+ 104067 tok in   38.1 s =   2730 tok/s

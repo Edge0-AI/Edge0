@@ -1,0 +1,264 @@
+{
+  "prefill": 8192,
+  "completed": true,
+  "method": "Fresh engine per arm, one excluded warmup; no prompt-prefix reuse. Adaptive expert cache and OS file cache not reset between requests.",
+  "warmup": {
+    "case": "quote_math",
+    "run": 0,
+    "wall_seconds": 8.798,
+    "first_token_seconds": 3.3178087000014784,
+    "first_answer_seconds": 7.784277200000361,
+    "usage": {
+      "prompt_tokens": 105,
+      "completion_tokens": 285,
+      "total_tokens": 390,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 105,
+      "prompt_ms": 3250.6,
+      "prompt_per_token_ms": 30.958,
+      "prompt_per_second": 32.3,
+      "predicted_n": 285,
+      "predicted_ms": 5543.9,
+      "predicted_per_token_ms": 19.452,
+      "predicted_per_second": 51.4,
+      "draft_n": 223,
+      "draft_n_accepted": 200
+    },
+    "finish_reason": "stop",
+    "answer": "{\n  \"subtotal\": 780,\n  \"discounted\": 702,\n  \"tax\": 91.26,\n  \"total\": 793.26\n}",
+    "tool_calls": [],
+    "available_ram_before_GiB": 10.293716430664062,
+    "minimum_available_ram_GiB": 9.664436340332031,
+    "available_ram_after_GiB": 9.697887420654297,
+    "error": null
+  },
+  "results": [
+    {
+      "case": "recall_8k",
+      "run": 1,
+      "wall_seconds": 11.423,
+      "first_token_seconds": 9.194095099999686,
+      "first_answer_seconds": 10.499791599999298,
+      "usage": {
+        "prompt_tokens": 8019,
+        "completion_tokens": 120,
+        "total_tokens": 8139,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 8019,
+        "prompt_ms": 9118.4,
+        "prompt_per_token_ms": 1.137,
+        "prompt_per_second": 879.4,
+        "predicted_n": 120,
+        "predicted_ms": 2259.5,
+        "predicted_per_token_ms": 18.829,
+        "predicted_per_second": 53.1,
+        "draft_n": 96,
+        "draft_n_accepted": 87
+      },
+      "finish_reason": "stop",
+      "answer": "```json\n{\n  \"start\": \"CLENEX-4181\",\n  \"middle\": \"STRATA-8081\",\n  \"end\": \"LONDON-9060\"\n}\n```",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.70633316040039,
+      "minimum_available_ram_GiB": 9.604408264160156,
+      "available_ram_after_GiB": 9.604408264160156,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": false
+    },
+    {
+      "case": "recall_8k",
+      "run": 2,
+      "wall_seconds": 11.111,
+      "first_token_seconds": 9.166701800000737,
+      "first_answer_seconds": 10.387907800002722,
+      "usage": {
+        "prompt_tokens": 8019,
+        "completion_tokens": 111,
+        "total_tokens": 8130,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 8019,
+        "prompt_ms": 9094.2,
+        "prompt_per_token_ms": 1.134,
+        "prompt_per_second": 881.8,
+        "predicted_n": 111,
+        "predicted_ms": 1972.0,
+        "predicted_per_token_ms": 17.766,
+        "predicted_per_second": 56.3,
+        "draft_n": 90,
+        "draft_n_accepted": 79
+      },
+      "finish_reason": "stop",
+      "answer": "```json\n{\"start\": \"CLENEX-4181\", \"middle\": \"STRATA-8081\", \"end\": \"LONDON-9060\"}\n```",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.599163055419922,
+      "minimum_available_ram_GiB": 9.599163055419922,
+      "available_ram_after_GiB": 9.667289733886719,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": false
+    },
+    {
+      "case": "recall_8k",
+      "run": 3,
+      "wall_seconds": 11.212,
+      "first_token_seconds": 9.207692400002998,
+      "first_answer_seconds": 10.400993900002504,
+      "usage": {
+        "prompt_tokens": 8019,
+        "completion_tokens": 120,
+        "total_tokens": 8139,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 8019,
+        "prompt_ms": 9150.7,
+        "prompt_per_token_ms": 1.141,
+        "prompt_per_second": 876.3,
+        "predicted_n": 120,
+        "predicted_ms": 2032.0,
+        "predicted_per_token_ms": 16.933,
+        "predicted_per_second": 59.1,
+        "draft_n": 100,
+        "draft_n_accepted": 84
+      },
+      "finish_reason": "stop",
+      "answer": "```json\n{\n  \"start\": \"CLENEX-4181\",\n  \"middle\": \"STRATA-8081\",\n  \"end\": \"LONDON-9060\"\n}\n```",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.658519744873047,
+      "minimum_available_ram_GiB": 9.600780487060547,
+      "available_ram_after_GiB": 9.618278503417969,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": false
+    },
+    {
+      "case": "recall_28k",
+      "run": 1,
+      "wall_seconds": 37.021,
+      "first_token_seconds": 35.06575399999929,
+      "first_answer_seconds": 36.373738300000696,
+      "usage": {
+        "prompt_tokens": 28180,
+        "completion_tokens": 111,
+        "total_tokens": 28291,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 28180,
+        "prompt_ms": 34927.1,
+        "prompt_per_token_ms": 1.239,
+        "prompt_per_second": 806.8,
+        "predicted_n": 111,
+        "predicted_ms": 1981.5,
+        "predicted_per_token_ms": 17.851,
+        "predicted_per_second": 56.0,
+        "draft_n": 97,
+        "draft_n_accepted": 79
+      },
+      "finish_reason": "stop",
+      "answer": "```json\n{\"start\": \"CLENEX-4181\", \"middle\": \"STRATA-8081\", \"end\": \"LONDON-9060\"}\n```",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.618522644042969,
+      "minimum_available_ram_GiB": 8.757949829101562,
+      "available_ram_after_GiB": 9.254573822021484,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": false
+    },
+    {
+      "case": "recall_28k",
+      "run": 2,
+      "wall_seconds": 37.008,
+      "first_token_seconds": 34.95294530000319,
+      "first_answer_seconds": 36.226432200001,
+      "usage": {
+        "prompt_tokens": 28180,
+        "completion_tokens": 120,
+        "total_tokens": 28300,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 28180,
+        "prompt_ms": 34826.7,
+        "prompt_per_token_ms": 1.236,
+        "prompt_per_second": 809.1,
+        "predicted_n": 120,
+        "predicted_ms": 2081.9,
+        "predicted_per_token_ms": 17.349,
+        "predicted_per_second": 57.6,
+        "draft_n": 105,
+        "draft_n_accepted": 84
+      },
+      "finish_reason": "stop",
+      "answer": "```json\n{\n  \"start\": \"CLENEX-4181\",\n  \"middle\": \"STRATA-8081\",\n  \"end\": \"LONDON-9060\"\n}\n```",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.248302459716797,
+      "minimum_available_ram_GiB": 9.168975830078125,
+      "available_ram_after_GiB": 9.555938720703125,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": false
+    },
+    {
+      "case": "recall_28k",
+      "run": 3,
+      "wall_seconds": 36.915,
+      "first_token_seconds": 35.02689590000227,
+      "first_answer_seconds": 36.28207939999993,
+      "usage": {
+        "prompt_tokens": 28180,
+        "completion_tokens": 111,
+        "total_tokens": 28291,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 28180,
+        "prompt_ms": 34903.8,
+        "prompt_per_token_ms": 1.239,
+        "prompt_per_second": 807.4,
+        "predicted_n": 111,
+        "predicted_ms": 1913.3,
+        "predicted_per_token_ms": 17.237,
+        "predicted_per_second": 58.0,
+        "draft_n": 95,
+        "draft_n_accepted": 79
+      },
+      "finish_reason": "stop",
+      "answer": "```json\n{\"start\": \"CLENEX-4181\", \"middle\": \"STRATA-8081\", \"end\": \"LONDON-9060\"}\n```",
+      "tool_calls": [],
+      "available_ram_before_GiB": 9.555522918701172,
+      "minimum_available_ram_GiB": 9.120704650878906,
+      "available_ram_after_GiB": 9.250995635986328,
+      "error": null,
+      "semantic_pass": true,
+      "strict_pass": false
+    }
+  ]
+}

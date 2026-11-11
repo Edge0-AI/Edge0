@@ -1,0 +1,86 @@
+[
+  {
+    "model": "q2_0",
+    "file": "<workspace>\\Strata-data\\models\\Q2_0\\Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+    "bytes": 37623740192,
+    "sha256": "69820c02ec7d0b45ef2ebb19d6620299db749fe2aded7f39f93c6b88b199b720"
+  },
+  {
+    "model": "q2_0",
+    "file": "<workspace>\\Strata-data\\models\\Q2_0\\Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf",
+    "bytes": 28800138432,
+    "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+  },
+  {
+    "model": "q2_0",
+    "tokenizer_hashes": {
+      "vocab.json": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4",
+      "merges.txt": "080cf95432173729d160346b7882bd2a644b07f7a3813a3eb73f4e66787bfde9",
+      "token_type.json": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b",
+      "chat_template.jinja": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+    }
+  },
+  {
+    "model": "iq2_xs",
+    "file": "<workspace>\\Strata-data\\models\\IQ2_XS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+    "bytes": 39225954592,
+    "sha256": "92cee27ae5bbadcd732416a0f7a7f0acc092399dbbe8f5a5efa707c2ec0a49d7"
+  },
+  {
+    "model": "iq2_xs",
+    "file": "<workspace>\\Strata-data\\models\\IQ2_XS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+    "bytes": 28800138432,
+    "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+  },
+  {
+    "model": "iq2_xs",
+    "tokenizer_hashes": {
+      "vocab.json": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4",
+      "merges.txt": "080cf95432173729d160346b7882bd2a644b07f7a3813a3eb73f4e66787bfde9",
+      "token_type.json": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b",
+      "chat_template.jinja": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+    }
+  },
+  {
+    "model": "iq3_xxs",
+    "file": "<workspace>\\Strata-data\\models\\IQ3_XXS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "bytes": 47039860096,
+    "sha256": "219ea929900dfa9ef091f3aa473fdba6874b65fcb36526d7d851ac9e95856d15"
+  },
+  {
+    "model": "iq3_xxs",
+    "file": "<workspace>\\Strata-data\\models\\IQ3_XXS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+    "bytes": 28800138432,
+    "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+  },
+  {
+    "model": "iq3_xxs",
+    "tokenizer_hashes": {
+      "vocab.json": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4",
+      "merges.txt": "080cf95432173729d160346b7882bd2a644b07f7a3813a3eb73f4e66787bfde9",
+      "token_type.json": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b",
+      "chat_template.jinja": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+    }
+  },
+  {
+    "model": "iq3_s",
+    "file": "<workspace>\\Strata-data\\models\\IQ3_S\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+    "bytes": 54817524224,
+    "sha256": "4c1eb2ceb4915e1192f4f386021897bde56a97f40a0bb78bb86465e0f7d2aca3"
+  },
+  {
+    "model": "iq3_s",
+    "file": "<workspace>\\Strata-data\\models\\IQ3_S\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+    "bytes": 28800138432,
+    "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+  },
+  {
+    "model": "iq3_s",
+    "tokenizer_hashes": {
+      "vocab.json": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4",
+      "merges.txt": "080cf95432173729d160346b7882bd2a644b07f7a3813a3eb73f4e66787bfde9",
+      "token_type.json": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b",
+      "chat_template.jinja": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+    }
+  }
+]

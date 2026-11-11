@@ -1,0 +1,40 @@
+{
+  "model": "Qwen3.8-Flash-Next, Unsloth UD-Q4_K_XL GGUF (4 shards) with the model's own MTP draft layer",
+  "files": [
+    {
+      "name": "Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+      "bytes": 10946624
+    },
+    {
+      "name": "Qwen3.8-Flash-Next-UD-Q4_K_XL-00002-of-00004.gguf",
+      "bytes": 49859583136
+    },
+    {
+      "name": "Qwen3.8-Flash-Next-UD-Q4_K_XL-00003-of-00004.gguf",
+      "bytes": 49376141504
+    },
+    {
+      "name": "Qwen3.8-Flash-Next-UD-Q4_K_XL-00004-of-00004.gguf",
+      "bytes": 12087983520
+    },
+    {
+      "name": "mmproj-Qwen3.8-Flash-Next-BF16.gguf (vision encoder, runs on the CPU)",
+      "bytes": 907543008
+    }
+  ],
+  "gguf_total_bytes": 111334654784,
+  "gguf_total_GiB": 103.69,
+  "gguf_total_GB_decimal": 111.33,
+  "hashes": "not computed: sha256 over 104 GiB on the machine that serves production would have flushed the page cache of the running engine. setup.py of the engine pins the repository below at the revision below; the local files were not checked against it.",
+  "repository_pinned_by_setup_py": {
+    "repo": "unsloth/Qwen3.8-Flash-Next-GGUF",
+    "revision": "38bb39ee97821de2c9009abb7e93950eec396e66",
+    "file": "setup.py (upstream main fb58e0d), HF revision table"
+  },
+  "mmproj_repository_in_setup_py": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+  "packs": {
+    "pack": "/opt/strata-ssd/packs/ud-q4_k_xl",
+    "mtp_runtime": "/opt/strata-ssd/mtp/rt",
+    "expert_profile": "/opt/strata-bmtp/data/expert-profile.bin (24576 ranked pairs per the engine log); not hashed"
+  }
+}

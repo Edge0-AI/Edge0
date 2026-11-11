@@ -1,0 +1,50 @@
+{
+  "exe": "/work/stock/build-hip/strata",
+  "args": [
+    "--pack",
+    "/m/packs/iq3_s",
+    "--native",
+    "/m/gguf/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+    "--ple-gguf",
+    "/m/gguf/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+    "--expert-profile",
+    "/home/user/prod-bin/strata-6add1a7/expert-profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--spec-min-p",
+    "0.5",
+    "--mtp",
+    "/m/mtp/rt",
+    "--max-context",
+    "131072",
+    "--kv",
+    "int8",
+    "--kv-resident",
+    "32768",
+    "--expert-cache-device1",
+    "auto",
+    "--remote-expert-opt",
+    "--pcie-frac",
+    "0",
+    "--adapt-every",
+    "100000"
+  ],
+  "cwd": "/work/stock",
+  "tokenizer": "/m/packs/iq3_s/tokenizer",
+  "model_name": "strata-helper",
+  "log": "/results/helper-stock-pcie0/engine.log",
+  "lib_dirs": [
+    "/opt/rocm/lib"
+  ],
+  "port": 8080,
+  "backend": "hip",
+  "gpu": 1,
+  "gpus_asked": true,
+  "env": {
+    "HIP_VISIBLE_DEVICES": "1,0"
+  }
+}

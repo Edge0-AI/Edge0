@@ -1,0 +1,4 @@
+gpu,role,avg_power_w,median_power_w,max_power_w,avg_util_pct,max_util_pct,median_mem_mib,max_mem_mib,samples
+0,SFF idle,10.987,10.990,11.060,0.000,0,2,2,187
+1,full-height active,66.091,66.590,123.410,46.096,100,19673,19673,187
+2,full-height active,75.436,77.560,124.820,53.722,100,19807,19807,187

@@ -1,0 +1,48 @@
+{
+ "request": {
+  "model": "qwen3.8-flash-next-iq3_s",
+  "max_tokens": 256,
+  "temperature": 0,
+  "stream": false
+ },
+ "prompt_chars": 16279,
+ "filler_repeats": 26,
+ "response": {
+  "id": "chatcmpl-2926cf43b12b4f8d9e6cde0d",
+  "object": "chat.completion",
+  "created": 1791084205,
+  "model": "qwen3.8-flash-next-iq3_s",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "Mixture-of-experts layers increase total parameters while keeping per-token compute low, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.",
+     "reasoning_content": "We need answer user's request: summarise text in exactly one sentence. Need produce final exactly one sentence. Text repeated many times about MoE layer tradeoff memory, expert cache hit rate, PCIe, layout. Need concise one sentence. Ensure exactly one sentence. Could be: \"Mixture-of-experts layers increase total parameters while keeping per-token compute low, but when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.\" That's one sentence. Need maybe no period? Exactly one sentence likely with period. Ensure no extra.\n"
+    },
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "prompt_tokens": 3197,
+   "completion_tokens": 160,
+   "total_tokens": 3357,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 3197,
+   "prompt_ms": 5286.4,
+   "prompt_per_token_ms": 1.654,
+   "prompt_per_second": 604.8,
+   "predicted_n": 160,
+   "predicted_ms": 3635.9,
+   "predicted_per_token_ms": 22.724,
+   "predicted_per_second": 44.0,
+   "draft_n": 133,
+   "draft_n_accepted": 102
+  }
+ }
+}

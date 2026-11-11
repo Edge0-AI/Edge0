@@ -1,0 +1,15 @@
+{
+  "samples": 521,
+  "observation_seconds": 1051.2532074451447,
+  "maximum_sensor_C": 72.0,
+  "peak_resident_VRAM_GiB": 29.07054901123047,
+  "minimum_host_available_GiB": 109.48617553710938,
+  "peak_cgroup_memory_GiB": 1.1615104675292969,
+  "all_AER_correctable_nonfatal_fatal_zero": true,
+  "swapout_delta_pages": 0,
+  "new_kernel_faults": 0,
+  "all_native_exits_zero": true,
+  "normal_service_and_private_API_recovery_passed": true,
+  "temporary_RAM_content_empty_after_stop": true,
+  "crash_capture_restored": true
+}

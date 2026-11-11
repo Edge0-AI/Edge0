@@ -1,0 +1,70 @@
+{
+  "service": "strata",
+  "model": "qwen3.8-flash-next-iq3_s",
+  "loaded": true,
+  "auto_load": true,
+  "structured_output": {
+    "formats": [
+      "json_object",
+      "json_schema"
+    ],
+    "method": "prompt_and_validate",
+    "constrained_decoding": false,
+    "stream_buffered": true
+  },
+  "engine": "0.1.38",
+  "started": 1791068360,
+  "uptime_s": 55,
+  "cache_max_tokens": 131072,
+  "context": {
+    "native": 131072,
+    "max_positions": 131072
+  },
+  "concurrency": {
+    "serving": 1,
+    "requested": 1
+  },
+  "dialects": [
+    "/v1/chat/completions",
+    "/v1/messages"
+  ],
+  "vision": {
+    "enabled": false,
+    "available": false,
+    "error": null
+  },
+  "activity": {
+    "requests": 1,
+    "in_flight": 0,
+    "last_request_at": 1791068388
+  },
+  "last_timings": {
+    "cache_n": 0,
+    "prompt_n": 25,
+    "prompt_ms": 513.4,
+    "prompt_per_token_ms": 20.536,
+    "prompt_per_second": 48.7,
+    "predicted_n": 1000,
+    "predicted_ms": 17533.2,
+    "predicted_per_token_ms": 17.533,
+    "predicted_per_second": 57.0,
+    "draft_n": 895,
+    "draft_n_accepted": 650,
+    "at": 1791068388
+  },
+  "machine": {
+    "at": 1791068415,
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 4090 Laptop GPU",
+      "used_mib": 16059.0,
+      "total_mib": 16376.0,
+      "util_pct": 0,
+      "temp_c": 52,
+      "power_w": 4.817
+    },
+    "ram": {
+      "used_gib": 53.7,
+      "total_gib": 61.3
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+ "exe": "C:/Users/AI-Server/Desktop/Strata/GitHub/release/z040/strata.exe",
+ "args": [
+  "--pack",
+  "C:\\Users\\AI-Server\\Desktop\\Strata\\Public\\Engine\\packs\\iq3_xxs",
+  "--native",
+  "C:\\Users\\AI-Server\\Desktop\\Strata\\IQ3_XXS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+  "--ple-gguf",
+  "C:\\Users\\AI-Server\\Desktop\\Strata\\IQ3_XXS\\Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+  "--expert-profile",
+  "C:\\Users\\AI-Server\\Desktop\\Strata\\Public\\Engine\\data\\expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "C:\\Users\\AI-Server\\Desktop\\Strata\\Public\\Engine\\mtp\\rt",
+  "--max-context",
+  "36864",
+  "--kv",
+  "int8",
+  "--vision",
+  "--vram-reserve-mib",
+  "2100",
+  "--kv-resident",
+  "32768"
+ ],
+ "cwd": "C:\\Users\\AI-Server\\Desktop\\Strata\\Public\\Engine",
+ "tokenizer": "C:\\Users\\AI-Server\\Desktop\\Strata\\Public\\Engine\\packs\\iq3_xxs\\tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3_xxs",
+ "log": "C:\\Users\\AI-Server\\Desktop\\Strata\\Public\\Engine\\strata-iq3_xxs.log",
+ "lib_dirs": [
+  "C:\\Users\\AI-Server\\Desktop\\Strata\\Public\\Engine\\.venv\\Lib\\site-packages\\nvidia\\cu13\\bin\\x86_64"
+ ],
+ "port": 8190
+}

@@ -1,0 +1,61 @@
+{
+  "url": "http://127.0.0.1:8081",
+  "cases": [
+    "short"
+  ],
+  "runs_per_case": 3,
+  "request_settings": {
+    "max_tokens": 256,
+    "temperature": 0,
+    "reasoning_effort": "none",
+    "stream": true,
+    "warmup_excluded": true
+  },
+  "cache_note": "No server cache-clear API is used. Every measured prompt starts with a unique nonce; actual prefix reuse is taken from before/after engine history and API usage. The target size uses /v1/messages/count_tokens; completion usage is also retained for the actual OpenAI request.",
+  "case_results": {
+    "short": {
+      "runs": 3,
+      "prompt_tokens": {
+        "median": 94,
+        "min": 94,
+        "max": 94
+      },
+      "prefix_reused_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "completion_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256
+      },
+      "client_ttft_s": {
+        "median": 2.043531499992241,
+        "min": 2.036206899996614,
+        "max": 3.017842600005679
+      },
+      "client_total_latency_s": {
+        "median": 7.344294999988051,
+        "min": 7.188750899993465,
+        "max": 8.687157899999875
+      },
+      "prompt_tok_s": {
+        "median": 46.79876530917057,
+        "min": 31.78575051567308,
+        "max": 46.99060187962407
+      },
+      "decode_tok_s": {
+        "median": 47.985004686035616,
+        "min": 44.91858506457047,
+        "max": 49.5011215097842
+      },
+      "finish_reasons": [
+        "length",
+        "length",
+        "length"
+      ]
+    }
+  },
+  "raw_jsonl": "bench\\results\\2026-10-03-rx6900xt-coder\\workers-31\\raw.jsonl"
+}

@@ -1,0 +1,54 @@
+arm | metric | median | vs base | pairs faster (higher) | rounds
+default | story:tok_s | 82.48 | 1.000 | 0/5 | 5
+pw2s0 | story:tok_s | 71.63 | 0.868 | 0/5 | 5
+pw1 | story:tok_s | 81.30 | 0.986 | 1/5 | 5
+default2 | story:tok_s | 82.15 | 0.996 | 1/5 | 5
+default | code:tok_s | 99.91 | 1.000 | 0/5 | 5
+pw2s0 | code:tok_s | 94.46 | 0.945 | 1/5 | 5
+pw1 | code:tok_s | 99.55 | 0.996 | 3/5 | 5
+default2 | code:tok_s | 99.84 | 0.999 | 2/5 | 5
+default | facts:tok_s | 94.31 | 1.000 | 0/5 | 5
+pw2s0 | facts:tok_s | 87.63 | 0.929 | 0/5 | 5
+pw1 | facts:tok_s | 92.94 | 0.985 | 2/5 | 5
+default2 | facts:tok_s | 92.34 | 0.979 | 2/5 | 5
+default | pp16k:pp_tok_s | 1650.65 | 1.000 | 0/5 | 5
+pw2s0 | pp16k:pp_tok_s | 1593.72 | 0.966 | 0/5 | 5
+pw1 | pp16k:pp_tok_s | 1646.58 | 0.998 | 1/5 | 5
+default2 | pp16k:pp_tok_s | 1646.89 | 0.998 | 1/5 | 5
+default | pp58k:pp_tok_s | 2961.37 | 1.000 | 0/5 | 5
+pw2s0 | pp58k:pp_tok_s | 2823.47 | 0.953 | 0/5 | 5
+pw1 | pp58k:pp_tok_s | 2954.94 | 0.998 | 2/5 | 5
+default2 | pp58k:pp_tok_s | 2957.59 | 0.999 | 1/5 | 5
+
+arm | window | mean util per card % (median over runs) | mean power W per card | idle% (mean over cards)
+default | story | gpu0 45, gpu1 58 | 121, 129 | 48
+default | code | gpu0 42, gpu1 59 | 120, 127 | 49
+default | facts | gpu0 45, gpu1 61 | 118, 125 | 47
+default | pp16k | gpu0 57, gpu1 60 | 109, 109 | 41
+default | pp58k | gpu0 75, gpu1 78 | 120, 123 | 24
+pw2s0 | story | gpu0 78, gpu1 48 | 134, 120 | 37
+pw2s0 | code | gpu0 88, gpu1 57 | 135, 120 | 28
+pw2s0 | facts | gpu0 88, gpu1 64 | 135, 121 | 24
+pw2s0 | pp16k | gpu0 68, gpu1 58 | 111, 107 | 37
+pw2s0 | pp58k | gpu0 69, gpu1 75 | 121, 120 | 28
+pw1 | story | gpu0 45, gpu1 59 | 123, 131 | 48
+pw1 | code | gpu0 45, gpu1 61 | 120, 128 | 47
+pw1 | facts | gpu0 47, gpu1 62 | 119, 125 | 45
+pw1 | pp16k | gpu0 61, gpu1 62 | 109, 110 | 38
+pw1 | pp58k | gpu0 74, gpu1 77 | 120, 123 | 24
+default2 | story | gpu0 44, gpu1 60 | 122, 128 | 48
+default2 | code | gpu0 45, gpu1 58 | 120, 127 | 49
+default2 | facts | gpu0 45, gpu1 58 | 119, 125 | 49
+default2 | pp16k | gpu0 57, gpu1 64 | 110, 110 | 40
+default2 | pp58k | gpu0 76, gpu1 82 | 120, 123 | 21
+
+answer hashes per window kind (distinct values over all runs of all arms; 1 = byte-identical)
+story: 18 distinct -> 1411a2a700d145ff:default; 1b105ccf96e69ba0:pw2s0; 5fee251b62c70822:pw1; 3ed28dd532e318fa:default2; cdc6511981fd6e8c:pw2s0; 49fbed07560bcab3:pw1; da12ccce0593f5b4:default2; d8a295c262921617:default; 5ca2d9d4411ea45d:pw1; afd22e324d2d9940:default2; 008dccf84b36532a:default,default2; be748469b6dbf0b6:pw2s0; 6d21e457c493340d:default; f110daae9f30821e:pw2s0; 4fe92a6e4e5ed327:pw1; c73ddd5e21f78f86:pw2s0; 7f199e4e8de74f5b:pw1; e02703b5d65f5fa2:default2
+code: 18 distinct -> 14d88a4c13be63b7:default,pw2s0; c42a369374eb8e8b:pw2s0; ce5578741a2f7c1a:pw1; 7a858dbde4437279:default2; 59c29287129a1108:pw1; 1199e5b1769e4630:default2; 610d88fa9f502690:default; e738aaf2957f824f:pw1; 312de79b868099ca:default2; bc30fe07ca8e50d3:default; 47ca0a02fa65b579:pw2s0; e3d15a74b1c3bcaa:default2; c1bbb731e33f6901:default; da0f0d0ae458a0f0:pw2s0; d0ef62ad571aa5e8:pw1; 4f739441d5e1da2f:default; 4f12a62cf84a32c3:pw2s0; 63a88930785d854a:default2
+facts: 20 distinct -> 1f49d91321c78079:default; cb82ba092887d71a:pw2s0; a4f5aa2f602f4523:pw1; 1491bd4b6892fc12:default2; 1b8a5ad32ac6ee89:pw2s0; 063dcd7ffe616f19:pw1; d7638c129a00155d:default2; 90493fa673d32422:default; 08b8a67f7c0f8441:pw1; 058e2202fc7e53c6:default2; 1f884adfc9a80ad5:default; 6d36f714d54583b0:pw2s0; 83061dd58b8fb934:default2; 322511ecf38cdf2a:default; 1d386e2f4b3d33ee:pw2s0; d2ca1951ddc13250:pw1; b081f1a6834a8dc4:default; e81effdffbc1b1ca:pw2s0; d1adfdb5832225c3:pw1; c28d387b00ba4408:default2
+pp16k: 2 distinct -> 84d46cd5a99fc0a9:default,default2,pw1,pw2s0; 3a17b0b54df13952:default,pw1
+pp58k: 3 distinct -> 84d46cd5a99fc0a9:default,default2,pw1,pw2s0; 56ca29a619f7cd8d:pw1,pw2s0; 07313010a2a7da94:default2
+default: expert-cache slots ['7342']
+pw2s0: expert-cache slots ['6594']
+pw1: expert-cache slots ['7238']
+default2: expert-cache slots ['7342']

@@ -1,0 +1,36 @@
+# strata launch preview: step2-folder
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Set up   Step 2 of 9: Folder
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Where should the model files be stored?
+ Needs about 84 GB (the download plus working room).
+ Free space in that folder's drive: 47 GB   Not enough for 84 GB. You can still go on, but the download is
+ likely to stop; pick a bigger drive.
+ ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │  C:\Users\AI-Server\Documents\Strata                                                                     │
+ └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Models are large files. Strata keeps them in one folder; the default is Strata's own data folder. Press
+ Enter to keep it, or type another folder (it is created if it does not exist).
+ Type to change the folder   Enter next   Esc back   ? help

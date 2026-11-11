@@ -1,0 +1,1083 @@
+{
+ "regression": {
+  "release_vs_dev_identical": [
+   10,
+   10
+  ],
+  "speed_release": {
+   "greedy story 200": 58.4,
+   "greedy code 200": 80.6,
+   "greedy sanity": 75.2,
+   "greedy, no penalty (sanity)": 74.2,
+   "greedy presence=100 last_n=64": 48.5,
+   "greedy presence=100 last_n=64 story": 46.4,
+   "sampled presence=100 last_n=64 seed 3": 43.3,
+   "sampled presence=100 last_n=64 seed 11": 49.8,
+   "greedy frequency=100 last_n=16": 62.5,
+   "greedy presence=100 last_n=4096 (8-row windows)": 52.6
+  },
+  "speed_dev": {
+   "greedy story 200": 59.2,
+   "greedy code 200": 81.6,
+   "greedy sanity": 74.9,
+   "greedy, no penalty (sanity)": 74.3,
+   "greedy presence=100 last_n=64": 49.6,
+   "greedy presence=100 last_n=64 story": 44.9,
+   "sampled presence=100 last_n=64 seed 3": 44.1,
+   "sampled presence=100 last_n=64 seed 11": 49.5,
+   "greedy frequency=100 last_n=16": 65.2,
+   "greedy presence=100 last_n=4096 (8-row windows)": 52.5
+  },
+  "dev_vs_same_gpu_split_identical": [
+   10,
+   10
+  ]
+ },
+ "correctness": {
+  "reg-rel": {
+   "cases": 10,
+   "repeats": 0,
+   "sanity_144": true,
+   "tok_s": {
+    "greedy story 200": 58.4,
+    "greedy code 200": 80.6,
+    "greedy sanity": 75.2,
+    "greedy, no penalty (sanity)": 74.2,
+    "greedy presence=100 last_n=64": 48.5,
+    "greedy presence=100 last_n=64 story": 46.4,
+    "sampled presence=100 last_n=64 seed 3": 43.3,
+    "sampled presence=100 last_n=64 seed 11": 49.8,
+    "greedy frequency=100 last_n=16": 62.5,
+    "greedy presence=100 last_n=4096 (8-row windows)": 52.6
+   }
+  },
+  "reg-dev": {
+   "cases": 10,
+   "repeats": 0,
+   "sanity_144": true,
+   "tok_s": {
+    "greedy story 200": 59.2,
+    "greedy code 200": 81.6,
+    "greedy sanity": 74.9,
+    "greedy, no penalty (sanity)": 74.3,
+    "greedy presence=100 last_n=64": 49.6,
+    "greedy presence=100 last_n=64 story": 44.9,
+    "sampled presence=100 last_n=64 seed 3": 44.1,
+    "sampled presence=100 last_n=64 seed 11": 49.5,
+    "greedy frequency=100 last_n=16": 65.2,
+    "greedy presence=100 last_n=4096 (8-row windows)": 52.5
+   }
+  },
+  "reg-same24": {
+   "cases": 10,
+   "repeats": 0,
+   "sanity_144": true,
+   "tok_s": {
+    "greedy story 200": 58.4,
+    "greedy code 200": 80.5,
+    "greedy sanity": 74.5,
+    "greedy, no penalty (sanity)": 76.8,
+    "greedy presence=100 last_n=64": 49.6,
+    "greedy presence=100 last_n=64 story": 46.7,
+    "sampled presence=100 last_n=64 seed 3": 44.3,
+    "sampled presence=100 last_n=64 seed 11": 50.0,
+    "greedy frequency=100 last_n=16": 62.0,
+    "greedy presence=100 last_n=4096 (8-row windows)": 52.1
+   }
+  },
+  "nr-x2-auto": {
+   "cases": 10,
+   "repeats": 0,
+   "sanity_144": true,
+   "tok_s": {
+    "greedy story 200": 74.0,
+    "greedy code 200": 103.4,
+    "greedy sanity": 91.1,
+    "greedy, no penalty (sanity)": 70.7,
+    "greedy presence=100 last_n=64": 65.4,
+    "greedy presence=100 last_n=64 story": 57.1,
+    "sampled presence=100 last_n=64 seed 3": 52.9,
+    "sampled presence=100 last_n=64 seed 11": 51.7,
+    "greedy frequency=100 last_n=16": 73.5,
+    "greedy presence=100 last_n=4096 (8-row windows)": 63.4
+   }
+  }
+ },
+ "runs": {
+  "dev-3090": {
+   "gpus": "2",
+   "extra": "",
+   "pp": [
+    [
+     2726,
+     796.0,
+     true
+    ],
+    [
+     8379,
+     972.3,
+     true
+    ],
+    [
+     16066,
+     1253.2,
+     true
+    ],
+    [
+     27743,
+     1211.4,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 5657.8,
+    "turn2_tokens": 6660,
+    "reused": 6631,
+    "turn2_ms": 238.7,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     71.7,
+     0.927
+    ],
+    [
+     "code",
+     92.9,
+     0.864
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict\n\n\ndef parse_csv(filepath: str) -> List[Dict[str, str]]:\n    \"\"\"\n    P",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: PCIe probe: 6.4 GB/s host->device -> pcie_frac 0.14 (default 0.55)",
+    "strata generate: expert cache auto: 17.31 GiB free, 700 MiB reserved -> 6704 slots",
+    "strata generate: expert cache 8730 slots, 16.62 GiB of VRAM; policy is",
+    "strata serve: prompt chunk auto: 8192 tokens"
+   ]
+  },
+  "dev-5080": {
+   "gpus": "0",
+   "extra": "",
+   "pp": [
+    [
+     2726,
+     1279.9,
+     true
+    ],
+    [
+     8379,
+     1656.8,
+     true
+    ],
+    [
+     16066,
+     2017.2,
+     true
+    ],
+    [
+     27743,
+     1974.1,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3366.4,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 197.3,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     83.1,
+     0.842
+    ],
+    [
+     "code",
+     88.0,
+     0.701
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: expert cache auto: 9.15 GiB free, 700 MiB reserved -> 3415 slots",
+    "strata generate: expert cache 4293 slots, 8.17 GiB of VRAM; policy is",
+    "strata serve: prompt chunk auto: 8192 tokens"
+   ]
+  },
+  "ks-k18": {
+   "gpus": "0,2",
+   "extra": "--layer-split 18",
+   "pp": [
+    [
+     16066,
+     1547.2,
+     true
+    ],
+    [
+     27743,
+     1694.5,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 4308.0,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 239.8,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     77.2,
+     0.999
+    ],
+    [
+     "code",
+     103.8,
+     0.998
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 18)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4608 slots, 8.24 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 18-47, expert cache 7152 slots (14.14 GiB), 7152 of its 7680 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-17",
+    "strata serve: layer split: layers 0-17 (CUDA0), 18-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "ks-k19": {
+   "gpus": "0,2",
+   "extra": "--layer-split 19",
+   "pp": [
+    [
+     16066,
+     1626.9,
+     true
+    ],
+    [
+     27743,
+     1790.1,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 4085.5,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 238.7,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     79.3,
+     0.998
+    ],
+    [
+     "code",
+     107.4,
+     0.999
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 19)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4606 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 19-47, expert cache 7160 slots (14.14 GiB), 7160 of its 7424 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-18",
+    "strata serve: layer split: layers 0-18 (CUDA0), 19-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "ks-k20": {
+   "gpus": "0,2",
+   "extra": "--layer-split 20",
+   "pp": [
+    [
+     16066,
+     1776.4,
+     true
+    ],
+    [
+     27743,
+     1991.8,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3743.5,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 236.8,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     76.4,
+     0.998
+    ],
+    [
+     "code",
+     105.9,
+     0.998
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed. It clawed at the granite base of the tower, trying to pry it from the bedrock, a",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 20)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4603 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 20-47, expert cache 7142 slots (14.14 GiB), 7142 of its 7168 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-19",
+    "strata serve: layer split: layers 0-19 (CUDA0), 20-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "ks-k21": {
+   "gpus": "0,2",
+   "extra": "--layer-split 21",
+   "pp": [
+    [
+     16066,
+     1809.1,
+     true
+    ],
+    [
+     27743,
+     2031.8,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3680.6,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 235.4,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     77.4,
+     0.997
+    ],
+    [
+     "code",
+     106.7,
+     0.998
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his woolen collar up to his chin, the rough fabric scratching agai",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 21)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4627 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 21-47, expert cache 6912 slots (13.78 GiB), 6912 of its 6912 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-20",
+    "strata serve: layer split: layers 0-20 (CUDA0), 21-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "ks-k22": {
+   "gpus": "0,2",
+   "extra": "--layer-split 22",
+   "pp": [
+    [
+     16066,
+     1840.1,
+     true
+    ],
+    [
+     27743,
+     2074.2,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3611.4,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 234.8,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     80.2,
+     0.998
+    ],
+    [
+     "code",
+     106.4,
+     0.997
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with ",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 22)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4640 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 22-47, expert cache 6656 slots (13.34 GiB), 6656 of its 6656 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-21",
+    "strata serve: layer split: layers 0-21 (CUDA0), 22-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "ks-k23": {
+   "gpus": "0,2",
+   "extra": "--layer-split 23",
+   "pp": [
+    [
+     16066,
+     1837.7,
+     true
+    ],
+    [
+     27743,
+     2120.3,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3566.1,
+    "turn2_tokens": 6660,
+    "reused": 6631,
+    "turn2_ms": 238.0,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     81.0,
+     0.996
+    ],
+    [
+     "code",
+     108.4,
+     0.996
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 23)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4609 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 23-47, expert cache 6400 slots (12.82 GiB), 6400 of its 6400 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-22",
+    "strata serve: layer split: layers 0-22 (CUDA0), 23-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "ks-k24": {
+   "gpus": "0,2",
+   "extra": "--layer-split 24",
+   "pp": [
+    [
+     16066,
+     1978.0,
+     true
+    ],
+    [
+     27743,
+     2258.1,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3407.0,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 234.0,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     83.5,
+     0.995
+    ],
+    [
+     "code",
+     109.5,
+     0.995
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his woolen collar up to his chin, the rough fabric scratching agai",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 24)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4603 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 24-47, expert cache 6144 slots (12.35 GiB), 6144 of its 6144 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-23",
+    "strata serve: layer split: layers 0-23 (CUDA0), 24-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "ks-single": {
+   "gpus": "0",
+   "extra": "",
+   "pp": [
+    [
+     16066,
+     1725.6,
+     true
+    ],
+    [
+     27743,
+     1969.6,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3388.7,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 200.7,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     86.7,
+     0.922
+    ],
+    [
+     "code",
+     105.2,
+     0.911
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with ",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: expert cache auto: 9.15 GiB free, 700 MiB reserved -> 3415 slots",
+    "strata generate: expert cache 4293 slots, 8.17 GiB of VRAM; policy is",
+    "strata serve: prompt chunk auto: 8192 tokens"
+   ]
+  },
+  "rel-5080": {
+   "gpus": "0",
+   "extra": "",
+   "pp": [
+    [
+     2726,
+     1278.1,
+     true
+    ],
+    [
+     8379,
+     1672.8,
+     true
+    ],
+    [
+     16066,
+     2045.2,
+     true
+    ],
+    [
+     27743,
+     2005.4,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3298.2,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 197.9,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     83.2,
+     0.842
+    ],
+    [
+     "code",
+     88.2,
+     0.701
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: expert cache auto: 9.15 GiB free, 700 MiB reserved -> 3415 slots",
+    "strata generate: expert cache 4293 slots, 8.17 GiB of VRAM; policy is",
+    "strata serve: prompt chunk auto: 8192 tokens"
+   ]
+  },
+  "t75-5080": {
+   "gpus": "0",
+   "extra": "",
+   "pp": [
+    [
+     2726,
+     1262.9,
+     true
+    ],
+    [
+     8379,
+     1658.6,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3385.2,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 212.5,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     86.7,
+     0.834
+    ],
+    [
+     "code",
+     90.1,
+     0.72
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: PCIe probe: 57.8 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: expert cache auto: 9.15 GiB free, 700 MiB reserved -> 3415 slots",
+    "strata generate: expert cache 4294 slots, 8.18 GiB of VRAM; policy is",
+    "strata serve: prompt chunk auto: 8192 tokens"
+   ]
+  },
+  "x2-auto-c1024": {
+   "gpus": "0,2",
+   "extra": "--layer-split auto --prefill 1024",
+   "pp": [
+    [
+     2726,
+     1029.2,
+     true
+    ],
+    [
+     8379,
+     1510.5,
+     true
+    ],
+    [
+     16066,
+     1587.0,
+     true
+    ],
+    [
+     27743,
+     1571.7,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 4379.9,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 235.5,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     82.7,
+     1.0
+    ],
+    [
+     "code",
+     111.1,
+     1.0
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed. It tore through the iron gallery of the Blackwood Point Lighthouse, rattling the",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv(file_path: str) -> List[Dict[str, Any]]:\n    \"\"\"",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)",
+    "strata generate: PCIe probe: 57.8 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: layer split auto: K=19 - the caches hold 12288 of 12288 profiled pairs (fullest device 99%)",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3613 slots",
+    "strata generate: expert cache 4864 slots, 8.76 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 19-47, expert cache 7424 slots (14.66 GiB), 7424 of its 7424 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-18",
+    "strata serve: layer split: layers 0-18 (CUDA0), 19-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "x2-auto": {
+   "gpus": "0,2",
+   "extra": "--layer-split auto",
+   "pp": [
+    [
+     2726,
+     1005.3,
+     true
+    ],
+    [
+     8379,
+     1672.4,
+     true
+    ],
+    [
+     16066,
+     1786.1,
+     true
+    ],
+    [
+     27743,
+     1790.2,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 4050.3,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 249.7,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     83.0,
+     0.992
+    ],
+    [
+     "code",
+     101.8,
+     0.992
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference betwe",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: layer split auto: K=19 - the caches hold 11767 of 12288 profiled pairs (fullest device 100%)",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4606 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 19-47, expert cache 7160 slots (14.14 GiB), 7160 of its 7424 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-18",
+    "strata serve: layer split: layers 0-18 (CUDA0), 19-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "x2-k16": {
+   "gpus": "0,2",
+   "extra": "--layer-split 16",
+   "pp": [
+    [
+     2726,
+     912.6,
+     true
+    ],
+    [
+     8379,
+     1418.1,
+     true
+    ],
+    [
+     16066,
+     1507.7,
+     true
+    ],
+    [
+     27743,
+     1500.9,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 4790.8,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 243.3,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     71.4,
+     0.981
+    ],
+    [
+     "code",
+     86.4,
+     0.98
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed. It clawed at the granite base of the tower, trying to pry the lighthouse from it",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 16)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4096 slots, 7.17 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 16-47, expert cache 7124 slots (14.14 GiB), 7124 of its 8192 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-15",
+    "strata serve: layer split: layers 0-15 (CUDA0), 16-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "x2-k22": {
+   "gpus": "0,2",
+   "extra": "--layer-split 22",
+   "pp": [
+    [
+     2726,
+     1074.2,
+     true
+    ],
+    [
+     8379,
+     1887.2,
+     true
+    ],
+    [
+     16066,
+     2040.8,
+     true
+    ],
+    [
+     27743,
+     2069.6,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 3610.4,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 236.0,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     78.1,
+     0.985
+    ],
+    [
+     "code",
+     104.3,
+     0.984
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with ",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 22)",
+    "strata generate: PCIe probe: 57.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+    "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+    "strata generate: expert cache 4640 slots, 8.29 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 22-47, expert cache 6656 slots (13.34 GiB), 6656 of its 6656 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-21",
+    "strata serve: layer split: layers 0-21 (CUDA0), 22-47 (CUDA1), one hand-off per window"
+   ]
+  },
+  "x2r-auto": {
+   "gpus": "2,0",
+   "extra": "--layer-split auto",
+   "pp": [
+    [
+     2726,
+     972.1,
+     true
+    ],
+    [
+     8379,
+     1485.2,
+     true
+    ],
+    [
+     16066,
+     1509.5,
+     true
+    ],
+    [
+     27743,
+     1510.8,
+     true
+    ]
+   ],
+   "chat": {
+    "turn1_tokens": 6584,
+    "turn1_ms": 4517.2,
+    "turn2_tokens": 6660,
+    "reused": 6632,
+    "turn2_ms": 245.6,
+    "ok": true
+   },
+   "decode": [
+    [
+     "story",
+     78.9,
+     0.991
+    ],
+    [
+     "code",
+     93.4,
+     0.99
+    ]
+   ],
+   "texts": [
+    "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his woolen collar up to his chin, the fabric stiff with salt and i",
+    "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:",
+    "meadow-254<|im_end|>",
+    "juniper-766<|im_end|>",
+    "falcon-174<|im_end|>",
+    "willow-474<|im_end|>"
+   ],
+   "engine": [
+    "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)",
+    "strata generate: PCIe probe: 6.4 GB/s host->device -> pcie_frac 0.14 (default 0.55)",
+    "strata generate: layer split: CUDA1 PCIe probe 57.7 GB/s -> pcie_frac 0.55",
+    "strata generate: layer split: CUDA1 holds its weights, session and head; 9.98 GiB free",
+    "strata generate: layer split auto: K=36 - the caches hold 11775 of 12288 profiled pairs (fullest device 100%)",
+    "strata generate: expert cache auto: 18.62 GiB free, 700 MiB reserved -> 6634 slots",
+    "strata generate: expert cache 8828 slots, 16.45 GiB of VRAM; policy is",
+    "strata generate: layer split: CUDA1 runs layers 36-47, expert cache 2945 slots (5.99 GiB), 2945 of its 3072 profiled pairs; slot 0 verified",
+    "strata generate: layer split: CUDA0 runs layers 0-35",
+    "strata serve: layer split: layers 0-35 (CUDA0), 36-47 (CUDA1), one hand-off per window"
+   ]
+  }
+ }
+}

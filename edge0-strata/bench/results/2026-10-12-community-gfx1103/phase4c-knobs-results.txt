@@ -1,0 +1,15 @@
+spec2-r1	15.93 tok/s
+minp0.5-r1	14.71 tok/s
+q4all-r1	15.73 tok/s
+q4proj-r1	15.71 tok/s
+chain4-r1	16.01 tok/s
+spec2-r2	15.65 tok/s
+minp0.5-r2	14.94 tok/s
+q4all-r2	15.39 tok/s
+q4proj-r2	15.88 tok/s
+chain4-r2	16.37 tok/s
+spec2-r3	15.65 tok/s
+minp0.5-r3	14.98 tok/s
+q4all-r3	15.63 tok/s
+q4proj-r3	15.74 tok/s
+chain4-r3	15.72 tok/s

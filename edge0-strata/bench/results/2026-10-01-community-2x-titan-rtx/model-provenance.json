@@ -1,0 +1,18 @@
+{
+ "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+ "quant": "IQ3_S",
+ "shards": [
+  {
+   "file": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+   "bytes": 54817524224,
+   "sha256_first_64MiB": "b73591643d79bb3eeea1f8daea8e98ff57400d8aa786e80899a87eee9dc7dfd5"
+  },
+  {
+   "file": "Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+   "bytes": 28800138432,
+   "sha256_first_64MiB": "55e48098de7a4b66be53aff004c6e067ca1f6a50751eb5ec049d2302d6914bc8"
+  }
+ ],
+ "mtp": "packed from the base checkpoint by setup (tools/mtp_fetch.py, mtp_pack.py) -> Strata-data/mtp/rt",
+ "pack": "iq_pack.py, every tensor as the GGUF stores it; experts read from the GGUF at start"
+}

@@ -1,0 +1,45 @@
+{
+  "versions": {
+    "0.1.40.4": {
+      "source": "GitHub tarball of tag v0.1.40.4 (codeload.github.com), commit 6674a0065fb96bacde33e3eb10f91a1df86f95f2",
+      "date": "2026-10-09",
+      "archs": ["gfx906"],
+      "engine_binary": "build-906/strata",
+      "engine_binary_sha256": "372e8b4fda7b14c0be16b4d4d7e114ffc33ecb9740d95e89e30dc86fe3490ae2",
+      "engine_binary_bytes": 25244368,
+      "rocm_version": "6.2.0-66",
+      "rocm_path": "/opt/rocm",
+      "hipcc": "HIP 6.2.41133-dd7f95766, AMD clang 18.0.0",
+      "toolkit_note": "Built with the distribution's own ROCm 6.2 (not the community ROCm 7.14 Docker image). gfx906 kernels are present in this ROCm's rocBLAS/MIOpen.",
+      "llama_cpp": "3cf03257f219afbe7334045ff7c6a06ac68c627d (the commit the tag pins in third_party/ggml/VERSION.txt)",
+      "docker_image": "none — engine built and run on the host",
+      "vision": "off (no mmproj passed to the engine for this run)",
+      "cmake_command": "cmake -S . -B build-906 -G Ninja -DSTRATA_HIP_GFX906=ON -DCMAKE_HIP_ARCHITECTURES=gfx906 -DSTRATA_PORTABLE=ON -DSTRATA_BUILD_TESTS=OFF -DSTRATA_GGML_DIR=<llama.cpp> -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ -DCMAKE_C_FLAGS=\"--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/11\" -DCMAKE_CXX_FLAGS=...(同上) -DCMAKE_HIP_FLAGS=...(同上) -DCMAKE_PREFIX_PATH=/opt/rocm",
+      "build_command": "ninja -C build-906 -j 20 strata",
+      "host_patches": [
+        {
+          "file": "CMakeLists.txt",
+          "what": "The gfx906 branch still points its CUDA-compat include path at include/strata/platform/hip_compat/, but 0.1.40.x moved those headers to include/strata/hip_compat/. Repointed the three occurrences.",
+          "why": "Without it the build uses the stale headers and fails with \"use of undeclared identifier 'cudaEventBlockingSync'\"."
+        },
+        {
+          "file": "include/strata/hip_compat/cuda_runtime.h",
+          "what": "Added the 24 CUDA->HIP name mappings that 0.1.39's include/strata/platform/hip_compat/strata_hip.h has and 0.1.40.x's split headers lost (cudaDeviceScheduleSpin / cudaDeviceScheduleYield / cudaDeviceScheduleBlockingSync / cudaDeviceMapHost, cudaGraphNode_t and the cudaGraphNodeType* family, cudaKernelNodeParams, cudaGraphKernelNodeGetParams, cudaMemcpyKind, cudaSetDeviceFlags, cudaEventDefault, cudaGetErrorName, cudaHostAllocWriteCombined, cudaHostRegisterDefault, cudaSharedmemCarveoutMaxShared, the three cudaStreamCapture* values and the two cudaDevAttr* bus/clock values). See patches/0.1.40.4-cuda_runtime.h.patch.",
+          "why": "gfx906 build otherwise: \"use of undeclared identifier\" / \"unknown type name\"."
+        },
+        {
+          "file": "include/strata/hip_compat/cuda_runtime.h",
+          "what": "Added the inline cudaInitDevice(dev, deviceFlags, flags) shim (verbatim from 0.1.39's strata_hip.h).",
+          "why": "remote_experts.cpp uses the CUDA 12 API; HIP has no equivalent single call."
+        },
+        {
+          "file": "include/strata/hip_compat/cublas_v2.h",
+          "what": "Define HIPBLAS_V2 before including <hipblas/hipblas.h>, and make cublasSetWorkspace a no-op for hipblasVersionMajor < 3.",
+          "why": "ROCm 6.2's hipBLAS 2.2 exposes hipblasGemmEx with hipDataType only when HIPBLAS_V2 is defined (0.1.39's header did this; 0.1.40.x dropped it, and hipBLAS 2.2 has no hipblasSetWorkspace)."
+        }
+      ],
+      "build_environment_note": "The host has libstdc++-11-dev but not libstdc++-12-dev while ROCm's clang 18 defaults to GCC 12; without --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/11 the C++ compiler check fails (\"fatal error: 'cmath' file not found\", then \"unable to find library -lstdc++\").",
+      "notes": "One dependency patch in the pinned llama.cpp: ggml/src/ggml-cuda/vendors/hip.h guards the __hip_fp8_e4m3 typedef with HIP_VERSION >= 60300000 (ROCm 6.2 ships only the fp8 storage helpers). The engine's own sources were not otherwise modified."
+    }
+  }
+}

@@ -1,0 +1,268 @@
+{
+ "date": "2026-10-02 12:19",
+ "max_tokens": 256,
+ "temperature": 0.6,
+ "runs": [
+  {
+   "label": "short-1",
+   "prompt_tokens": 104,
+   "reused_tokens": 0,
+   "read_tokens": 104,
+   "prompt_ms": 1961.2,
+   "prompt_tok_s": 53.0,
+   "generated_tokens": 256,
+   "decode_ms": 4249.4,
+   "decode_tok_s": 60.2,
+   "draft_n": 211,
+   "draft_accepted": 128,
+   "ttft_s": 1.985,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 6.214,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15077,
+    "gpu2_mib": 2501
+   },
+   "engine_log": [
+    "strata serve: prompt 104 tokens = 0 reused + 104 read in 1961 ms (53.0 tok/s), 256 generated in 4249 ms (60.2 tok/s), drafts accepted 128 of 211, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 95.3% (155489 hits / 163180 lookups)",
+    "strata serve: KV streaming: 99.55% of 122442 block reads hit VRAM, 2.2 MiB read from RAM",
+    "strata serve: suffix drafts: 6 windows, 17 of 18 drafts accepted"
+   ],
+   "reasoning_chars": 956,
+   "answer": ""
+  },
+  {
+   "label": "short-2",
+   "prompt_tokens": 104,
+   "reused_tokens": 0,
+   "read_tokens": 104,
+   "prompt_ms": 1870.3,
+   "prompt_tok_s": 55.6,
+   "generated_tokens": 256,
+   "decode_ms": 4067.5,
+   "decode_tok_s": 62.9,
+   "draft_n": 212,
+   "draft_accepted": 136,
+   "ttft_s": 1.893,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 5.941,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15077,
+    "gpu2_mib": 2491
+   },
+   "engine_log": [
+    "strata serve: prompt 104 tokens = 0 reused + 104 read in 1870 ms (55.6 tok/s), 256 generated in 4068 ms (62.9 tok/s), drafts accepted 136 of 212, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 95.3% (151895 hits / 159343 lookups)",
+    "strata serve: KV streaming: 99.54% of 119634 block reads hit VRAM, 2.2 MiB read from RAM",
+    "strata serve: suffix drafts: 13 windows, 30 of 34 drafts accepted"
+   ],
+   "reasoning_chars": 981,
+   "answer": ""
+  },
+  {
+   "label": "short-3",
+   "prompt_tokens": 104,
+   "reused_tokens": 0,
+   "read_tokens": 104,
+   "prompt_ms": 1845.7,
+   "prompt_tok_s": 56.3,
+   "generated_tokens": 256,
+   "decode_ms": 3713.5,
+   "decode_tok_s": 68.9,
+   "draft_n": 196,
+   "draft_accepted": 145,
+   "ttft_s": 1.869,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 5.563,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15077,
+    "gpu2_mib": 2470
+   },
+   "engine_log": [
+    "strata serve: prompt 104 tokens = 0 reused + 104 read in 1846 ms (56.3 tok/s), 256 generated in 3714 ms (68.9 tok/s), drafts accepted 145 of 196, 1 checkpoints",
+    "strata serve: decode expert cache hit rate: 95.6% (141795 hits / 148305 lookups)",
+    "strata serve: KV streaming: 99.51% of 110538 block reads hit VRAM, 2.2 MiB read from RAM",
+    "strata serve: suffix drafts: 14 windows, 31 of 34 drafts accepted"
+   ],
+   "reasoning_chars": 972,
+   "answer": ""
+  },
+  {
+   "label": "long-cold-1",
+   "prompt_tokens": 20913,
+   "reused_tokens": 0,
+   "read_tokens": 20913,
+   "prompt_ms": 18871.1,
+   "prompt_tok_s": 1108.2,
+   "generated_tokens": 256,
+   "decode_ms": 4404.8,
+   "decode_tok_s": 58.1,
+   "draft_n": 201,
+   "draft_accepted": 158,
+   "ttft_s": 19.101,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 23.485,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15077,
+    "gpu2_mib": 2485
+   },
+   "engine_log": [
+    "strata serve: prompt 20913 tokens = 0 reused + 20913 read in 18871 ms (1108.2 tok/s), 256 generated in 4405 ms (58.1 tok/s), drafts accepted 158 of 201, 2 checkpoints",
+    "strata serve: decode expert cache hit rate: 89.2% (127986 hits / 143405 lookups)",
+    "strata serve: KV streaming: 97.31% of 933522 block reads hit VRAM, 101.2 MiB read from RAM",
+    "strata serve: suffix drafts: 6 windows, 13 of 15 drafts accepted"
+   ],
+   "reasoning_chars": 1111,
+   "answer": ""
+  },
+  {
+   "label": "long-reuse-1",
+   "prompt_tokens": 20899,
+   "reused_tokens": 16384,
+   "read_tokens": 4515,
+   "prompt_ms": 7971.3,
+   "prompt_tok_s": 566.4,
+   "generated_tokens": 256,
+   "decode_ms": 4918.8,
+   "decode_tok_s": 52.0,
+   "draft_n": 206,
+   "draft_accepted": 140,
+   "ttft_s": 8.17,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 13.069,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15077,
+    "gpu2_mib": 2478
+   },
+   "engine_log": [
+    "strata serve: prompt 20899 tokens = 16384 reused + 4515 read in 7971 ms (566.4 tok/s), 256 generated in 4919 ms (52.0 tok/s), drafts accepted 140 of 206, 2 checkpoints",
+    "strata serve: decode expert cache hit rate: 89.2% (138139 hits / 154917 lookups)",
+    "strata serve: KV streaming: 98.58% of 1941000 block reads hit VRAM, 111.0 MiB read from RAM",
+    "strata serve: suffix drafts: 13 windows, 32 of 43 drafts accepted"
+   ],
+   "reasoning_chars": 866,
+   "answer": ""
+  },
+  {
+   "label": "long-cold-2",
+   "prompt_tokens": 20905,
+   "reused_tokens": 0,
+   "read_tokens": 20905,
+   "prompt_ms": 18857.6,
+   "prompt_tok_s": 1108.6,
+   "generated_tokens": 256,
+   "decode_ms": 4536.3,
+   "decode_tok_s": 56.4,
+   "draft_n": 213,
+   "draft_accepted": 146,
+   "ttft_s": 19.091,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 23.606,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15077,
+    "gpu2_mib": 2498
+   },
+   "engine_log": [
+    "strata serve: prompt 20905 tokens = 0 reused + 20905 read in 18858 ms (1108.6 tok/s), 256 generated in 4536 ms (56.4 tok/s), drafts accepted 146 of 213, 2 checkpoints",
+    "strata serve: decode expert cache hit rate: 92.0% (142517 hits / 154976 lookups)",
+    "strata serve: KV streaming: 97.59% of 1007478 block reads hit VRAM, 97.9 MiB read from RAM",
+    "strata serve: suffix drafts: 9 windows, 27 of 31 drafts accepted"
+   ],
+   "reasoning_chars": 922,
+   "answer": "(omitted: summary of a private codebase)"
+  },
+  {
+   "label": "long-reuse-2",
+   "prompt_tokens": 20891,
+   "reused_tokens": 16384,
+   "read_tokens": 4507,
+   "prompt_ms": 7853.1,
+   "prompt_tok_s": 573.9,
+   "generated_tokens": 256,
+   "decode_ms": 4282.9,
+   "decode_tok_s": 59.8,
+   "draft_n": 182,
+   "draft_accepted": 138,
+   "ttft_s": 8.051,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 12.314,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15077,
+    "gpu2_mib": 2474
+   },
+   "engine_log": [
+    "strata serve: prompt 20891 tokens = 16384 reused + 4507 read in 7853 ms (573.9 tok/s), 256 generated in 4283 ms (59.8 tok/s), drafts accepted 138 of 182, 2 checkpoints",
+    "strata serve: decode expert cache hit rate: 93.4% (134943 hits / 144443 lookups)",
+    "strata serve: KV streaming: 98.61% of 1947168 block reads hit VRAM, 109.2 MiB read from RAM",
+    "strata serve: suffix drafts: 2 windows, 4 of 4 drafts accepted"
+   ],
+   "reasoning_chars": 1071,
+   "answer": ""
+  },
+  {
+   "label": "long-cold-3",
+   "prompt_tokens": 20912,
+   "reused_tokens": 0,
+   "read_tokens": 20912,
+   "prompt_ms": 19067.1,
+   "prompt_tok_s": 1096.8,
+   "generated_tokens": 256,
+   "decode_ms": 4567.9,
+   "decode_tok_s": 56.0,
+   "draft_n": 225,
+   "draft_accepted": 144,
+   "ttft_s": 19.272,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 23.819,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15079,
+    "gpu2_mib": 2543
+   },
+   "engine_log": [
+    "strata serve: prompt 20912 tokens = 0 reused + 20912 read in 19067 ms (1096.8 tok/s), 256 generated in 4568 ms (56.0 tok/s), drafts accepted 144 of 225, 2 checkpoints",
+    "strata serve: decode expert cache hit rate: 93.7% (152029 hits / 162212 lookups)",
+    "strata serve: KV streaming: 97.59% of 1053690 block reads hit VRAM, 102.4 MiB read from RAM",
+    "strata serve: suffix drafts: 7 windows, 14 of 19 drafts accepted"
+   ],
+   "reasoning_chars": 1119,
+   "answer": ""
+  },
+  {
+   "label": "long-reuse-3",
+   "prompt_tokens": 20898,
+   "reused_tokens": 16384,
+   "read_tokens": 4514,
+   "prompt_ms": 7839.9,
+   "prompt_tok_s": 575.8,
+   "generated_tokens": 256,
+   "decode_ms": 4510.2,
+   "decode_tok_s": 56.8,
+   "draft_n": 198,
+   "draft_accepted": 140,
+   "ttft_s": 8.022,
+   "first_token_kind": "reasoning",
+   "total_latency_s": 12.511,
+   "vram_after": {
+    "gpu0_mib": 14949,
+    "gpu1_mib": 15079,
+    "gpu2_mib": 2437
+   },
+   "engine_log": [
+    "strata serve: prompt 20898 tokens = 16384 reused + 4514 read in 7840 ms (575.8 tok/s), 256 generated in 4510 ms (56.8 tok/s), drafts accepted 140 of 198, 2 checkpoints",
+    "strata serve: decode expert cache hit rate: 90.8% (136732 hits / 150619 lookups)",
+    "strata serve: KV streaming: 98.63% of 2033466 block reads hit VRAM, 112.0 MiB read from RAM",
+    "strata serve: suffix drafts: 11 windows, 32 of 37 drafts accepted"
+   ],
+   "reasoning_chars": 984,
+   "answer": ""
+  }
+ ]
+}

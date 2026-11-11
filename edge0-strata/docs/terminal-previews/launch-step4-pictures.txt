@@ -1,0 +1,36 @@
+# strata launch preview: step4-pictures
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Set up   Step 4 of 9: Pictures
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Should the model read pictures?
+ › No pictures
+   Yes, read pictures  (this engine has no picture reader)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Pictures add a 0.9 GB download. On a card under 24 GB the picture reader runs on the CPU (a few seconds per
+ picture, nothing taken from the graphics card). On a bigger card it runs on the GPU and keeps about 1.4 GB
+ free, costing a few % of text speed. Say No if you only chat in text.
+ Heads up: the engine installed here does not carry the picture reader, so the model would answer text only.
+ ↑↓ choose   Enter next   Esc back   ? help   q quit

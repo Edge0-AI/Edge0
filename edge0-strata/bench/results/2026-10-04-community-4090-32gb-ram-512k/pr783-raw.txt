@@ -1,0 +1,84 @@
+== base round 1
+strata    running (pid 284668)
+llama-swap inactive
+unknown
+
+VRAM:
+  23782 MiB, 382 MiB
+  held by:
+    284675 MiB (pid 284675)
+
+RAM:
+  total 31 GB, used 26 GB, available 4 GB
+
+last requests (expert tiers / MTP):
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 21 ms (234.3 tok/s), 320 generated in 2371 ms (135.0 tok/s), drafts accepted 139 of 217, 1 checkpoints
+  strata serve: expert tiers: GPU 183110 hits this request; since the start RAM 143239 blobs, files 0 blobs 17009.5 MB read
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 22 ms (228.1 tok/s), 320 generated in 2200 ms (145.4 tok/s), drafts accepted 149 of 218, 1 checkpoints
+  strata serve: expert tiers: GPU 181969 hits this request; since the start RAM 149820 blobs, files 0 blobs 17009.5 MB read
+code     mean  138.5 t/s   runs ['115.3', '145.0', '155.2']
+reason   mean  155.3 t/s   runs ['125.2', '171.5', '169.2']
+agent    mean  134.1 t/s   runs ['117.5', '138.6', '146.2']
+== pr783 round 1
+strata    running (pid 285724)
+llama-swap inactive
+unknown
+
+VRAM:
+  23780 MiB, 384 MiB
+  held by:
+    285731 MiB (pid 285731)
+
+RAM:
+  total 31 GB, used 26 GB, available 4 GB
+
+last requests (expert tiers / MTP):
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 22 ms (228.4 tok/s), 320 generated in 2284 ms (140.1 tok/s), drafts accepted 139 of 205, 1 checkpoints
+  strata serve: expert tiers: GPU 178658 hits this request; since the start RAM 141731 blobs, files 0 blobs 17009.5 MB read
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 22 ms (231.0 tok/s), 320 generated in 2164 ms (147.9 tok/s), drafts accepted 153 of 222, 1 checkpoints
+  strata serve: expert tiers: GPU 182333 hits this request; since the start RAM 147989 blobs, files 0 blobs 17009.5 MB read
+code     mean  141.9 t/s   runs ['121.3', '143.5', '161.0']
+reason   mean  158.6 t/s   runs ['129.9', '161.7', '184.1']
+agent    mean  141.8 t/s   runs ['121.5', '151.9', '151.9']
+== base round 2
+strata    running (pid 286625)
+llama-swap inactive
+unknown
+
+VRAM:
+  23782 MiB, 382 MiB
+  held by:
+    286629 MiB (pid 286629)
+
+RAM:
+  total 31 GB, used 26 GB, available 4 GB
+
+last requests (expert tiers / MTP):
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 32 ms (157.3 tok/s), 320 generated in 2072 ms (154.4 tok/s), drafts accepted 158 of 218, 1 checkpoints
+  strata serve: expert tiers: GPU 174935 hits this request; since the start RAM 129511 blobs, files 0 blobs 17008.0 MB read
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 21 ms (240.4 tok/s), 320 generated in 2082 ms (153.7 tok/s), drafts accepted 150 of 222, 1 checkpoints
+  strata serve: expert tiers: GPU 182332 hits this request; since the start RAM 135801 blobs, files 0 blobs 17008.0 MB read
+code     mean  138.5 t/s   runs ['116.0', '144.2', '155.4']
+reason   mean  151.0 t/s   runs ['126.3', '163.2', '163.6']
+agent    mean  134.3 t/s   runs ['114.6', '141.3', '147.0']
+== pr783 round 2
+strata    running (pid 287594)
+llama-swap inactive
+unknown
+
+VRAM:
+  23780 MiB, 384 MiB
+  held by:
+    287598 MiB (pid 287598)
+
+RAM:
+  total 31 GB, used 26 GB, available 4 GB
+
+last requests (expert tiers / MTP):
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 32 ms (157.5 tok/s), 320 generated in 2229 ms (143.5 tok/s), drafts accepted 156 of 232, 1 checkpoints
+  strata serve: expert tiers: GPU 182234 hits this request; since the start RAM 145481 blobs, files 0 blobs 17009.5 MB read
+  strata serve: prompt 87 tokens = 82 reused + 5 read in 23 ms (220.1 tok/s), 320 generated in 2150 ms (148.8 tok/s), drafts accepted 153 of 230, 1 checkpoints
+  strata serve: expert tiers: GPU 185060 hits this request; since the start RAM 151901 blobs, files 0 blobs 17009.5 MB read
+code     mean  140.3 t/s   runs ['121.2', '143.3', '156.5']
+reason   mean  159.8 t/s   runs ['124.7', '179.3', '175.3']
+agent    mean  139.1 t/s   runs ['118.9', '146.0', '152.5']

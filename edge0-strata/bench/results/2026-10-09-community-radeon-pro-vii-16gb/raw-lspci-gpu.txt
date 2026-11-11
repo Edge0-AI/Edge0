@@ -1,0 +1,24 @@
+### 显卡 PCI 信息  （2026-10-09T21:29:45+08:00）
+### 命令: lspci -vv -s 06:00.0   （非 root 时看不到 LnkCap/LnkSta，故补充 sysfs）
+06:00.0 VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Vega 20 [Radeon Pro VII/Radeon Instinct MI50 32GB] (rev 06) (prog-if 00 [VGA controller])
+	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Vega 20 WKS GL-XE [Radeon Pro VII]
+	Control: I/O+ Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR+ FastB2B- DisINTx+
+	Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+	Latency: 0, Cache Line Size: 32 bytes
+	Interrupt: pin A routed to IRQ 51
+	IOMMU group: 33
+	Region 0: Memory at 383800000000 (64-bit, prefetchable) [size=16G]
+	Region 2: Memory at 383c00000000 (64-bit, prefetchable) [size=256M]
+	Region 4: I/O ports at e000 [size=256]
+	Region 5: Memory at fb100000 (32-bit, non-prefetchable) [size=512K]
+	Expansion ROM at fb180000 [disabled] [size=128K]
+	Capabilities: <access denied>
+	Kernel driver in use: amdgpu
+	Kernel modules: amdgpu
+
+
+### PCIe 链路能力/当前状态（sysfs，非 root 可读）
+  max_link_speed = 16.0 GT/s PCIe
+  max_link_width = 16
+  current_link_speed = 16.0 GT/s PCIe
+  current_link_width = 16

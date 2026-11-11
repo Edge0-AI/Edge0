@@ -1,0 +1,18 @@
+{
+ "note": "startup snapshot taken after warm-up, with a long context and a warm expert cache",
+ "process_pid": "2762916",
+ "process_smaps_rollup": {
+  "Rss_GiB": 81.32,
+  "Private_Clean_GiB": 27.08,
+  "Private_Dirty_GiB": 54.23,
+  "Locked_GiB": 0.0
+ },
+ "gpu_memory_used_MiB": "0, 23652 MiB\n1, 23778 MiB",
+ "host_ram_GiB": {
+  "total": "125",
+  "used": "61",
+  "buff_cache": "68",
+  "available": "64"
+ },
+ "model_ram_note": "46.84 GiB of experts are anonymous (Private_Dirty); the n-gram table under --ple-io ram is file-backed (Private_Clean)"
+}

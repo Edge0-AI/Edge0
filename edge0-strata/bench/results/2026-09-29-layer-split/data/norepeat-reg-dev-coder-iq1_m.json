@@ -1,0 +1,92 @@
+[
+ {
+  "name": "greedy story 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 88,
+  "drafts_offered": 187,
+  "tok_s": 59.2,
+  "text": "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with salt and age. He was seventy years old, but he moved with the grace of a man who had spent decades on a narrow spiral staircase. His hands, mapped with veins like the roots of an ancient oak, gripped the cold iron railing.\n\nFor forty years, Elias had tended the light at the end of the world. Not the end of the map, but the end of the land. Here, the Atlantic threw itself against the granite cliffs with such violence that the spray reached the gallery, thirty feet above the rocks.\n\nHe checked the clock. 11:42 PM. The fog was thickening, a gray soup that swallowed the horizon. In the old days, he would have climbed the stairs to the lantern room, polished the Fresnel lens, and wound the clockwork mechanism that turned the great beam. But the automation had changed"
+ },
+ {
+  "name": "greedy code 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 135,
+  "drafts_offered": 179,
+  "tok_s": 81.6,
+  "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+ },
+ {
+  "name": "greedy sanity",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 74.9,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy, no penalty (sanity)",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 74.3,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64",
+  "tokens": 61,
+  "repeats": 0,
+  "drafts_accepted": 19,
+  "drafts_offered": 49,
+  "tok_s": 49.6,
+  "text": "Aardvark  \nAlbatross  \n\nAlligator   \nAntelope    \nBaboon      \nBadger     \nBeaver       \nBear        \nBird         \nBoar          \nBuffalo \nButterfly \n\nCamel           \nCat            \nCheetah        \n\nDolphin         \n\n\nElephant        \n\n\n\nFlamingo<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64 story",
+  "tokens": 80,
+  "repeats": 0,
+  "drafts_accepted": 6,
+  "drafts_offered": 52,
+  "tok_s": 44.9,
+  "text": "The wind didn\u2019t just blow; it screamed against the glass of Lantern House 42, rattling like chains in an empty cathedral hall outside my window at midnight on November third this year\u2014so I pulled up to check what was happening with that storm and why they were calling me out there when all we had left for tonight\u2019s shift is one last pass through our logs before dawn breaks.<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 3",
+  "tokens": 160,
+  "repeats": 0,
+  "drafts_accepted": 17,
+  "drafts_offered": 83,
+  "tok_s": 44.1,
+  "text": "The wind didn\u2019t just blow at Cape Harrow; it screamed through the gaps in its teeth, hungry and relentless for three centuries of stone salt-spray history that had long since forgotten to be polite or gentle with itself against anything smaller than God Himself was willing acknowledge as divine protection from drowning souls who were already lost before they ever touched water.\n\nElias knew this rhythm better he himself could hear it sometimes; his boots worn smooth by pacing the spiral stair\u2019s center-post groove where thousands upon countless steps had rubbed away texture until all that remained beneath sole leather now felt like polished bone carved out slowly but surely over time into something more hollow than wood ever really should be allowed become when used so often enough within such confined circular spaces meant only for vertical ascent down always descending again back upward never truly leaving"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 11",
+  "tokens": 62,
+  "repeats": 0,
+  "drafts_accepted": 18,
+  "drafts_offered": 31,
+  "tok_s": 49.5,
+  "text": "Lion  \nTiger  \n\nElephant  \n  \nGiraffe  \n\n\n\nHippopotamus    \nZebra   \nRhinoceros   \n\n\nPanda Bear    \n\n\n\n\nKangaroo     \nKoala      \nSloth      \n\n\n\n\n\nCheetah       \nLeopard        \nPanther        \n\n\n\n\n\n\nWolf              \nFox                \nBear                 <|im_end|>"
+ },
+ {
+  "name": "greedy frequency=100 last_n=16",
+  "tokens": 11,
+  "repeats": 0,
+  "drafts_accepted": 5,
+  "drafts_offered": 13,
+  "tok_s": 65.2,
+  "text": "1 to 50, separated by commas:<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=4096 (8-row windows)",
+  "tokens": 300,
+  "repeats": 0,
+  "drafts_accepted": 47,
+  "drafts_offered": 153,
+  "tok_s": 52.5,
+  "text": "The ocean is not merely water; it has been, and remains to this day one giant machine for making life possible on Earth.\" \u2014 *David Attenborough* \n\nThis quote captures perhaps more than any other single sentence in human language: that which we call \"the Sea\" or \u201cOcean\u201d was never just an element within our planet\u2019s geography but rather its most fundamental biological engine\u2014a living system whose existence predates humanity by billions years yet continues shaping every aspect from climate regulation through evolutionary biology all way down modern industrial supply chains today's global shipping lanes carry cargo across vast distances because they were once crossed only slowly via coastal hopping routes used since antiquity until steamships revolutionized travel during late nineteenth century when diesel engines replaced wind power entirely allowing container ships carrying thousands TEUs (Twenty-foot Equivalent Units) per voyage crossing entire Pacific basins without stopping at intermediate ports anymore unlike earlier sailing vessels needing favorable winds currents seasonal patterns dictating departure windows based upon monsoon calendars established centuries ago before technological advances changed those constraints fundamentally altering logistics networks worldwide thereby transforming economic structures globally while simultaneously creating ecological disruptions due invasive species transported unintentionally alongside legitimate goods causing cascading ecosystem collapses locally where non-native organisms outcompete native fauna disrupting food webs leading population declines affecting biodiversity indices measured scientifically using standardized metrics like Shannon-Wiener diversity index calculations applied consistently over decades revealing trends showing significant decreases post-introduction events correl strongly with introduction dates matching historical records documenting first sightings confirmed taxonomically classified formally according International Code Nomenclature rules"
+ }
+]

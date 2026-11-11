@@ -1,0 +1,4046 @@
+{
+  "baseline63": {
+    "scores": {
+      "hs": {
+        "correct": 181,
+        "invalid": 0,
+        "n": 200
+      },
+      "wg": {
+        "correct": 173,
+        "invalid": 0,
+        "n": 200
+      }
+    },
+    "answers": [
+      {
+        "id": "hs0",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs1",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs2",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs3",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs4",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs5",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs6",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs7",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs8",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs9",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs10",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs11",
+        "gold": "D",
+        "answer": "A"
+      },
+      {
+        "id": "hs12",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs13",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs14",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs15",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs16",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs17",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs18",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs19",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs20",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "hs21",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs22",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs23",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs24",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs25",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs26",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs27",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs28",
+        "gold": "B",
+        "answer": "C"
+      },
+      {
+        "id": "hs29",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs30",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs31",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs32",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs33",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs34",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs35",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs36",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs37",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs38",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs39",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs40",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs41",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs42",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs43",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs44",
+        "gold": "A",
+        "answer": "D"
+      },
+      {
+        "id": "hs45",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs46",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs47",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs48",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs49",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs50",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs51",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs52",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs53",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs54",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs55",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs56",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs57",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs58",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs59",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "hs60",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs61",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs62",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs63",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs64",
+        "gold": "D",
+        "answer": "A"
+      },
+      {
+        "id": "hs65",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs66",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs67",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs68",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs69",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs70",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs71",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs72",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs73",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs74",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs75",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs76",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs77",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs78",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs79",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs80",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs81",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs82",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs83",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs84",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs85",
+        "gold": "B",
+        "answer": "C"
+      },
+      {
+        "id": "hs86",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs87",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs88",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs89",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs90",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs91",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs92",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs93",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs94",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs95",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs96",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs97",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs98",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs99",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs100",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs101",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs102",
+        "gold": "D",
+        "answer": "C"
+      },
+      {
+        "id": "hs103",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs104",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs105",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs106",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs107",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs108",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs109",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs110",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs111",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs112",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs113",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs114",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs115",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs116",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs117",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs118",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs119",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs120",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs121",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs122",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs123",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs124",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs125",
+        "gold": "C",
+        "answer": "B"
+      },
+      {
+        "id": "hs126",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs127",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs128",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs129",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs130",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs131",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs132",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs133",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs134",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs135",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs136",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs137",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs138",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs139",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs140",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs141",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs142",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs143",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs144",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs145",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs146",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs147",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs148",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "hs149",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs150",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs151",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs152",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs153",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs154",
+        "gold": "C",
+        "answer": "A"
+      },
+      {
+        "id": "hs155",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs156",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs157",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs158",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs159",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs160",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs161",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs162",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs163",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs164",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs165",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs166",
+        "gold": "D",
+        "answer": "A"
+      },
+      {
+        "id": "hs167",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs168",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs169",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs170",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs171",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs172",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs173",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs174",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs175",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs176",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs177",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs178",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs179",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs180",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs181",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs182",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs183",
+        "gold": "B",
+        "answer": "D"
+      },
+      {
+        "id": "hs184",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs185",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs186",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "hs187",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs188",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs189",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs190",
+        "gold": "A",
+        "answer": "D"
+      },
+      {
+        "id": "hs191",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs192",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs193",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs194",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs195",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs196",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs197",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs198",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs199",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg0",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg1",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg2",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg3",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg4",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg5",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg6",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg7",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg8",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg9",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg10",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg11",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg12",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg13",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg14",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg15",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg16",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg17",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg18",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg19",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg20",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg21",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg22",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg23",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg24",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg25",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg26",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg27",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg28",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg29",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg30",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg31",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg32",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg33",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg34",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg35",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg36",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg37",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg38",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg39",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg40",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg41",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg42",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg43",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg44",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg45",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg46",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg47",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg48",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg49",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg50",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg51",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg52",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg53",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg54",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg55",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg56",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg57",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg58",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg59",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg60",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg61",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg62",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg63",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg64",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg65",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg66",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg67",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg68",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg69",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg70",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg71",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg72",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg73",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg74",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg75",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg76",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg77",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg78",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg79",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg80",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg81",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg82",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg83",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg84",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg85",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg86",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg87",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg88",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg89",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg90",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg91",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg92",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg93",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg94",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg95",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg96",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg97",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg98",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg99",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg100",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg101",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg102",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg103",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg104",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg105",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg106",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg107",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg108",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg109",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg110",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg111",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg112",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg113",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg114",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg115",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg116",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg117",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg118",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg119",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg120",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg121",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg122",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg123",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg124",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg125",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg126",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg127",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg128",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg129",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg130",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg131",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg132",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg133",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg134",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg135",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg136",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg137",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg138",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg139",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg140",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg141",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg142",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg143",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg144",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg145",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg146",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg147",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg148",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg149",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg150",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg151",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg152",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg153",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg154",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg155",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg156",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg157",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg158",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg159",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg160",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg161",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg162",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg163",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg164",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg165",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg166",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg167",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg168",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg169",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg170",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg171",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg172",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg173",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg174",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg175",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg176",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg177",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg178",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg179",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg180",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg181",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg182",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg183",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg184",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg185",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg186",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg187",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg188",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg189",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg190",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg191",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg192",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg193",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg194",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg195",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg196",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg197",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg198",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg199",
+        "gold": "B",
+        "answer": "B"
+      }
+    ]
+  },
+  "q8il-combo-w15-s8": {
+    "scores": {
+      "hs": {
+        "correct": 181,
+        "invalid": 0,
+        "n": 200
+      },
+      "wg": {
+        "correct": 175,
+        "invalid": 0,
+        "n": 200
+      }
+    },
+    "answers": [
+      {
+        "id": "hs0",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs1",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs2",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs3",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs4",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs5",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs6",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs7",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs8",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs9",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs10",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs11",
+        "gold": "D",
+        "answer": "A"
+      },
+      {
+        "id": "hs12",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs13",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs14",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs15",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs16",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs17",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs18",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs19",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs20",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "hs21",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs22",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs23",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs24",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs25",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs26",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs27",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs28",
+        "gold": "B",
+        "answer": "C"
+      },
+      {
+        "id": "hs29",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs30",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs31",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs32",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs33",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs34",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs35",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs36",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs37",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs38",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs39",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs40",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs41",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs42",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs43",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs44",
+        "gold": "A",
+        "answer": "D"
+      },
+      {
+        "id": "hs45",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs46",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs47",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs48",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs49",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs50",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs51",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs52",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs53",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs54",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs55",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs56",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs57",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs58",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs59",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "hs60",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs61",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs62",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs63",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs64",
+        "gold": "D",
+        "answer": "A"
+      },
+      {
+        "id": "hs65",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs66",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs67",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs68",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs69",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs70",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs71",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs72",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs73",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs74",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs75",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs76",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs77",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs78",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs79",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs80",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs81",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs82",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs83",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs84",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs85",
+        "gold": "B",
+        "answer": "C"
+      },
+      {
+        "id": "hs86",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs87",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs88",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs89",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs90",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs91",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs92",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs93",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs94",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs95",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs96",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs97",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs98",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs99",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs100",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs101",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs102",
+        "gold": "D",
+        "answer": "C"
+      },
+      {
+        "id": "hs103",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs104",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs105",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs106",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs107",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs108",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs109",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs110",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs111",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs112",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs113",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs114",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs115",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs116",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs117",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs118",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs119",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs120",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs121",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs122",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs123",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs124",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs125",
+        "gold": "C",
+        "answer": "B"
+      },
+      {
+        "id": "hs126",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs127",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs128",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs129",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs130",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs131",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs132",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs133",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs134",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs135",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs136",
+        "gold": "C",
+        "answer": "D"
+      },
+      {
+        "id": "hs137",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs138",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs139",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs140",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs141",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs142",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs143",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs144",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs145",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs146",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs147",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs148",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "hs149",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs150",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs151",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs152",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs153",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs154",
+        "gold": "C",
+        "answer": "A"
+      },
+      {
+        "id": "hs155",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs156",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs157",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs158",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs159",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs160",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs161",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs162",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs163",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs164",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs165",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs166",
+        "gold": "D",
+        "answer": "A"
+      },
+      {
+        "id": "hs167",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs168",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs169",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs170",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs171",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs172",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs173",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs174",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs175",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs176",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs177",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs178",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs179",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs180",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs181",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs182",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs183",
+        "gold": "B",
+        "answer": "D"
+      },
+      {
+        "id": "hs184",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs185",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs186",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "hs187",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs188",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs189",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs190",
+        "gold": "A",
+        "answer": "D"
+      },
+      {
+        "id": "hs191",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs192",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs193",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs194",
+        "gold": "C",
+        "answer": "C"
+      },
+      {
+        "id": "hs195",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "hs196",
+        "gold": "D",
+        "answer": "D"
+      },
+      {
+        "id": "hs197",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs198",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "hs199",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg0",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg1",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg2",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg3",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg4",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg5",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg6",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg7",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg8",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg9",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg10",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg11",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg12",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg13",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg14",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg15",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg16",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg17",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg18",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg19",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg20",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg21",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg22",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg23",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg24",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg25",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg26",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg27",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg28",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg29",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg30",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg31",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg32",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg33",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg34",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg35",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg36",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg37",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg38",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg39",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg40",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg41",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg42",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg43",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg44",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg45",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg46",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg47",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg48",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg49",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg50",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg51",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg52",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg53",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg54",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg55",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg56",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg57",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg58",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg59",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg60",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg61",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg62",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg63",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg64",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg65",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg66",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg67",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg68",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg69",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg70",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg71",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg72",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg73",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg74",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg75",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg76",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg77",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg78",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg79",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg80",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg81",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg82",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg83",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg84",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg85",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg86",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg87",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg88",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg89",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg90",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg91",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg92",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg93",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg94",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg95",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg96",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg97",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg98",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg99",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg100",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg101",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg102",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg103",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg104",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg105",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg106",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg107",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg108",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg109",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg110",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg111",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg112",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg113",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg114",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg115",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg116",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg117",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg118",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg119",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg120",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg121",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg122",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg123",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg124",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg125",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg126",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg127",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg128",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg129",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg130",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg131",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg132",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg133",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg134",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg135",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg136",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg137",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg138",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg139",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg140",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg141",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg142",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg143",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg144",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg145",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg146",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg147",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg148",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg149",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg150",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg151",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg152",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg153",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg154",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg155",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg156",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg157",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg158",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg159",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg160",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg161",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg162",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg163",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg164",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg165",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg166",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg167",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg168",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg169",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg170",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg171",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg172",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg173",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg174",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg175",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg176",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg177",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg178",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg179",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg180",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg181",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg182",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg183",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg184",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg185",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg186",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg187",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg188",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg189",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg190",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg191",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg192",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg193",
+        "gold": "B",
+        "answer": "A"
+      },
+      {
+        "id": "wg194",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg195",
+        "gold": "A",
+        "answer": "A"
+      },
+      {
+        "id": "wg196",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg197",
+        "gold": "B",
+        "answer": "B"
+      },
+      {
+        "id": "wg198",
+        "gold": "A",
+        "answer": "B"
+      },
+      {
+        "id": "wg199",
+        "gold": "B",
+        "answer": "B"
+      }
+    ]
+  },
+  "dataset_files": {
+    "hellaswag_val_full.txt": {
+      "sha256": "d572539320eb2050e858ca34b495bbe2103e3b3f1391a9c3bcdf215b0bb93bd1",
+      "bytes": 7770677,
+      "selection": "first200 in local file order; no shuffle"
+    },
+    "winogrande-debiased-eval.csv": {
+      "sha256": "6726173ef65ffdc4abb0d28b755375d288ffb3eb41633bd833288c411c8ebf7c",
+      "bytes": 155325,
+      "selection": "first200 in local file order; no shuffle"
+    }
+  }
+}

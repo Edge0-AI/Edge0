@@ -1,0 +1,402 @@
+{
+  "started": "2026-10-10 07:54:42",
+  "url": "http://127.0.0.1:8080/v1/chat/completions",
+  "model": "qwen3.8-flash-next-iq3_xxs",
+  "engine_log": "D:/Dev/Strata/strata-iq3_xxs.log",
+  "cap_tokens": 256,
+  "reps": 3,
+  "speed": [
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 7.127,
+      "total_s": 11.47,
+      "answer_len": 1410,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 4195,
+        "completion_tokens": 256,
+        "total_tokens": 4451,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 4195,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 4195,
+      "read_ms": 7102,
+      "read_tok_s": 590.7,
+      "generated_tokens": 256,
+      "gen_ms": 4361,
+      "decode_tok_s": 58.7,
+      "pairing_ok": true,
+      "target": 4096,
+      "rep": 1,
+      "chars": 10535
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 7.225,
+      "total_s": 11.618,
+      "answer_len": 1208,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 4198,
+        "completion_tokens": 256,
+        "total_tokens": 4454,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 4198,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 4198,
+      "read_ms": 7188,
+      "read_tok_s": 584.0,
+      "generated_tokens": 256,
+      "gen_ms": 4422,
+      "decode_tok_s": 57.9,
+      "pairing_ok": true,
+      "target": 4096,
+      "rep": 2,
+      "chars": 10535
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 7.208,
+      "total_s": 11.41,
+      "answer_len": 1265,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 4199,
+        "completion_tokens": 256,
+        "total_tokens": 4455,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 4199,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 4199,
+      "read_ms": 7163,
+      "read_tok_s": 586.2,
+      "generated_tokens": 256,
+      "gen_ms": 4232,
+      "decode_tok_s": 60.5,
+      "pairing_ok": true,
+      "target": 4096,
+      "rep": 3,
+      "chars": 10535
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 41.64,
+      "total_s": 46.031,
+      "answer_len": 1196,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 33467,
+        "completion_tokens": 256,
+        "total_tokens": 33723,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 33467,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 33467,
+      "read_ms": 41584,
+      "read_tok_s": 804.8,
+      "generated_tokens": 256,
+      "gen_ms": 4421,
+      "decode_tok_s": 57.9,
+      "pairing_ok": true,
+      "target": 32768,
+      "rep": 1,
+      "chars": 82757
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 41.716,
+      "total_s": 45.964,
+      "answer_len": 1310,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 33467,
+        "completion_tokens": 256,
+        "total_tokens": 33723,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 33467,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 33467,
+      "read_ms": 41659,
+      "read_tok_s": 803.4,
+      "generated_tokens": 256,
+      "gen_ms": 4279,
+      "decode_tok_s": 59.8,
+      "pairing_ok": true,
+      "target": 32768,
+      "rep": 2,
+      "chars": 82757
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 41.669,
+      "total_s": 46.231,
+      "answer_len": 1286,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 33467,
+        "completion_tokens": 256,
+        "total_tokens": 33723,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 33467,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 33467,
+      "read_ms": 41600,
+      "read_tok_s": 804.5,
+      "generated_tokens": 256,
+      "gen_ms": 4591,
+      "decode_tok_s": 55.8,
+      "pairing_ok": true,
+      "target": 32768,
+      "rep": 3,
+      "chars": 82757
+    },
+    {
+      "ok": false,
+      "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"prompt (131428 tokens) + max tokens (256) exceeds the context (131072); requests are never truncated. Send a smaller max_tokens (at most 0 here), or add \\\"fit_max_tokens\\\": true to the model's strata-<model>.json to shorten it to the room left (#545)\"}}",
+      "target": 128000,
+      "rep": 1,
+      "chars": 322636
+    },
+    {
+      "ok": false,
+      "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"prompt (131428 tokens) + max tokens (256) exceeds the context (131072); requests are never truncated. Send a smaller max_tokens (at most 0 here), or add \\\"fit_max_tokens\\\": true to the model's strata-<model>.json to shorten it to the room left (#545)\"}}",
+      "target": 128000,
+      "rep": 2,
+      "chars": 322636
+    },
+    {
+      "ok": false,
+      "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"prompt (131428 tokens) + max tokens (256) exceeds the context (131072); requests are never truncated. Send a smaller max_tokens (at most 0 here), or add \\\"fit_max_tokens\\\": true to the model's strata-<model>.json to shorten it to the room left (#545)\"}}",
+      "target": 128000,
+      "rep": 3,
+      "chars": 322636
+    }
+  ],
+  "needles": [
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 42.206,
+      "total_s": 42.528,
+      "text": "7-BLUE-MAGNET-4417",
+      "answer_len": 18,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 33512,
+        "completion_tokens": 13,
+        "total_tokens": 33525,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 33512,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 33512,
+      "read_ms": 42132,
+      "read_tok_s": 795.4,
+      "generated_tokens": 13,
+      "gen_ms": 356,
+      "decode_tok_s": 36.5,
+      "pairing_ok": true,
+      "target": 32768,
+      "depth": 10,
+      "needle_found": true,
+      "chars": 82895
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 42.071,
+      "total_s": 42.388,
+      "text": "7-BLUE-MAGNET-4417",
+      "answer_len": 18,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 33512,
+        "completion_tokens": 13,
+        "total_tokens": 33525,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 33512,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 33512,
+      "read_ms": 42017,
+      "read_tok_s": 797.6,
+      "generated_tokens": 13,
+      "gen_ms": 345,
+      "decode_tok_s": 37.7,
+      "pairing_ok": true,
+      "target": 32768,
+      "depth": 50,
+      "needle_found": true,
+      "chars": 82895
+    },
+    {
+      "ok": true,
+      "payload_variant": 0,
+      "thinking_off": true,
+      "ttft_s": 42.584,
+      "total_s": 42.909,
+      "text": "7-BLUE-MAGNET-4417",
+      "answer_len": 18,
+      "reasoning_len": 0,
+      "reasoning_text": "",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 33512,
+        "completion_tokens": 13,
+        "total_tokens": 33525,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "engine_prompt_tokens": 33512,
+      "reused_tokens": 0,
+      "new_prompt_tokens": 33512,
+      "read_ms": 42530,
+      "read_tok_s": 788.0,
+      "generated_tokens": 13,
+      "gen_ms": 351,
+      "decode_tok_s": 37.0,
+      "pairing_ok": true,
+      "target": 32768,
+      "depth": 90,
+      "needle_found": true,
+      "chars": 82895
+    },
+    {
+      "ok": false,
+      "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"prompt (131473 tokens) + max tokens (32) exceeds the context (131072); requests are never truncated. Send a smaller max_tokens (at most 0 here), or add \\\"fit_max_tokens\\\": true to the model's strata-<model>.json to shorten it to the room left (#545)\"}}",
+      "target": 128000,
+      "depth": 10,
+      "needle_found": false,
+      "chars": 322774
+    },
+    {
+      "ok": false,
+      "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"prompt (131473 tokens) + max tokens (32) exceeds the context (131072); requests are never truncated. Send a smaller max_tokens (at most 0 here), or add \\\"fit_max_tokens\\\": true to the model's strata-<model>.json to shorten it to the room left (#545)\"}}",
+      "target": 128000,
+      "depth": 50,
+      "needle_found": false,
+      "chars": 322774
+    },
+    {
+      "ok": false,
+      "error": "HTTP 400: {\"error\": {\"type\": \"invalid_request_error\", \"message\": \"prompt (131473 tokens) + max tokens (32) exceeds the context (131072); requests are never truncated. Send a smaller max_tokens (at most 0 here), or add \\\"fit_max_tokens\\\": true to the model's strata-<model>.json to shorten it to the room left (#545)\"}}",
+      "target": 128000,
+      "depth": 90,
+      "needle_found": false,
+      "chars": 322774
+    }
+  ],
+  "notes": [],
+  "calibration": {
+    "ok": true,
+    "payload_variant": 0,
+    "thinking_off": true,
+    "ttft_s": 6.38,
+    "total_s": 7.788,
+    "answer_len": 389,
+    "reasoning_len": 0,
+    "reasoning_text": "",
+    "finish_reason": "length",
+    "usage": {
+      "prompt_tokens": 3216,
+      "completion_tokens": 64,
+      "total_tokens": 3280,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "engine_prompt_tokens": 3216,
+    "reused_tokens": 0,
+    "new_prompt_tokens": 3216,
+    "read_ms": 6334,
+    "read_tok_s": 507.8,
+    "generated_tokens": 64,
+    "gen_ms": 1440,
+    "decode_tok_s": 44.4,
+    "pairing_ok": true
+  },
+  "chars_per_token": 2.5188916876574305,
+  "warmup": {
+    "ok": true,
+    "payload_variant": 0,
+    "thinking_off": true,
+    "ttft_s": 6.129,
+    "total_s": 6.728,
+    "answer_len": 94,
+    "reasoning_len": 0,
+    "reasoning_text": "",
+    "finish_reason": "length",
+    "usage": {
+      "prompt_tokens": 2082,
+      "completion_tokens": 32,
+      "total_tokens": 2114,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "engine_prompt_tokens": 2082,
+    "reused_tokens": 0,
+    "new_prompt_tokens": 2082,
+    "read_ms": 6103,
+    "read_tok_s": 341.2,
+    "generated_tokens": 32,
+    "gen_ms": 620,
+    "decode_tok_s": 51.6,
+    "pairing_ok": true
+  },
+  "finished": "2026-10-10 08:00:00",
+  "tag": ""
+}

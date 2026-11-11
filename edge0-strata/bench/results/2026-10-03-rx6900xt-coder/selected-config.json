@@ -1,0 +1,41 @@
+{
+  "exe": "C:\\Dev\\Strata\\engine\\strata.exe",
+  "args": [
+    "--pack",
+    "C:\\Dev\\Strata-data\\packs\\coder-iq1_m",
+    "--native",
+    "C:\\Dev\\Strata-data\\models\\coder-IQ1_M\\Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf",
+    "--ple-gguf",
+    "C:\\Dev\\Strata-data\\models\\coder-IQ1_M\\Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00002-of-00002.gguf",
+    "--expert-profile",
+    "C:\\Dev\\Strata\\data\\expert-profile-coder.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--spec-min-p",
+    "0.5",
+    "--mtp",
+    "C:\\Dev\\Strata-data\\mtp\\rt",
+    "--max-context",
+    "65536",
+    "--kv",
+    "int8",
+    "--kv-resident",
+    "32768",
+    "--pool-workers",
+    "31"
+  ],
+  "cwd": "C:\\Dev\\Strata",
+  "tokenizer": "C:\\Dev\\Strata-data\\packs\\coder-iq1_m\\tokenizer",
+  "model_name": "qwen3.8-flash-next-coder-iq1_m",
+  "log": "C:\\Dev\\Strata\\strata-coder-iq1_m.log",
+  "lib_dirs": [
+    "C:\\Dev\\Strata\\engine\\rocm\\bin"
+  ],
+  "port": 8081,
+  "backend": "hip",
+  "host": "127.0.0.1"
+}

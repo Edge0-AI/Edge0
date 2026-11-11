@@ -1,0 +1,84 @@
+{
+ "label": "lim-cv-pp-x2",
+ "extra": [
+  "--layer-split",
+  "auto",
+  "--control-vector-scaled",
+  "C:\\Users\\ribbon\\strata-test\\Strata\\data\\experimental-speed-projection\\Qwen3.8-Flash-Next-experimental-speed-projection.gguf:1.0",
+  "--control-vector-layer-range",
+  "4",
+  "44",
+  "--cvec-mode",
+  "project",
+  "--cvec-dir",
+  "per-layer"
+ ],
+ "gpus": "0,2",
+ "needles": [
+  {
+   "tokens": 15925,
+   "prompt_ms": 8783.1,
+   "pp_tok_s": 1813.1,
+   "found": true,
+   "answer": "meadow-254<|im_end|>"
+  },
+  {
+   "tokens": 27474,
+   "prompt_ms": 13379.7,
+   "pp_tok_s": 2053.4,
+   "found": true,
+   "answer": "juniper-766<|im_end|>"
+  }
+ ],
+ "chat": {
+  "turn1_tokens": 6584,
+  "turn1_ms": 3652.4,
+  "turn2_tokens": 6660,
+  "reused": 6632,
+  "turn2_ms": 246.8,
+  "answer": "lantern-417<|im_end|>",
+  "ok": true
+ },
+ "decode": [
+  {
+   "name": "story",
+   "tok_s": 77.0,
+   "reps": [
+    77.0
+   ],
+   "hit_rate": 0.9718150054476462,
+   "text": "The wind didn\u2019t just howl; it screamed. It tore through the gaps in the iron railing of the Lantern Room, carrying the scent of brine and rotting kelp. Elias pulled his woolen collar up to his chin, his fingers numb and clumsy inside thick leather gloves.\n\nHe was the last man on the island. The automated systems had failed three winters ago, a glitch in the solar panel array that no engineer had been able to fix before the supply boat stopped running. Now, it was just him, the light, and the sea.\n\nElias climbed the spiral stairs, his boots heavy with salt spray. The iron steps groaned under his weight, a sound that seemed to mock the storm outside. He reached the top, the glass walls vibrating with the force of the gale.\n\nInside the lantern room, the great Fresnel lens sat like a dormant eye. It was cold, dark, and waiting.\n\nElias moved to the control panel. His"
+  },
+  {
+   "name": "code",
+   "tok_s": 103.6,
+   "reps": [
+    103.6
+   ],
+   "hit_rate": 0.957731667226356,
+   "text": "```python\nimport csv\nfrom typing import List, Dict\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, str]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False"
+  }
+ ],
+ "stage_timing": [],
+ "engine_lines": [
+  "strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)",
+  "strata generate: layer split: CUDA1 PCIe probe 6.4 GB/s -> pcie_frac 0.14",
+  "strata generate: layer split: CUDA1 holds its weights, session and head; 18.13 GiB free",
+  "strata generate: layer split auto: CUDA0 84 SMs at 2.81 GHz -> 0.31 ms per layer, 8.30 GiB for experts",
+  "strata generate: layer split auto: CUDA1 82 SMs at 1.86 GHz -> 0.48 ms per layer, 14.14 GiB for experts",
+  "strata generate: layer split auto: K=22 - predicted 19.7 ms per decode window; the caches hold 11298 of 12288 profiled pairs (~99.7% of the routed mass)",
+  "strata generate: expert cache auto: 10.46 GiB free, 700 MiB reserved -> 3345 slots",
+  "strata generate: expert cache 3479 slots, 6.22 GiB of VRAM; policy is",
+  "strata generate: layer split: CUDA1 runs layers 22-47, expert cache 6656 slots (13.34 GiB), 6656 of its 6656 profiled pairs; slot 0 verified",
+  "strata generate: layer split: CUDA0 runs layers 0-21",
+  "strata serve: the prompt path allocates its own buffers (too few cache slots to borrow)",
+  "strata serve: layer split: layers 0-21 (CUDA0), 22-47 (CUDA1), one hand-off per window",
+  "strata serve: decode expert cache hit rate: 91.6% (5554 hits / 6062 lookups)",
+  "strata serve: decode expert cache hit rate: 95.3% (3592 hits / 3771 lookups)",
+  "strata serve: decode expert cache hit rate: 96.5% (3650 hits / 3782 lookups)",
+  "strata serve: decode expert cache hit rate: 96.3% (25027 hits / 25980 lookups)",
+  "strata serve: decode expert cache hit rate: 96.5% (3201 hits / 3318 lookups)",
+  "strata serve: decode expert cache hit rate: 97.2% (129334 hits / 133085 lookups)",
+  "strata serve: decode expert cache hit rate: 95.8% (108375 hits / 113158 lookups)"
+ ]
+}

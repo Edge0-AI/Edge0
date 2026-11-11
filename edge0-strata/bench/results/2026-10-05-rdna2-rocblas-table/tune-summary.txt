@@ -1,0 +1,226 @@
+meta device_arch=gfx1030 rocblas_version=5.6.0.8d1ae90e shapes=112 min_gain=1.050
+case T=256 N=10240 K=2560 ldy=10240 default_ms=2.3582 default_padding_writes=0
+best T=256 N=10240 K=2560 ldy=10240 solution=-1086327703 ms=0.3478 default_ms=2.3582 gain=6.78
+case T=512 N=10240 K=2560 ldy=10240 default_ms=4.9305 default_padding_writes=0
+best T=512 N=10240 K=2560 ldy=10240 solution=-1086327703 ms=0.6744 default_ms=4.9305 gain=7.31
+case T=768 N=10240 K=2560 ldy=10240 default_ms=7.5687 default_padding_writes=0
+best T=768 N=10240 K=2560 ldy=10240 solution=-1086327719 ms=1.0134 default_ms=7.5687 gain=7.47
+case T=1024 N=10240 K=2560 ldy=10240 default_ms=10.1879 default_padding_writes=0
+best T=1024 N=10240 K=2560 ldy=10240 solution=-1086327687 ms=1.4093 default_ms=10.1879 gain=7.23
+case T=1536 N=10240 K=2560 ldy=10240 default_ms=1.9304 default_padding_writes=0
+keep_default T=1536 N=10240 K=2560 ldy=10240 (237 solutions; best 1.9404 ms vs default 1.9304)
+case T=2048 N=10240 K=2560 ldy=10240 default_ms=2.5629 default_padding_writes=0
+keep_default T=2048 N=10240 K=2560 ldy=10240 (237 solutions; best 2.5848 ms vs default 2.5629)
+case T=4096 N=10240 K=2560 ldy=10240 default_ms=5.2270 default_padding_writes=0
+keep_default T=4096 N=10240 K=2560 ldy=10240 (237 solutions; best 5.5127 ms vs default 5.2270)
+case T=8192 N=10240 K=2560 ldy=10240 default_ms=12.2560 default_padding_writes=0
+keep_default T=8192 N=10240 K=2560 ldy=10240 (237 solutions; best 12.1342 ms vs default 12.2560)
+case T=256 N=12288 K=2560 ldy=12288 default_ms=3.0070 default_padding_writes=0
+best T=256 N=12288 K=2560 ldy=12288 solution=-1086327718 ms=0.5044 default_ms=3.0070 gain=5.96
+case T=512 N=12288 K=2560 ldy=12288 default_ms=1.0101 default_padding_writes=0
+best T=512 N=12288 K=2560 ldy=12288 solution=-1086327703 ms=0.8314 default_ms=1.0101 gain=1.21
+case T=768 N=12288 K=2560 ldy=12288 default_ms=1.5441 default_padding_writes=0
+best T=768 N=12288 K=2560 ldy=12288 solution=-1086327703 ms=1.3048 default_ms=1.5441 gain=1.18
+case T=1024 N=12288 K=2560 ldy=12288 default_ms=1.8461 default_padding_writes=0
+best T=1024 N=12288 K=2560 ldy=12288 solution=-1086327687 ms=1.6263 default_ms=1.8461 gain=1.14
+case T=1536 N=12288 K=2560 ldy=12288 default_ms=2.6097 default_padding_writes=0
+best T=1536 N=12288 K=2560 ldy=12288 solution=-1086327687 ms=2.4141 default_ms=2.6097 gain=1.08
+case T=2048 N=12288 K=2560 ldy=12288 default_ms=3.3976 default_padding_writes=0
+best T=2048 N=12288 K=2560 ldy=12288 solution=-1086327687 ms=3.2127 default_ms=3.3976 gain=1.06
+case T=4096 N=12288 K=2560 ldy=12288 default_ms=6.8017 default_padding_writes=0
+keep_default T=4096 N=12288 K=2560 ldy=12288 (237 solutions; best 6.8216 ms vs default 6.8017)
+case T=8192 N=12288 K=2560 ldy=12288 default_ms=14.3542 default_padding_writes=0
+keep_default T=8192 N=12288 K=2560 ldy=12288 (237 solutions; best 14.9711 ms vs default 14.3542)
+case T=256 N=6144 K=2560 ldy=6144 default_ms=0.9801 default_padding_writes=0
+best T=256 N=6144 K=2560 ldy=6144 solution=-1086327717 ms=0.2813 default_ms=0.9801 gain=3.48
+case T=512 N=6144 K=2560 ldy=6144 default_ms=1.8331 default_padding_writes=0
+best T=512 N=6144 K=2560 ldy=6144 solution=-1086327703 ms=0.5097 default_ms=1.8331 gain=3.60
+case T=768 N=6144 K=2560 ldy=6144 default_ms=0.6667 default_padding_writes=0
+keep_default T=768 N=6144 K=2560 ldy=6144 (237 solutions; best 0.6687 ms vs default 0.6667)
+case T=1024 N=6144 K=2560 ldy=6144 default_ms=0.8296 default_padding_writes=0
+keep_default T=1024 N=6144 K=2560 ldy=6144 (237 solutions; best 0.8873 ms vs default 0.8296)
+case T=1536 N=6144 K=2560 ldy=6144 default_ms=1.2994 default_padding_writes=0
+keep_default T=1536 N=6144 K=2560 ldy=6144 (237 solutions; best 1.3967 ms vs default 1.2994)
+case T=2048 N=6144 K=2560 ldy=6144 default_ms=2.4454 default_padding_writes=0
+best T=2048 N=6144 K=2560 ldy=6144 solution=-1086327687 ms=1.6310 default_ms=2.4454 gain=1.50
+case T=4096 N=6144 K=2560 ldy=6144 default_ms=3.2071 default_padding_writes=0
+keep_default T=4096 N=6144 K=2560 ldy=6144 (237 solutions; best 3.2142 ms vs default 3.2071)
+case T=8192 N=6144 K=2560 ldy=6144 default_ms=6.3302 default_padding_writes=0
+keep_default T=8192 N=6144 K=2560 ldy=6144 (237 solutions; best 6.7397 ms vs default 6.3302)
+case T=256 N=2560 K=6144 ldy=2560 default_ms=1.3017 default_padding_writes=0
+best T=256 N=2560 K=6144 ldy=2560 solution=-1086327764 ms=0.2927 default_ms=1.3017 gain=4.45
+case T=512 N=2560 K=6144 ldy=2560 default_ms=1.2293 default_padding_writes=0
+best T=512 N=2560 K=6144 ldy=2560 solution=-1086327719 ms=0.4751 default_ms=1.2293 gain=2.59
+case T=768 N=2560 K=6144 ldy=2560 default_ms=0.7950 default_padding_writes=0
+keep_default T=768 N=2560 K=6144 ldy=2560 (275 solutions; best 0.7770 ms vs default 0.7950)
+case T=1024 N=2560 K=6144 ldy=2560 default_ms=1.0164 default_padding_writes=0
+best T=1024 N=2560 K=6144 ldy=2560 solution=-1086327719 ms=0.8868 default_ms=1.0164 gain=1.15
+case T=1536 N=2560 K=6144 ldy=2560 default_ms=1.5987 default_padding_writes=0
+best T=1536 N=2560 K=6144 ldy=2560 solution=-1086327703 ms=1.4385 default_ms=1.5987 gain=1.11
+case T=2048 N=2560 K=6144 ldy=2560 default_ms=1.8388 default_padding_writes=0
+keep_default T=2048 N=2560 K=6144 ldy=2560 (237 solutions; best 1.8535 ms vs default 1.8388)
+case T=4096 N=2560 K=6144 ldy=2560 default_ms=3.4526 default_padding_writes=0
+keep_default T=4096 N=2560 K=6144 ldy=2560 (237 solutions; best 3.7885 ms vs default 3.4526)
+case T=8192 N=2560 K=6144 ldy=2560 default_ms=7.1451 default_padding_writes=0
+keep_default T=8192 N=2560 K=6144 ldy=2560 (237 solutions; best 8.2445 ms vs default 7.1451)
+case T=256 N=2560 K=640 ldy=2560 default_ms=0.0435 default_padding_writes=0
+best T=256 N=2560 K=640 ldy=2560 solution=-1086327695 ms=0.0385 default_ms=0.0435 gain=1.13
+case T=512 N=2560 K=640 ldy=2560 default_ms=0.0729 default_padding_writes=0
+best T=512 N=2560 K=640 ldy=2560 solution=-1086327711 ms=0.0594 default_ms=0.0729 gain=1.23
+case T=768 N=2560 K=640 ldy=2560 default_ms=0.0965 default_padding_writes=0
+best T=768 N=2560 K=640 ldy=2560 solution=-1086327694 ms=0.0798 default_ms=0.0965 gain=1.21
+case T=1024 N=2560 K=640 ldy=2560 default_ms=0.1084 default_padding_writes=0
+best T=1024 N=2560 K=640 ldy=2560 solution=-1086327709 ms=0.0945 default_ms=0.1084 gain=1.15
+case T=1536 N=2560 K=640 ldy=2560 default_ms=0.1569 default_padding_writes=0
+best T=1536 N=2560 K=640 ldy=2560 solution=-1086327713 ms=0.1383 default_ms=0.1569 gain=1.13
+case T=2048 N=2560 K=640 ldy=2560 default_ms=0.1833 default_padding_writes=0
+keep_default T=2048 N=2560 K=640 ldy=2560 (237 solutions; best 0.1776 ms vs default 0.1833)
+case T=4096 N=2560 K=640 ldy=2560 default_ms=0.3481 default_padding_writes=0
+keep_default T=4096 N=2560 K=640 ldy=2560 (237 solutions; best 0.3392 ms vs default 0.3481)
+case T=8192 N=2560 K=640 ldy=2560 default_ms=0.6858 default_padding_writes=0
+keep_default T=8192 N=2560 K=640 ldy=2560 (237 solutions; best 0.6570 ms vs default 0.6858)
+case T=256 N=2560 K=2560 ldy=2560 default_ms=0.1292 default_padding_writes=0
+keep_default T=256 N=2560 K=2560 ldy=2560 (275 solutions; best 0.1254 ms vs default 0.1292)
+case T=512 N=2560 K=2560 ldy=2560 default_ms=0.2150 default_padding_writes=0
+best T=512 N=2560 K=2560 ldy=2560 solution=-1086327719 ms=0.2046 default_ms=0.2150 gain=1.05
+case T=768 N=2560 K=2560 ldy=2560 default_ms=0.3035 default_padding_writes=0
+keep_default T=768 N=2560 K=2560 ldy=2560 (275 solutions; best 0.3088 ms vs default 0.3035)
+case T=1024 N=2560 K=2560 ldy=2560 default_ms=0.4164 default_padding_writes=0
+best T=1024 N=2560 K=2560 ldy=2560 solution=-1086327719 ms=0.3567 default_ms=0.4164 gain=1.17
+case T=1536 N=2560 K=2560 ldy=2560 default_ms=0.5242 default_padding_writes=0
+keep_default T=1536 N=2560 K=2560 ldy=2560 (237 solutions; best 0.5240 ms vs default 0.5242)
+case T=2048 N=2560 K=2560 ldy=2560 default_ms=0.6880 default_padding_writes=0
+keep_default T=2048 N=2560 K=2560 ldy=2560 (237 solutions; best 0.6871 ms vs default 0.6880)
+case T=4096 N=2560 K=2560 ldy=2560 default_ms=1.5527 default_padding_writes=0
+best T=4096 N=2560 K=2560 ldy=2560 solution=-1086327703 ms=1.3273 default_ms=1.5527 gain=1.17
+case T=8192 N=2560 K=2560 ldy=2560 default_ms=2.8199 default_padding_writes=0
+best T=8192 N=2560 K=2560 ldy=2560 solution=-1086327703 ms=2.6153 default_ms=2.8199 gain=1.08
+case T=256 N=640 K=2560 ldy=640 default_ms=0.1526 default_padding_writes=0
+best T=256 N=640 K=2560 ldy=640 solution=-1086327725 ms=0.0563 default_ms=0.1526 gain=2.71
+case T=512 N=640 K=2560 ldy=640 default_ms=0.2008 default_padding_writes=0
+best T=512 N=640 K=2560 ldy=640 solution=-1086327724 ms=0.0830 default_ms=0.2008 gain=2.42
+case T=768 N=640 K=2560 ldy=640 default_ms=0.1659 default_padding_writes=0
+best T=768 N=640 K=2560 ldy=640 solution=-1086327723 ms=0.1138 default_ms=0.1659 gain=1.46
+case T=1024 N=640 K=2560 ldy=640 default_ms=0.2067 default_padding_writes=0
+best T=1024 N=640 K=2560 ldy=640 solution=-1086327764 ms=0.1255 default_ms=0.2067 gain=1.65
+case T=1536 N=640 K=2560 ldy=640 default_ms=0.2841 default_padding_writes=0
+best T=1536 N=640 K=2560 ldy=640 solution=-1086327719 ms=0.2013 default_ms=0.2841 gain=1.41
+case T=2048 N=640 K=2560 ldy=640 default_ms=0.2173 default_padding_writes=0
+best T=2048 N=640 K=2560 ldy=640 solution=-1086327703 ms=0.2062 default_ms=0.2173 gain=1.05
+case T=4096 N=640 K=2560 ldy=640 default_ms=0.3467 default_padding_writes=0
+keep_default T=4096 N=640 K=2560 ldy=640 (237 solutions; best 0.3515 ms vs default 0.3467)
+case T=8192 N=640 K=2560 ldy=640 default_ms=0.6892 default_padding_writes=0
+keep_default T=8192 N=640 K=2560 ldy=640 (237 solutions; best 0.6712 ms vs default 0.6892)
+case T=256 N=512 K=2560 ldy=512 default_ms=0.1569 default_padding_writes=0
+best T=256 N=512 K=2560 ldy=512 solution=-1086327769 ms=0.0474 default_ms=0.1569 gain=3.31
+case T=512 N=512 K=2560 ldy=512 default_ms=0.2025 default_padding_writes=0
+best T=512 N=512 K=2560 ldy=512 solution=-1086327722 ms=0.0734 default_ms=0.2025 gain=2.76
+case T=768 N=512 K=2560 ldy=512 default_ms=0.1474 default_padding_writes=0
+best T=768 N=512 K=2560 ldy=512 solution=-1086327774 ms=0.0978 default_ms=0.1474 gain=1.51
+case T=1024 N=512 K=2560 ldy=512 default_ms=0.1552 default_padding_writes=0
+best T=1024 N=512 K=2560 ldy=512 solution=-1086327722 ms=0.1194 default_ms=0.1552 gain=1.30
+case T=1536 N=512 K=2560 ldy=512 default_ms=0.2222 default_padding_writes=0
+best T=1536 N=512 K=2560 ldy=512 solution=-1086327768 ms=0.1703 default_ms=0.2222 gain=1.30
+case T=2048 N=512 K=2560 ldy=512 default_ms=0.2122 default_padding_writes=0
+keep_default T=2048 N=512 K=2560 ldy=512 (275 solutions; best 0.2031 ms vs default 0.2122)
+case T=4096 N=512 K=2560 ldy=512 default_ms=0.3443 default_padding_writes=0
+keep_default T=4096 N=512 K=2560 ldy=512 (275 solutions; best 0.3530 ms vs default 0.3443)
+case T=8192 N=512 K=2560 ldy=512 default_ms=0.6643 default_padding_writes=0
+keep_default T=8192 N=512 K=2560 ldy=512 (237 solutions; best 0.6684 ms vs default 0.6643)
+case T=256 N=128 K=2560 ldy=128 default_ms=0.0608 default_padding_writes=0
+best T=256 N=128 K=2560 ldy=128 solution=-1086327780 ms=0.0371 default_ms=0.0608 gain=1.64
+case T=512 N=128 K=2560 ldy=128 default_ms=0.1992 default_padding_writes=0
+best T=512 N=128 K=2560 ldy=128 solution=-1086327780 ms=0.0377 default_ms=0.1992 gain=5.28
+case T=768 N=128 K=2560 ldy=128 default_ms=0.1137 default_padding_writes=0
+best T=768 N=128 K=2560 ldy=128 solution=-1086327780 ms=0.0452 default_ms=0.1137 gain=2.52
+case T=1024 N=128 K=2560 ldy=128 default_ms=0.1180 default_padding_writes=0
+best T=1024 N=128 K=2560 ldy=128 solution=-1086327774 ms=0.0493 default_ms=0.1180 gain=2.40
+case T=1536 N=128 K=2560 ldy=128 default_ms=0.1520 default_padding_writes=0
+best T=1536 N=128 K=2560 ldy=128 solution=-1086327772 ms=0.0664 default_ms=0.1520 gain=2.29
+case T=2048 N=128 K=2560 ldy=128 default_ms=0.1242 default_padding_writes=0
+best T=2048 N=128 K=2560 ldy=128 solution=-1086327768 ms=0.0753 default_ms=0.1242 gain=1.65
+case T=4096 N=128 K=2560 ldy=128 default_ms=0.1512 default_padding_writes=0
+best T=4096 N=128 K=2560 ldy=128 solution=-1086327764 ms=0.1248 default_ms=0.1512 gain=1.21
+case T=8192 N=128 K=2560 ldy=128 default_ms=0.2066 default_padding_writes=0
+keep_default T=8192 N=128 K=2560 ldy=128 (275 solutions; best 0.2036 ms vs default 0.2066)
+case T=256 N=48 K=2560 ldy=48 default_ms=0.0456 default_padding_writes=0
+best T=256 N=48 K=2560 ldy=48 solution=-1086327840 ms=0.0208 default_ms=0.0456 gain=2.19
+case T=512 N=48 K=2560 ldy=48 default_ms=0.2023 default_padding_writes=0
+best T=512 N=48 K=2560 ldy=48 solution=-1086327781 ms=0.0387 default_ms=0.2023 gain=5.23
+case T=768 N=48 K=2560 ldy=48 default_ms=0.1029 default_padding_writes=0
+best T=768 N=48 K=2560 ldy=48 solution=-1086327779 ms=0.0418 default_ms=0.1029 gain=2.47
+case T=1024 N=48 K=2560 ldy=48 default_ms=0.1078 default_padding_writes=0
+best T=1024 N=48 K=2560 ldy=48 solution=-1086327779 ms=0.0439 default_ms=0.1078 gain=2.46
+case T=1536 N=48 K=2560 ldy=48 default_ms=0.1125 default_padding_writes=0
+best T=1536 N=48 K=2560 ldy=48 solution=-1086327776 ms=0.0512 default_ms=0.1125 gain=2.20
+case T=2048 N=48 K=2560 ldy=48 default_ms=0.1210 default_padding_writes=0
+best T=2048 N=48 K=2560 ldy=48 solution=-1086327779 ms=0.0565 default_ms=0.1210 gain=2.14
+case T=4096 N=48 K=2560 ldy=48 default_ms=0.1865 default_padding_writes=0
+best T=4096 N=48 K=2560 ldy=48 solution=-1086327736 ms=0.0972 default_ms=0.1865 gain=1.92
+case T=8192 N=48 K=2560 ldy=48 default_ms=0.2047 default_padding_writes=0
+best T=8192 N=48 K=2560 ldy=48 solution=-1086327762 ms=0.1489 default_ms=0.2047 gain=1.37
+case T=256 N=320 K=10240 ldy=320 default_ms=0.4283 default_padding_writes=0
+best T=256 N=320 K=10240 ldy=320 solution=-1086327781 ms=0.1325 default_ms=0.4283 gain=3.23
+case T=512 N=320 K=10240 ldy=320 default_ms=0.4971 default_padding_writes=0
+best T=512 N=320 K=10240 ldy=320 solution=-1086327769 ms=0.2001 default_ms=0.4971 gain=2.48
+case T=768 N=320 K=10240 ldy=320 default_ms=0.8265 default_padding_writes=0
+best T=768 N=320 K=10240 ldy=320 solution=-1086327722 ms=0.2416 default_ms=0.8265 gain=3.42
+case T=1024 N=320 K=10240 ldy=320 default_ms=1.1697 default_padding_writes=0
+best T=1024 N=320 K=10240 ldy=320 solution=-1086327773 ms=0.3623 default_ms=1.1697 gain=3.23
+case T=1536 N=320 K=10240 ldy=320 default_ms=1.6087 default_padding_writes=0
+best T=1536 N=320 K=10240 ldy=320 solution=-1086327738 ms=0.4669 default_ms=1.6087 gain=3.45
+case T=2048 N=320 K=10240 ldy=320 default_ms=2.1792 default_padding_writes=0
+best T=2048 N=320 K=10240 ldy=320 solution=-1086327724 ms=0.6335 default_ms=2.1792 gain=3.44
+case T=4096 N=320 K=10240 ldy=320 default_ms=9.6169 default_padding_writes=0
+best T=4096 N=320 K=10240 ldy=320 solution=-1086327717 ms=1.1841 default_ms=9.6169 gain=8.12
+case T=8192 N=320 K=10240 ldy=320 default_ms=2.2651 default_padding_writes=0
+keep_default T=8192 N=320 K=10240 ldy=320 (237 solutions; best 2.3719 ms vs default 2.2651)
+case T=256 N=10240 K=320 ldy=10240 default_ms=0.0584 default_padding_writes=0
+best T=256 N=10240 K=320 ldy=10240 solution=-1086327694 ms=0.0556 default_ms=0.0584 gain=1.05
+case T=512 N=10240 K=320 ldy=10240 default_ms=0.0980 default_padding_writes=0
+keep_default T=512 N=10240 K=320 ldy=10240 (237 solutions; best 0.0964 ms vs default 0.0980)
+case T=768 N=10240 K=320 ldy=10240 default_ms=0.1398 default_padding_writes=0
+keep_default T=768 N=10240 K=320 ldy=10240 (237 solutions; best 0.1377 ms vs default 0.1398)
+case T=1024 N=10240 K=320 ldy=10240 default_ms=0.1815 default_padding_writes=0
+keep_default T=1024 N=10240 K=320 ldy=10240 (237 solutions; best 0.1806 ms vs default 0.1815)
+case T=1536 N=10240 K=320 ldy=10240 default_ms=0.2626 default_padding_writes=0
+keep_default T=1536 N=10240 K=320 ldy=10240 (237 solutions; best 0.2625 ms vs default 0.2626)
+case T=2048 N=10240 K=320 ldy=10240 default_ms=0.3437 default_padding_writes=0
+keep_default T=2048 N=10240 K=320 ldy=10240 (237 solutions; best 0.3432 ms vs default 0.3437)
+case T=4096 N=10240 K=320 ldy=10240 default_ms=0.6693 default_padding_writes=0
+keep_default T=4096 N=10240 K=320 ldy=10240 (237 solutions; best 0.6686 ms vs default 0.6693)
+case T=8192 N=10240 K=320 ldy=10240 default_ms=1.3531 default_padding_writes=0
+keep_default T=8192 N=10240 K=320 ldy=10240 (237 solutions; best 1.3274 ms vs default 1.3531)
+case T=256 N=4 K=10240 ldy=4 default_ms=0.1050 default_padding_writes=0
+best T=256 N=4 K=10240 ldy=4 solution=-1086327846 ms=0.0503 default_ms=0.1050 gain=2.09
+case T=512 N=4 K=10240 ldy=4 default_ms=0.2470 default_padding_writes=0
+best T=512 N=4 K=10240 ldy=4 solution=-1086327840 ms=0.0544 default_ms=0.2470 gain=4.54
+case T=768 N=4 K=10240 ldy=4 default_ms=0.2539 default_padding_writes=0
+best T=768 N=4 K=10240 ldy=4 solution=-1086327840 ms=0.0610 default_ms=0.2539 gain=4.16
+case T=1024 N=4 K=10240 ldy=4 default_ms=0.2553 default_padding_writes=0
+best T=1024 N=4 K=10240 ldy=4 solution=-1086327850 ms=0.0801 default_ms=0.2553 gain=3.19
+case T=1536 N=4 K=10240 ldy=4 default_ms=0.2556 default_padding_writes=0
+best T=1536 N=4 K=10240 ldy=4 solution=-1086327840 ms=0.1116 default_ms=0.2556 gain=2.29
+case T=2048 N=4 K=10240 ldy=4 default_ms=0.3051 default_padding_writes=0
+best T=2048 N=4 K=10240 ldy=4 solution=-1086327815 ms=0.1429 default_ms=0.3051 gain=2.14
+case T=4096 N=4 K=10240 ldy=4 default_ms=0.4891 default_padding_writes=0
+best T=4096 N=4 K=10240 ldy=4 solution=-1086327922 ms=0.2538 default_ms=0.4891 gain=1.93
+case T=8192 N=4 K=10240 ldy=4 default_ms=1.1681 default_padding_writes=0
+best T=8192 N=4 K=10240 ldy=4 solution=-1086327922 ms=0.4845 default_ms=1.1681 gain=2.41
+case T=256 N=1 K=2560 ldy=1 default_ms=0.0433 default_padding_writes=0
+best T=256 N=1 K=2560 ldy=1 solution=-9 ms=0.0081 default_ms=0.0433 gain=5.33
+case T=512 N=1 K=2560 ldy=1 default_ms=0.2000 default_padding_writes=0
+best T=512 N=1 K=2560 ldy=1 solution=-9 ms=0.0107 default_ms=0.2000 gain=18.63
+case T=768 N=1 K=2560 ldy=1 default_ms=0.0865 default_padding_writes=0
+best T=768 N=1 K=2560 ldy=1 solution=-9 ms=0.0125 default_ms=0.0865 gain=6.90
+case T=1024 N=1 K=2560 ldy=1 default_ms=0.0914 default_padding_writes=0
+best T=1024 N=1 K=2560 ldy=1 solution=-9 ms=0.0167 default_ms=0.0914 gain=5.49
+case T=1536 N=1 K=2560 ldy=1 default_ms=0.0931 default_padding_writes=0
+best T=1536 N=1 K=2560 ldy=1 solution=-9 ms=0.0197 default_ms=0.0931 gain=4.72
+case T=2048 N=1 K=2560 ldy=1 default_ms=0.1200 default_padding_writes=0
+best T=2048 N=1 K=2560 ldy=1 solution=-9 ms=0.0307 default_ms=0.1200 gain=3.92
+case T=4096 N=1 K=2560 ldy=1 default_ms=0.0734 default_padding_writes=0
+best T=4096 N=1 K=2560 ldy=1 solution=-9 ms=0.0415 default_ms=0.0734 gain=1.77
+case T=8192 N=1 K=2560 ldy=1 default_ms=0.2007 default_padding_writes=0
+best T=8192 N=1 K=2560 ldy=1 solution=-9 ms=0.0728 default_ms=0.2007 gain=2.76
+wrote 112 rows (76 with a solution) to table-5.6-v2.txt

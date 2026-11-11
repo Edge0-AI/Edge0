@@ -1,0 +1,12 @@
+{
+  "STRATA_HIPBLASLT_TUNING": "/data/ssd/llm-src/Strata/tools/hip/gfx1151-hipblaslt-100401.txt",
+  "STRATA_PF_FUSED": "1",
+  "STRATA_PF_GEMM": "1",
+  "STRATA_HC_UPMIX": "1",
+  "STRATA_PA_FAST": "1",
+  "STRATA_HIP_WMMA": "1",
+  "STRATA_SELECT_WMMA": "1",
+  "STRATA_HC_Q8": "1",
+  "STRATA_PF_SWITCH_MIN_T": "4096",
+  "STRATA_PREFILL_STREAM_MIN": "128"
+}

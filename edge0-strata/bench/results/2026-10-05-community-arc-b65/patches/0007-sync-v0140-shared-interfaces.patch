@@ -1,0 +1,122 @@
+--- a/sycl/src/kernels/cuda/fused_gr.dp.cpp
++++ b/sycl/src/kernels/cuda/fused_gr.dp.cpp
+@@ -1604,7 +1604,7 @@
+     return p;
+ }
+ 
+-void fused_gr_read_multi(const FusedGrArgs* a, int n_tok, float* xn_scratch, void* stream, unsigned long long* stamp_buf,
++bool fused_gr_read_multi(const FusedGrArgs* a, int n_tok, float* xn_scratch, void* stream, unsigned long long* stamp_buf,
+                          int stamp_i0) {
+     if (n_tok < 1 || n_tok > kFusedGrMaxT || xn_scratch == nullptr) {
+         std::fprintf(stderr, "fused_gr_read_multi: invalid arguments\n");
+@@ -1752,7 +1752,7 @@
+         */
+         const dpct::err0 e3 = 0;
+ 
+-        return;
++        return false;   // SYCL read does not produce the new fused q8_1 images
+     }
+     m.part = down_partials(st);
+     {
+@@ -1879,6 +1879,8 @@
+     need to rewrite this code.
+     */
+     const dpct::err0 e = 0;
++    return false;   // Outputs were written; q8_1 images are not fused on SYCL.
++
+ }
+ 
+ bool fused_gr_supported(int64_t n_embd, int64_t hc, int64_t hc_lr) {
+--- a/sycl/src/core/expert_source.cpp
++++ b/sycl/src/core/expert_source.cpp
+@@ -2630,7 +2630,11 @@
+ // `unbuffered` (Windows, experts_unbuffered): each chunk's 4 KiB-aligned window is read with FILE_FLAG_NO_BUFFERING into
+ // an aligned buffer and scattered into the blobs - no copy through the file cache when the drive is read anyway.
+ LoadStats load_experts_gguf(const std::string& gguf, uint8_t* dst, const strata::kernels::cpu::ExpertLayout& lay,
+-                            int threads, bool unbuffered) {
++                            int threads, bool unbuffered, const std::atomic<int>* ready) {
++    auto wait_ready = [ready](int64_t l) {
++        if (ready != nullptr)
++            while (ready->load(std::memory_order_acquire) <= l + 1) std::this_thread::yield();
++    };
+     LoadStats st;
+     st.layers = (uint64_t) lay.n_layers;
+     const auto t0 = std::chrono::steady_clock::now();
+@@ -2660,6 +2664,7 @@
+             for (;;) {
+                 const int64_t l = next.fetch_add(1);
+                 if (l >= lay.n_layers || bad) break;
++                wait_ready(l);
+                 const auto& fm = lay.fmt[(size_t) l];
+                 const uint64_t blob = lay.bytes[(size_t) l];
+                 const uint64_t per[3] = {fm.up_off, fm.up_off, blob - fm.down_off};
+@@ -2738,6 +2743,7 @@
+         for (;;) {
+             const int64_t l = next.fetch_add(1);
+             if (l >= lay.n_layers || bad) break;
++                wait_ready(l);
+             const auto& fm = lay.fmt[(size_t) l];
+             const uint64_t blob = lay.bytes[(size_t) l];
+             const uint64_t per[3] = {fm.up_off, fm.up_off, blob - fm.down_off};
+--- a/sycl/src/prefill/gemm.dp.cpp
++++ b/sycl/src/prefill/gemm.dp.cpp
+@@ -439,9 +439,10 @@
+ }
+ 
+ void Gemm::bf16(const uint16_t* X, const uint16_t* W, float* Y, int64_t T, int64_t N, int64_t K, int64_t ldy,
+-                float beta) {
++                float beta, int64_t ldx) {
+     if (T <= 0 || N <= 0) return;
+     if (ldy <= 0) ldy = N;
++    if (ldx <= 0) ldx = K;
+     const float alpha = 1.0f;
+ #if defined(__HIPCC__) && defined(STRATA_HIPBLASLT_AVAILABLE)
+     if (try_hipblaslt(hipblaslt_state_, strata::prefill::hipblaslt::InputType::bf16, X, W, Y, T, N, K, ldy,
+@@ -455,7 +456,7 @@
+            (dpct::blas::descriptor_ptr)handle_, oneapi::mkl::transpose::trans,
+            oneapi::mkl::transpose::nontrans, (int)N, (int)T, (int)K, &alpha, W,
+            dpct::library_data_t::real_bfloat16, (int)K, X,
+-           dpct::library_data_t::real_bfloat16, (int)K, &beta, Y,
++           dpct::library_data_t::real_bfloat16, (int)ldx, &beta, Y,
+            dpct::library_data_t::real_float, (int)ldy,
+            dpct::compute_type::f32)),
+        "cublasGemmEx");
+@@ -486,7 +487,22 @@
+ }
+ 
+ void Gemm::native(const uint16_t* X, int ggml_type, const void* W_blocks, float* Y, int64_t T, int64_t N, int64_t K,
+-                  int64_t ldy, float beta) {
++                  int64_t ldy, float beta, int64_t ldx) {
++    if (ldx <= 0) ldx = K;
++    // The current SYCL prompt uses contiguous rows; preserve that path exactly.
++    // Shared headers also admit padded input rows. Respect their stride.
++    auto product = [&](const uint16_t* weights, float* output, int64_t columns) {
++        if (ldx == K) { f16(X, weights, output, T, columns, K, ldy, beta); return; }
++        const float alpha = 1.0f;
++        const int64_t output_stride = ldy > 0 ? ldy : columns;
++        ck(DPCT_CHECK_ERROR(dpct::blas::gemm(
++            (dpct::blas::descriptor_ptr)handle_, oneapi::mkl::transpose::trans,
++            oneapi::mkl::transpose::nontrans, (int)columns, (int)T, (int)K, &alpha, weights,
++            dpct::library_data_t::real_half, (int)K, X,
++            dpct::library_data_t::real_half, (int)ldx, &beta, output,
++            dpct::library_data_t::real_float, (int)output_stride,
++            dpct::compute_type::f32)), "SYCL native GEMM padded input");
++    };
+     if (N * K > scratch_elems_) {
+         // Too large for the scratch at once: in row slices.
+         const int64_t rows = scratch_elems_ / K;
+@@ -495,12 +511,12 @@
+         for (int64_t r0 = 0; r0 < N; r0 += rows) {
+             const int64_t n = (N - r0 < rows) ? N - r0 : rows;
+             strata::kernels::dequant_f16(ggml_type, W_blocks, r0, n, K, scratch_, stream_);
+-            f16(X, scratch_, Y + r0, T, n, K, ldy, beta);
++            product(scratch_, Y + r0, n);
+         }
+         return;
+     }
+     strata::kernels::dequant_f16(ggml_type, W_blocks, 0, N, K, scratch_, stream_);
+-    f16(X, scratch_, Y, T, N, K, ldy, beta);
++    product(scratch_, Y, N);
+ }
+ 
+ }  // namespace strata::prefill

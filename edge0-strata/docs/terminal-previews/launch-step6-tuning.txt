@@ -1,0 +1,36 @@
+# strata launch preview: step6-tuning
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Set up   Step 6 of 9: Tuning
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Tune for the best speed on this computer?
+ › Quick       about 20 minutes      checks the most likely gains
+   Thorough    up to 2 hours         tries more settings, measures each one several times
+   Skip                              use the default settings (already good on most computers)
+
+   [ ] Allow settings that change answers very slightly (same quality)   press a to change
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Tuning is optional. It tries single changes against your settings, keeps only gains above the noise, and
+ saves the result as a preset the Strata app can use too. Close other heavy programs while it measures. If
+ your computer is already at its best it says so and changes nothing.
+ ↑↓ choose   Enter next   a answer-changing settings on/off   Esc back   ? help

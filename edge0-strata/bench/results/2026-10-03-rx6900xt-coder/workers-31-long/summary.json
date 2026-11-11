@@ -1,0 +1,105 @@
+{
+  "url": "http://127.0.0.1:8081",
+  "cases": [
+    "4k",
+    "32k"
+  ],
+  "runs_per_case": 3,
+  "request_settings": {
+    "max_tokens": 256,
+    "temperature": 0,
+    "reasoning_effort": "none",
+    "stream": true,
+    "warmup_excluded": true
+  },
+  "cache_note": "No server cache-clear API is used. Every measured prompt starts with a unique nonce; actual prefix reuse is taken from before/after engine history and API usage. The target size uses /v1/messages/count_tokens; completion usage is also retained for the actual OpenAI request.",
+  "case_results": {
+    "4k": {
+      "runs": 3,
+      "prompt_tokens": {
+        "median": 4022,
+        "min": 4022,
+        "max": 4022
+      },
+      "prefix_reused_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "completion_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256
+      },
+      "client_ttft_s": {
+        "median": 12.933832199996687,
+        "min": 12.82531349999772,
+        "max": 13.673815699992701
+      },
+      "client_total_latency_s": {
+        "median": 18.54342469999392,
+        "min": 18.447821000008844,
+        "max": 19.512083800000255
+      },
+      "prompt_tok_s": {
+        "median": 312.495143971532,
+        "min": 295.7635656349504,
+        "max": 315.0802976889933
+      },
+      "decode_tok_s": {
+        "median": 45.28248487635759,
+        "min": 43.63909107955611,
+        "max": 45.37237247882032
+      },
+      "finish_reasons": [
+        "length",
+        "length",
+        "length"
+      ]
+    },
+    "32k": {
+      "runs": 3,
+      "prompt_tokens": {
+        "median": 32685,
+        "min": 32685,
+        "max": 32685
+      },
+      "prefix_reused_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "completion_tokens": {
+        "median": 256,
+        "min": 256,
+        "max": 256
+      },
+      "client_ttft_s": {
+        "median": 93.02138020000712,
+        "min": 92.66679550000117,
+        "max": 93.14141569999629
+      },
+      "client_total_latency_s": {
+        "median": 98.55144549999386,
+        "min": 98.10154210000474,
+        "max": 99.27776209999865
+      },
+      "prompt_tok_s": {
+        "median": 352.1426455140464,
+        "min": 351.7314852678475,
+        "max": 353.4797504823374
+      },
+      "decode_tok_s": {
+        "median": 46.029919447640964,
+        "min": 41.52136890763118,
+        "max": 46.82898275010519
+      },
+      "finish_reasons": [
+        "length",
+        "length",
+        "length"
+      ]
+    }
+  },
+  "raw_jsonl": "bench\\results\\2026-10-03-rx6900xt-coder\\workers-31-long\\raw.jsonl"
+}

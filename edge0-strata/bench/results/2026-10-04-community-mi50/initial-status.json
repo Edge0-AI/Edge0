@@ -1,0 +1,50 @@
+{
+  "service": "strata",
+  "model": "Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS",
+  "loaded": true,
+  "auto_load": true,
+  "structured_output": {
+    "formats": [
+      "json_object",
+      "json_schema"
+    ],
+    "method": "prompt_and_validate",
+    "constrained_decoding": false,
+    "stream_buffered": true
+  },
+  "engine": "0.1.38",
+  "started": 1791115048,
+  "uptime_s": 20,
+  "cache_max_tokens": 131072,
+  "context": {
+    "native": 131072,
+    "max_positions": 131072
+  },
+  "concurrency": {
+    "serving": 1,
+    "requested": 1
+  },
+  "dialects": [
+    "/v1/chat/completions",
+    "/v1/messages"
+  ],
+  "vision": {
+    "enabled": false,
+    "available": false,
+    "error": null
+  },
+  "activity": {
+    "requests": 0,
+    "in_flight": 0,
+    "last_request_at": null
+  },
+  "last_timings": null,
+  "machine": {
+    "at": 1791115069,
+    "gpu": null,
+    "ram": {
+      "used_gib": 39.8,
+      "total_gib": 61.6
+    }
+  }
+}

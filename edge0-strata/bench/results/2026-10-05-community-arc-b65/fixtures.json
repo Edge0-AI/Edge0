@@ -1,0 +1,74 @@
+[
+  {
+    "task_index": 0,
+    "prompt_tokens": 512,
+    "input_ids_sha256": "7a8b790518b46aeb09308bcaf0b2d6e5f88e1833675f003ab729879bd66f0429",
+    "warmup": false
+  },
+  {
+    "task_index": 1,
+    "prompt_tokens": 512,
+    "input_ids_sha256": "46ba88f7512466954166caa83b4d4a9efb14ea97a572d40b6e2b2314fae0fbf2",
+    "warmup": false
+  },
+  {
+    "task_index": 2,
+    "prompt_tokens": 512,
+    "input_ids_sha256": "ca4431f9e01900953702dc1788b319df7c908ff2af329367eef614c6f47f793d",
+    "warmup": false
+  },
+  {
+    "task_index": 3,
+    "prompt_tokens": 512,
+    "input_ids_sha256": "2577f5dc58806bfa2d770923235ca38c2ee1287f591bf3f0a5affd0d9da1704b",
+    "warmup": false
+  },
+  {
+    "task_index": 4,
+    "prompt_tokens": 512,
+    "input_ids_sha256": "2affe3aea9eb191ea72197455b01efed5acb3922d1414da0f890491bbde3e67f",
+    "warmup": false
+  },
+  {
+    "task_index": 5,
+    "prompt_tokens": 512,
+    "input_ids_sha256": "99d9eee5852accaa239e8391864ded3f1c34941d4a88c62ad01c9386344c8c16",
+    "warmup": true
+  },
+  {
+    "task_index": 0,
+    "prompt_tokens": 7000,
+    "input_ids_sha256": "6b8e7149da625c30b478f0e793fc4e788febe8013160276f5eb7d4217659b619",
+    "warmup": false
+  },
+  {
+    "task_index": 1,
+    "prompt_tokens": 7000,
+    "input_ids_sha256": "cf3bf3862432f28434d999ab26bbb99900518e85f635bb30fbe3b2dee8a43269",
+    "warmup": false
+  },
+  {
+    "task_index": 2,
+    "prompt_tokens": 7000,
+    "input_ids_sha256": "bbd058e7ee29c3a3403b7d2dedffb873412386e3185a537dc677f2649b4e64fa",
+    "warmup": false
+  },
+  {
+    "task_index": 3,
+    "prompt_tokens": 7000,
+    "input_ids_sha256": "271be8da7554e506184cb33a8d8211846dfe34551cfa5e1088b57dae34386533",
+    "warmup": false
+  },
+  {
+    "task_index": 4,
+    "prompt_tokens": 7000,
+    "input_ids_sha256": "36e2231837959a481491bf9d851b048eaff4008e60ef9025e304425e89a6ad53",
+    "warmup": false
+  },
+  {
+    "task_index": 5,
+    "prompt_tokens": 7000,
+    "input_ids_sha256": "753604d76da4ac5dfdc2105ed6a34c05db2dc94bd66ab572f550b2e1fbc06845",
+    "warmup": true
+  }
+]

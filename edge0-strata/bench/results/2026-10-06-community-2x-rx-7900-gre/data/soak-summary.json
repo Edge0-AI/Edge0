@@ -1,0 +1,43 @@
+{
+  "built_by": "scripts/soak_summary.py (soak.py's teardown raised TimeoutExpired waiting for sample_mem.py to notice its stop file)",
+  "started": 1791285704.0868523,
+  "minutes": 30.0,
+  "interval_s": 60.0,
+  "config": "<strata checkout>/bench/results/2026-10-06-community-2x-rx-7900-gre/data/cfg-soak.json",
+  "samples": 31,
+  "sample_span_s": 1800.2,
+  "prompts": 239,
+  "prompt_errors": [],
+  "finish_reasons": {
+    "length": 239
+  },
+  "wall_s_min_median_max": [
+    2.02,
+    2.55,
+    3.23
+  ],
+  "survived": true,
+  "engine_rss_mib": {
+    "first": 10810.3,
+    "peak": 11180.1,
+    "unit": "MiB"
+  },
+  "ram_used_mib": {
+    "first": 22713.6,
+    "peak": 24009.0,
+    "unit": "MiB"
+  },
+  "vram_used": {
+    "0000:06:00.0": {
+      "first": 15.004,
+      "peak": 15.054,
+      "unit": "GiB"
+    },
+    "0000:2d:00.0": {
+      "first": 14.314,
+      "peak": 14.44,
+      "unit": "GiB"
+    }
+  },
+  "fault_lines": []
+}

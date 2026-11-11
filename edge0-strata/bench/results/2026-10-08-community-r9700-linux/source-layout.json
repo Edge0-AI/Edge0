@@ -1,0 +1,35 @@
+{
+  "public_base_commit": "d5ea7133741e67743c0e886bb426c0ce8d69cf6c",
+  "measured_baseline_commit": "9fd910f4bc6513558b133f7faf78b57f5874fd35",
+  "measured_candidate_commit": "269a140b473a36686661103b9649f8383fe88b77",
+  "report_parent": "fb58e0dbc8399662c0e47c76578c6e878b14f6cf",
+  "note": "Patches reconstruct the measured engine source on the public base; they are archival artifacts, not changes applied to this PR engine. Compiler-generated revision strings and rebuilt binary hashes may differ.",
+  "binary_sha256": {
+    "baseline": "e90845e090cb51ee836c967e9e2fa01890a06cabcb389a1707778235c7a84b96",
+    "candidate": "ffc88a3da34fc83158c8cd64fae549d928d9f2953a62234c1d7d0f1967d63b1d"
+  },
+  "source_sha256": {
+    "baseline": {
+      "CMakeLists.txt": "6b6d3c11b670010a5a531f53fd1bfa2832587d49b8a8e4635cc93611d09d2d6c",
+      "src/kernels/cuda/iq_kernels.cu": "4e7c8ebc621af5fddb8aaa6e104bc4ca3ae743b6c3b6665ca52c61b5727ffb42",
+      "src/kernels/native_expert_parity.cpp": "d6326bf99b41c4e1ab7fc0d0de68b193bfe31c16ecb3ffbb6afe76a09372d1f6",
+      "src/prefill/prefill.cpp": "cfe076cc4b34cb03018c30a455bc0f5c583f8ee47fd4c33afc4bcd6624f42be3",
+      "src/program/generate.cpp": "640b5b15d0ec62cb262348c83034beeed2731841fe0f666c65cf21421374003b",
+      "tests/hip/prefill_gather_bytes.cpp": "76a16c8643cc90c59d3553a2af70af3f82d063d49460579fe95b5959bbe012fc",
+      "tests/hip/qsa_decode_repeat.cpp": "24cc03b2bd380fd6a3574dc2365d34d1f676c7c0ce03ae16b506e9588ec93e30"
+    },
+    "candidate": {
+      "CMakeLists.txt": "6b6d3c11b670010a5a531f53fd1bfa2832587d49b8a8e4635cc93611d09d2d6c",
+      "src/kernels/cuda/iq_kernels.cu": "4e7c8ebc621af5fddb8aaa6e104bc4ca3ae743b6c3b6665ca52c61b5727ffb42",
+      "src/kernels/native_expert_parity.cpp": "d6326bf99b41c4e1ab7fc0d0de68b193bfe31c16ecb3ffbb6afe76a09372d1f6",
+      "src/prefill/prefill.cpp": "bb6b0f5044a9069ab40cd6b11b7a6b190f68f234c82315ce2adb6da44a39105b",
+      "src/program/generate.cpp": "640b5b15d0ec62cb262348c83034beeed2731841fe0f666c65cf21421374003b",
+      "tests/hip/prefill_gather_bytes.cpp": "76a16c8643cc90c59d3553a2af70af3f82d063d49460579fe95b5959bbe012fc",
+      "tests/hip/qsa_decode_repeat.cpp": "24cc03b2bd380fd6a3574dc2365d34d1f676c7c0ce03ae16b506e9588ec93e30"
+    }
+  },
+  "dependency": {
+    "llama_cpp_revision": "3cf03257f219afbe7334045ff7c6a06ac68c627d",
+    "archive_sha256": "c076d7534afa0e5d0ec2a0d425b11e791c16f3de0d727221aea071cef156a280"
+  }
+}

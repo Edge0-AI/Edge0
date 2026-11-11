@@ -1,0 +1,45 @@
+{
+ "exe": "/home/user/Strata/.bench/0.1.41/build-906/strata",
+ "args": [
+  "--pack",
+  "/home/user/Strata-data/packs/iq2_xs",
+  "--native",
+  "/media/user/新加卷/Strata-models/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/media/user/新加卷/Strata-models/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+  "--expert-profile",
+  "/home/user/Strata/data/expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "2048",
+  "--mtp",
+  "/home/user/Strata-data/mtp/rt",
+  "--max-context",
+  "131072",
+  "--kv",
+  "int8",
+  "--kv-resident",
+  "32768",
+  "--spec",
+  "3",
+  "--spec-min-p",
+  "0.9",
+  "--vram-reserve-mib",
+  "1024"
+ ],
+ "cwd": "/home/user/Strata",
+ "backend": "hip",
+ "tokenizer": "/home/user/Strata-data/packs/iq2_xs/tokenizer",
+ "model_name": "Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS",
+ "log": "/home/user/Strata/.bench/bench-0.1.41.log",
+ "lib_dirs": [
+  "/opt/rocm/lib"
+ ],
+ "host": "127.0.0.1",
+ "port": 8080,
+ "open_browser": false,
+ "gpu": [
+  0
+ ]
+}

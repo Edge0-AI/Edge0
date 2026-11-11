@@ -1,0 +1,282 @@
+{
+ "label": "kvpref-check",
+ "style": "code",
+ "env": {
+  "collected_at": "2026-10-06T12:31:54",
+  "gpu": {
+   "name": "NVIDIA GeForce RTX 4090",
+   "vram_mib": "23028",
+   "driver": "610.57.04",
+   "power_limit_w": "480.00",
+   "pci_bus": "00000000:01:00.0"
+  },
+  "gpu_link": "Failed to parse --display/-d flags",
+  "cpu": {
+   "model": "AMD Ryzen 9 7950X 16-Core Processor",
+   "logical_cpus": "32"
+  },
+  "ram_total_kib": "47579468",
+  "os": "Ubuntu 26.04.1 LTS",
+  "kernel": "7.0.0-38-generic",
+  "cuda": "release 13.4, V13.4.92",
+  "storage": "",
+  "strata_commit": "1735d6471df29b42c26170efaac1f1446a58640f",
+  "strata_branch": "main",
+  "engine_version": "0.1.40",
+  "model_name": "qwen3.8-flash-next-iq3_xxs",
+  "context": {
+   "native": 204800,
+   "max_positions": 204800
+  },
+  "cache_max_tokens": 204800,
+  "vision": {
+   "enabled": true,
+   "available": true,
+   "error": null
+  },
+  "engine_launch_command": "/bin/bash -c cd ~/Strata && echo /home/dgbox/Strata/strata-test-200k-kvpref.json > try-config && sudo -n systemctl restart strata.service && for i in $(seq 1 60); do curl -s -m 5 http://127.0.0.1:8080/health | grep -q '\"loaded\": true' && break; sleep 5; done; curl -s -m 5 http://127.0.0.1:8080/health; echo; tr '\\0' '\\n' < /proc/$(pgrep -f \"engine/strata --serve\" | head -1)/cmdline | grep -c STRATA || true; echo \"--- замер 32k/128k с KV_PREFETCH=1 ---\"; timeout 1200 .venv/bin/python -u ~/scripts/strata-bench.py kvpref-check --style code --lengths 32k,128k --no-gen-case 2>&1 | tail -12",
+  "model_files": [],
+  "server_config_path": "/home/dgbox/Strata/strata-test-200k-kvpref.json",
+  "server_config": {
+   "exe": "/home/dgbox/Strata/engine/strata",
+   "args": [
+    "--pack",
+    "/home/dgbox/Strata-data/packs/iq3_xxs",
+    "--native",
+    "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "--ple-gguf",
+    "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf",
+    "--expert-profile",
+    "/home/dgbox/Strata/data/expert-profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--mtp",
+    "/home/dgbox/Strata-data/mtp/rt",
+    "--max-context",
+    "204800",
+    "--kv",
+    "int8",
+    "--mmap-experts",
+    "--vision",
+    "--vram-reserve-mib",
+    "989",
+    "--control-vector-scaled",
+    "/home/dgbox/Strata/data/experimental-speed-projection/Qwen3.8-Flash-Next-experimental-speed-projection.gguf:1.0",
+    "--control-vector-layer-range",
+    "4",
+    "44",
+    "--cvec-mode",
+    "project",
+    "--cvec-dir",
+    "per-layer",
+    "--pcie-frac",
+    "0.00",
+    "--spec-min-p",
+    "0.50",
+    "--pool-workers",
+    "10"
+   ],
+   "cwd": "/home/dgbox/Strata",
+   "tokenizer": "/home/dgbox/Strata-data/packs/iq3_xxs/tokenizer",
+   "model_name": "qwen3.8-flash-next-iq3_xxs",
+   "draft_vocab": "cyrillic",
+   "expert_profile_save": "/home/dgbox/Strata/data/expert-profile-learned.bin",
+   "expert_profile_save_every": 10,
+   "env": {
+    "STRATA_PF_FUSED": "1",
+    "STRATA_KV_PREFETCH": "1"
+   },
+   "log": "/home/dgbox/Strata/strata-200k.log",
+   "lib_dirs": [
+    "/usr/local/cuda/bin",
+    "/usr/local/cuda/lib64"
+   ],
+   "port": 8080,
+   "host": "0.0.0.0",
+   "gpu": 0,
+   "gpus_asked": true,
+   "vision": {
+    "exe": "/home/dgbox/Strata/engine/strata-vision",
+    "mmproj": "/home/dgbox/Strata-data/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+    "model": "/home/dgbox/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+    "gpu": true,
+    "max_tokens": 1024
+   },
+   "mcp_servers": {
+    "crawl4ai": {
+     "command": "/home/dgbox/.local/share/pi-node/node-v22.22.3-linux-x64/bin/node",
+     "args": [
+      "/home/dgbox/.local/share/pi-node/node-v22.22.3-linux-x64/lib/node_modules/crawl4ai-mcp-sse-stdio/bin/crawl4ai-mcp.js",
+      "--stdio"
+     ],
+     "env": {
+      "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+      "CRAWL4AI_ENDPOINT": "https://192.168.2.162/crawl4ai/",
+      "CRAWL4AI_BEARER_TOKEN": "removed"
+     }
+    },
+    "search": {
+     "command": "/usr/bin/python3",
+     "args": [
+      "/home/dgbox/scripts/searxng-mcp.py"
+     ]
+    }
+   },
+   "reasoning_effort": "low",
+   "fit_max_tokens": true
+  }
+ },
+ "memory": {
+  "start_snapshot": {
+   "vram_used_mib": 22024,
+   "ram_used_kib": 5749720
+  },
+  "peak_vram_used_mib": 22040,
+  "peak_ram_used_kib": 6587012,
+  "note": "пик — максимум опросов каждые 2 с во время замеров"
+ },
+ "results": [
+  {
+   "case": "32768-prompt",
+   "target_prompt_tokens": 32768,
+   "max_tokens": 256,
+   "prompt_tok_s": {
+    "median": 3001.8,
+    "min": 2936.9,
+    "max": 3063.2,
+    "n": 3
+   },
+   "gen_tok_s": {
+    "median": 113.8,
+    "min": 110.1,
+    "max": 128.5,
+    "n": 3
+   },
+   "ttft": {
+    "median": 10.51,
+    "min": 10.31,
+    "max": 10.75,
+    "n": 3
+   },
+   "wall": {
+    "median": 12.75,
+    "min": 12.29,
+    "max": 13.06,
+    "n": 3
+   },
+   "draft_ok": 489,
+   "draft_n": 642,
+   "all": [
+    {
+     "prompt_n": 31307,
+     "prompt_s": 2936.9,
+     "gen_n": 256,
+     "gen_s": 110.1,
+     "draft_n": 203,
+     "draft_ok": 166,
+     "cached": 0,
+     "ttft_s": 10.75,
+     "wall_s": 13.06,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    },
+    {
+     "prompt_n": 31307,
+     "prompt_s": 3001.8,
+     "gen_n": 256,
+     "gen_s": 113.8,
+     "draft_n": 222,
+     "draft_ok": 156,
+     "cached": 0,
+     "ttft_s": 10.513,
+     "wall_s": 12.75,
+     "text": "Based on the description provided, here is a Rust implementation of the `parse_r"
+    },
+    {
+     "prompt_n": 31307,
+     "prompt_s": 3063.2,
+     "gen_n": 256,
+     "gen_s": 128.5,
+     "draft_n": 217,
+     "draft_ok": 167,
+     "cached": 0,
+     "ttft_s": 10.306,
+     "wall_s": 12.29,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    }
+   ]
+  },
+  {
+   "case": "131072-prompt",
+   "target_prompt_tokens": 131072,
+   "max_tokens": 256,
+   "prompt_tok_s": {
+    "median": 3052.3,
+    "min": 3030.3,
+    "max": 3059.4,
+    "n": 3
+   },
+   "gen_tok_s": {
+    "median": 106.5,
+    "min": 87.0,
+    "max": 113.4,
+    "n": 3
+   },
+   "ttft": {
+    "median": 41.26,
+    "min": 41.16,
+    "max": 85.58,
+    "n": 3
+   },
+   "wall": {
+    "median": 43.4,
+    "min": 42.58,
+    "max": 87.45,
+    "n": 3
+   },
+   "draft_ok": 353,
+   "draft_n": 477,
+   "all": [
+    {
+     "prompt_n": 125011,
+     "prompt_s": 3052.3,
+     "gen_n": 142,
+     "gen_s": 106.5,
+     "draft_n": 120,
+     "draft_ok": 87,
+     "cached": 0,
+     "ttft_s": 41.263,
+     "wall_s": 42.58,
+     "text": "Based on the text provided, here is a summary of the function `parse_record`:\n\n*"
+    },
+    {
+     "prompt_n": 125011,
+     "prompt_s": 3030.3,
+     "gen_n": 164,
+     "gen_s": 87.0,
+     "draft_n": 147,
+     "draft_ok": 102,
+     "cached": 0,
+     "ttft_s": 85.576,
+     "wall_s": 87.45,
+     "text": "Based on the text provided, here is a summary of the function `parse_record`:\n\n*"
+    },
+    {
+     "prompt_n": 125011,
+     "prompt_s": 3059.4,
+     "gen_n": 256,
+     "gen_s": 113.4,
+     "draft_n": 210,
+     "draft_ok": 164,
+     "cached": 0,
+     "ttft_s": 41.159,
+     "wall_s": 43.4,
+     "text": "Based on the description provided, here is a conceptual implementation of the `p"
+    }
+   ]
+  }
+ ]
+}

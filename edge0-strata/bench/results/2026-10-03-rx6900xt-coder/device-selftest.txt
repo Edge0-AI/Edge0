@@ -1,0 +1,20 @@
+strata: Windows budgets 15569 of this card's 16368 MiB for this process; free VRAM is counted within that (STRATA_WDDM_BUDGET=0: off)
+device 0: AMD Radeon RX 6900 XT
+  HIP arch            gfx1030 wave32 (compiled for gfx1100,gfx1101,gfx1102,gfx1200,gfx1201,gfx1030)
+  multiprocessors     40
+  VRAM total / free   15.984 GiB (17163091968 B) / 15.066 GiB (16177524736 B)
+  driver / runtime    71726391 / 71726391
+  HIP runtime         C:\Dev\Strata\engine\amdhip64_7.dll
+
+memory plan  --max-context 20480
+  KV + indexer keys   0.267387 GB
+  recurrent state     0.000000 GB  (GDN recurrence + conv history, NOT evictable)
+  expert cache        5.675613 GB  (4105 slots of 1,382,400 B)
+  VRAM pool           5.943000 GB
+  expert arena (DRAM) 0.000000 GB
+  card free           15.066 GiB (16177524736 B)
+  plan + KV vs free   FITS
+
+selftest: arena 0.062 GiB (67108864 B), used 0.002 GiB (2097152 B) after two 1 MiB allocations
+selftest: over-allocation refused as required
+strata-device selftest OK

@@ -1,0 +1,29 @@
+{
+  "id": "sanity-I1",
+  "phase": "sanity",
+  "case_id": "I1",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "instruction",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-I1]\nReturn only a JSON object with ok set to true and count set to the integer 3. No other keys."
+    }
+  ],
+  "tools": null,
+  "tool_choice": null,
+  "expected": {
+    "kind": "json",
+    "value": {
+      "ok": true,
+      "count": 3
+    }
+  },
+  "input_tokens_frozen": 82,
+  "max_shared_prefix_tokens": 49
+}

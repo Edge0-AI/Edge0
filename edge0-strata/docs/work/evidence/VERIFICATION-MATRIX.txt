@@ -1,0 +1,31 @@
+# Phase A verification matrix -- 2026-10-15T05:19:20Z
+# repo: 0a8bf4c235dfe4b5ad88ed7cd02a8cb82cf87976  branch: strata/rebuild-2026-10
+# host: Apple M4, 16 GiB unified memory, macOS 26.5.2, ~21 GiB free
+
+CHECK                                 RESULT                            EVIDENCE
+----------------------------------------------------------------------------------------------
+Engine build (Metal, from source)     PASS                              engine-build.txt
+Metal kernel parity (real GPU)        17/17 + 1 known                   metal-parity.md
+  moe_mm_parity (real defect, open)   FAIL                              metal-parity/moe_mm_parity.log
+Serve suite                           801 PASS (11 skip)                serve-suite.txt
+Terminal suite (incl. 15 transport)   237 PASS                          owner-transport-suite.txt
+Time-skip suite                       24 PASS                           timeskip-suite.txt
+Tuning suite (job/measure/sweep)      63 PASS                           tuning-suite.txt
+UI build + typecheck                  PASS                              -
+UI suite (incl. 7 route tests)        194/195 (1 pre-existing flake)    STATUS 1.14
+Tauri .app; packaged self-test        8/8 PASS                          tauri-selftest.json
+DMG verify + self-test inside DMG     8/8 PASS                          tauri-artifact.txt
+Terminal distribution self-contained  PASS in a clean env               terminal-dist.txt
+  serving from the bundled runtime    PASS (no agent/TUI)               terminal-dist.txt
+Agent bridge: turn completes locally  PASS                              bridge-e2e.txt
+Agent bridge: cancellation            INCONCLUSIVE (mock)               STATUS 1.8
+Agent bridge: approval/denial         NOT EXERCISED                     STATUS 1.8
+Time-skip: Harness-driven revision    PASS (rejected a no-op)           timeskip-harness.txt
+Time-skip over the client API         PASS (409 on user edit)           timeskip-http.txt
+Tuning: plan API + UI surface         PASS                              tuning-http.txt
+Tuning: measurement harness           PASS vs a stub engine             tuning-suite.txt
+Tuning: sweep end to end              PASS (found --kv int8)            tuning-sweep.txt
+Tuning: sweep vs a real model         NOT RUN (no pack fits)            STATUS 1.16
+Windows owner transport               PASS (branch ran on macOS)        owner-transport-suite.txt
+Windows/Linux package recipes         PRESENT, NOT BUILT                packaging/README.md
+Real-model inference                  NOT RUN (hardware)                STATUS 3.2

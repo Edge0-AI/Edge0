@@ -1,0 +1,232 @@
+{
+ "what": "per-run data for the gfx1100 hipBLASLt 100500 table A/B on the ROCm 10.2 nightly (PR #745 follow-up)",
+ "fields": {
+  "arm": "nightly-100500 = STRATA_HIPBLASLT_TUNING pointed at gfx1100-hipblaslt-100500.txt; nightly-notable = the variable unset (the parent folder's nightly condition)",
+  "tier": "prompt workload: qsa-profile-1024 / qsa-profile-131072 token files (code-agent prompts), one-shot strata generate, greedy, --max-new 256",
+  "exit": "engine process exit code (0 = completed all 256 tokens)",
+  "prompt_tokens": "actual prompt tokens from the engine's 'prefill timing:' line",
+  "prefill_gpu_s": "GPU timeline seconds for prefill (same line); prefill_tok_s = prompt_tokens / prefill_gpu_s",
+  "decoded": "tokens actually generated (256 cap; none ended early)",
+  "decode_tok_s": "from the engine's own decode summary line ('decode N tokens in X ms -> Y tok/s'), not derived from wall time",
+  "lt_table": "what the engine logged at prefill init: rows/arch/version when the table engaged, or the fallback condition",
+  "wall_s": "whole one-shot run incl. engine load (~25 s), prefill and decode",
+  "conditions": "system load and MemAvailable at request time",
+  "stall_rule": "cells below 40% of the arm's best observed rate in either phase would be flagged and excluded from medians; no cell was flagged (all 7 clean)"
+ },
+ "cells": [
+  {
+   "arm": "nightly-100500",
+   "tier": "1k",
+   "exit": 0,
+   "prompt_tokens": 1023,
+   "prefill_gpu_s": 1.584,
+   "prefill_tok_s": 645.83,
+   "decoded": 256,
+   "decode_wall_s": 3.69,
+   "decode_tok_s": 69.38,
+   "wall_s": 29.4,
+   "lt_table": {
+    "rows": 32,
+    "arch": "gfx1100",
+    "version": 100500
+   },
+   "conditions": {
+    "loadavg": [
+     "3.65",
+     "2.71",
+     "1.85"
+    ],
+    "mem_available_gb": 65.3
+   }
+  },
+  {
+   "arm": "nightly-100500",
+   "tier": "128k",
+   "exit": 0,
+   "prompt_tokens": 131071,
+   "prefill_gpu_s": 77.694,
+   "prefill_tok_s": 1687.02,
+   "decoded": 256,
+   "decode_wall_s": 4.117,
+   "decode_tok_s": 62.19,
+   "wall_s": 107.8,
+   "lt_table": {
+    "rows": 32,
+    "arch": "gfx1100",
+    "version": 100500
+   },
+   "conditions": {
+    "loadavg": [
+     "6.32",
+     "3.98",
+     "2.41"
+    ],
+    "mem_available_gb": 66.0
+   }
+  },
+  {
+   "arm": "nightly-100500",
+   "tier": "128k",
+   "exit": 0,
+   "prompt_tokens": 131071,
+   "prefill_gpu_s": 77.372,
+   "prefill_tok_s": 1694.04,
+   "decoded": 256,
+   "decode_wall_s": 4.102,
+   "decode_tok_s": 62.41,
+   "wall_s": 107.2,
+   "lt_table": {
+    "rows": 32,
+    "arch": "gfx1100",
+    "version": 100500
+   },
+   "conditions": {
+    "loadavg": [
+     "4.07",
+     "3.83",
+     "2.52"
+    ],
+    "mem_available_gb": 66.0
+   }
+  },
+  {
+   "arm": "nightly-100500",
+   "tier": "128k",
+   "exit": 0,
+   "prompt_tokens": 131071,
+   "prefill_gpu_s": 78.038,
+   "prefill_tok_s": 1679.58,
+   "decoded": 256,
+   "decode_wall_s": 4.112,
+   "decode_tok_s": 62.26,
+   "wall_s": 106.9,
+   "lt_table": {
+    "rows": 32,
+    "arch": "gfx1100",
+    "version": 100500
+   },
+   "conditions": {
+    "loadavg": [
+     "6.23",
+     "4.96",
+     "3.09"
+    ],
+    "mem_available_gb": 66.0
+   }
+  },
+  {
+   "arm": "nightly-notable",
+   "tier": "128k",
+   "exit": 0,
+   "prompt_tokens": 131071,
+   "prefill_gpu_s": 142.876,
+   "prefill_tok_s": 917.38,
+   "decoded": 256,
+   "decode_wall_s": 4.218,
+   "decode_tok_s": 60.69,
+   "wall_s": 171.4,
+   "lt_table": {
+    "engaged": false,
+    "refusal": "no tuning line found"
+   },
+   "conditions": {
+    "loadavg": [
+     "4.85",
+     "4.95",
+     "3.40"
+    ],
+    "mem_available_gb": 66.0
+   }
+  },
+  {
+   "arm": "nightly-notable",
+   "tier": "128k",
+   "exit": 0,
+   "prompt_tokens": 131071,
+   "prefill_gpu_s": 141.528,
+   "prefill_tok_s": 926.11,
+   "decoded": 256,
+   "decode_wall_s": 4.635,
+   "decode_tok_s": 55.24,
+   "wall_s": 171.7,
+   "lt_table": {
+    "engaged": false,
+    "refusal": "no tuning line found"
+   },
+   "conditions": {
+    "loadavg": [
+     "3.39",
+     "4.36",
+     "3.45"
+    ],
+    "mem_available_gb": 66.2
+   }
+  },
+  {
+   "arm": "nightly-notable",
+   "tier": "128k",
+   "exit": 0,
+   "prompt_tokens": 131071,
+   "prefill_gpu_s": 141.517,
+   "prefill_tok_s": 926.19,
+   "decoded": 256,
+   "decode_wall_s": 4.195,
+   "decode_tok_s": 61.02,
+   "wall_s": 170.2,
+   "lt_table": {
+    "engaged": false,
+    "refusal": "no tuning line found"
+   },
+   "conditions": {
+    "loadavg": [
+     "3.76",
+     "4.41",
+     "3.65"
+    ],
+    "mem_available_gb": 66.2
+   }
+  }
+ ],
+ "raw_logs": [
+  "t1005-raw-nightly-100500-1k-1.log",
+  "t1005-raw-nightly-100500-128k-2.log",
+  "t1005-raw-nightly-100500-128k-3.log",
+  "t1005-raw-nightly-100500-128k-4.log",
+  "t1005-raw-nightly-notable-128k-5.log",
+  "t1005-raw-nightly-notable-128k-6.log",
+  "t1005-raw-nightly-notable-128k-7.log"
+ ],
+ "medians": {
+  "nightly-100500": {
+   "n": 3,
+   "prefill_tok_s_median": 1687.02,
+   "prefill_range": [
+    1679.58,
+    1694.04
+   ],
+   "decode_tok_s_median": 62.26,
+   "decode_range": [
+    62.19,
+    62.41
+   ]
+  },
+  "nightly-notable": {
+   "n": 3,
+   "prefill_tok_s_median": 926.11,
+   "prefill_range": [
+    917.38,
+    926.19
+   ],
+   "decode_tok_s_median": 60.69,
+   "decode_range": [
+    55.24,
+    61.02
+   ]
+  }
+ },
+ "sanity_1k": {
+  "decode_tok_s": 69.38,
+  "prefill_tok_s": 645.83
+ },
+ "ttft": "not available: the one-shot generate path does not print a TTFT line (serve path only)"
+}

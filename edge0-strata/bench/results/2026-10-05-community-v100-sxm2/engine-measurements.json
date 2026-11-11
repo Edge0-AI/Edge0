@@ -1,0 +1,51 @@
+{
+  "_note": "Engine-side numbers (the engine's own decode/prefill lines), NOT client timings. One run per configuration, so median==min==max; the engine reports about +/-20% between runs. See README.md for the limits.",
+  "hardware": {
+    "gpu": "Tesla V100-SXM2-32GB",
+    "compute_capability": 7.0,
+    "pcie": "Gen3 x16 (engine probe: 13.1 GB/s host->device)",
+    "cpu": "AMD Threadripper 2990WX (AVX2, no AVX-512)",
+    "ram_gb": 96,
+    "os": "Windows 11 26200",
+    "cuda": "12.6",
+    "msvc": "19.44",
+    "engine": {"commit": "6f32ec0", "version": "0.1.27", "build": "-DSTRATA_EXPERIMENTAL_SM60=ON -DCMAKE_CUDA_ARCHITECTURES=70"}
+  },
+  "protocol": {
+    "prompt_tokens": 7999,
+    "new_tokens": 256,
+    "kv": "fp16",
+    "spec": 3,
+    "prefill_chunk": 2048,
+    "vram_reserve_mib": 2048,
+    "sampling": "greedy",
+    "runs_per_config": 1
+  },
+  "decode": {
+    "Q2_0@32768":    {"tok_s": 76.40, "prefill_tok_s": 1268.36, "mtp_accept": 0.714, "tokens_per_round": 2.50},
+    "IQ2_XS@32768":  {"tok_s": 71.19, "prefill_tok_s": 1182.46, "mtp_accept": 0.756, "tokens_per_round": 2.52},
+    "IQ2_XS@262144": {"tok_s": 75.66, "prefill_tok_s": 1164.97, "mtp_accept": 0.659, "tokens_per_round": 2.32},
+    "UD-IQ4_XS@32768": {"tok_s": 26.33, "prefill_tok_s": 665.40, "mtp_accept": 0.714, "tokens_per_round": 2.50}
+  },
+  "expert_cache": {
+    "Q2_0@32768":    {"slots": 18918, "vram_gib": 24.36, "cpu_experts_per_layer": 0.68},
+    "IQ2_XS@32768":  {"slots": 18151, "vram_gib": 24.38, "cpu_experts_per_layer": 1.21},
+    "IQ2_XS@262144": {"slots": 13637, "vram_gib": 18.28, "cpu_experts_per_layer": 1.93},
+    "UD-IQ4_XS@32768": {"slots": 10078, "vram_gib": 22.70, "cpu_experts_per_layer": 3.86}
+  },
+  "pcie_link_effect": {
+    "_note": "same 30 000-token prompt, same model, only the slot changed",
+    "gen3_x4":  {"probe_gb_s": 3.3, "pcie_frac": 0.00, "prefill_tok_s": 179, "ttft_s": 168.4},
+    "gen3_x16": {"probe_gb_s": 13.1, "pcie_frac": 0.28, "prefill_tok_s": 682, "ttft_s": 45.7}
+  },
+  "quality_battery_5_prompts": {
+    "_note": "greedy, 1024-token cap, through the resident server; answers checked by hand",
+    "Q2_0":   {"wolf": "correct", "arith": "correct", "jug": "correct", "chick": "correct", "code": "correct"},
+    "IQ2_XS": {"wolf": "token cap reached mid-thought (no answer)", "arith": "correct", "jug": "correct", "chick": "correct", "code": "correct"}
+  },
+  "cold_start": {
+    "_note": "measured with a 24-token generation at max-context 262144; the 2-3 s of first-touch on the KV buffers dominates that sample and made 256K look 3x slower than it is",
+    "observed_extra_ms_per_round": 240,
+    "real_steady_state_decode_tok_s_at_256k": 75.66
+  }
+}

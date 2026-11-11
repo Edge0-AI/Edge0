@@ -1,0 +1,5 @@
+# Terminal + server test evidence
+# command: python -m unittest discover -s tests/terminal -t tests/terminal -p 'test_*.py'
+# python: Python 3.11.15 on Darwin arm64
+# repo: 05bfff689e31843e06f4db3fe6e537fc9fde1649
+# result: Ran 222 tests ... OK

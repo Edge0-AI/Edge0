@@ -1,0 +1,27 @@
+# public2185-256-r1
+DONE 256 2185 7075.6 5380.4 length 168 217 0 0 0 0 0 0.0 2185 0
+strata serve: prompt 2185 tokens = 0 reused + 2185 read in 7076 ms (308.8 tok/s), 256 generated in 5380 ms (47.6 tok/s), drafts accepted 168 of 217, 0 checkpoints
+# public20-256-r1
+DONE 256 20 377.9 5366.3 length 170 234 0 0 0 0 0 0.0 20 0
+strata serve: prompt 20 tokens = 0 reused + 20 read in 378 ms (52.9 tok/s), 256 generated in 5366 ms (47.7 tok/s), drafts accepted 170 of 234, 0 checkpoints
+# canary-end-r1
+DONE 8 23 392.5 177.9 stop 6 6 0 0 0 0 0 0.0 23 0
+strata serve: prompt 23 tokens = 0 reused + 23 read in 392 ms (58.6 tok/s), 8 generated in 178 ms (45.0 tok/s), drafts accepted 6 of 6, 0 checkpoints
+# public2185-256-r2
+DONE 256 2185 6869.9 5304.7 length 168 217 0 0 0 0 0 0.0 2185 0
+strata serve: prompt 2185 tokens = 0 reused + 2185 read in 6870 ms (318.1 tok/s), 256 generated in 5305 ms (48.3 tok/s), drafts accepted 168 of 217, 0 checkpoints
+# public20-256-r2
+DONE 256 20 368.6 5182.9 length 170 234 0 0 0 0 0 0.0 20 0
+strata serve: prompt 20 tokens = 0 reused + 20 read in 369 ms (54.3 tok/s), 256 generated in 5183 ms (49.4 tok/s), drafts accepted 170 of 234, 0 checkpoints
+# canary-end-r2
+DONE 8 23 382.5 165.1 stop 6 6 0 0 0 0 0 0.0 23 0
+strata serve: prompt 23 tokens = 0 reused + 23 read in 382 ms (60.1 tok/s), 8 generated in 165 ms (48.4 tok/s), drafts accepted 6 of 6, 0 checkpoints
+# public2185-256-r3
+DONE 256 2185 7159.2 5421.4 length 168 217 0 0 0 0 0 0.0 2185 0
+strata serve: prompt 2185 tokens = 0 reused + 2185 read in 7159 ms (305.2 tok/s), 256 generated in 5421 ms (47.2 tok/s), drafts accepted 168 of 217, 0 checkpoints
+# public20-256-r3
+DONE 256 20 381.8 5436.4 length 170 234 0 0 0 0 0 0.0 20 0
+strata serve: prompt 20 tokens = 0 reused + 20 read in 382 ms (52.4 tok/s), 256 generated in 5436 ms (47.1 tok/s), drafts accepted 170 of 234, 0 checkpoints
+# canary-end-r3
+DONE 8 23 396.0 182.8 stop 6 6 0 0 0 0 0 0.0 23 0
+strata serve: prompt 23 tokens = 0 reused + 23 read in 396 ms (58.1 tok/s), 8 generated in 183 ms (43.8 tok/s), drafts accepted 6 of 6, 0 checkpoints

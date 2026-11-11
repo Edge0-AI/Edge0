@@ -1,0 +1,36 @@
+# A real tuning sweep, end to end, against a stub engine
+# repo: 64fca7e172daa6ec3f811ff4e6a5dfc573b6fe16
+
+# The stub speaks the real serve protocol (READY/PP/T/DONE) and makes its decode speed depend
+# on one flag, so the sweep has something real to find. It is NOT a model: its numbers say
+# nothing about any hardware. It exists so the sweep machinery is exercised without weights,
+# which do not fit this Mac.
+
+$ strata tune run --engine tests/tuning/stub_engine.sh --backend metal --model stub \
+      --trials 4 --repeats 3 --prompt-tokens 16 --max-new 6 \
+      --hold ple_io --hold kv_grow --hold spec_min_p
+
+sweeping kv
+backend metal · objective generation · repeats 3 · at most 4 trials / 1800s
+job 0bd6141d39d94c9fa9aad22957d14d4d -> completed
+  baseline  median 20.0 over 3 runs
+  trials    4 of 4
+  drift     baseline 20.0 -> 20.0 (+0.0%) — within noise
+  recommend index 2: --kv int8
+            median 24.0 against a baseline of 20.0
+
+  measured through the engine's own serve protocol. Before trusting a recommendation,
+  re-measure the exported configuration through the full API the agent uses, and apply
+  it as a separate reviewed step. No profile has been changed.
+  report: strata tune status 0bd6141d39d94c9fa9aad22957d14d4d
+
+# And a bounded sweep that did NOT find the winner, to show the search space is disclosed:
+
+sweeping ple_io, kv, kv_grow, spec_min_p
+backend metal · objective generation · repeats 2 · at most 6 trials / 1800s
+job 6e0ffef942374f6994fb4e7003693787 -> completed
+  baseline  median 20.0 over 2 runs
+  trials    6 of 6 allowed, from 96 possible combinations (a prefix of the enumeration)
+  drift     baseline 20.0 -> 20.0 (+0.0%) — within noise
+  recommend none — no candidate beat the baseline outside its own spread; keeping the current configuration
+

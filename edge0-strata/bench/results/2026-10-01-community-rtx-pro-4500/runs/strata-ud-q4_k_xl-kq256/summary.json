@@ -1,0 +1,105 @@
+{
+ "label": "strata-ud-q4_k_xl-kq256",
+ "base_url": "http://127.0.0.1:8080/v1",
+ "model": "qwen3.8-flash-next-ud-q4_k_xl",
+ "started": "2026-10-01T17:13:06+02:00",
+ "settings": {
+  "base_url": "http://127.0.0.1:8080/v1",
+  "model": "qwen3.8-flash-next-ud-q4_k_xl",
+  "label": "strata-ud-q4_k_xl-kq256",
+  "prompts": "short,codegen",
+  "runs": 3,
+  "warmup": 1,
+  "max_tokens": null,
+  "auth_field": null,
+  "auth_header": "Authorization",
+  "auth_scheme": "Bearer",
+  "temperature": 0.0,
+  "top_k": 1,
+  "top_p": null,
+  "seed": null,
+  "no_think": true,
+  "extra_body": null,
+  "gpu": "GPU-627db4bb-f09b-e5d8-1911-a7cde5605dcc",
+  "journal_unit": null,
+  "out": "runs",
+  "timeout": 3600
+ },
+ "prompts": {
+  "short": {
+   "max_tokens": 512,
+   "prompt_tokens_server": 2700,
+   "ttft_s": {
+    "median": 2.35,
+    "min": 2.35,
+    "max": 2.37,
+    "n": 3
+   },
+   "prefill_tok_s": {
+    "median": 1146.3,
+    "min": 1140.5,
+    "max": 1150.1,
+    "n": 3
+   },
+   "decode_tok_s": {
+    "median": 67.61,
+    "min": 61.58,
+    "max": 68.13,
+    "n": 3
+   },
+   "completion_tokens": {
+    "median": 512,
+    "min": 512,
+    "max": 512,
+    "n": 3
+   },
+   "errors": [],
+   "vram_mib_max": 31336.0,
+   "ram_used_gib_max": 103.1,
+   "power_w_mean": {
+    "median": 142.5,
+    "min": 142.0,
+    "max": 144.5,
+    "n": 3
+   }
+  },
+  "codegen": {
+   "max_tokens": 1024,
+   "prompt_tokens_server": 370,
+   "ttft_s": {
+    "median": 1.12,
+    "min": 1.1,
+    "max": 1.18,
+    "n": 3
+   },
+   "prefill_tok_s": {
+    "median": 329.8,
+    "min": 314.4,
+    "max": 337.7,
+    "n": 3
+   },
+   "decode_tok_s": {
+    "median": 71.74,
+    "min": 70.73,
+    "max": 75.48,
+    "n": 3
+   },
+   "completion_tokens": {
+    "median": 1024,
+    "min": 1024,
+    "max": 1024,
+    "n": 3
+   },
+   "errors": [],
+   "vram_mib_max": 31336.0,
+   "ram_used_gib_max": 103.1,
+   "power_w_mean": {
+    "median": 142.1,
+    "min": 139.6,
+    "max": 143.8,
+    "n": 3
+   }
+  }
+ },
+ "ended": "2026-10-01T17:14:51+02:00"
+}

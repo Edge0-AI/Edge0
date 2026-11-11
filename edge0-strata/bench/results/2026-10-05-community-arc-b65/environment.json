@@ -1,0 +1,23 @@
+{
+  "variables": {
+    "ONEAPI_DEVICE_SELECTOR": "level_zero:0",
+    "SYCL_CACHE_PERSISTENT": "0",
+    "SYCL_PROGRAM_COMPILE_OPTIONS": "-cl-fp32-correctly-rounded-divide-sqrt",
+    "STRATA_MIRROR_MIB": "16384",
+    "STRATA_VERIFY_DEVICE_PLAN": "1",
+    "STRATA_VERIFY_NO_HOST": "1",
+    "STRATA_WARM_GRAPHS": "0",
+    "STRATA_STAGER_THREADS": "4",
+    "OMP_NUM_THREADS": "4",
+    "MKL_NUM_THREADS": "4"
+  },
+  "explicitly_unset": [
+    "STRATA_DBG_NAN",
+    "STRATA_VERIFY_EAGER"
+  ],
+  "measured_deployment_wrapper_sha256": "f41302a176d548fbebe4c3559ce9308cb46d64e3a43dfb5f8704d6550de03836",
+  "public_fixture_additional_variable": {
+    "STRATA_TRACE": "1"
+  },
+  "note": "Existing diagnostic-off launch wrapper reused for the isolated candidate; portable values above specify the environment."
+}

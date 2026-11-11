@@ -1,0 +1,172 @@
+{
+  "gguf": {
+    "/home/jason/Projects/Strata-data/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf": {
+      "bytes": 29608446496,
+      "sha256": "e11083ba855e7666b48ea3f2db6a9c3a20c18751a012cc24f948de91b7087fad"
+    },
+    "/home/jason/Projects/Strata-data/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00002-of-00002.gguf": {
+      "bytes": 28800138432,
+      "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+    },
+    "/home/jason/Projects/Strata-data/models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf": {
+      "bytes": 39225954592,
+      "sha256": "92cee27ae5bbadcd732416a0f7a7f0acc092399dbbe8f5a5efa707c2ec0a49d7"
+    },
+    "/home/jason/Projects/Strata-data/models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf": {
+      "bytes": 28800138432,
+      "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+    },
+    "/home/jason/Projects/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf": {
+      "bytes": 47039860096,
+      "sha256": "219ea929900dfa9ef091f3aa473fdba6874b65fcb36526d7d851ac9e95856d15"
+    },
+    "/home/jason/Projects/Strata-data/models/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf": {
+      "bytes": 28800138432,
+      "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113"
+    }
+  },
+  "expert_profiles": {
+    "expert-profile.bin": {
+      "bytes": 196632,
+      "sha256": "8f59b4aa8873209dff11c11e37bcda9529a1335b724a1afeea37bf6388975baf"
+    },
+    "expert-profile-coder.bin": {
+      "bytes": 98328,
+      "sha256": "a514661124d5305effe9c1bcecff7dc069af398b2b19ff9d11628a2cad0a8915"
+    },
+    "draft_vocab_en.bin": {
+      "bytes": 162100,
+      "sha256": "369151522226a5edaa5f12cfd1e2ae7db8f4fbdbd222f3dcf327dced9597fb25"
+    }
+  },
+  "mtp_draft": {
+    "dense.bin": {
+      "bytes": 116099072,
+      "sha256": "c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a"
+    },
+    "dense.txt": {
+      "bytes": 1851,
+      "sha256": "991456cf4eb266eb8a888c349e548d11bc640f5dbd9149439aa9786af0f732fd"
+    },
+    "draft_vocab.bin": {
+      "bytes": 162100,
+      "sha256": "369151522226a5edaa5f12cfd1e2ae7db8f4fbdbd222f3dcf327dced9597fb25"
+    },
+    "experts.bin": {
+      "bytes": 707788800,
+      "sha256": "09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f"
+    }
+  },
+  "packs": {
+    "coder-iq1_m": {
+      "small_files_hashed": 7,
+      "note": "files of 64 MiB or more are not hashed here; only their names and sizes are kept",
+      "files": {
+        "index.txt": {
+          "bytes": 93633,
+          "sha256": "2cb3352786bcae81ea4d933eee6b2d5db45774069320c924a6dea48eb65a3cd3"
+        },
+        "native_experts.txt": {
+          "bytes": 3269,
+          "sha256": "9ace1b92e1fe12595de469409e69dd52c8d5418c7981c405d9a51aa9d574dd3b"
+        },
+        "tokenizer/chat_template.jinja": {
+          "bytes": 9993,
+          "sha256": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+        },
+        "tokenizer/merges.txt": {
+          "bytes": 3353258,
+          "sha256": "4ba698529766c7a2f5052083ea10cdf2485577f5237a332ee291054eb11e3332"
+        },
+        "tokenizer/token_type.json": {
+          "bytes": 744960,
+          "sha256": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b"
+        },
+        "tokenizer/tokenizer.json": {
+          "bytes": 541,
+          "sha256": "c0bd435efbc6c3b28964b47999afe16c4ad268c7c7c4e8cb3af410796a6f30bf"
+        },
+        "tokenizer/vocab.json": {
+          "bytes": 5737005,
+          "sha256": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4"
+        }
+      }
+    },
+    "iq2_xs": {
+      "small_files_hashed": 8,
+      "note": "files of 64 MiB or more are not hashed here; only their names and sizes are kept",
+      "files": {
+        "conversions.json": {
+          "bytes": 308,
+          "sha256": "b0908ca2ee3712d3734aaf778c38f75f4a8a8753edae5fb9429ba6a04fbb2c07"
+        },
+        "index.txt": {
+          "bytes": 93686,
+          "sha256": "19e781af360ca3b83fd90fe09e757ac9aa2a9dcada26810ddc9e933bdb112091"
+        },
+        "native_experts.txt": {
+          "bytes": 3289,
+          "sha256": "48df605acb89c7e8c3176a51cec777c2ed344ea439e8f3a37e5ce4f9dcb6946c"
+        },
+        "tokenizer/chat_template.jinja": {
+          "bytes": 9993,
+          "sha256": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+        },
+        "tokenizer/merges.txt": {
+          "bytes": 3353258,
+          "sha256": "4ba698529766c7a2f5052083ea10cdf2485577f5237a332ee291054eb11e3332"
+        },
+        "tokenizer/token_type.json": {
+          "bytes": 744960,
+          "sha256": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b"
+        },
+        "tokenizer/tokenizer.json": {
+          "bytes": 541,
+          "sha256": "c0bd435efbc6c3b28964b47999afe16c4ad268c7c7c4e8cb3af410796a6f30bf"
+        },
+        "tokenizer/vocab.json": {
+          "bytes": 5737005,
+          "sha256": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4"
+        }
+      }
+    },
+    "iq3_xxs": {
+      "small_files_hashed": 8,
+      "note": "files of 64 MiB or more are not hashed here; only their names and sizes are kept",
+      "files": {
+        "conversions.json": {
+          "bytes": 310,
+          "sha256": "68beec784ea64aeecace591b33debb8ba331a9ad257a3e1b68c5c701dd22b267"
+        },
+        "index.txt": {
+          "bytes": 93687,
+          "sha256": "1afe12b36cd2d13bf122b741fa0e81e1f751319cc3c451e54ba75524d825f148"
+        },
+        "native_experts.txt": {
+          "bytes": 3296,
+          "sha256": "ae28cf7a2a1c9063c4b55d6c8cf86d4d079dcddcf597f9e8697c9157d462c0ee"
+        },
+        "tokenizer/chat_template.jinja": {
+          "bytes": 9993,
+          "sha256": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce"
+        },
+        "tokenizer/merges.txt": {
+          "bytes": 3353258,
+          "sha256": "4ba698529766c7a2f5052083ea10cdf2485577f5237a332ee291054eb11e3332"
+        },
+        "tokenizer/token_type.json": {
+          "bytes": 744960,
+          "sha256": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b"
+        },
+        "tokenizer/tokenizer.json": {
+          "bytes": 541,
+          "sha256": "c0bd435efbc6c3b28964b47999afe16c4ad268c7c7c4e8cb3af410796a6f30bf"
+        },
+        "tokenizer/vocab.json": {
+          "bytes": 5737005,
+          "sha256": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4"
+        }
+      }
+    }
+  }
+}

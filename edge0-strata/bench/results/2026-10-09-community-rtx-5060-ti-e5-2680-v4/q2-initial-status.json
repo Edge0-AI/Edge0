@@ -1,0 +1,61 @@
+{
+  "service": "strata",
+  "model": "qwen3.8-flash-next-abliterated-q2_0",
+  "loaded": true,
+  "auto_load": true,
+  "structured_output": {
+    "formats": [
+      "json_object",
+      "json_schema"
+    ],
+    "method": "prompt_and_validate",
+    "constrained_decoding": false,
+    "stream_buffered": true
+  },
+  "engine": "0.1.41",
+  "started": 1791536553,
+  "uptime_s": 12,
+  "cache_max_tokens": 262144,
+  "context": {
+    "native": 262144,
+    "max_positions": 262144
+  },
+  "concurrency": {
+    "serving": 1,
+    "requested": 1
+  },
+  "dialects": [
+    "/v1/chat/completions",
+    "/v1/messages",
+    "/v1/responses"
+  ],
+  "vision": {
+    "enabled": false,
+    "available": false,
+    "error": null
+  },
+  "activity": {
+    "requests": 0,
+    "in_flight": 0,
+    "last_request_at": null
+  },
+  "last_timings": null,
+  "vram": {
+    "elastic": false
+  },
+  "machine": {
+    "at": 1791536566,
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 5060 Ti",
+      "used_mib": 15632.0,
+      "total_mib": 16311.0,
+      "util_pct": 0,
+      "temp_c": 31,
+      "power_w": 16.733
+    },
+    "ram": {
+      "used_gib": 50.2,
+      "total_gib": 63.8
+    }
+  }
+}

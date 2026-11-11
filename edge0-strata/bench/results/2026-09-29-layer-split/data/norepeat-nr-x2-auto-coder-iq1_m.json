@@ -1,0 +1,92 @@
+[
+ {
+  "name": "greedy story 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 91,
+  "drafts_offered": 190,
+  "tok_s": 74.0,
+  "text": "The wind didn\u2019t just blow; it screamed.\n\nElias pulled his wool coat tighter around his shoulders, the fabric stiff with salt and age. He was seventy years old, but he moved with the grace of a man who had spent decades on a narrow spiral staircase. His hands, rough as sandpaper, knew every bolt, every lever, and every creak in the iron bones of the tower.\n\nFor forty years, Elias had been the guardian of the Point. Not just of the light, but of the silence between the waves.\n\nIt was November. The sky was a bruised purple, heavy with rain that hadn\u2019t yet fallen. The sea was a churning cauldron of grey and white, throwing itself against the granite base with a violence that shook the floorboards beneath Elias\u2019s boots.\n\nHe climbed the stairs. One hundred and twelve steps. He counted them by feel, his left hand trailing along the cold iron railing. At the top, the air was"
+ },
+ {
+  "name": "greedy code 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 137,
+  "drafts_offered": 178,
+  "tok_s": 103.4,
+  "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+ },
+ {
+  "name": "greedy sanity",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 91.1,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy, no penalty (sanity)",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 70.7,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64",
+  "tokens": 118,
+  "repeats": 0,
+  "drafts_accepted": 38,
+  "drafts_offered": 108,
+  "tok_s": 65.4,
+  "text": "Aardvark  \nAlbatross   \nAlligator    \nAntelope     \nBaboon       \nBadger      \nBeaver        \nBear          \nBird of Paradise \nBuffalo         \nCamel           \nCheetah            \nChimpanzee             \nCrane              \nCrocodile                \nDeer                 \nDolphin               \nDonkey                  \nElephant                   \nFlamingo                    \nFox                       \nGiraffe                     \nGoat                      \nHippopotamus  \nIguana       \nJaguar        \nKangaroo      \nKoala          \nLion         \nLeopard     \nMonkey    \nMoose   \nOstrich \nOtter\nPanda<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64 story",
+  "tokens": 57,
+  "repeats": 0,
+  "drafts_accepted": 11,
+  "drafts_offered": 61,
+  "tok_s": 57.1,
+  "text": "The wind didn\u2019t just blow; it screamed against the glass of Lantern House 42, rattling like chains in an empty cathedral vaults below Elias\u2019s boots were heavy with salt and exhaustion as he climbed one hundred twelve steps to reach top room where his world began again.<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 3",
+  "tokens": 58,
+  "repeats": 0,
+  "drafts_accepted": 14,
+  "drafts_offered": 54,
+  "tok_s": 52.9,
+  "text": "The wind didn\u2019t just blow at Cape Harrow; it screamed through the gaps in stone and steel, carrying with them spray from three miles out into churning black water that no longer resembled an ocean so much as abyssal chaos waiting for its prey to surface beneath waves of salt.<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 11",
+  "tokens": 59,
+  "repeats": 0,
+  "drafts_accepted": 11,
+  "drafts_offered": 47,
+  "tok_s": 51.7,
+  "text": "Lion  \nTiger  \n\nElephant\\nGiraffe\\Zebra\\rHippopotamus\\tRhinoceros\\vCrocodile\\fAlligator\\bSnake\\aSpider\\u2615CoffeeCup\u2615\ufe0fTeaTime\ud83d\udc09DragonFishWhaleDolph<|im_end|>"
+ },
+ {
+  "name": "greedy frequency=100 last_n=16",
+  "tokens": 11,
+  "repeats": 0,
+  "drafts_accepted": 5,
+  "drafts_offered": 12,
+  "tok_s": 73.5,
+  "text": "1 to 50, separated by commas:<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=4096 (8-row windows)",
+  "tokens": 300,
+  "repeats": 0,
+  "drafts_accepted": 43,
+  "drafts_offered": 126,
+  "tok_s": 63.4,
+  "text": "The ocean is not merely water; it has been, and continues to be one with humanity\u2019s most profound narrative arc in human civilization: **the story told by waves**. It serves as both witness (through sedimentary layers)and participant( through currents that carry messages across continents). Its \"history\" spans geological epochs where life first emerged from primordial pools into complex ecosystems today\u2014and cultural histories shaped entirely around its roleas connector between distant lands or barrier separating them forever depending on perspective taken at different times throughout millennia since ancient civilizations began building boats outof logs carved using stone tools until modern container ships carrying billions tons cargo daily cross Atlantic routes once navigated onlyby stars alone under moonlight during nights when sailors feared monsters lurking beneath hulls made fragile against storms they could barely predict even now despite advanced meteorology systems developed over past century after industrial revolution transformed maritime trade patterns globally due economic pressures driving demand for faster logistics chains linking factories producing electronics manufactured inside cities located far inland near rivers feeding estuaries opening directly onto open seas connected via canals engineered centuries ago like Suez Canal built originallyfor military purposes later adapted commercial use post-World War II era reshaping global supply networks dramatically because geopolitical shifts altered which ports remained accessible politically versus physically blocked temporarily then reopened permanently following treaty agreements signed among nations agreeing upon shared responsibilities regarding environmental stewardship including coral reef restoration efforts funded jointly international organizations coordinating scientific research conducted aboard vessels specifically designed deep-sea exploration equipped robotic submersibles capable descending trenches deeper than any previous technology allowed"
+ }
+]

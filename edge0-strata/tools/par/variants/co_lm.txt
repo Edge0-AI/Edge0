@@ -1,0 +1,2 @@
+co_lref | 0,1 | 8 |   | STRATA_PREFILL_LM_FORCE=1 | | w2:4@--nonce idl --keep-text --max-tokens 48 --rounds 2;w2:8@--nonce idl --keep-text --max-tokens 48 --rounds 2
+co_lon  | 0,1 | 8 |   | STRATA_PREFILL_LM_FORCE=1;STRATA_COALESCE_PREFILL=8;STRATA_COALESCE_WAIT_MS=40;STRATA_CRASH_BT=/data/external/niko/par29/res/co/crash.txt | | w2:4@--nonce idl --keep-text --max-tokens 48 --rounds 2;w2:8@--nonce idl --keep-text --max-tokens 48 --rounds 2

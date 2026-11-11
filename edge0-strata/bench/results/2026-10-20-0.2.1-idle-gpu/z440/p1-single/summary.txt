@@ -1,0 +1,54 @@
+arm | metric | median | vs base | pairs faster (higher) | rounds
+default | story:tok_s | 82.13 | 1.000 | 0/5 | 5
+overlap | story:tok_s | 82.35 | 1.003 | 2/5 | 5
+pw2 | story:tok_s | 81.30 | 0.990 | 2/5 | 5
+default2 | story:tok_s | 82.06 | 0.999 | 2/5 | 5
+default | code:tok_s | 97.76 | 1.000 | 0/5 | 5
+overlap | code:tok_s | 99.83 | 1.021 | 4/5 | 5
+pw2 | code:tok_s | 103.03 | 1.054 | 5/5 | 5
+default2 | code:tok_s | 100.49 | 1.028 | 5/5 | 5
+default | facts:tok_s | 93.63 | 1.000 | 0/5 | 5
+overlap | facts:tok_s | 93.38 | 0.997 | 2/5 | 5
+pw2 | facts:tok_s | 94.76 | 1.012 | 4/5 | 5
+default2 | facts:tok_s | 93.64 | 1.000 | 3/5 | 5
+default | pp16k:pp_tok_s | 1646.81 | 1.000 | 0/5 | 5
+overlap | pp16k:pp_tok_s | 1648.59 | 1.001 | 4/5 | 5
+pw2 | pp16k:pp_tok_s | 1651.33 | 1.003 | 4/5 | 5
+default2 | pp16k:pp_tok_s | 1647.27 | 1.000 | 3/5 | 5
+default | pp58k:pp_tok_s | 2956.07 | 1.000 | 0/5 | 5
+overlap | pp58k:pp_tok_s | 2958.62 | 1.001 | 3/5 | 5
+pw2 | pp58k:pp_tok_s | 2963.43 | 1.002 | 4/5 | 5
+default2 | pp58k:pp_tok_s | 2960.39 | 1.001 | 4/5 | 5
+
+arm | window | mean util per card % (median over runs) | mean power W per card | idle% (mean over cards)
+default | story | gpu0 45, gpu1 58 | 122, 129 | 49
+default | code | gpu0 45, gpu1 58 | 121, 127 | 49
+default | facts | gpu0 44, gpu1 61 | 119, 126 | 47
+default | pp16k | gpu0 55, gpu1 61 | 109, 109 | 42
+default | pp58k | gpu0 75, gpu1 78 | 120, 123 | 24
+overlap | story | gpu0 45, gpu1 94 | 121, 129 | 31
+overlap | code | gpu0 45, gpu1 94 | 120, 127 | 31
+overlap | facts | gpu0 45, gpu1 94 | 118, 126 | 30
+overlap | pp16k | gpu0 55, gpu1 65 | 109, 110 | 40
+overlap | pp58k | gpu0 77, gpu1 80 | 120, 123 | 21
+pw2 | story | gpu0 76, gpu1 75 | 132, 134 | 25
+pw2 | code | gpu0 73, gpu1 75 | 131, 134 | 26
+pw2 | facts | gpu0 71, gpu1 78 | 130, 132 | 26
+pw2 | pp16k | gpu0 58, gpu1 60 | 110, 110 | 41
+pw2 | pp58k | gpu0 76, gpu1 80 | 120, 123 | 22
+default2 | story | gpu0 45, gpu1 58 | 122, 128 | 48
+default2 | code | gpu0 45, gpu1 58 | 120, 126 | 48
+default2 | facts | gpu0 46, gpu1 59 | 118, 125 | 48
+default2 | pp16k | gpu0 58, gpu1 62 | 109, 109 | 40
+default2 | pp58k | gpu0 76, gpu1 78 | 120, 123 | 23
+
+answer hashes per window kind (distinct values over all runs of all arms; 1 = byte-identical)
+story: 14 distinct -> 1c01746bd4aa8c79:default; 008dccf84b36532a:default,default2,overlap; 8fbd675f2b34b5e3:pw2; 2fa43bd4ebb13cd1:pw2; afd22e324d2d9940:default2; d43b672bf7be1cb1:pw2; 31d88ac82bdf6ae5:overlap; da12ccce0593f5b4:default,default2; 15ebcf29b5162678:overlap; f8746ccbd57d6649:pw2; 91affce38e3f51ca:default; a7c0955cb848bbab:overlap; 5d3afb4f401a5167:pw2; 319224671fa473ab:default2
+code: 19 distinct -> 4b313919e85e39b4:default; a7e4a1c48e84b906:default2,overlap; 14d88a4c13be63b7:pw2; 7ce67910a72be85f:default2; bc30fe07ca8e50d3:overlap; 66fa0cc96f94efbd:pw2; 15610d42ccbd81d7:default2; 612774bf7ff21027:default; e4171b7711cde5ce:pw2; ec801efea1254ee8:default2; 290d5f1bd43f06cb:default; f5b67e456277df81:overlap; 7dd92589ace9f811:default; 45f9ca588c8a6dc8:overlap; 1610e3a8b9388710:pw2; e459b6708f3bfdc6:default; ce5578741a2f7c1a:overlap; 7864b18b1743b35f:pw2; 0870af28e4f17ebe:default2
+facts: 18 distinct -> d02ccf8df3989951:default; c229bdca374702de:overlap; 51ba6909cd7a9706:pw2; aeff37ca994e506e:default2; 5c9a13ac44c56caa:overlap; c6f93065d8f41796:pw2; c5fb683f831e986e:default2; cb02e14bcab3e033:default,overlap; 3ca0a27e58fb6bf0:default,pw2; c969965f64b1c703:default2; f4024f42ed689588:default; 8930a996a572e8b6:default2; e52c6aa7891fc91b:default; c28d387b00ba4408:overlap; 651d15a182f97816:pw2; 93bd65cacaf3e3de:overlap; a62ee2740f43ea2c:pw2; 9ae6882d593b88b5:default2
+pp16k: 1 distinct
+pp58k: 2 distinct -> 84d46cd5a99fc0a9:default,default2,overlap,pw2; 56ca29a619f7cd8d:default,overlap,pw2
+default: expert-cache slots ['7342']
+overlap: expert-cache slots ['7342']
+pw2: expert-cache slots ['7156']
+default2: expert-cache slots ['7342']

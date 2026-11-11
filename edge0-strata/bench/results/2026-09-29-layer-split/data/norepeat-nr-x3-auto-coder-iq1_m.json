@@ -1,0 +1,92 @@
+[
+ {
+  "name": "greedy story 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 98,
+  "drafts_offered": 166,
+  "tok_s": 54.4,
+  "text": "The wind didn\u2019t just blow; it screamed. It tore through the iron gallery of the Blackwood Point Lighthouse, rattling the glass panes like a prisoner shaking its bars.\n\nElias Thorne was seventy years old, and he had been the keeper for forty of them. He knew every creak in the spiral staircase, every draft that slipped under the door, and every shift in the weather that the barometer couldn\u2019t quite predict. He knew that when the fog rolled in thick enough to swallow the horizon, the world ceased to exist. There was only the light, the stone, and him.\n\nIt was November, the month of storms. The sea was a churning cauldron of grey and white, throwing itself against the granite base with a violence that made the floorboards tremble. Elias stood by the lantern room, his hands wrapped around a mug of coffee that had gone cold hours ago. He wasn\u2019t drinking it. He was holding it for warmth."
+ },
+ {
+  "name": "greedy code 200",
+  "tokens": 200,
+  "repeats": 0,
+  "drafts_accepted": 137,
+  "drafts_offered": 163,
+  "tok_s": 70.7,
+  "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv(file_path: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys being the header values\n    and values being the corresponding cell values.\n    \n    Args:\n        file_path: Path to the CSV file.\n        \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result = []\n    with open(file_path, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_basic():\n    \"\"\"Test basic CSV parsing with simple data.\"\"\"\n    import tempfile\n    import os\n    \n    # Create a temporary CSV"
+ },
+ {
+  "name": "greedy sanity",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 56.7,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy, no penalty (sanity)",
+  "tokens": 4,
+  "repeats": 0,
+  "drafts_accepted": 3,
+  "drafts_offered": 3,
+  "tok_s": 57.6,
+  "text": "144<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64",
+  "tokens": 59,
+  "repeats": 0,
+  "drafts_accepted": 13,
+  "drafts_offered": 47,
+  "tok_s": 39.7,
+  "text": "Aardvark  \nAlbatross  \n\nAlligator   \nAntelope    \nBaboon      \nBadger     \nBeaver       \nBear        \nBird         \nBuffalo     \n\nCat          \nCheetah      \n\nChimpanzee \nClam         \n\n\nCrocodile   \n\n\n\nDolphin      \n\n\n\n\nDonkey       <|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=64 story",
+  "tokens": 57,
+  "repeats": 0,
+  "drafts_accepted": 12,
+  "drafts_offered": 58,
+  "tok_s": 39.9,
+  "text": "The wind didn\u2019t just blow; it screamed against the glass of Lantern House 42, rattling like chains in an empty cathedral vaults below Elias\u2019s boots were heavy with salt and exhaustion as he climbed one hundred twelve steps to reach topmost gallery where his world began.<|im_end|>"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 3",
+  "tokens": 160,
+  "repeats": 0,
+  "drafts_accepted": 30,
+  "drafts_offered": 111,
+  "tok_s": 34.7,
+  "text": "The wind didn\u2019t just blow at Blackwood Rock; it screamed through the gaps in his stone cottage like an angry ghost trying to get inside, yet finding no door left unlocked because Elias never let one stay that way for more than three seconds after entering or leaving during storm season. He had been doing this since 1987\u2014since before he even knew why\u2014and now it was muscle memory so deep into his bones and fingers\u2019 calloused skin texture patterns worn thin by years of gripping the same iron railing at midnight watch that if you asked him what time exactly, down to quarter-hour increments when fog rolled in thick enough where light beams bent around itself like old rope coiling tight on a winch drum spooling out slowly from below deck floor level storage locker number seven under stairs leading"
+ },
+ {
+  "name": "sampled presence=100 last_n=64 seed 11",
+  "tokens": 96,
+  "repeats": 0,
+  "drafts_accepted": 31,
+  "drafts_offered": 48,
+  "tok_s": 42.3,
+  "text": "Lion  \nTiger   \nElephant \nGiraffe    \nZebra     \nPanda       \nKoala      \nKangaroo        \nCheetah         \nHippopotamus          \nRhinoceros            \nLeopard             \nJaguar              \nWolf                \nFox                 \nBear                  \nDeer                    \nOtter                   \nBeaver                      \nBadger                        \nMongoose                          \nMeerkat                           \nChimpanzee                            \nGorilla                             \nOrangetutan                              \nAntelope                                \nBison                                   \nElk                                     <|im_end|>"
+ },
+ {
+  "name": "greedy frequency=100 last_n=16",
+  "tokens": 11,
+  "repeats": 0,
+  "drafts_accepted": 5,
+  "drafts_offered": 13,
+  "tok_s": 43.0,
+  "text": "1 to 50, separated by commas:<|im_end|>"
+ },
+ {
+  "name": "greedy presence=100 last_n=4096 (8-row windows)",
+  "tokens": 300,
+  "repeats": 0,
+  "drafts_accepted": 29,
+  "drafts_offered": 127,
+  "tok_s": 37.6,
+  "text": "The ocean is not merely water; it has been, and remains to this day one giant machine for making life possible on Earth.\u201d \u2014 *David Attenborough* \n\nThis quote captures perhaps more than any other single sentence in human language: that which we call \u201cthe Sea\u201d or \"Ocean\" (terms often used interchangeably but distinct geographically) was never just an element within our planet\u2019s geography\u2014it became its engine itself\u2014a living system whose existence predates humanity by billions years yet continues shaping us today through climate regulation oxygen production food supply trade routes cultural identity ecological resilience economic development political boundaries scientific discovery technological innovation environmental crisis conservation efforts historical memory philosophical reflection poetic metaphor musical composition cinematic storytelling literary narrative visual art architectural inspiration culinary tradition spiritual symbolism psychological influence sociological transformation educational foundation medical necessity agricultural dependency industrial revolution urban planning infrastructural engineering legal framework regulatory policy international cooperation global governance planetary stewardship existential risk mitigation sustainable practice ethical consideration moral imperative social justice democratic participation civic engagement public health community welfare individual responsibility personal accountability collective action shared experience common understanding mutual respect reciprocal trust collaborative effort cooperative endeavor joint venture unified mission integrated strategy coordinated plan synchronized schedule aligned timeline concurrent execution simultaneous operation parallel processing sequential progression iterative refinement recursive improvement continuous adaptation dynamic adjustment flexible response adaptive behavior responsive conduct proactive initiative anticipatory foresight predictive modeling probabilistic assessment statistical analysis empirical observation experimental verification theoretical hypothesis conceptual abstraction logical deduction rational inference critical evaluation analytical reasoning systematic investigation methodical inquiry structured exploration comprehensive examination detailed scrutiny meticulous inspection thorough review exhaustive audit complete survey full census total enumeration absolute"
+ }
+]

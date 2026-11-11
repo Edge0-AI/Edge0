@@ -1,0 +1,13 @@
+{
+  "input_tokens": 1048064,
+  "max_tokens": 504,
+  "configured_context": 1048576,
+  "markers": {
+    "10": "copper-saffron-731",
+    "50": "quartz-harbor-864",
+    "90": "willow-orchid-529"
+  },
+  "note": "Markers placed at 10/50/90% of initial character haystack; final tail is trimmed to exact capacity. The API guard reserves eight decoder tokens; exact full usable request capacity is exercised without changing server context.",
+  "api_reserved_tokens": 8,
+  "usable_request_capacity": 1048568
+}

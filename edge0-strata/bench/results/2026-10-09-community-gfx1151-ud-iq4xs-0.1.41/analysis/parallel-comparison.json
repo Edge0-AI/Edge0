@@ -1,0 +1,65 @@
+{
+  "checks": {
+    "borrow0_same_qfuse_text": true,
+    "borrow1_same_qfuse_text": true,
+    "requests_match_all_four_cells": true
+  },
+  "rows": {
+    "parallel-qfuse0-borrow0": [
+      {
+        "slot": 0,
+        "request_sha256": "4aadefa0dcae1ce05178ad80f4e1400b58407162eeb96242606adcaadbfd59fd",
+        "text_sha256": "987d6add00d5c52ebbaacd2659cda91941fa502a0f3f7f392efac4718cad8e66",
+        "elapsed_s": 69.6220111650182
+      },
+      {
+        "slot": 1,
+        "request_sha256": "e28b2396cdb73fcd076b033846c35552764671e44891159e1f0ba2dec3594c9c",
+        "text_sha256": "ac1f3d57443c05a7747152bcb73507b2a22a5ba9b169318800b5acf7cf28bc60",
+        "elapsed_s": 90.16287862602621
+      }
+    ],
+    "parallel-qfuse0-borrow1": [
+      {
+        "slot": 0,
+        "request_sha256": "4aadefa0dcae1ce05178ad80f4e1400b58407162eeb96242606adcaadbfd59fd",
+        "text_sha256": "3968c0376034cb5d2c3e23735ffcb8dc8853ee7dd15a313539fb95d03ee3cb55",
+        "elapsed_s": 62.07045801798813
+      },
+      {
+        "slot": 1,
+        "request_sha256": "e28b2396cdb73fcd076b033846c35552764671e44891159e1f0ba2dec3594c9c",
+        "text_sha256": "edd9fc812ef3698bb81338d74e847750a9ef6e97ea2d60dd3bbb166700e1d02f",
+        "elapsed_s": 73.8662049069535
+      }
+    ],
+    "parallel-qfuse1-borrow0": [
+      {
+        "slot": 0,
+        "request_sha256": "4aadefa0dcae1ce05178ad80f4e1400b58407162eeb96242606adcaadbfd59fd",
+        "text_sha256": "987d6add00d5c52ebbaacd2659cda91941fa502a0f3f7f392efac4718cad8e66",
+        "elapsed_s": 89.28582659189124
+      },
+      {
+        "slot": 1,
+        "request_sha256": "e28b2396cdb73fcd076b033846c35552764671e44891159e1f0ba2dec3594c9c",
+        "text_sha256": "ac1f3d57443c05a7747152bcb73507b2a22a5ba9b169318800b5acf7cf28bc60",
+        "elapsed_s": 68.57701655093115
+      }
+    ],
+    "parallel-qfuse1-borrow1": [
+      {
+        "slot": 0,
+        "request_sha256": "4aadefa0dcae1ce05178ad80f4e1400b58407162eeb96242606adcaadbfd59fd",
+        "text_sha256": "3968c0376034cb5d2c3e23735ffcb8dc8853ee7dd15a313539fb95d03ee3cb55",
+        "elapsed_s": 62.15661845600698
+      },
+      {
+        "slot": 1,
+        "request_sha256": "e28b2396cdb73fcd076b033846c35552764671e44891159e1f0ba2dec3594c9c",
+        "text_sha256": "edd9fc812ef3698bb81338d74e847750a9ef6e97ea2d60dd3bbb166700e1d02f",
+        "elapsed_s": 73.90174183307681
+      }
+    ]
+  }
+}

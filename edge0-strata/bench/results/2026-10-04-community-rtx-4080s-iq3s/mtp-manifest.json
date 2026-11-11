@@ -1,0 +1,429 @@
+[
+ {
+  "name": "mtp.fc_embedding.weight",
+  "shard": "model-00120-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   2560,
+   2560
+  ],
+  "start": 1935412640,
+  "end": 1948519839,
+  "bytes": 13107200,
+  "file": "tensors\\mtp.fc_embedding.weight.bin",
+  "sha256": "241d6e87ded317a61b1aeb3ca4e28c53f1caba09ad5be66092e91fe5e3e14751"
+ },
+ {
+  "name": "mtp.fc_hidden.weight",
+  "shard": "model-00124-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   2560,
+   2560
+  ],
+  "start": 1716599928,
+  "end": 1729707127,
+  "bytes": 13107200,
+  "file": "tensors\\mtp.fc_hidden.weight.bin",
+  "sha256": "97c8e427ad0177e2c713ed24a397d815b523eda15ef453f1ae6463f6c70a8f96"
+ },
+ {
+  "name": "mtp.hyper_connection_mixer.hc_norm.weight",
+  "shard": "model-00037-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   10240
+  ],
+  "start": 1742326680,
+  "end": 1742347159,
+  "bytes": 20480,
+  "file": "tensors\\mtp.hyper_connection_mixer.hc_norm.weight.bin",
+  "sha256": "ce948a398e15aeaa403c424cda34e6eed296ab2570d591bb5ff3da642b255d64"
+ },
+ {
+  "name": "mtp.hyper_connection_mixer.input_mix_weight_down.weight",
+  "shard": "model-00041-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   320,
+   10240
+  ],
+  "start": 1935412688,
+  "end": 1941966287,
+  "bytes": 6553600,
+  "file": "tensors\\mtp.hyper_connection_mixer.input_mix_weight_down.weight.bin",
+  "sha256": "c633d2841fda463e82045e0b93fb8cb8d511ec0c9eda616020f01aca18d71947"
+ },
+ {
+  "name": "mtp.hyper_connection_mixer.input_mix_weight_up.weight",
+  "shard": "model-00043-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   10240,
+   320
+  ],
+  "start": 1832518416,
+  "end": 1839072015,
+  "bytes": 6553600,
+  "file": "tensors\\mtp.hyper_connection_mixer.input_mix_weight_up.weight.bin",
+  "sha256": "6565285f0ba2923703252763cfc11d8a9bda40ab42e7548e12464b04dbdbec13"
+ },
+ {
+  "name": "mtp.layers.0.attn_hyper_connection.block_inject_weight.weight",
+  "shard": "model-00047-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   4,
+   10240
+  ],
+  "start": 1716599984,
+  "end": 1716681903,
+  "bytes": 81920,
+  "file": "tensors\\mtp.layers.0.attn_hyper_connection.block_inject_weight.weight.bin",
+  "sha256": "c8afff64e7f54412d02120097c4255033c55245e1c1eed84cc630d428ccb864c"
+ },
+ {
+  "name": "mtp.layers.0.attn_hyper_connection.hc_norm.weight",
+  "shard": "model-00049-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   10240
+  ],
+  "start": 1935412672,
+  "end": 1935433151,
+  "bytes": 20480,
+  "file": "tensors\\mtp.layers.0.attn_hyper_connection.hc_norm.weight.bin",
+  "sha256": "1fb619aeaaf637ccd70f46f1f8f8116e6a46448cb43026b246de8ee8286ed809"
+ },
+ {
+  "name": "mtp.layers.0.attn_hyper_connection.input_mix_weight_down.weight",
+  "shard": "model-00053-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   320,
+   10240
+  ],
+  "start": 1832518424,
+  "end": 1839072023,
+  "bytes": 6553600,
+  "file": "tensors\\mtp.layers.0.attn_hyper_connection.input_mix_weight_down.weight.bin",
+  "sha256": "e80ac8bf3e270e9d5a949ec7c913329dc8de017d69851334820fae7b8c86a7f5"
+ },
+ {
+  "name": "mtp.layers.0.attn_hyper_connection.input_mix_weight_up.weight",
+  "shard": "model-00057-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   10240,
+   320
+  ],
+  "start": 1935412680,
+  "end": 1941966279,
+  "bytes": 6553600,
+  "file": "tensors\\mtp.layers.0.attn_hyper_connection.input_mix_weight_up.weight.bin",
+  "sha256": "f80f1fd44e1183e7764ea496b11ff89ead9dd758f861d4e79a770bf54956b1a5"
+ },
+ {
+  "name": "mtp.layers.0.mlp.experts.down_proj",
+  "shard": "model-00062-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   512,
+   2560,
+   640
+  ],
+  "start": 1832518400,
+  "end": 3510239999,
+  "bytes": 1677721600,
+  "file": "tensors\\mtp.layers.0.mlp.experts.down_proj.bin",
+  "sha256": "539c46234f73bac70450f731f40e715f77ac32faf77def0f3f800e58aaabbbc0"
+ },
+ {
+  "name": "mtp.layers.0.mlp.experts.gate_up_proj",
+  "shard": "model-00060-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   512,
+   1280,
+   2560
+  ],
+  "start": 115918328,
+  "end": 3471361527,
+  "bytes": 3355443200,
+  "file": "tensors\\mtp.layers.0.mlp.experts.gate_up_proj.bin",
+  "sha256": "839e98f9642ebc884b178abd2090b6dc8b0bcd81ed92d7f7a08314c6a68f96d5"
+ },
+ {
+  "name": "mtp.layers.0.mlp.gate.weight",
+  "shard": "model-00066-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   512,
+   2560
+  ],
+  "start": 1716599952,
+  "end": 1719221391,
+  "bytes": 2621440,
+  "file": "tensors\\mtp.layers.0.mlp.gate.weight.bin",
+  "sha256": "f0d35fa41b360a08bc0c5b1e5766aa42df960291716ee189208b5d2599462c20"
+ },
+ {
+  "name": "mtp.layers.0.mlp.shared_expert.down_proj.weight",
+  "shard": "model-00076-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   2560,
+   640
+  ],
+  "start": 1935412680,
+  "end": 1938689479,
+  "bytes": 3276800,
+  "file": "tensors\\mtp.layers.0.mlp.shared_expert.down_proj.weight.bin",
+  "sha256": "d2ced8c81367cc494599d1a8cdc279c3dd6579b628ded05acd7495e99cee01d8"
+ },
+ {
+  "name": "mtp.layers.0.mlp.shared_expert.gate_proj.weight",
+  "shard": "model-00072-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   640,
+   2560
+  ],
+  "start": 1832518528,
+  "end": 1835795327,
+  "bytes": 3276800,
+  "file": "tensors\\mtp.layers.0.mlp.shared_expert.gate_proj.weight.bin",
+  "sha256": "f4a81109165853b3b64f36d809f98094b599763364070f5fa079200e1c386d4c"
+ },
+ {
+  "name": "mtp.layers.0.mlp.shared_expert.up_proj.weight",
+  "shard": "model-00072-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   640,
+   2560
+  ],
+  "start": 1835795328,
+  "end": 1839072127,
+  "bytes": 3276800,
+  "file": "tensors\\mtp.layers.0.mlp.shared_expert.up_proj.weight.bin",
+  "sha256": "172586861eea53efbff10afc43ded5b6e49c83879e9efc01e089c652bbb0a156"
+ },
+ {
+  "name": "mtp.layers.0.mlp.shared_expert_gate.weight",
+  "shard": "model-00070-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   1,
+   2560
+  ],
+  "start": 1832518400,
+  "end": 1832523519,
+  "bytes": 5120,
+  "file": "tensors\\mtp.layers.0.mlp.shared_expert_gate.weight.bin",
+  "sha256": "acdd306d9996d356e4667a16ff63af6fef086fc7f570f1bc00bbe882a2a93f6e"
+ },
+ {
+  "name": "mtp.layers.0.mlp_hyper_connection.block_inject_weight.weight",
+  "shard": "model-00078-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   4,
+   10240
+  ],
+  "start": 1832518424,
+  "end": 1832600343,
+  "bytes": 81920,
+  "file": "tensors\\mtp.layers.0.mlp_hyper_connection.block_inject_weight.weight.bin",
+  "sha256": "c5782dd92b479a1f8ef43d683fe9c917fd9e8fba81f23c1aae8817bfe4b476a6"
+ },
+ {
+  "name": "mtp.layers.0.mlp_hyper_connection.hc_norm.weight",
+  "shard": "model-00082-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   10240
+  ],
+  "start": 1935412656,
+  "end": 1935433135,
+  "bytes": 20480,
+  "file": "tensors\\mtp.layers.0.mlp_hyper_connection.hc_norm.weight.bin",
+  "sha256": "21a504876b5e7b788301557c68dfb757999430eba36c66ec8ab96a63604dbfd1"
+ },
+ {
+  "name": "mtp.layers.0.mlp_hyper_connection.input_mix_weight_down.weight",
+  "shard": "model-00086-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   320,
+   10240
+  ],
+  "start": 1935412696,
+  "end": 1941966295,
+  "bytes": 6553600,
+  "file": "tensors\\mtp.layers.0.mlp_hyper_connection.input_mix_weight_down.weight.bin",
+  "sha256": "b71240036dea954e034d5ae04e097bcd7ac51cb28a44e4c93d198af3447278a1"
+ },
+ {
+  "name": "mtp.layers.0.mlp_hyper_connection.input_mix_weight_up.weight",
+  "shard": "model-00088-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   10240,
+   320
+  ],
+  "start": 1832518424,
+  "end": 1839072023,
+  "bytes": 6553600,
+  "file": "tensors\\mtp.layers.0.mlp_hyper_connection.input_mix_weight_up.weight.bin",
+  "sha256": "40756866bf2a5e82c28e407f717b6fa07614d593f78e79c7ceb2cd4ffe6dda94"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.indexer.index_qk_proj.weight",
+  "shard": "model-00090-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   640,
+   2560
+  ],
+  "start": 1832518416,
+  "end": 1835795215,
+  "bytes": 3276800,
+  "file": "tensors\\mtp.layers.0.self_attn.indexer.index_qk_proj.weight.bin",
+  "sha256": "2befafae6e944c1fc651fd73d4d527eb6f138a6c1679065b003128ee3150e859"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.indexer.k_layernorm.weight",
+  "shard": "model-00094-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   128
+  ],
+  "start": 1935412672,
+  "end": 1935412927,
+  "bytes": 256,
+  "file": "tensors\\mtp.layers.0.self_attn.indexer.k_layernorm.weight.bin",
+  "sha256": "2db621f6a08b4085756fc69d60a4a1bd1d7fbf5d406456d2477075842efaae54"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.indexer.q_layernorm.weight",
+  "shard": "model-00100-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   128
+  ],
+  "start": 1716599968,
+  "end": 1716600223,
+  "bytes": 256,
+  "file": "tensors\\mtp.layers.0.self_attn.indexer.q_layernorm.weight.bin",
+  "sha256": "afaf59f68e251939970ffdeacad0667dffc657a522bea62cdc44a52816fc49d6"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.k_norm.weight",
+  "shard": "model-00102-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   256
+  ],
+  "start": 1935412648,
+  "end": 1935413159,
+  "bytes": 512,
+  "file": "tensors\\mtp.layers.0.self_attn.k_norm.weight.bin",
+  "sha256": "8f924b0357cf936e14fc34518205d000e1423aa60626827df81b0804fae8cdfd"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.k_proj.weight",
+  "shard": "model-00108-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   512,
+   2560
+  ],
+  "start": 1832518624,
+  "end": 1835140063,
+  "bytes": 2621440,
+  "file": "tensors\\mtp.layers.0.self_attn.k_proj.weight.bin",
+  "sha256": "1a295dc2d6e633e808aeb19e00c97856a1817bbfcc83f5b610e2bfcacfcb8c38"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.o_proj.weight",
+  "shard": "model-00106-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   2560,
+   6144
+  ],
+  "start": 1832518400,
+  "end": 1863975679,
+  "bytes": 31457280,
+  "file": "tensors\\mtp.layers.0.self_attn.o_proj.weight.bin",
+  "sha256": "9d2fcf0ac6ac19de87f638f710cfd1af6ad14141e75b7d3d5d29fbd06f374219"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.q_norm.weight",
+  "shard": "model-00112-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   256
+  ],
+  "start": 1935412664,
+  "end": 1935413175,
+  "bytes": 512,
+  "file": "tensors\\mtp.layers.0.self_attn.q_norm.weight.bin",
+  "sha256": "57957aa1e7c5a3ac628bff0ec5522ad55a39b8c0b8bd2d324ae640e3771617ef"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.q_proj.weight",
+  "shard": "model-00108-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   12288,
+   2560
+  ],
+  "start": 1835140064,
+  "end": 1898054623,
+  "bytes": 62914560,
+  "file": "tensors\\mtp.layers.0.self_attn.q_proj.weight.bin",
+  "sha256": "5220aef3d288f40759f7356af9ef453e5ac0256a38749a9bb803a4e9db58150d"
+ },
+ {
+  "name": "mtp.layers.0.self_attn.v_proj.weight",
+  "shard": "model-00108-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   512,
+   2560
+  ],
+  "start": 1898054624,
+  "end": 1900676063,
+  "bytes": 2621440,
+  "file": "tensors\\mtp.layers.0.self_attn.v_proj.weight.bin",
+  "sha256": "39cb12f5424e965fa71fb81db0ee230c701b7b1e0b72c36641fde7e0e41bff41"
+ },
+ {
+  "name": "mtp.pre_fc_norm_embedding.weight",
+  "shard": "model-00114-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   2560
+  ],
+  "start": 1832518392,
+  "end": 1832523511,
+  "bytes": 5120,
+  "file": "tensors\\mtp.pre_fc_norm_embedding.weight.bin",
+  "sha256": "04c4a570850e06f2d8913da8220d54d4c7f87db6eb6d45480b938e8ba41d6a86"
+ },
+ {
+  "name": "mtp.pre_fc_norm_hidden.weight",
+  "shard": "model-00118-of-00131.safetensors",
+  "dtype": "BF16",
+  "shape": [
+   10240
+  ],
+  "start": 1716599944,
+  "end": 1716620423,
+  "bytes": 20480,
+  "file": "tensors\\mtp.pre_fc_norm_hidden.weight.bin",
+  "sha256": "b933b44559879449b1baf2af8385c5c237347307e3fd452394870cb53e6eab6d"
+ }
+]

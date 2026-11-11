@@ -1,0 +1,650 @@
+{
+ "Q2_0": {
+  "hard": [
+   {
+    "task": "topo_sort",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 8.0,
+    "out_tokens": 372,
+    "tok_s": 60.0,
+    "finish": "stop"
+   },
+   {
+    "task": "wildcard_match",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 5.7,
+    "out_tokens": 336,
+    "tok_s": 69.9,
+    "finish": "stop"
+   },
+   {
+    "task": "min_window",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 3.7,
+    "out_tokens": 205,
+    "tok_s": 71.6,
+    "finish": "stop"
+   },
+   {
+    "task": "json_pointer",
+    "effort": "none",
+    "pass": false,
+    "err": "timeout",
+    "wall": 8.8,
+    "out_tokens": 460,
+    "tok_s": 68.2,
+    "finish": "stop"
+   },
+   {
+    "task": "nqueens",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 3.3,
+    "out_tokens": 188,
+    "tok_s": 77.1,
+    "finish": "stop"
+   },
+   {
+    "task": "semver_sort",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 14.6,
+    "out_tokens": 928,
+    "tok_s": 68.2,
+    "finish": "stop"
+   },
+   {
+    "task": "edit_distance",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 3.5,
+    "out_tokens": 203,
+    "tok_s": 72.4,
+    "finish": "stop"
+   },
+   {
+    "task": "gather_limited",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 3.9,
+    "out_tokens": 137,
+    "tok_s": 64.6,
+    "finish": "stop"
+   },
+   {
+    "task": "trie",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 6.1,
+    "out_tokens": 319,
+    "tok_s": 74.8,
+    "finish": "stop"
+   },
+   {
+    "task": "bowling",
+    "effort": "none",
+    "pass": false,
+    "err": "AssertionError",
+    "wall": 5.8,
+    "out_tokens": 340,
+    "tok_s": 69.0,
+    "finish": "stop"
+   },
+   {
+    "task": "palindrome",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 3.0,
+    "out_tokens": 158,
+    "tok_s": 70.4,
+    "finish": "stop"
+   },
+   {
+    "task": "normpath",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 6.7,
+    "out_tokens": 333,
+    "tok_s": 69.5,
+    "finish": "stop"
+   }
+  ],
+  "js": [
+   {
+    "task": "groupBy",
+    "pass": true,
+    "err": "",
+    "wall": 1.9
+   },
+   {
+    "task": "deepEqual",
+    "pass": false,
+    "err": "node:internal/assert/utils:77",
+    "wall": 5.1
+   },
+   {
+    "task": "parseQuery",
+    "pass": true,
+    "err": "",
+    "wall": 5.2
+   },
+   {
+    "task": "chunk",
+    "pass": true,
+    "err": "",
+    "wall": 2.9
+   }
+  ],
+  "sql": [
+   {
+    "q": "Names of customers who have no orders, sorted by name. One c",
+    "pass": true,
+    "got": [
+     [
+      "Dee"
+     ]
+    ],
+    "err": ""
+   },
+   {
+    "q": "The two customers with the highest total order amount: name ",
+    "pass": true,
+    "got": [
+     [
+      "Bob",
+      200.0
+     ],
+     [
+      "Ann",
+      120.0
+     ]
+    ],
+    "err": ""
+   },
+   {
+    "q": "For each customer who has orders: name and the amount of the",
+    "pass": true,
+    "got": [
+     [
+      "Ann",
+      70.0
+     ],
+     [
+      "Bob",
+      200.0
+     ],
+     [
+      "Cid",
+      20.0
+     ]
+    ],
+    "err": ""
+   }
+  ],
+  "regex": [
+   {
+    "what": "an IPv4 address in dotted decimal, each ",
+    "pass": false,
+    "pattern": "```\n(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}\n```"
+   },
+   {
+    "what": "a CSS hex color: '#' followed by exactly",
+    "pass": true,
+    "pattern": "#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})"
+   },
+   {
+    "what": "a date YYYY-MM-DD with month 01-12 and d",
+    "pass": false,
+    "pattern": "```\n\\d{4}-0[1-9]|1[0-2]-0[1-9]|[12]\\d|3[01]\n```"
+   }
+  ],
+  "agent": [],
+  "qa": [],
+  "longgen": []
+ },
+ "IQ2_XS": {
+  "hard": [
+   {
+    "task": "topo_sort",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 9.2,
+    "out_tokens": 361,
+    "tok_s": 54.8,
+    "finish": "stop"
+   },
+   {
+    "task": "wildcard_match",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 6.6,
+    "out_tokens": 392,
+    "tok_s": 69.2,
+    "finish": "stop"
+   },
+   {
+    "task": "min_window",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 4.0,
+    "out_tokens": 215,
+    "tok_s": 68.8,
+    "finish": "stop"
+   },
+   {
+    "task": "json_pointer",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 18.9,
+    "out_tokens": 974,
+    "tok_s": 58.9,
+    "finish": "stop"
+   },
+   {
+    "task": "nqueens",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 3.6,
+    "out_tokens": 175,
+    "tok_s": 66.5,
+    "finish": "stop"
+   },
+   {
+    "task": "semver_sort",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 7.4,
+    "out_tokens": 444,
+    "tok_s": 69.2,
+    "finish": "stop"
+   },
+   {
+    "task": "edit_distance",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 2.7,
+    "out_tokens": 146,
+    "tok_s": 71.9,
+    "finish": "stop"
+   },
+   {
+    "task": "gather_limited",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 4.9,
+    "out_tokens": 191,
+    "tok_s": 68.6,
+    "finish": "stop"
+   },
+   {
+    "task": "trie",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 6.7,
+    "out_tokens": 322,
+    "tok_s": 70.1,
+    "finish": "stop"
+   },
+   {
+    "task": "bowling",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 5.8,
+    "out_tokens": 323,
+    "tok_s": 65.8,
+    "finish": "stop"
+   },
+   {
+    "task": "palindrome",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 3.2,
+    "out_tokens": 173,
+    "tok_s": 69.3,
+    "finish": "stop"
+   },
+   {
+    "task": "normpath",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 19.4,
+    "out_tokens": 1013,
+    "tok_s": 58.8,
+    "finish": "stop"
+   }
+  ],
+  "js": [
+   {
+    "task": "groupBy",
+    "pass": true,
+    "err": "",
+    "wall": 2.2
+   },
+   {
+    "task": "deepEqual",
+    "pass": false,
+    "err": "node:internal/assert/utils:77",
+    "wall": 5.6
+   },
+   {
+    "task": "parseQuery",
+    "pass": true,
+    "err": "",
+    "wall": 5.2
+   },
+   {
+    "task": "chunk",
+    "pass": true,
+    "err": "",
+    "wall": 3.2
+   }
+  ],
+  "sql": [
+   {
+    "q": "Names of customers who have no orders, sorted by name. One c",
+    "pass": true,
+    "got": [
+     [
+      "Dee"
+     ]
+    ],
+    "err": ""
+   },
+   {
+    "q": "The two customers with the highest total order amount: name ",
+    "pass": true,
+    "got": [
+     [
+      "Bob",
+      200.0
+     ],
+     [
+      "Ann",
+      120.0
+     ]
+    ],
+    "err": ""
+   },
+   {
+    "q": "For each customer who has orders: name and the amount of the",
+    "pass": true,
+    "got": [
+     [
+      "Ann",
+      70.0
+     ],
+     [
+      "Bob",
+      200.0
+     ],
+     [
+      "Cid",
+      20.0
+     ]
+    ],
+    "err": ""
+   }
+  ],
+  "regex": [
+   {
+    "what": "an IPv4 address in dotted decimal, each ",
+    "pass": false,
+    "pattern": "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+   },
+   {
+    "what": "a CSS hex color: '#' followed by exactly",
+    "pass": true,
+    "pattern": "#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}"
+   },
+   {
+    "what": "a date YYYY-MM-DD with month 01-12 and d",
+    "pass": true,
+    "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+   }
+  ],
+  "agent": [],
+  "qa": [],
+  "longgen": []
+ },
+ "IQ3_XXS": {
+  "hard": [
+   {
+    "task": "topo_sort",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 9.8,
+    "out_tokens": 371,
+    "tok_s": 48.6,
+    "finish": "stop"
+   },
+   {
+    "task": "wildcard_match",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 7.0,
+    "out_tokens": 342,
+    "tok_s": 57.6,
+    "finish": "stop"
+   },
+   {
+    "task": "min_window",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 5.5,
+    "out_tokens": 282,
+    "tok_s": 62.2,
+    "finish": "stop"
+   },
+   {
+    "task": "json_pointer",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 22.9,
+    "out_tokens": 1080,
+    "tok_s": 52.9,
+    "finish": "stop"
+   },
+   {
+    "task": "nqueens",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 5.8,
+    "out_tokens": 274,
+    "tok_s": 57.5,
+    "finish": "stop"
+   },
+   {
+    "task": "semver_sort",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 22.7,
+    "out_tokens": 1182,
+    "tok_s": 54.9,
+    "finish": "stop"
+   },
+   {
+    "task": "edit_distance",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 4.4,
+    "out_tokens": 203,
+    "tok_s": 57.4,
+    "finish": "stop"
+   },
+   {
+    "task": "gather_limited",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 6.2,
+    "out_tokens": 213,
+    "tok_s": 52.9,
+    "finish": "stop"
+   },
+   {
+    "task": "trie",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 9.4,
+    "out_tokens": 445,
+    "tok_s": 61.3,
+    "finish": "stop"
+   },
+   {
+    "task": "bowling",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 7.3,
+    "out_tokens": 368,
+    "tok_s": 59.5,
+    "finish": "stop"
+   },
+   {
+    "task": "palindrome",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 4.8,
+    "out_tokens": 227,
+    "tok_s": 58.1,
+    "finish": "stop"
+   },
+   {
+    "task": "normpath",
+    "effort": "none",
+    "pass": true,
+    "err": "",
+    "wall": 11.0,
+    "out_tokens": 469,
+    "tok_s": 53.8,
+    "finish": "stop"
+   }
+  ],
+  "js": [
+   {
+    "task": "groupBy",
+    "pass": true,
+    "err": "",
+    "wall": 2.4
+   },
+   {
+    "task": "deepEqual",
+    "pass": true,
+    "err": "",
+    "wall": 9.0
+   },
+   {
+    "task": "parseQuery",
+    "pass": true,
+    "err": "",
+    "wall": 7.2
+   },
+   {
+    "task": "chunk",
+    "pass": true,
+    "err": "",
+    "wall": 3.5
+   }
+  ],
+  "sql": [
+   {
+    "q": "Names of customers who have no orders, sorted by name. One c",
+    "pass": true,
+    "got": [
+     [
+      "Dee"
+     ]
+    ],
+    "err": ""
+   },
+   {
+    "q": "The two customers with the highest total order amount: name ",
+    "pass": true,
+    "got": [
+     [
+      "Bob",
+      200.0
+     ],
+     [
+      "Ann",
+      120.0
+     ]
+    ],
+    "err": ""
+   },
+   {
+    "q": "For each customer who has orders: name and the amount of the",
+    "pass": true,
+    "got": [
+     [
+      "Ann",
+      70.0
+     ],
+     [
+      "Bob",
+      200.0
+     ],
+     [
+      "Cid",
+      20.0
+     ]
+    ],
+    "err": ""
+   }
+  ],
+  "regex": [
+   {
+    "what": "an IPv4 address in dotted decimal, each ",
+    "pass": true,
+    "pattern": "^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])$"
+   },
+   {
+    "what": "a CSS hex color: '#' followed by exactly",
+    "pass": true,
+    "pattern": "#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?"
+   },
+   {
+    "what": "a date YYYY-MM-DD with month 01-12 and d",
+    "pass": true,
+    "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+   }
+  ],
+  "agent": [],
+  "qa": [],
+  "longgen": []
+ }
+}

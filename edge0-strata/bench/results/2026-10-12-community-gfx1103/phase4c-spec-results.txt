@@ -1,0 +1,12 @@
+spec2-r1	15.70 tok/s
+spec3-r1	15.38 tok/s
+spec4-r1	13.98 tok/s
+spec6-r1	11.16 tok/s
+spec2-r2	15.96 tok/s
+spec3-r2	15.89 tok/s
+spec4-r2	14.18 tok/s
+spec6-r2	11.16 tok/s
+spec2-r3	15.78 tok/s
+spec3-r3	15.69 tok/s
+spec4-r3	14.21 tok/s
+spec6-r3	10.85 tok/s

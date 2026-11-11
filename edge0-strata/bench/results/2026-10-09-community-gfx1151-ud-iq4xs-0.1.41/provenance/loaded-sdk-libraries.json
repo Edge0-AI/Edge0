@@ -1,0 +1,11 @@
+[
+  {
+    "pid": 1939614,
+    "libraries": [
+      "/data/ssd/llm-build/strata-sdk-7.14.1/install/lib/libamdhip64.so.7.14.60850-0000000",
+      "/data/ssd/llm-build/strata-sdk-7.14.1/install/lib/libhipblaslt.so.1.4",
+      "/data/ssd/llm-build/strata-sdk-7.14.1/install/lib/libhsa-runtime64.so.1.21.0",
+      "/data/ssd/llm-build/strata-sdk-7.14.1/install/lib/librocblas.so.5.5"
+    ]
+  }
+]

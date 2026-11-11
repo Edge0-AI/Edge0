@@ -1,0 +1,61 @@
+{
+ "speed": [],
+ "longctx": [
+  {
+   "label": "512K config",
+   "target": 510288,
+   "found": 5,
+   "by_depth": {
+    "red": true,
+    "green": true,
+    "blue": true,
+    "amber": true,
+    "violet": true
+   },
+   "prompt_n": 512194,
+   "prompt_s": 1968.4,
+   "prompt_tok_s": 260.2,
+   "tok_s": 33.0,
+   "wall": 1972.8,
+   "error": null,
+   "answer": "```json\n{\n  \"red\": \"198025\",\n  \"green\": \"408113\",\n  \"blue\": \"747384\",\n  \"amber\": \"564131\",\n  \"violet\": \"380097\"\n}\n```"
+  }
+ ],
+ "vision": [],
+ "config": [
+  {
+   "asked_context": 524288,
+   "reserve_mib": 2048,
+   "vision_tokens": null,
+   "start_s": 31,
+   "max_context": 524288,
+   "setup_exit": 0,
+   "notes": [
+    "[ok] rope scaling: yarn, factor 2 (final context / trained 262144; override with --rope-scale)",
+    "[ok] context: 524288 tokens",
+    "[ok] KV streaming on: the context's KV cache lives in RAM (7.2 GB), more experts fit in VRAM",
+    "[!]  no hipBLASLt tuning table for gfx1030 with hipBLASLt 100500: the prompt's dense matrix products use plain hipBLAS (tools/hip/tune_hipblaslt makes a table: docs/AMD_HIP.md, Tuning table)"
+   ],
+   "expert_slots": 4435,
+   "cache_gib": 5.95,
+   "vram_free_mib": 1714
+  },
+  {
+   "asked_context": 131072,
+   "reserve_mib": 2048,
+   "vision_tokens": 1024,
+   "start_s": 30,
+   "max_context": 131072,
+   "setup_exit": 0,
+   "notes": [
+    "[ok] context: 131072 tokens",
+    "[ok] KV streaming on: the context's KV cache lives in RAM (1.8 GB), more experts fit in VRAM",
+    "[!]  no hipBLASLt tuning table for gfx1030 with hipBLASLt 100500: the prompt's dense matrix products use plain hipBLAS (tools/hip/tune_hipblaslt makes a table: docs/AMD_HIP.md, Tuning table)"
+   ],
+   "expert_slots": 4752,
+   "cache_gib": 6.37,
+   "vram_free_mib": 1398
+  }
+ ],
+ "suites": []
+}

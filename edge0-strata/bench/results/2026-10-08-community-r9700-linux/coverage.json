@@ -1,0 +1,9 @@
+{
+  "scope": "Recomputed archived evidence, not new GPU measurements or automatic performance acceptance",
+  "paired_formal_requests": 94,
+  "current_speed_formal_requests": 12,
+  "retained_records_including_warmups": 213,
+  "engine_logs_verified": 23,
+  "exported_artifact_hashes_verified": 29,
+  "all_workload_performance_acceptance": false
+}

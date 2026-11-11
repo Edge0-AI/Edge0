@@ -1,0 +1,461 @@
+[
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "Q2_0",
+  "tier": "1k",
+  "slots": 4517,
+  "h": 0.747,
+  "decode": 88.7,
+  "prefill": 389.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "Q2_0",
+  "tier": "1k",
+  "slots": 7179,
+  "h": 0.826,
+  "decode": 80.5,
+  "prefill": 341.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "Q2_0",
+  "tier": "1k",
+  "slots": 12503,
+  "h": 0.93,
+  "decode": 127.5,
+  "prefill": 355.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "Q2_0",
+  "tier": "4k",
+  "slots": 4464,
+  "h": 0.722,
+  "decode": 94.6,
+  "prefill": 539.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "Q2_0",
+  "tier": "4k",
+  "slots": 7126,
+  "h": 0.809,
+  "decode": 87.4,
+  "prefill": 472.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "Q2_0",
+  "tier": "4k",
+  "slots": 12450,
+  "h": 0.923,
+  "decode": 140.0,
+  "prefill": 491.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "Q2_0",
+  "tier": "32k",
+  "slots": 4174,
+  "h": 0.674,
+  "decode": 87.5,
+  "prefill": 571.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "Q2_0",
+  "tier": "32k",
+  "slots": 6836,
+  "h": 0.774,
+  "decode": 81.3,
+  "prefill": 501.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "Q2_0",
+  "tier": "32k",
+  "slots": 12160,
+  "h": 0.907,
+  "decode": 130.0,
+  "prefill": 521.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "Q2_0",
+  "tier": "64k",
+  "slots": 3809,
+  "h": 0.625,
+  "decode": 76.4,
+  "prefill": 561.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "Q2_0",
+  "tier": "64k",
+  "slots": 6471,
+  "h": 0.74,
+  "decode": 71.6,
+  "prefill": 492.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "Q2_0",
+  "tier": "64k",
+  "slots": 11795,
+  "h": 0.892,
+  "decode": 115.3,
+  "prefill": 512.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "Q2_0",
+  "tier": "128k",
+  "slots": 3079,
+  "h": 0.571,
+  "decode": 65.1,
+  "prefill": 543.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "Q2_0",
+  "tier": "128k",
+  "slots": 5741,
+  "h": 0.702,
+  "decode": 61.8,
+  "prefill": 476.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "Q2_0",
+  "tier": "128k",
+  "slots": 11065,
+  "h": 0.873,
+  "decode": 100.0,
+  "prefill": 495.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "Q2_0",
+  "tier": "262k",
+  "slots": 1588,
+  "h": 0.526,
+  "decode": 56.3,
+  "prefill": 496.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "Q2_0",
+  "tier": "262k",
+  "slots": 4250,
+  "h": 0.668,
+  "decode": 52.9,
+  "prefill": 435.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "Q2_0",
+  "tier": "262k",
+  "slots": 9574,
+  "h": 0.849,
+  "decode": 84.6,
+  "prefill": 453.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ2_XS",
+  "tier": "1k",
+  "slots": 4621,
+  "h": 0.799,
+  "decode": 82.0,
+  "prefill": 332.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ2_XS",
+  "tier": "1k",
+  "slots": 7176,
+  "h": 0.86,
+  "decode": 79.6,
+  "prefill": 291.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ2_XS",
+  "tier": "1k",
+  "slots": 12287,
+  "h": 0.941,
+  "decode": 131.1,
+  "prefill": 303.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ2_XS",
+  "tier": "4k",
+  "slots": 4568,
+  "h": 0.785,
+  "decode": 78.1,
+  "prefill": 463.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ2_XS",
+  "tier": "4k",
+  "slots": 7123,
+  "h": 0.85,
+  "decode": 76.9,
+  "prefill": 406.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ2_XS",
+  "tier": "4k",
+  "slots": 12234,
+  "h": 0.937,
+  "decode": 127.7,
+  "prefill": 422.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ2_XS",
+  "tier": "32k",
+  "slots": 4289,
+  "h": 0.783,
+  "decode": 65.3,
+  "prefill": 495.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ2_XS",
+  "tier": "32k",
+  "slots": 6844,
+  "h": 0.848,
+  "decode": 62.9,
+  "prefill": 434.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ2_XS",
+  "tier": "32k",
+  "slots": 11955,
+  "h": 0.935,
+  "decode": 102.9,
+  "prefill": 451.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ2_XS",
+  "tier": "64k",
+  "slots": 3936,
+  "h": 0.759,
+  "decode": 63.7,
+  "prefill": 486.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ2_XS",
+  "tier": "64k",
+  "slots": 6491,
+  "h": 0.83,
+  "decode": 62.0,
+  "prefill": 426.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ2_XS",
+  "tier": "64k",
+  "slots": 11602,
+  "h": 0.927,
+  "decode": 102.2,
+  "prefill": 444.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ2_XS",
+  "tier": "128k",
+  "slots": 3229,
+  "h": 0.695,
+  "decode": 52.0,
+  "prefill": 472.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ2_XS",
+  "tier": "128k",
+  "slots": 5784,
+  "h": 0.784,
+  "decode": 51.3,
+  "prefill": 413.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ2_XS",
+  "tier": "128k",
+  "slots": 10895,
+  "h": 0.905,
+  "decode": 85.0,
+  "prefill": 430.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ2_XS",
+  "tier": "262k",
+  "slots": 1796,
+  "h": 0.627,
+  "decode": 48.1,
+  "prefill": 437.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ2_XS",
+  "tier": "262k",
+  "slots": 4351,
+  "h": 0.735,
+  "decode": 47.3,
+  "prefill": 383.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ2_XS",
+  "tier": "262k",
+  "slots": 9462,
+  "h": 0.876,
+  "decode": 77.5,
+  "prefill": 398.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ3_XXS",
+  "tier": "1k",
+  "slots": 3556,
+  "h": 0.638,
+  "decode": 64.6,
+  "prefill": 285.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ3_XXS",
+  "tier": "1k",
+  "slots": 5658,
+  "h": 0.728,
+  "decode": 65.8,
+  "prefill": 249.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ3_XXS",
+  "tier": "1k",
+  "slots": 9864,
+  "h": 0.858,
+  "decode": 106.5,
+  "prefill": 260.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ3_XXS",
+  "tier": "4k",
+  "slots": 3511,
+  "h": 0.712,
+  "decode": 65.6,
+  "prefill": 410.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ3_XXS",
+  "tier": "4k",
+  "slots": 5613,
+  "h": 0.784,
+  "decode": 64.7,
+  "prefill": 359.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ3_XXS",
+  "tier": "4k",
+  "slots": 9819,
+  "h": 0.887,
+  "decode": 103.0,
+  "prefill": 374.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ3_XXS",
+  "tier": "32k",
+  "slots": 3279,
+  "h": 0.696,
+  "decode": 57.3,
+  "prefill": 435.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ3_XXS",
+  "tier": "32k",
+  "slots": 5381,
+  "h": 0.772,
+  "decode": 56.3,
+  "prefill": 381.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ3_XXS",
+  "tier": "32k",
+  "slots": 9587,
+  "h": 0.879,
+  "decode": 89.0,
+  "prefill": 396.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ3_XXS",
+  "tier": "64k",
+  "slots": 2990,
+  "h": 0.677,
+  "decode": 54.4,
+  "prefill": 427.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ3_XXS",
+  "tier": "64k",
+  "slots": 5092,
+  "h": 0.757,
+  "decode": 53.7,
+  "prefill": 374.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ3_XXS",
+  "tier": "64k",
+  "slots": 9298,
+  "h": 0.87,
+  "decode": 85.1,
+  "prefill": 390.0
+ },
+ {
+  "card": "RTX 5070 12GB (measured)",
+  "model": "IQ3_XXS",
+  "tier": "128k",
+  "slots": 2407,
+  "h": 0.57,
+  "decode": 44.8,
+  "prefill": 414.0
+ },
+ {
+  "card": "RTX 5060 Ti 16GB",
+  "model": "IQ3_XXS",
+  "tier": "128k",
+  "slots": 4509,
+  "h": 0.675,
+  "decode": 44.6,
+  "prefill": 363.0
+ },
+ {
+  "card": "RTX 3090 24GB",
+  "model": "IQ3_XXS",
+  "tier": "128k",
+  "slots": 8715,
+  "h": 0.824,
+  "decode": 70.8,
+  "prefill": 378.0
+ }
+]

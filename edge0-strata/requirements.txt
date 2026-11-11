@@ -1,0 +1,23 @@
+# Runtime Python packages setup.py installs into .venv, pinned so a checkout installs the same ones on any day (#214).
+# CMake and Ninja are in requirements-build.txt and are installed only if a local build needs them.
+# setup.py's pip step reads this file; an install from before it keeps the packages it has.
+# Python 3.10+ (numpy's newest releases need a newer Python: one line per range).
+numpy==2.5.3; python_version >= "3.12"
+numpy==2.4.6; python_version == "3.11"
+numpy==2.2.6; python_version < "3.11"
+jinja2==3.1.6
+regex==2026.9.10
+pyyaml==6.0.3
+tqdm==4.70.1
+requests==2.34.2
+pillow==12.3.0
+psutil==7.2.2
+
+# their dependencies
+markupsafe==3.0.3
+certifi==2026.10.19
+truststore==0.10.5; python_version >= "3.10"
+charset-normalizer==3.5.1
+idna==3.20
+urllib3==2.8.0
+colorama==0.4.6; sys_platform == "win32"

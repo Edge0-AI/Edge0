@@ -1,0 +1,4 @@
+﻿index, name, memory.total [MiB], driver_version
+0, NVIDIA GeForce RTX 5090, 32607 MiB, 610.88
+1, NVIDIA RTX PRO 4000 Blackwell, 24467 MiB, 610.88
+CPU: AMD Ryzen 7 9800X3D 8-Core (16 threads), RAM: 128 GB, OS: Windows 11 Pro

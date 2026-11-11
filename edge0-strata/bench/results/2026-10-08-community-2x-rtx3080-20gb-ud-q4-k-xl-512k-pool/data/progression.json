@@ -1,0 +1,164 @@
+{
+  "source": "lm-server /root/tune/summary.jsonl (copy: codebox ~/saved-2026-10-08/summary.jsonl), rows by tag; p25k/p51k/p104k are tok/s of our own read script (/root/read96.py), n values each; solo and c2 are /opt/strata-bmtp-tools/ab.py medians (n = number of values)",
+  "rows": {
+    "base": {
+      "solo": 76.7,
+      "solo_n": 16,
+      "c2": 85.9,
+      "c2_n": 12,
+      "p25k": [
+        1413,
+        1448
+      ],
+      "p51k": [
+        1731,
+        1715
+      ],
+      "p104k": [
+        1939,
+        1881,
+        1928
+      ],
+      "power_limit": [
+        "220.00"
+      ]
+    },
+    "base2": {
+      "solo": 85.0,
+      "solo_n": 16,
+      "c2": 92.4,
+      "c2_n": 12,
+      "p25k": [
+        1451,
+        1465
+      ],
+      "p51k": [
+        1754,
+        1711
+      ],
+      "p104k": [
+        1963,
+        1952,
+        1972
+      ],
+      "power_limit": [
+        "220.00"
+      ]
+    },
+    "w2direct": {
+      "solo": 85.8,
+      "solo_n": 16,
+      "c2": 92.7,
+      "c2_n": 12,
+      "p25k": [
+        1458,
+        1468
+      ],
+      "p51k": [
+        1760,
+        1720
+      ],
+      "p104k": [
+        1952,
+        1941,
+        1965
+      ],
+      "power_limit": [
+        "220.00"
+      ]
+    },
+    "pauto16": {
+      "solo": 77.4,
+      "solo_n": 16,
+      "c2": 84.3,
+      "c2_n": 12,
+      "p25k": [
+        1559,
+        1611
+      ],
+      "p51k": [
+        1962,
+        1884
+      ],
+      "p104k": [
+        2356,
+        2335,
+        2361
+      ],
+      "power_limit": [
+        "220.00"
+      ]
+    },
+    "pr384": {
+      "solo": 76.4,
+      "solo_n": 24,
+      "c2": 79.8,
+      "c2_n": 16,
+      "p25k": [
+        1850,
+        1878
+      ],
+      "p51k": [
+        2320,
+        2228
+      ],
+      "p104k": [
+        2716,
+        2726,
+        2746
+      ],
+      "power_limit": [
+        "220.00"
+      ]
+    },
+    "pr384eq": {
+      "solo": 73.9,
+      "solo_n": 24,
+      "c2": 79.7,
+      "c2_n": 16,
+      "p25k": [
+        2154,
+        2221
+      ],
+      "p51k": [
+        2626,
+        2569
+      ],
+      "p104k": [
+        2857,
+        2865,
+        2872
+      ],
+      "power_limit": [
+        "220.00"
+      ]
+    },
+    "pr384eq32": {
+      "p25k": [
+        2141,
+        2217
+      ],
+      "p51k": [
+        2715,
+        2648
+      ],
+      "p104k": [
+        3033,
+        3002,
+        3035
+      ],
+      "power_limit": [
+        "220.00"
+      ]
+    }
+  },
+  "tags": {
+    "base": "start of day: merged upstream build, --prefill auto (8192 chunks)",
+    "base2": "same configuration as base, a later restart",
+    "w2direct": "the pre-merge binary (strata-w2) with --ple-io direct",
+    "pauto16": "--prefill auto:16384 (engine log: 'prompt chunk auto: 16384 tokens, a 96-slot ring')",
+    "pr384": "--prefill auto:16384 with STRATA_PREFILL_RING=384 (log: 'a 384-slot ring')",
+    "pr384eq": "the same plus STRATA_PREFILL_EQUAL=1",
+    "pr384eq32": "the same as pr384eq with --prefill auto:32768"
+  }
+}

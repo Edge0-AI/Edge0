@@ -1,0 +1,50 @@
+{
+ "exe": "/opt/strata/engine/strata",
+ "args": [
+  "--pack",
+  "/data/packs/coder-iq1_m",
+  "--native",
+  "/data/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/data/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00002-of-00002.gguf",
+  "--expert-profile",
+  "/opt/strata/data/expert-profile-coder.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "/data/mtp/rt",
+  "--max-context",
+  "65536",
+  "--kv",
+  "int8",
+  "--vision",
+  "--vram-reserve-mib",
+  "700"
+ ],
+ "cwd": "/opt/strata",
+ "tokenizer": "/data/packs/coder-iq1_m/tokenizer",
+ "model_name": "qwen3.8-flash-next-coder-iq1_m",
+ "log": "/opt/strata/strata-coder-iq1_m.log",
+ "lib_dirs": [
+  "/usr/local/cuda/bin",
+  "/usr/local/cuda/lib64"
+ ],
+ "port": 8080,
+ "gpu": 0,
+ "gpus_asked": true,
+ "host": "0.0.0.0",
+ "vision": {
+  "exe": "/opt/strata/engine/strata-vision",
+  "mmproj": "/data/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+  "model": "/data/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf",
+  "gpu": false,
+  "max_tokens": 300,
+  "threads": 16
+ }
+}

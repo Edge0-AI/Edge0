@@ -1,0 +1,77 @@
+[
+  {
+    "source": "batches/pilot-1m/checkpoint.json",
+    "source_record_sha256": "c0c458c0ffa465b835f699a68051e99fb1b425a916e1ee359bd8cac0f0ebf514",
+    "status": "failed",
+    "error": "Browser GPU process misidentified by harness; stopped before lease/model start. Process arguments omitted.",
+    "hermes_restored": false
+  },
+  {
+    "source": "batches/pilot-1m-v2/checkpoint.json",
+    "source_record_sha256": "75dc810436c6e93235ae34f048eeae6f58331cbd3aa1c1e2bd255d9f3b218f4d",
+    "status": "failed",
+    "error": "Browser GPU process misidentified by harness; stopped before lease/model start. Process arguments omitted.",
+    "hermes_restored": false
+  },
+  {
+    "source": "batches/pilot-1m-v3/checkpoint.json",
+    "source_record_sha256": "b0cc11d1f98601366362e9dfec7e617431dac46f93f3078a355833d5f48ddbbe",
+    "status": "failed",
+    "error": "Strata startup exited with 1",
+    "hermes_restored": true
+  },
+  {
+    "source": "batches/screen-1m-r1/checkpoint.json",
+    "source_record_sha256": "624b8b1c88784f9730dfe37bff320108b3b64c41334329680a58368f76a205e4",
+    "status": "failed",
+    "error": "RAM guard: swap growth exceeded configured maximum",
+    "hermes_restored": true
+  },
+  {
+    "source": "batches/screen-1m-r2/checkpoint.json",
+    "source_record_sha256": "51375c18e129558868405376f101f9bc577a2a2bea9af247b3fe8cae7d2da84c",
+    "status": "failed",
+    "error": "SSE error or invalid chunk: {'error': {'type': 'server_error', 'message': 'the engine stopped unexpectedly (exit code -15); the next request restarts it'}}",
+    "hermes_restored": true
+  },
+  {
+    "source": "disk-batches/learned-1m/checkpoint.json",
+    "source_record_sha256": "d7fe77ce76bd4c9a896842c5f5b151bb830d9a7e7e72c04f4aa680f1ca376316",
+    "status": "failed",
+    "error": "SSE error or invalid chunk: {'error': {'type': 'server_error', 'message': 'the engine stopped unexpectedly (exit code -15); the next request restarts it'}}",
+    "hermes_restored": true
+  },
+  {
+    "source": "live-batches/live-supervisor-v1/checkpoint.json",
+    "source_record_sha256": "f7160d1acf4ee98940b675171db5d524816c56346c8d9a366e4aecd065fa9dc3",
+    "status": "failed",
+    "phase": "handoff-2-worker",
+    "error": "Second handoff fell back to synchronous SAVE; async path is not qualified",
+    "hermes_restored": true,
+    "watchdog_errors": [],
+    "cleanup_errors": []
+  },
+  {
+    "source": "live-batches/live-supervisor-v2/checkpoint.json",
+    "source_record_sha256": "33f98a9bc12e6ed7d044c3fba3ea937d5a2f677bcdaf6b9bac756f806e9a7607",
+    "status": "failed",
+    "phase": "handoff-2-worker",
+    "error": "Second handoff fell back to synchronous SAVE; async path is not qualified",
+    "hermes_restored": true,
+    "watchdog_errors": [],
+    "cleanup_errors": []
+  },
+  {
+    "source": "write-overlap-batches/write-pilot-1m/checkpoint.json",
+    "source_record_sha256": "7058e2e1a1a1ec588170f4de6c13b62e829a49d331abde93e36310f621f1c28b",
+    "status": "failed",
+    "error": "Harness compared a backend display label with an enum name after NInfer was already ready; worker identity check corrected.",
+    "hermes_restored": true
+  },
+  {
+    "source": "write-overlap-batches/write-pilot-1m-v2/checkpoint.json",
+    "source_record_sha256": "f796c55ecafcc8488739cc656ab7377cc01fbd771f6906a63f1669a6d9653147",
+    "status": "completed_with_skipped_arms",
+    "hermes_restored": true
+  }
+]

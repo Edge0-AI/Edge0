@@ -1,0 +1,51 @@
+{
+ "engines": [
+  {
+   "folder": "0.1.46-windows-x86_64-cuda-cuda12",
+   "longest": [
+    "engine-component.json",
+    "cublasLt64_12.dll",
+    "strata-vision.exe"
+   ],
+   "files": 8
+  },
+  {
+   "folder": "0.1.46-windows-x86_64-cuda-cuda13",
+   "longest": [
+    "engine-component.json",
+    "cublasLt64_13.dll",
+    "strata-vision.exe"
+   ],
+   "files": 7
+  },
+  {
+   "folder": "0.1.46-windows-x86_64-hip-rdna3",
+   "longest": [
+    "rocm/bin/hipblaslt/library/gfx1100/TensileLibrary_BB_BB_HA_Bias_Aux_SAV_UA_Type_BB_HPA_Contraction_l_Ailk_Bjlk_Cijk_Dijk_gfx1100.dat.zlib",
+    "rocm/bin/hipblaslt/library/gfx1100/TensileLibrary_BB_BB_HA_Bias_Aux_SAV_UA_Type_BB_HPA_Contraction_l_Ailk_Bljk_Cijk_Dijk_gfx1100.dat.zlib",
+    "rocm/bin/hipblaslt/library/gfx1100/TensileLibrary_BB_BB_HA_Bias_Aux_SAV_UA_Type_BB_HPA_Contraction_l_Alik_Bjlk_Cijk_Dijk_gfx1100.dat.zlib"
+   ],
+   "files": 1050
+  },
+  {
+   "folder": "0.1.46-windows-x86_64-hip-rx9070",
+   "longest": [
+    "rocm/bin/hipblaslt/library/gfx1200/TensileLibrary_B8F8_B8B8F8_HA_Bias_SAB_SCD_SAV_UA_Type_B8B8_HPA_Contraction_l_Ailk_Bjlk_Cijk_Dijk_gfx1200.dat.zlib",
+    "rocm/bin/hipblaslt/library/gfx1200/TensileLibrary_B8F8_B8B8F8_HA_Bias_SAB_SCD_SAV_UA_Type_B8B8_HPA_Contraction_l_Ailk_Bljk_Cijk_Dijk_gfx1200.dat.zlib",
+    "rocm/bin/hipblaslt/library/gfx1200/TensileLibrary_B8F8_B8B8F8_HA_Bias_SAB_SCD_SAV_UA_Type_B8B8_HPA_Contraction_l_Alik_Bjlk_Cijk_Dijk_gfx1200.dat.zlib"
+   ],
+   "files": 831
+  }
+ ],
+ "control": [
+  {
+   "version": "0.1.46",
+   "longest": [
+    "python/Lib/site-packages/numpy-2.5.3.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
+    "python/Lib/site-packages/numpy-2.5.3.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+    "python/Lib/site-packages/numpy-2.5.3.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt"
+   ],
+   "files": 5679
+  }
+ ]
+}

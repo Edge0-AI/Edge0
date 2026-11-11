@@ -1,0 +1,8 @@
+[long run0] prompt_n=2129 cache_n=0 prompt 436.4 tok/s | decode 104 tok 38.8 tok/s | drafts 56/87 | wall 7.6s | finish stop
+[long run1] prompt_n=7 cache_n=2122 prompt 79.3 tok/s | decode 104 tok 40.0 tok/s | drafts 56/87 | wall 2.7s | finish stop
+This code serves as a comprehensive test harness for a batch inference engine, specifically designed to verify that token generation remains consistent when multiple prompts are processed concurrently in separate slots. It compares the output tokens from parallel execution against those from sequential "solo" runs to ensure that interleaving, checkpointing, and resource sharing (such as expert cache borrowing) do not introduce drift or errors in the model's responses.
+
+```python
+def reverse_string(s: str) -> str:
+    return s[::-1]
+```

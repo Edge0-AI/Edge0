@@ -1,0 +1,99 @@
+{
+ "label": "image-run1",
+ "attempt": 1,
+ "epoch_start": 1790925863.251174,
+ "image": "image-run1.png",
+ "image_px": [
+  768,
+  512
+ ],
+ "expected": "KAZ-14; 2; 4",
+ "answer": "KAZ-14; 2; 4",
+ "correct": true,
+ "request_sha256": "40d2c0e48875d8832fcbfd1166bfa2c49a97790344b08d7d8ef1a700a0db68f1",
+ "client_ttft_s": 5.020737817045301,
+ "client_total_s": 5.280843218788505,
+ "finish_reason": "stop",
+ "usage": {
+  "prompt_tokens": 441,
+  "completion_tokens": 12,
+  "total_tokens": 453,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 441,
+  "prompt_ms": 3438.8,
+  "prompt_per_token_ms": 7.798,
+  "prompt_per_second": 128.2,
+  "predicted_n": 12,
+  "predicted_ms": 284.7,
+  "predicted_per_token_ms": 23.725,
+  "predicted_per_second": 42.1,
+  "draft_n": 9,
+  "draft_n_accepted": 9
+ },
+ "keepalives": 2,
+ "text": "KAZ-14; 2; 4",
+ "engine": {
+  "prompt_tokens": 441,
+  "reused": 0,
+  "read": 441,
+  "prompt_ms_log": 3439,
+  "prompt_tok_s_log": 128.2,
+  "generated": 12,
+  "decode_ms_log": 285,
+  "decode_tok_s_log": 42.2,
+  "drafts_accepted": 9,
+  "drafts_proposed": 9,
+  "checkpoints": 1,
+  "cancelled": false,
+  "line": "strata serve: prompt 441 tokens = 0 reused + 441 read in 3439 ms (128.2 tok/s), 12 generated in 285 ms (42.2 tok/s), drafts accepted 9 of 9, 1 checkpoints",
+  "hit_rate_pct": 27.6,
+  "hit_line": "strata serve: decode expert cache hit rate: 27.6% (1462 hits / 5302 lookups)",
+  "kv_vram_pct": 94.61,
+  "kv_block_reads": 25392,
+  "kv_ram_mib": 5.5,
+  "kv_line": "strata serve: KV streaming: 94.61% of 25392 block reads hit VRAM, 5.5 MiB read from RAM"
+ },
+ "metrics_record": {
+  "projection": null,
+  "time": 1790925864.7982528,
+  "duration_s": 3.7,
+  "finish": "stop",
+  "prompt_tokens": 441,
+  "reused": 0,
+  "output_tokens": 12,
+  "engine_generated": 12,
+  "prompt_ms": 3438.8,
+  "decode_ms": 284.7,
+  "decode_tok_s": 42.1,
+  "hit_rate": 0.276,
+  "ram_blobs": 0,
+  "file_blobs": 0,
+  "file_mb": 0.0
+ },
+ "approx_encode_s": 1.5817378170453011,
+ "status_before": {
+  "busy": false,
+  "queued": 0,
+  "phase": "answering",
+  "prompt_tokens": 122149,
+  "generated": 8,
+  "max_tokens": 40
+ },
+ "totals_before": 21,
+ "totals_after": 22,
+ "foreign_overlap": false,
+ "engine_log": [
+  "strata serve: prompt 441 tokens = 0 reused + 441 read in 3439 ms (128.2 tok/s), 12 generated in 285 ms (42.2 tok/s), drafts accepted 9 of 9, 1 checkpoints",
+  "strata serve: decode expert cache hit rate: 27.6% (1462 hits / 5302 lookups)",
+  "strata serve: KV streaming: 94.61% of 25392 block reads hit VRAM, 5.5 MiB read from RAM"
+ ],
+ "server_log": [
+  "[strata] reading the prompt: 434 of 441 tokens, 3 s so far",
+  "[strata] done: 12 tokens in 4 s (46.3 tok/s) (stop, cancel=False), expert cache 27.6% hit"
+ ]
+}

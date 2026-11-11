@@ -1,0 +1,239 @@
+{
+ "_": "DeepSeek-V4.1-Flash-1017 at 3.5 bits for maya-ds4 (maya.py's DeepSeek setup): every file pinned to a revision, with its size and sha256. The EXL3 quant's repo has no Engram tables: they come from DeepSeek's base repo (they changed in the 1017 release - the older V4.1's must not be used). The repo's assets/ and encoding/ folders (its README's picture, DeepSeek's prompt-format reference) are not needed and not listed.",
+ "name": "DeepSeek-V4.1-Flash-1017",
+ "repo": "LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-3.5bpw",
+ "revision": "04a492fc3b4d25ddbab8f2d2f07f235ec77c9010",
+ "license": "MIT",
+ "files": {
+  ".gitattributes": [
+   1697,
+   "5c43150d6197107ff8d2b87f76f9f88b7a1a6ab1af968d7828ab33a62e9d06f4"
+  ],
+  "LICENSE": [
+   1084,
+   "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040"
+  ],
+  "README.md": [
+   12779,
+   "3dfe8dd8e4861a3e2a95d72962d2c323fef9d663e829f1c1c134893ff23964d4"
+  ],
+  "chat_template.jinja": [
+   34813,
+   "2ed8bc3372c9c68577f232229e78ebfe37a53ae7964694d845533e485ed738e8"
+  ],
+  "config.json": [
+   3628,
+   "2cbc57cd18428f62aba490870ceda44d2b0639649c05754d6040a5be8e976cf4"
+  ],
+  "exl3_k_map.json": [
+   1323,
+   "efc15305bfe0cc0a728d89943c542bd885fc6cbdc8863f892ae9a8330e5c172c"
+  ],
+  "model-00001-of-00044.safetensors": [
+   1323827293,
+   "ba5ccb4d39882d08800e856150bce42b23584f3d9943520ae4cff5647d5a3045"
+  ],
+  "model-00002-of-00044.safetensors": [
+   7060206910,
+   "012504ba47677b9bb8727bb89cb8c6327a066ef10d2ade179f7ffd5c8151ff84"
+  ],
+  "model-00003-of-00044.safetensors": [
+   6942014187,
+   "9f9d5228106bd5c8064d672f5ae24cce6005be8c2cf33592ef0478655c9e9b80"
+  ],
+  "model-00004-of-00044.safetensors": [
+   6950309596,
+   "8cae1bf802a2e10c59e1f3e057b58f183a0f64e6bf4a1c76107168a9cbb9d532"
+  ],
+  "model-00005-of-00044.safetensors": [
+   6942014187,
+   "b583b45c6a5848dc33a7219d2c34149663779059b11b1bba5a9e76951b333af7"
+  ],
+  "model-00006-of-00044.safetensors": [
+   6942014187,
+   "c4d2e5290f5253262adb8b83b91f37406f24d0a1ce14c7c6844734aa2cbe064a"
+  ],
+  "model-00007-of-00044.safetensors": [
+   6942014187,
+   "65a639c07a74c59da458298adc99bca87036f8316f9c09ac409e2c9b68d414ba"
+  ],
+  "model-00008-of-00044.safetensors": [
+   6942014187,
+   "90f9448977e45f2db5859ca7c9d33ea34a6cdaffc4c28c0d8bb030938db4d614"
+  ],
+  "model-00009-of-00044.safetensors": [
+   6942014187,
+   "06cd3e7672a90c4edfb9ff98b77d11261e39a21558af314f2b235ea5b90b7518"
+  ],
+  "model-00010-of-00044.safetensors": [
+   6950309596,
+   "286c1c0597f29d154391d9f8252cabc560a89be68b50c1f227d0b078200336b2"
+  ],
+  "model-00011-of-00044.safetensors": [
+   6942014187,
+   "b644d168923b319816185fc99b77478db7698067e5e8c67fae619f56a6b18405"
+  ],
+  "model-00012-of-00044.safetensors": [
+   5243325245,
+   "e8e278e5d6a44c81d6fe16c9231aa2cb3823cb8d26e55bdb491345f4e0797f28"
+  ],
+  "model-00013-of-00044.safetensors": [
+   5243325245,
+   "39e25072f8f8de381b3176cb56eb0ec7caa8ab70e85956b57d7f9452291cd386"
+  ],
+  "model-00014-of-00044.safetensors": [
+   5243325245,
+   "3e6e26fad54c7cbc90fbda7209a2f389ff73e58160fb60326bcaa5635e52d811"
+  ],
+  "model-00015-of-00044.safetensors": [
+   5361517974,
+   "e34e397fb634b06a8558643d6b621a2b560b68c0766aac9c0252451ea3daffe2"
+  ],
+  "model-00016-of-00044.safetensors": [
+   5251620673,
+   "db9782ab6346e2dbcf259b79289e6dbc6b4fe183c4936bc1c1c892e2604fd6c7"
+  ],
+  "model-00017-of-00044.safetensors": [
+   5243325245,
+   "711c747176c8494d0cef290e98de5026658bd79a3ef51ed4d43ce403acbfa481"
+  ],
+  "model-00018-of-00044.safetensors": [
+   5243325245,
+   "111ce8d8496d6265098337f5b5ff79e71a31ba340eb2b682d0042dbca4dc954a"
+  ],
+  "model-00019-of-00044.safetensors": [
+   5243325245,
+   "6feedcd839b5593b275761107593ad9f9a0244098dffed66ae6f88ead8844c0d"
+  ],
+  "model-00020-of-00044.safetensors": [
+   5243325245,
+   "bf22fe666d473899b7d6f7bfa1709ad3cffe93f69d39a3da272eac854b39a882"
+  ],
+  "model-00021-of-00044.safetensors": [
+   5243325245,
+   "afef0df9f451e9392cbf4704c9f8ee9183695e543b669d811b6eca88c21a7fe2"
+  ],
+  "model-00022-of-00044.safetensors": [
+   5249642888,
+   "987c51d505f4b49442481ad8596256d846067e8c1fa8edb6c90bd6fc3f85d454"
+  ],
+  "model-00023-of-00044.safetensors": [
+   5243325245,
+   "38cfb33a3a47483a1b1f7b3eebd22ffc9087437d45c8561062a72a8798fa48ef"
+  ],
+  "model-00024-of-00044.safetensors": [
+   5243325245,
+   "aec09849c4916f7254129324bb6aa73eb3685448709534f66fbb31009e0edaf1"
+  ],
+  "model-00025-of-00044.safetensors": [
+   5243325245,
+   "6e0730da79761933690a243e2dd7dd8ecada43c95d9ec96fcc3a520b9f3194a2"
+  ],
+  "model-00026-of-00044.safetensors": [
+   5247596381,
+   "d9a15b99de6190d10099c62383e283c32ef42fdab8ec37ebf355448669eeb027"
+  ],
+  "model-00027-of-00044.safetensors": [
+   5243325245,
+   "c673fa72f6aca977106267afb63f218f241f49a57eb833311ec8affe16009560"
+  ],
+  "model-00028-of-00044.safetensors": [
+   5243325245,
+   "e54fe28e42bd8eec92fa07ac0e4be0850149b20b74e15d7af37d5314a9842deb"
+  ],
+  "model-00029-of-00044.safetensors": [
+   5243325245,
+   "f69616591acdc45b7760db5ef9fab39dfb66558a908778aab230bd8c0d9faa3d"
+  ],
+  "model-00030-of-00044.safetensors": [
+   5247596381,
+   "ac4862535de5828c521e7e5e13906f993395940693cb66fbd323ce9360cd1917"
+  ],
+  "model-00031-of-00044.safetensors": [
+   5243325245,
+   "0beae804fe362965413ba7d26c9c902cf44dd77824838239878332c95170dc7b"
+  ],
+  "model-00032-of-00044.safetensors": [
+   6942018869,
+   "48df9384d595f94b0093b9182b63b4c48216c3c1e486f7aa43a894e93521785d"
+  ],
+  "model-00033-of-00044.safetensors": [
+   6942018869,
+   "a2cd7f6f24043d39ad247a24dd642ce78cb75a2f332fd17779aa012817354c28"
+  ],
+  "model-00034-of-00044.safetensors": [
+   6946290005,
+   "e2f1620bc902230c92361b8689d70f7a72e88283da24a8202561782390c91f70"
+  ],
+  "model-00035-of-00044.safetensors": [
+   6942018869,
+   "c9fc5076793da76174d3d92ec780fedc73cd2f31a79d26a3ef6f26f8f23c0f8a"
+  ],
+  "model-00036-of-00044.safetensors": [
+   6942018869,
+   "905176e9573296c98eb4636c8c1c1559291ac6bdf04c7be5ec97f11eddd30a52"
+  ],
+  "model-00037-of-00044.safetensors": [
+   6942018869,
+   "3f146f50cd59ce9d656f729260d56e5fce4df9e3fcb625102764800abb74ed0e"
+  ],
+  "model-00038-of-00044.safetensors": [
+   6946290005,
+   "eb83d2598c932d5f367606615a9a92e9b45f958e928850eee45ce53bb01db05a"
+  ],
+  "model-00039-of-00044.safetensors": [
+   6942018869,
+   "be69239f0303332cabbf3e0d390d32a45e165ebb8bc514aa186896e792bd17bc"
+  ],
+  "model-00040-of-00044.safetensors": [
+   6942018869,
+   "4ad6d074dcdec1da6425abd105ec105bdcfd594ea7847396cb6d949e86c34df1"
+  ],
+  "model-00041-of-00044.safetensors": [
+   6942029194,
+   "2900611e1b5e83d8ebeefbd4e0956ddb83356e360edde30f0fd076f48ac86d38"
+  ],
+  "model-00042-of-00044.safetensors": [
+   4086008391,
+   "f84c4f2f383ec95f46beef3acc71b73809c9e0b7d54d483db27524ecbe70bea0"
+  ],
+  "model-00043-of-00044.safetensors": [
+   7329857517,
+   "d673275ee4833a78ba76e3a537c50290d0e0ed419b35f68c598b23168f081ee4"
+  ],
+  "model-00044-of-00044.safetensors": [
+   833651138,
+   "4ddb11bc29f6728e95258e2b52faeb91471d3ae145b8f8bfa3e267dd47d3ce19"
+  ],
+  "model.safetensors.index.json": [
+   15504210,
+   "002568f81f402b357a92e2601e6eb664216ab8b27f02c6053d4233a9fdbc72e4"
+  ],
+  "quantization_config.json": [
+   54653015,
+   "493549dee7a0c686cef48bd298bf4ec4f89f4445da2784123726f41854484c5f"
+  ],
+  "tokenizer.json": [
+   6367257,
+   "c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b"
+  ],
+  "tokenizer_config.json": [
+   801,
+   "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547"
+  ]
+ },
+ "engram": {
+  "repo": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  "revision": "1bae0e1088993b9b82de08f59de5be5a34e42170",
+  "files": {
+   "model-00047-of-00048.safetensors": [
+    101535150936,
+    "76a05106ece259be83d1bfea0dcb54f23377864ee60fd321690f35e6698a2af5"
+   ],
+   "model-00048-of-00048.safetensors": [
+    101537926640,
+    "9dc51433e195bc78b5ad846b68643cc0351d3b174e5e4309222d3b7402c83afd"
+   ]
+  }
+ }
+}

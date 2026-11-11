@@ -1,0 +1,54 @@
+{
+ "exe": "C:\\Strata\\engine\\strata.exe",
+ "args": [
+  "--pack",
+  "C:\\Strata-data\\packs\\unsloth-ud-q4_k_xl",
+  "--native",
+  "C:\\Strata-data\\models\\unsloth-UD-Q4_K_XL\\Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+  "--expert-profile",
+  "C:\\Strata\\data\\expert-profile.bin",
+  "--expert-cache",
+  "auto",
+  "--expert-cache-device1",
+  "5000",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--mtp",
+  "C:\\Strata-data\\mtp\\rt",
+  "--max-context",
+  "262144",
+  "--kv",
+  "int8",
+  "--kv-resident",
+  "32768",
+  "--spec-min-p",
+  "0.5",
+  "--remote-expert-opt",
+  "--vision"
+ ],
+ "cwd": "C:\\Strata",
+ "tokenizer": "C:\\Strata-data\\packs\\unsloth-ud-q4_k_xl\\tokenizer",
+ "model_name": "qwen3.8-flash-next-unsloth-ud-q4_k_xl",
+ "reasoning_budget_tokens": 131072,
+ "idle_unload_s": 0,
+ "log": "C:\\Strata\\strata-unsloth-ud-q4_k_xl-helper.log",
+ "lib_dirs": [
+  "C:\\Strata\\.venv\\Lib\\site-packages\\nvidia\\cu13\\bin\\x86_64"
+ ],
+ "env": {
+  "CUDA_VISIBLE_DEVICES": "0,1"
+ },
+ "port": 8081,
+ "gpu": 0,
+ "gpus_asked": true,
+ "vision": {
+  "exe": "C:\\Strata\\engine\\strata-vision.exe",
+  "mmproj": "C:\\Strata-data\\models\\mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+  "model": "C:\\Strata-data\\models\\unsloth-UD-Q4_K_XL\\Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+  "gpu": true,
+  "max_tokens": 1024,
+  "cuda_device": 1
+ }
+}

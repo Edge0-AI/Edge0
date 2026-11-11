@@ -1,0 +1,57 @@
+{
+  "${BENCH_ASSETS}/pack/dense.bin": {
+    "bytes": 1538035200,
+    "sha256": "d2af3d8331e5c7a1985d1d589747230f9d56719a6d33c7cddc9ee6b81cde6b13",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/pack/tokenizer/chat_template.jinja": {
+    "bytes": 9993,
+    "sha256": "12827f24b742ea4e80cdc12dbcf9622227056b9f797252a3149263d4f9aaadce",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/pack/tokenizer/tokenizer.json": {
+    "bytes": 541,
+    "sha256": "c0bd435efbc6c3b28964b47999afe16c4ad268c7c7c4e8cb3af410796a6f30bf",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/pack/tokenizer/vocab.json": {
+    "bytes": 5737005,
+    "sha256": "4ba64f0332abcfb0b600b7df1537d1e836e68009d5fb7cdb77339738dc6365c4",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/pack/tokenizer/merges.txt": {
+    "bytes": 3353258,
+    "sha256": "4ba698529766c7a2f5052083ea10cdf2485577f5237a332ee291054eb11e3332",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/pack/tokenizer/token_type.json": {
+    "bytes": 744960,
+    "sha256": "5088c8c298fc06af8382ddb3b76c888703ac2634e82263b97eedcc2ad202738b",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/mtp-rt/experts.bin": {
+    "bytes": 707788800,
+    "sha256": "09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/mtp-rt/dense.bin": {
+    "bytes": 116099072,
+    "sha256": "c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf": {
+    "bytes": 39225954592,
+    "sha256": "92cee27ae5bbadcd732416a0f7a7f0acc092399dbbe8f5a5efa707c2ec0a49d7",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${BENCH_ASSETS}/models/IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf": {
+    "bytes": 28800138432,
+    "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  },
+  "${STRATA_ROOT}/data/expert-profile.bin": {
+    "bytes": 196632,
+    "sha256": "8f59b4aa8873209dff11c11e37bcda9529a1335b724a1afeea37bf6388975baf",
+    "verification": "sealed size, mtime, inode and root ownership rechecked"
+  }
+}

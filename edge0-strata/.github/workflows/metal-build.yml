@@ -1,0 +1,53 @@
+name: Metal build
+
+# Compile and link the Metal engine on a macOS runner (no GPU needed: the kernels are compiled at run time).  The shared host files
+# (src/core/verify.cpp, src/prefill, src/program/generate.cpp) call kernel entry points that exist only for CUDA / HIP until Metal gets a
+# stub or an implementation; a missing one is a link error here, not on a user's Mac (owner round 9, G6).
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'metal/**'
+      - 'third_party/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/metal-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metal-link:
+    # the macOS 26 SDK: metal/src/mtl_rt.mm names MTLGPUFamilyMetal4 (and MTLCompileOptions.mathMode, macOS 15) behind @available,
+    # which is a run-time check; the names must still be in the SDK the engine is compiled against
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      # setup.py's LLAMA_CPP_COMMIT and metal/setup_mac.py's metal-cpp pin
+      LLAMA_CPP_COMMIT: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+      METAL_CPP_URL: https://developer.apple.com/metal/cpp/files/metal-cpp_26.zip
+      METAL_CPP_SHA256: 4df3c078b9aadcb516212e9cb03004cbc5ce9a3e9c068fa3144d021db585a3a4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: brew install ninja
+      - name: metal-cpp
+        run: |
+          curl -fsSL "$METAL_CPP_URL" -o metal-cpp.zip
+          echo "$METAL_CPP_SHA256  metal-cpp.zip" | shasum -a 256 -c -
+          unzip -q metal-cpp.zip -d _mcpp
+      - name: llama.cpp (ggml) at the pinned commit
+        run: |
+          mkdir llama.cpp && cd llama.cpp
+          git init -q
+          git remote add origin https://github.com/ggml-org/llama.cpp.git
+          git fetch -q --depth 1 origin "$LLAMA_CPP_COMMIT"
+          git checkout -q FETCH_HEAD
+      - name: Configure
+        run: |
+          cmake -S metal -B build-metal -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DMETAL_CPP_DIR="$PWD/_mcpp/metal-cpp" -DSTRATA_GGML_DIR="$PWD/llama.cpp"
+      - name: Build and link the engine
+        run: cmake --build build-metal --target strata

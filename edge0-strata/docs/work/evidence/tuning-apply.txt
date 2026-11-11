@@ -1,0 +1,27 @@
+# Applying and rolling back a tuning recommendation (checklist T07)
+# repo: bfbe5cae5f0796f2c019f418b6a265aa67ee8670
+
+# A sweep recommends; it never writes. The apply is a separate command that re-checks the
+# sweep's artifact identity, snapshots the previous bytes, and verifies before writing.
+
+1. An apply whose identity cannot be re-checked is REFUSED and nothing is written:
+
+   $ strata tune apply <job> --config strata-demo.json
+   strata: the sweep recorded no model digest, so its recommendation cannot be matched to
+           the installed weights; re-run the sweep with --model-path and apply that result
+   config byte-identical: yes
+
+2. With an identity, the apply writes the recommendation and retains the previous bytes:
+
+   $ strata tune apply <job> --config strata-demo.json --model-path model.gguf
+   applied to strata-demo.json
+     + --kv int8
+     - --kv fp16
+     before c7b5a4970be860d2  after da90fb62b8c3e7e5
+     rollback: strata tune rollback 20261015T052436Z-aa873d11c569
+
+   env.STRATA_TOKEN and aliases survive untouched. The command states plainly that the
+   candidate was not verified against a running model, because no supported model fits this
+   machine.
+
+3. Rollback restores the exact previous bytes, and refuses to run twice.

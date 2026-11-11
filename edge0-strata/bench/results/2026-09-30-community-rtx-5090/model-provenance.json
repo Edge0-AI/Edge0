@@ -1,0 +1,46 @@
+[
+  {
+    "repository": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF",
+    "revision": "ed59f92082b1e93c0e96d60a8b11aab089b52f09",
+    "gguf_files": [
+      {
+        "filename": "IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+        "lfs": {
+          "sha256": "92cee27ae5bbadcd732416a0f7a7f0acc092399dbbe8f5a5efa707c2ec0a49d7",
+          "size": 39225954592,
+          "pointerSize": 136
+        },
+        "size": 39225954592,
+        "actual_sha256": "92cee27ae5bbadcd732416a0f7a7f0acc092399dbbe8f5a5efa707c2ec0a49d7",
+        "verified": true
+      },
+      {
+        "filename": "IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf",
+        "lfs": {
+          "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113",
+          "size": 28800138432,
+          "pointerSize": 136
+        },
+        "size": 28800138432,
+        "actual_sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113",
+        "verified": true
+      },
+      {
+        "filename": "mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+        "lfs": {
+          "sha256": "b1a82259702816a5330d7bd7607cd9676b11780e79ff7348c21103ff3ce49bd0",
+          "size": 907543008,
+          "pointerSize": 134
+        },
+        "size": 907543008,
+        "actual_sha256": "b1a82259702816a5330d7bd7607cd9676b11780e79ff7348c21103ff3ce49bd0",
+        "verified": true
+      }
+    ]
+  },
+  {
+    "repository": "Qwen/Qwen3.8-Flash-Next",
+    "revision": "de4b8e4d43b917e7706784d8bb445c9af86a3540",
+    "gguf_files": []
+  }
+]

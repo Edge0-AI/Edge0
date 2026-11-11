@@ -1,0 +1,133 @@
+BENCH IQ4_XS 2560x10240          T=1  multi 101.8 us | il rows1 102.9 rows2 62.8 rows4 58.1 us
+BENCH IQ4_XS 2560x10240          T=2  multi 111.8 us | il rows1 106.3 rows2 70.1 rows4 65.0 us
+BENCH IQ4_XS 2560x10240          T=3  multi 116.6 us | il rows1 112.9 rows2 79.7 rows4 61.8 us
+BENCH IQ4_XS 2560x10240          T=4  multi 130.4 us | il rows1 113.0 rows2 74.6 rows4 81.4 us
+BENCH IQ4_XS 2560x6144           T=1  multi 62.7 us | il rows1 63.3 rows2 40.5 rows4 36.6 us
+BENCH IQ4_XS 2560x6144           T=2  multi 64.0 us | il rows1 64.5 rows2 46.6 rows4 42.9 us
+BENCH IQ4_XS 2560x6144           T=3  multi 71.9 us | il rows1 74.4 rows2 52.4 rows4 40.2 us
+BENCH IQ4_XS 2560x6144           T=4  multi 82.2 us | il rows1 70.6 rows2 46.7 rows4 50.3 us
+BENCH IQ4_XS 6144x2560           T=1  multi 59.3 us | il rows1 58.9 rows2 36.5 rows4 42.5 us
+BENCH IQ4_XS 6144x2560           T=2  multi 70.1 us | il rows1 57.6 rows2 44.7 rows4 41.5 us
+BENCH IQ4_XS 6144x2560           T=3  multi 70.3 us | il rows1 64.0 rows2 57.1 rows4 35.4 us
+BENCH IQ4_XS 6144x2560           T=4  multi 87.3 us | il rows1 67.3 rows2 43.0 rows4 47.8 us
+BENCH IQ4_XS 2560x512            T=1  multi 7.8 us | il rows1 7.9 rows2 6.6 rows4 8.1 us
+BENCH IQ4_XS 2560x512            T=2  multi 10.4 us | il rows1 7.9 rows2 7.4 rows4 9.0 us
+BENCH IQ4_XS 2560x512            T=3  multi 11.2 us | il rows1 9.4 rows2 8.7 rows4 8.4 us
+BENCH IQ4_XS 2560x512            T=4  multi 12.0 us | il rows1 8.6 rows2 7.8 rows4 9.4 us
+BENCH Q4_K 2560x10240            T=1  multi 58.1 us | il rows1 65.2 rows2 58.6 rows4 60.9 us
+BENCH Q4_K 2560x10240            T=2  multi 78.3 us | il rows1 92.5 rows2 74.3 rows4 69.2 us
+BENCH Q4_K 2560x10240            T=3  multi 104.1 us | il rows1 89.0 rows2 67.4 rows4 112.3 us
+BENCH Q4_K 2560x10240            T=4  multi 125.1 us | il rows1 97.9 rows2 77.3 rows4 116.0 us
+BENCH Q4_K 6144x2560             T=1  multi 36.6 us | il rows1 46.3 rows2 47.4 rows4 36.4 us
+BENCH Q4_K 6144x2560             T=2  multi 45.2 us | il rows1 58.8 rows2 45.2 rows4 49.0 us
+BENCH Q4_K 6144x2560             T=3  multi 56.7 us | il rows1 52.6 rows2 42.3 rows4 83.9 us
+BENCH Q4_K 6144x2560             T=4  multi 67.8 us | il rows1 56.3 rows2 48.3 rows4 73.4 us
+BENCH Q5_K 2560x12288            T=1  multi 89.9 us | il rows1 94.5 rows2 82.2 rows4 99.2 us
+BENCH Q5_K 2560x12288            T=2  multi 108.3 us | il rows1 102.2 rows2 97.5 rows4 88.0 us
+BENCH Q5_K 2560x12288            T=3  multi 131.7 us | il rows1 113.5 rows2 91.2 rows4 96.2 us
+BENCH Q5_K 2560x12288            T=4  multi 174.8 us | il rows1 157.9 rows2 126.5 rows4 164.1 us
+BENCH Q5_K 2560x6144             T=1  multi 47.0 us | il rows1 51.5 rows2 45.9 rows4 57.6 us
+BENCH Q5_K 2560x6144             T=2  multi 58.2 us | il rows1 53.4 rows2 52.8 rows4 49.4 us
+BENCH Q5_K 2560x6144             T=3  multi 69.3 us | il rows1 59.2 rows2 48.3 rows4 52.5 us
+BENCH Q5_K 2560x6144             T=4  multi 91.4 us | il rows1 80.7 rows2 65.3 rows4 98.0 us
+BENCH Q5_K 6144x2560             T=1  multi 47.3 us | il rows1 55.3 rows2 56.9 rows4 53.3 us
+BENCH Q5_K 6144x2560             T=2  multi 55.7 us | il rows1 56.6 rows2 55.6 rows4 58.3 us
+BENCH Q5_K 6144x2560             T=3  multi 64.9 us | il rows1 60.9 rows2 53.6 rows4 55.1 us
+BENCH Q5_K 6144x2560             T=4  multi 77.1 us | il rows1 69.9 rows2 64.5 rows4 110.0 us
+BENCH Q5_K head 2560x248320      T=1  multi 1754.1 us | il rows1 1786.3 rows2 1506.8 rows4 1737.9 us
+BENCH Q5_K head 2560x248320      T=2  multi 2059.9 us | il rows1 1963.3 rows2 1835.9 rows4 1596.7 us
+BENCH Q5_K head 2560x248320      T=3  multi 2545.4 us | il rows1 2211.2 rows2 1766.2 rows4 1793.0 us
+BENCH Q5_K head 2560x248320      T=4  multi 3370.8 us | il rows1 3099.2 rows2 2435.3 rows4 3350.6 us
+BENCH Q6_K 2560x12288            T=1  multi 109.4 us | il rows1 133.8 rows2 128.0 rows4 153.1 us
+BENCH Q6_K 2560x12288            T=2  multi 136.4 us | il rows1 158.9 rows2 123.0 rows4 142.9 us
+BENCH Q6_K 2560x12288            T=3  multi 162.8 us | il rows1 182.6 rows2 163.0 rows4 121.7 us
+BENCH Q6_K 2560x12288            T=4  multi 189.3 us | il rows1 188.0 rows2 127.4 rows4 133.9 us
+BENCH Q6_K 2560x10240            T=1  multi 92.6 us | il rows1 114.5 rows2 109.7 rows4 144.3 us
+BENCH Q6_K 2560x10240            T=2  multi 114.4 us | il rows1 132.5 rows2 105.1 rows4 119.2 us
+BENCH Q6_K 2560x10240            T=3  multi 135.7 us | il rows1 156.3 rows2 136.0 rows4 104.3 us
+BENCH Q6_K 2560x10240            T=4  multi 157.8 us | il rows1 161.1 rows2 108.0 rows4 115.1 us
+BENCH Q6_K 6144x2560             T=1  multi 57.8 us | il rows1 77.3 rows2 80.8 rows4 88.4 us
+BENCH Q6_K 6144x2560             T=2  multi 71.6 us | il rows1 81.5 rows2 69.9 rows4 102.2 us
+BENCH Q6_K 6144x2560             T=3  multi 85.8 us | il rows1 98.4 rows2 99.5 rows4 75.7 us
+BENCH Q6_K 6144x2560             T=4  multi 98.2 us | il rows1 99.5 rows2 75.3 rows4 70.1 us
+BENCH Q6_K 2560x512              T=1  multi 8.4 us | il rows1 10.0 rows2 15.1 rows4 29.2 us
+BENCH Q6_K 2560x512              T=2  multi 8.8 us | il rows1 10.1 rows2 13.5 rows4 21.6 us
+BENCH Q6_K 2560x512              T=3  multi 11.6 us | il rows1 10.5 rows2 14.7 rows4 15.1 us
+BENCH Q6_K 2560x512              T=4  multi 13.4 us | il rows1 10.5 rows2 11.4 rows4 15.7 us
+BENCH IQ4_XS 2560x12288          T=1  multi 121.0 us | il rows1 122.2 rows2 73.3 rows4 68.3 us
+BENCH IQ4_XS 2560x12288          T=2  multi 122.4 us | il rows1 124.2 rows2 83.9 rows4 75.9 us
+BENCH IQ4_XS 2560x12288          T=3  multi 138.0 us | il rows1 143.9 rows2 95.3 rows4 71.5 us
+BENCH IQ4_XS 2560x12288          T=4  multi 156.5 us | il rows1 134.7 rows2 87.7 rows4 95.3 us
+BENCH IQ4_XS 2560x640            T=1  multi 9.1 us | il rows1 9.2 rows2 7.1 rows4 8.4 us
+BENCH IQ4_XS 2560x640            T=2  multi 10.8 us | il rows1 9.3 rows2 7.9 rows4 9.5 us
+BENCH IQ4_XS 2560x640            T=3  multi 11.1 us | il rows1 10.5 rows2 9.1 rows4 8.6 us
+BENCH IQ4_XS 2560x640            T=4  multi 14.1 us | il rows1 12.9 rows2 8.6 rows4 9.5 us
+BENCH Q4_K 2560x6144             T=1  multi 36.7 us | il rows1 41.8 rows2 37.0 rows4 35.9 us
+BENCH Q4_K 2560x6144             T=2  multi 50.0 us | il rows1 58.1 rows2 47.2 rows4 45.8 us
+BENCH Q4_K 2560x6144             T=3  multi 66.0 us | il rows1 54.8 rows2 42.0 rows4 73.9 us
+BENCH Q4_K 2560x6144             T=4  multi 78.8 us | il rows1 60.5 rows2 48.2 rows4 73.7 us
+BENCH Q4_K 2560x640              T=1  multi 6.9 us | il rows1 7.6 rows2 9.0 rows4 11.1 us
+BENCH Q4_K 2560x640              T=2  multi 9.5 us | il rows1 12.0 rows2 8.0 rows4 10.8 us
+BENCH Q4_K 2560x640              T=3  multi 10.1 us | il rows1 9.4 rows2 8.0 rows4 18.0 us
+BENCH Q4_K 2560x640              T=4  multi 11.7 us | il rows1 10.4 rows2 9.0 rows4 12.8 us
+BENCH Q4_K 2560x512              T=1  multi 6.5 us | il rows1 7.0 rows2 8.5 rows4 10.7 us
+BENCH Q4_K 2560x512              T=2  multi 8.9 us | il rows1 7.7 rows2 7.7 rows4 10.5 us
+BENCH Q4_K 2560x512              T=3  multi 9.3 us | il rows1 9.1 rows2 8.0 rows4 17.4 us
+BENCH Q4_K 2560x512              T=4  multi 10.8 us | il rows1 9.7 rows2 8.9 rows4 12.8 us
+BENCH Q5_K 2560x10240            T=1  multi 75.5 us | il rows1 80.1 rows2 70.0 rows4 81.4 us
+BENCH Q5_K 2560x10240            T=2  multi 91.4 us | il rows1 86.1 rows2 82.3 rows4 75.1 us
+BENCH Q5_K 2560x10240            T=3  multi 111.4 us | il rows1 95.3 rows2 77.6 rows4 82.6 us
+BENCH Q5_K 2560x10240            T=4  multi 148.4 us | il rows1 133.3 rows2 106.9 rows4 156.2 us
+BENCH Q5_K 2560x640              T=1  multi 7.8 us | il rows1 8.3 rows2 8.5 rows4 15.3 us
+BENCH Q5_K 2560x640              T=2  multi 9.7 us | il rows1 9.8 rows2 8.4 rows4 11.7 us
+BENCH Q5_K 2560x640              T=3  multi 10.8 us | il rows1 10.0 rows2 8.8 rows4 12.0 us
+BENCH Q5_K 2560x640              T=4  multi 14.4 us | il rows1 11.4 rows2 9.7 rows4 18.2 us
+BENCH Q5_K 2560x512              T=1  multi 7.2 us | il rows1 7.6 rows2 8.3 rows4 14.7 us
+BENCH Q5_K 2560x512              T=2  multi 9.0 us | il rows1 8.9 rows2 8.1 rows4 11.3 us
+BENCH Q5_K 2560x512              T=3  multi 9.7 us | il rows1 9.6 rows2 8.5 rows4 11.8 us
+BENCH Q5_K 2560x512              T=4  multi 11.0 us | il rows1 10.5 rows2 9.3 rows4 18.3 us
+BENCH Q6_K 2560x6144             T=1  multi 57.1 us | il rows1 70.8 rows2 71.6 rows4 78.9 us
+BENCH Q6_K 2560x6144             T=2  multi 71.4 us | il rows1 80.9 rows2 63.1 rows4 73.2 us
+BENCH Q6_K 2560x6144             T=3  multi 84.2 us | il rows1 95.9 rows2 88.5 rows4 68.4 us
+BENCH Q6_K 2560x6144             T=4  multi 96.8 us | il rows1 97.9 rows2 69.8 rows4 72.3 us
+BENCH Q6_K 2560x640              T=1  multi 8.8 us | il rows1 10.6 rows2 15.4 rows4 29.9 us
+BENCH Q6_K 2560x640              T=2  multi 12.0 us | il rows1 10.8 rows2 13.8 rows4 21.6 us
+BENCH Q6_K 2560x640              T=3  multi 13.3 us | il rows1 16.8 rows2 15.4 rows4 15.8 us
+BENCH Q6_K 2560x640              T=4  multi 15.7 us | il rows1 17.4 rows2 11.7 rows4 16.1 us
+BENCH Q3_K 2560x10240            T=1  multi 93.5 us | il rows1 127.5 rows2 72.2 rows4 131.6 us
+BENCH Q3_K 2560x10240            T=2  multi 110.0 us | il rows1 102.9 rows2 90.4 rows4 109.5 us
+BENCH Q3_K 2560x10240            T=3  multi 152.5 us | il rows1 119.9 rows2 107.7 rows4 117.9 us
+BENCH Q3_K 2560x10240            T=4  multi 217.6 us | il rows1 134.8 rows2 163.3 rows4 177.0 us
+BENCH Q3_K 2560x12288            T=1  multi 111.5 us | il rows1 151.7 rows2 85.7 rows4 150.4 us
+BENCH Q3_K 2560x12288            T=2  multi 131.1 us | il rows1 122.4 rows2 107.3 rows4 127.8 us
+BENCH Q3_K 2560x12288            T=3  multi 183.5 us | il rows1 145.1 rows2 130.3 rows4 141.1 us
+BENCH Q3_K 2560x12288            T=4  multi 262.4 us | il rows1 163.3 rows2 195.4 rows4 217.0 us
+BENCH Q3_K 2560x6144             T=1  multi 57.7 us | il rows1 77.9 rows2 46.2 rows4 83.7 us
+BENCH Q3_K 2560x6144             T=2  multi 68.4 us | il rows1 63.4 rows2 56.4 rows4 67.1 us
+BENCH Q3_K 2560x6144             T=3  multi 94.7 us | il rows1 74.7 rows2 67.1 rows4 75.0 us
+BENCH Q3_K 2560x6144             T=4  multi 133.4 us | il rows1 83.3 rows2 100.7 rows4 117.5 us
+BENCH Q3_K 6144x2560             T=1  multi 46.3 us | il rows1 78.0 rows2 44.9 rows4 74.8 us
+BENCH Q3_K 6144x2560             T=2  multi 60.6 us | il rows1 63.0 rows2 56.2 rows4 65.7 us
+BENCH Q3_K 6144x2560             T=3  multi 77.2 us | il rows1 75.5 rows2 63.7 rows4 70.6 us
+BENCH Q3_K 6144x2560             T=4  multi 99.1 us | il rows1 79.7 rows2 98.3 rows4 113.1 us
+BENCH Q3_K 2560x640              T=1  multi 8.9 us | il rows1 10.3 rows2 8.1 rows4 16.9 us
+BENCH Q3_K 2560x640              T=2  multi 10.8 us | il rows1 10.7 rows2 8.6 rows4 12.0 us
+BENCH Q3_K 2560x640              T=3  multi 14.8 us | il rows1 11.7 rows2 9.5 rows4 12.3 us
+BENCH Q3_K 2560x640              T=4  multi 17.1 us | il rows1 13.5 rows2 12.9 rows4 18.0 us
+BENCH Q3_K 2560x512              T=1  multi 7.7 us | il rows1 9.5 rows2 7.7 rows4 16.3 us
+BENCH Q3_K 2560x512              T=2  multi 9.7 us | il rows1 10.1 rows2 8.6 rows4 11.8 us
+BENCH Q3_K 2560x512              T=3  multi 11.3 us | il rows1 11.1 rows2 9.3 rows4 12.3 us
+BENCH Q3_K 2560x512              T=4  multi 16.1 us | il rows1 12.3 rows2 12.7 rows4 18.1 us
+// measured on this card by mmvq_il_parity --bench --emit-table
+    {23, {{2, 4, 4, 4, 4}, {4, 4, 4, 4, 4}, {2, 2, 2, 2, 2}}},   // IQ4_XS
+    {12, {{2, 0, 4, 4, 4}, {2, 2, 2, 2, 2}, {2, 2, 2, 2, 2}}},   // Q4_K
+    {13, {{2, 0, 4, 4, 4}, {2, 2, 2, 2, 2}, {2, 2, 2, 2, 2}}},   // Q5_K
+    {14, {{0, 0, 2, 2, 2}, {0, 4, 4, 4, 4}, {2, 4, 2, 2, 2}}},   // Q6_K
+    {11, {{2, 2, 2, 2, 2}, {2, 2, 2, 2, 2}, {1, 1, 1, 1, 1}}},   // Q3_K
+// one column (kIl1RowsShared):
+    {23, {2, 2, 4, 4, 4}},   // IQ4_XS
+    {12, {0, 0, 0, 0, 0}},   // Q4_K
+    {13, {0, 0, 0, 2, 2}},   // Q5_K
+    {14, {0, 0, 0, 0, 0}},   // Q6_K
+    {11, {0, 2, 2, 2, 2}},   // Q3_K
+mmvq_il_parity: OK (every case, T 1-4, rows 1/2/4 and the table, bitwise)

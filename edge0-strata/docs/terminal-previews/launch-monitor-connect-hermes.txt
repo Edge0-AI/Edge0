@@ -1,0 +1,39 @@
+# strata launch preview: the Connect view, Hermes selected (its limits in plain words)
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Connect   http://127.0.0.1:8080                                                                         [LIVE]
+ 1 Overview  2 Serving  3 Requests  4 Engine  5 Hardware  6 Logs  [7 Connect]
+ ----------------------------------------------------------------------------------------------------
+ Connect an app     URL http://127.0.0.1:8080/v1    model qwen3.8-flash-next-iq3_xxs    key sk-strata-****  (k show)
+      also reachable at http://192.168.88.21:8080/v1
+
+    App                 Works with            Status
+     OpenCode            chat + tools          tested ok
+     Codex CLI           responses + tools     tested ok
+     Claude Code         messages + tools      tested ok
+     oh-my-pi (omp)      chat + tools          tested ok
+     pi (pi.dev)         chat + tools          tested ok
+   > Hermes Agent        chat + tools          tested ok
+     OpenClaw            chat + tools          tested ok
+     DeepSeek Harness    the Strata app        tested ok
+
+ Hermes Agent setup   ~/.hermes/config.yaml
+   model:
+     default: qwen3.8-flash-next-iq3_xxs
+     provider: lmstudio
+     base_url: http://127.0.0.1:8080/v1
+     context_length: 32768
+   compression:
+     enabled: true
+   ... 5 more lines (c copies all)
+ Good to know
+   - WARNING: Hermes is built for 64K or more. At 32K it works only through the workaround above.
+   - Hermes refuses a window under 64,000 tokens unless the provider is lmstudio with an explicit context_length: the
+     config uses that, and auxiliary.compression.context_length 65536 for its summariser (the same floor).
+   - Its system prompt and 20 tools take about 12.9K tokens (40% of a 32K window): about 19K is left for the
+     conversation.
+   - Its compaction threshold is floored at its own 64K minimum, so it compacts later than 15K (around 20K); it still
+
+
+
+ c copy   w write it for me (keeps a backup)   h check it   1-7 views   q quit (asks: keep serving / stop)

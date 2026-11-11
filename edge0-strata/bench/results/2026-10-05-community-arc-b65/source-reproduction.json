@@ -1,0 +1,19 @@
+{
+  "clean_tag_patch_replay_passed": true,
+  "changed_files_identical_to_measured_source": true,
+  "sha256": {
+    "sycl/include/strata/core/verify.hpp": "80ff939651573538679bba8daff3b46d9718b2c7650e3da99ba5312e3499d73d",
+    "sycl/src/core/verify.cpp": "aed157ed2f918b78ecb71a599dce7b22e57419308499516ff6651373b2b75eb3",
+    "sycl/src/kernels/cuda/fused_gr.dp.cpp": "db9777be49329f4aa4678b050c92018f9be0ba6ea3150a50ebe240cfca15a229",
+    "sycl/src/core/expert_source.cpp": "5f169d3708e3da80110890c9bf535654c1b70c599a56e9df63cecd572ae60216",
+    "sycl/src/prefill/gemm.dp.cpp": "3c672ac1cb7ef0da3f30955703a3b8fa278c9508410822324aaf01dc0f9adbb4",
+    "sycl/src/program/generate.cpp": "5d9b07450349a481848533b4fbc2ec9e79f5d4854d6ad379cc3a3de9521cd998",
+    "sycl/src/kernels/cuda/verify_kernels.dp.cpp": "c8b6cfe87a0eb62a5516e2da724699b8c75b7645548c4794450492c5260d9690",
+    "sycl/src/kernels/cuda/shared_expert.dp.cpp": "4514bf1d1a2feb3062d89ac6efda465fcfae28aca077c34baf42521e53da5916",
+    "sycl/src/prefill/kernels.dp.cpp": "d6c080575b7498be1b540554215afd176fb691e126387d1cfbf55a915d251a43",
+    "sycl/src/core/pinned.dp.cpp": "74e79a22a9c98a4b0192f055bf5ee519d124200537382358bb90ce275fea1be0",
+    "sycl/src/core/vmm_stub.cpp": "10f19072e230ef483523ea25237553901b8d7cecf02f33584cd4f14b9050d3bc",
+    "sycl/CMakeLists.txt": "4fd1be010f2f343e9e554eb584903169d659d829dc6ccaf4b7412f89760f1448",
+    "sycl/src/core/conversation_snapshot_test.cpp": "acf51084622d4bff1b44b807dc1356da2a5c35acfa8b47f9c5ba0009552b9628"
+  }
+}

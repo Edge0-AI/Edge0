@@ -1,0 +1,27 @@
+Internal ctest changing into directory: C:/Users/<user>/.codex/worktrees/zen2-gfx1030-defaults/Strata/build-default-tests
+UpdateCTestConfiguration  from :C:/Users/<user>/.codex/worktrees/zen2-gfx1030-defaults/Strata/build-default-tests/DartConfiguration.tcl
+UpdateCTestConfiguration  from :C:/Users/<user>/.codex/worktrees/zen2-gfx1030-defaults/Strata/build-default-tests/DartConfiguration.tcl
+Test project C:/Users/<user>/.codex/worktrees/zen2-gfx1030-defaults/Strata/build-default-tests
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 9
+    Start 9: pool_affinity_test
+
+9: Test command: C:\Users\<user>\.codex\worktrees\zen2-gfx1030-defaults\Strata\build-default-tests\Release\pool_affinity_test.exe
+9: Working Directory: C:/Users/<user>/.codex/worktrees/zen2-gfx1030-defaults/Strata/build-default-tests
+9: Test timeout computed to be: 10000000
+9: Host restore: still executes on group 0 processor 0
+9: Host restore: still executes on group 1 processor 0
+9: Windows affinity test: worker pins, host CPU Sets and process-default restoration passed (2 groups)
+1/1 Test #9: pool_affinity_test ...............   Passed    0.13 sec
+
+The following tests passed:
+	pool_affinity_test
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.14 sec

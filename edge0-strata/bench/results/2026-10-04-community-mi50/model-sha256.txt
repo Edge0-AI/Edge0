@@ -1,0 +1,3 @@
+92cee27ae5bbadcd732416a0f7a7f0acc092399dbbe8f5a5efa707c2ec0a49d7  /home/models/gguf/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf
+316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113  /home/models/gguf/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf
+DONE

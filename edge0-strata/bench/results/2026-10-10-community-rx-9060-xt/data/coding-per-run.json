@@ -1,0 +1,712 @@
+{
+  "results": [
+    {
+      "case": "merge-windows",
+      "repeat": 1,
+      "model": "iq2",
+      "wall_s": 55.463,
+      "checks": 25,
+      "passed": 25,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 6,
+      "tool_count": 7,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 6,
+        "prompt_tokens": 47023,
+        "reused": 38660,
+        "output_tokens": 1416,
+        "prompt_ms": 24897.6,
+        "decode_ms": 27036.9,
+        "drafts_offered": 1190,
+        "drafts_accepted": 965
+      },
+      "generation_tps": 52.37286819124973,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "windows.ts": "c9890872bff05c136f96558209a479cf97a6f9c015f92235ef4197f7c04ca799"
+      }
+    },
+    {
+      "case": "merge-windows",
+      "repeat": 2,
+      "model": "iq2",
+      "wall_s": 60.368,
+      "checks": 25,
+      "passed": 25,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 6,
+      "tool_count": 7,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 6,
+        "prompt_tokens": 47766,
+        "reused": 39395,
+        "output_tokens": 1734,
+        "prompt_ms": 23728.500000000015,
+        "decode_ms": 33186.200000000004,
+        "drafts_offered": 1459,
+        "drafts_accepted": 1153
+      },
+      "generation_tps": 52.2506342997993,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "windows.ts": "e4806a38a4fdda2977d9ebf3d15c658e19ee7394b99be9bd701a3a69e43bca5f"
+      }
+    },
+    {
+      "case": "merge-windows",
+      "repeat": 3,
+      "model": "iq2",
+      "wall_s": 99.988,
+      "checks": 25,
+      "passed": 25,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 6,
+      "tool_count": 7,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 50539,
+        "reused": 30342,
+        "output_tokens": 2951,
+        "prompt_ms": 46189.299999999996,
+        "decode_ms": 59249.40000000002,
+        "drafts_offered": 2468,
+        "drafts_accepted": 1853
+      },
+      "generation_tps": 49.80641154172024,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "windows.ts": "7bba1b5aba5960eefc45005830b471b9c4491d9e8a7e2532d86de54778c78b03"
+      }
+    },
+    {
+      "case": "refactor-orders",
+      "repeat": 1,
+      "model": "iq2",
+      "wall_s": 120.835,
+      "checks": 24,
+      "passed": 24,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 9,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 64229,
+        "reused": 43281,
+        "output_tokens": 3711,
+        "prompt_ms": 43495.999999999985,
+        "decode_ms": 74470.39999999997,
+        "drafts_offered": 3014,
+        "drafts_accepted": 2315
+      },
+      "generation_tps": 49.83187951185977,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "orders.ts": "5c727738256b7cf25a46e92a0f5100c32df77354657e1d317c216d85c449a65c",
+        "validation.ts": "430f4f34496010b25317a9c68eff94e4fcbc4f4016b6ad7a2afe297a102e789b",
+        "aggregation.ts": "0e749416e7af1189e57e915054cc36e8288c0df7578da630cf5a9763d48adf64"
+      }
+    },
+    {
+      "case": "refactor-orders",
+      "repeat": 2,
+      "model": "iq2",
+      "wall_s": 93.343,
+      "checks": 24,
+      "passed": 24,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 9,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 59839,
+        "reused": 40091,
+        "output_tokens": 2291,
+        "prompt_ms": 43874.100000000006,
+        "decode_ms": 46505.399999999965,
+        "drafts_offered": 1891,
+        "drafts_accepted": 1446
+      },
+      "generation_tps": 49.26309632859844,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "orders.ts": "06582975b1c7749598eaf9b1560a7a0575b7e2234ba164641dd9d157104f0023",
+        "validation.ts": "93742276a04be91ca59fa041c34193cc981f562c28a382200845ee1a0b7f3733",
+        "aggregation.ts": "d4e7d3af880e3ac3af9141f96194ddc1edbadb200088e583f7f52575047fd982"
+      }
+    },
+    {
+      "case": "refactor-orders",
+      "repeat": 3,
+      "model": "iq2",
+      "wall_s": 91.803,
+      "checks": 24,
+      "passed": 24,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 9,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 59489,
+        "reused": 39756,
+        "output_tokens": 2331,
+        "prompt_ms": 41112.20000000001,
+        "decode_ms": 47516.00000000009,
+        "drafts_offered": 1927,
+        "drafts_accepted": 1427
+      },
+      "generation_tps": 49.05715969357681,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "orders.ts": "77cf178c6b373f2a68f7485544dcef0a541c88c9f874d850ab936e0a0726a71b",
+        "validation.ts": "b95549b4f1ce6fd976627a11931fa93e40c650d79235aaaf1b77d7f3d15af679",
+        "aggregation.ts": "686e5f9b274602f891c92b24d1b3c958561586bd06c0532296b77664a6cc0494"
+      }
+    },
+    {
+      "case": "reservation-workflow",
+      "repeat": 1,
+      "model": "iq2",
+      "wall_s": 143.302,
+      "checks": 32,
+      "passed": 32,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 11,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 68784,
+        "reused": 46180,
+        "output_tokens": 4620,
+        "prompt_ms": 46345.600000000035,
+        "decode_ms": 93955.49999999994,
+        "drafts_offered": 3944,
+        "drafts_accepted": 2831
+      },
+      "generation_tps": 49.17221450580331,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "stock.ts": "f7c925e1931d49c67404bc2637cf2432ccd7b5c7ad89f27a15f0270b21479bff",
+        "requests.ts": "036731dbd2644a8aac39bc3850c2e3000707bdb2edd80a9a3a8f14d745c64288",
+        "allocate.ts": "609ad9e4a41fafbe9a2a16a387c0a97571c7c5cecb5a7d15d3582140b5ff28d9"
+      }
+    },
+    {
+      "case": "reservation-workflow",
+      "repeat": 2,
+      "model": "iq2",
+      "wall_s": 145.326,
+      "checks": 32,
+      "passed": 32,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 10,
+      "tool_count": 13,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 11,
+        "prompt_tokens": 95657,
+        "reused": 73058,
+        "output_tokens": 4442,
+        "prompt_ms": 50873.69999999984,
+        "decode_ms": 90429.39999999997,
+        "drafts_offered": 3751,
+        "drafts_accepted": 2729
+      },
+      "generation_tps": 49.12119288638432,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "stock.ts": "9d1793538c5b7715d6709e02b510b4196f2abd99e13d032765b1af1c806c50c5",
+        "requests.ts": "eba15c94027fc5015342b69c09a20ab667377506e0f187e7d1e9d7116e5ee96a",
+        "allocate.ts": "58958cf324d7cfb6ebd85357c5de33bb1df73a1c141fff3b84184289e21479e6"
+      }
+    },
+    {
+      "case": "reservation-workflow",
+      "repeat": 3,
+      "model": "iq2",
+      "wall_s": 125.702,
+      "checks": 32,
+      "passed": 32,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 11,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 66094,
+        "reused": 44453,
+        "output_tokens": 3749,
+        "prompt_ms": 45572.29999999999,
+        "decode_ms": 76810.09999999998,
+        "drafts_offered": 3142,
+        "drafts_accepted": 2310
+      },
+      "generation_tps": 48.80868531612381,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "stock.ts": "f3bd35d9eea5faf74088f4e1f0278184b9572486e7bd663c61558e9de140671b",
+        "requests.ts": "39ca61e3fb544ed922b5851f04060a65cf08c532043571a47739e0b6ee8cb8e7",
+        "allocate.ts": "dc81742828188aa31f6ba0eca165ab54461d1cfb07c341f93a8d2eea2cfbae12"
+      }
+    },
+    {
+      "case": "merge-windows",
+      "repeat": 1,
+      "model": "iq3",
+      "wall_s": 81.012,
+      "checks": 25,
+      "passed": 25,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 6,
+      "tool_count": 9,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 6,
+        "prompt_tokens": 52281,
+        "reused": 42832,
+        "output_tokens": 2135,
+        "prompt_ms": 28794.700000000004,
+        "decode_ms": 48841.5,
+        "drafts_offered": 1841,
+        "drafts_accepted": 1417
+      },
+      "generation_tps": 43.712826182652044,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "windows.ts": "01f9287e0c573d0d437b050c9071a6e7d976d307392f737fbcc1bb82a7f731f6"
+      }
+    },
+    {
+      "case": "merge-windows",
+      "repeat": 2,
+      "model": "iq3",
+      "wall_s": 136.321,
+      "checks": 25,
+      "passed": 25,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 8,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 59847,
+        "reused": 39187,
+        "output_tokens": 3618,
+        "prompt_ms": 50173.499999999985,
+        "decode_ms": 83049.79999999999,
+        "drafts_offered": 3057,
+        "drafts_accepted": 2249
+      },
+      "generation_tps": 43.564222912035916,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "windows.ts": "5c34da2f2bc23ebed85e9961938d623e6266ce4a6e2edb39b5302ab73d29e1e5"
+      }
+    },
+    {
+      "case": "merge-windows",
+      "repeat": 3,
+      "model": "iq3",
+      "wall_s": 109.951,
+      "checks": 25,
+      "passed": 25,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 6,
+      "tool_count": 7,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 7,
+        "prompt_tokens": 49042,
+        "reused": 30049,
+        "output_tokens": 2422,
+        "prompt_ms": 48901.5,
+        "decode_ms": 58264.100000000006,
+        "drafts_offered": 2117,
+        "drafts_accepted": 1523
+      },
+      "generation_tps": 41.56933686438132,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "windows.ts": "541aee5f1b5f9ff5031742da268d9d3dd10f25260d483e5046072361a293fa23"
+      }
+    },
+    {
+      "case": "refactor-orders",
+      "repeat": 1,
+      "model": "iq3",
+      "wall_s": 104.944,
+      "checks": 24,
+      "passed": 24,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 8,
+      "tool_count": 10,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 9,
+        "prompt_tokens": 67685,
+        "reused": 48049,
+        "output_tokens": 2077,
+        "prompt_ms": 51204.09999999998,
+        "decode_ms": 49947.19999999998,
+        "drafts_offered": 1772,
+        "drafts_accepted": 1384
+      },
+      "generation_tps": 41.58391261171799,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "orders.ts": "a98fc473305094e474f68c4efff2fcb84ab757a520e7b79689a52d220c0dcc6c",
+        "validation.ts": "430f4f34496010b25317a9c68eff94e4fcbc4f4016b6ad7a2afe297a102e789b",
+        "aggregation.ts": "9136902f4b9e15f1d6377ce341fb3602cd32422c4a9a3f20135f2f4817669a64"
+      }
+    },
+    {
+      "case": "refactor-orders",
+      "repeat": 2,
+      "model": "iq3",
+      "wall_s": 119.482,
+      "checks": 24,
+      "passed": 24,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 10,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 62561,
+        "reused": 42273,
+        "output_tokens": 2869,
+        "prompt_ms": 49435.0,
+        "decode_ms": 67192.79999999996,
+        "drafts_offered": 2454,
+        "drafts_accepted": 1886
+      },
+      "generation_tps": 42.69802716957771,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "orders.ts": "a98fc473305094e474f68c4efff2fcb84ab757a520e7b79689a52d220c0dcc6c",
+        "validation.ts": "430f4f34496010b25317a9c68eff94e4fcbc4f4016b6ad7a2afe297a102e789b",
+        "aggregation.ts": "9136902f4b9e15f1d6377ce341fb3602cd32422c4a9a3f20135f2f4817669a64"
+      }
+    },
+    {
+      "case": "refactor-orders",
+      "repeat": 3,
+      "model": "iq3",
+      "wall_s": 137.212,
+      "checks": 24,
+      "passed": 24,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 7,
+      "tool_count": 10,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 8,
+        "prompt_tokens": 63865,
+        "reused": 43228,
+        "output_tokens": 3525,
+        "prompt_ms": 51135.5,
+        "decode_ms": 83125.70000000001,
+        "drafts_offered": 2988,
+        "drafts_accepted": 2263
+      },
+      "generation_tps": 42.40565793731661,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "orders.ts": "0823459338038a099e36a7d20c8279f9c128f90474c5272b98a5a1136a85f213",
+        "validation.ts": "93742276a04be91ca59fa041c34193cc981f562c28a382200845ee1a0b7f3733",
+        "aggregation.ts": "774ef9a84e12063715b8db0cca4141d51b28c064bfda476ddfbb974239a51485"
+      }
+    },
+    {
+      "case": "reservation-workflow",
+      "repeat": 1,
+      "model": "iq3",
+      "wall_s": 158.644,
+      "checks": 32,
+      "passed": 32,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 6,
+      "tool_count": 12,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 7,
+        "prompt_tokens": 57077,
+        "reused": 33960,
+        "output_tokens": 4491,
+        "prompt_ms": 50754.399999999965,
+        "decode_ms": 105292.0,
+        "drafts_offered": 3908,
+        "drafts_accepted": 2804
+      },
+      "generation_tps": 42.6528131292026,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "stock.ts": "a871b7e3c67aacbd223d0b199f1242ed9917cfad2d75856ccd32f7f1d93e49d0",
+        "requests.ts": "2bb44d2cfd568b51e8314796045386ffc383819f2a942d3919d22fe70686ba29",
+        "allocate.ts": "8d771e3d64e51c3d74336f8f752a4d5dcc39f683eabafb368c8df0027fb34ae1"
+      }
+    },
+    {
+      "case": "reservation-workflow",
+      "repeat": 2,
+      "model": "iq3",
+      "wall_s": 151.56,
+      "checks": 32,
+      "passed": 32,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 6,
+      "tool_count": 11,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 7,
+        "prompt_tokens": 55754,
+        "reused": 33157,
+        "output_tokens": 4141,
+        "prompt_ms": 51591.00000000006,
+        "decode_ms": 97561.80000000005,
+        "drafts_offered": 3610,
+        "drafts_accepted": 2625
+      },
+      "generation_tps": 42.44489134066815,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "stock.ts": "98aa12feff3de724054440b2d836425cee22d02356ab2e422c10364f359780c6",
+        "requests.ts": "4a62cb81145f0d92b16a4d129eafa4a5d4be072000c5e0daee0217ac8ae76084",
+        "allocate.ts": "3185d368c1cbee91c31610ef7e9ddba7b3157d7283838f0927f10fea63768808"
+      }
+    },
+    {
+      "case": "reservation-workflow",
+      "repeat": 3,
+      "model": "iq3",
+      "wall_s": 166.632,
+      "checks": 32,
+      "passed": 32,
+      "failed": 0,
+      "protected": {
+        "AGENTS.md": true,
+        "README.md": true,
+        "acceptance.test.ts": true,
+        "opencode.json": true
+      },
+      "model_verified": true,
+      "structural": true,
+      "steps": 8,
+      "tool_count": 13,
+      "test_tool_runs": 1,
+      "engine_delta": {
+        "requests": 9,
+        "prompt_tokens": 85383,
+        "reused": 61961,
+        "output_tokens": 4615,
+        "prompt_ms": 53303.20000000001,
+        "decode_ms": 109750.5,
+        "drafts_offered": 3998,
+        "drafts_accepted": 2861
+      },
+      "generation_tps": 42.04992232381629,
+      "success": true,
+      "completion_error_count": 0,
+      "tool_error_count": 1,
+      "tool_error_note": "Raw permission/error text omitted; expected disallowed shell-command attempts were blocked by the fixture policy.",
+      "solution_sha256": {
+        "stock.ts": "47aed300c22cd48242ca3b4d998f2df147ccc81f5eda08f71e81f15b30548e04",
+        "requests.ts": "7052b6fe110efc7efd581ecbbc374b0f8a881e0016ffed70c6ece3da444dc13b",
+        "allocate.ts": "4bf537e7f7751a87cf9c26fe7d3eab7522771783a54d0eeb7586223cd4aee56f"
+      }
+    }
+  ]
+}

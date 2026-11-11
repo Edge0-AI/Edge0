@@ -1,0 +1,49 @@
+{
+  "carrier": "tauri",
+  "error": "",
+  "kind": "strata-desktop-self-test",
+  "ok": true,
+  "schemaVersion": 1,
+  "steps": [
+    {
+      "detail": "/Users/nikoveit/Documents/deepseek-harness/strata-work/strata-rebuild/apps/desktop/src-tauri/target/release/bundle/macos/Strata.app/Contents/Resources",
+      "name": "resources-packaged",
+      "ok": true
+    },
+    {
+      "detail": "/Users/nikoveit/Documents/deepseek-harness/strata-work/strata-rebuild/apps/desktop/src-tauri/target/release/bundle/macos/Strata.app/Contents/Resources/host/server/index.mjs",
+      "name": "host-entry-present",
+      "ok": true
+    },
+    {
+      "detail": "/Users/nikoveit/Documents/deepseek-harness/strata-work/strata-rebuild/apps/desktop/src-tauri/target/release/bundle/macos/Strata.app/Contents/Resources/host/dist",
+      "name": "ui-dist-present",
+      "ok": true
+    },
+    {
+      "detail": "/Users/nikoveit/Documents/deepseek-harness/strata-work/strata-rebuild/apps/desktop/src-tauri/target/release/bundle/macos/Strata.app/Contents/Resources/node/node",
+      "name": "private-node-runtime",
+      "ok": true
+    },
+    {
+      "detail": "pid 6759",
+      "name": "host-spawned",
+      "ok": true
+    },
+    {
+      "detail": "http://127.0.0.1:49613/api/health answered 2xx",
+      "name": "host-healthy",
+      "ok": true
+    },
+    {
+      "detail": "http://127.0.0.1:49613/",
+      "name": "ui-served",
+      "ok": true
+    },
+    {
+      "detail": "GET /api/health",
+      "name": "api-reachable-on-same-origin",
+      "ok": true
+    }
+  ]
+}

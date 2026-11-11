@@ -1,0 +1,66 @@
+strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split 24)
+strata generate: PCIe probe: 7.0 GB/s host->device (best of 7.0 7.0 7.0 7.0) -> pcie_frac 0.19 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
+strata generate: native pack: <data root>/packs/coder-iq1_m experts (largest blob 2.66 MB), token embedding IQ4_XS in mapped host memory (322 MiB)
+strata generate: layer split: CUDA0 loads the dense weights of layers 0-23 only
+strata generate: 741 MiB of weights loaded from <data root>/packs/coder-iq1_m (686 canonical tensors skipped: served natively)
+strata generate: 150 native projection matrices, 988.19 MiB of weights
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split: CUDA1 loads the dense weights of layers 24-47 only
+strata generate: layer split: CUDA1 PCIe probe 7.0 GB/s (best of 7.0 7.0 7.0 7.0) -> pcie_frac 0.19
+strata generate: layer split: CUDA1 holds its weights; 22.04 GiB free (its session follows the split search)
+strata generate: profile data/expert-profile-coder.bin: 12288 ranked pairs, built for 12288 slots
+strata generate: PLE on, table 320001536 rows of <data root>/models/coder-iq1_m/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00002-of-00002.gguf
+strata generate: layer split: CUDA1 holds its weights, session [24, 48) and the head; 21.43 GiB free
+strata mtp: draft layer loaded, 802 MiB of VRAM (experts 675, dense 111), files read in 0.44 s (1769 MiB/s)
+strata generate: GPU 0: Intel(R) Arc(TM) Pro B60 Graphics, compute capability 20.1
+strata generate: WARNING: this engine was compiled with CUDA 12.8 headers but loaded a CUDA 0.2 runtime (libcudart): GPU properties can read wrong and some kernels go unused. Rebuild it against one toolkit (cmake -DCUDAToolkit_ROOT=<the toolkit>, with its libcudart.so present) (#542)
+strata generate: experts streamed from the GGUF on demand (--stream-experts): no host arena; every expert must fit the VRAM cache
+strata generate: expert cache auto: 21.95 GiB free, 1536 MiB reserved (+0 MiB for the draft head) -> 6144 slots
+strata generate: expert cache 6144 slots, 11.07 GiB of VRAM; policy is
+strata generate: the GPU computes the experts in the cache; it rounds differently from the CPU,
+                 so a reply can differ slightly from a run without the cache (same quality:
+                 bench/results/2026-09-27-cache-parity).
+                 PROFILE, ranked by routing frequency, no eviction.
+strata generate: profile fill: 11.07 GiB in 1.9 s (6.27 GB/s, pipelined)
+strata generate: pre-filled 6144 of 6144 slots from the profile; slot 0 verified
+strata generate: 3024 of 6144 experts missing from VRAM mirrored in pinned host memory (6.00 GiB, 1.0 s); the GPU reads them over PCIe
+strata generate: WARNING: 3120 experts are neither in VRAM nor mirrored; with STRATA_VERIFY_NO_HOST the device plan cannot run them and their layers' windows fall back slowly - raise STRATA_MIRROR_MIB or the free RAM, or lower --max-context
+strata generate: layer split, CUDA1: 20.65 GiB free of 23.91, room for experts 17.33 GiB
+strata generate: layer split: CUDA1 runs layers 24-47, expert cache 6144 slots (12.35 GiB), 6144 of its 6144 profiled pairs; slot 0 verified
+strata generate: layer split: CUDA0 runs layers 0-23
+strata generate: R4 hit path ON - resident experts are computed on the GPU
+strata generate: 5 expert-pool workers + the host thread
+strata generate: session is up (engine 0.1.39-sycl)
+strata generate: token graph hit path: 12288 resident experts, decided on the device
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: the prompt path allocates its own buffers (too few cache slots to borrow)
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata serve: layer split: layers 0-23 (CUDA0), 24-47 (CUDA1), one hand-off per window
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata mtp: draft head over 106299 tokens (212.9 MiB)
+strata serve: 9890 MiB of VRAM free with everything loaded
+strata verify: captured the 6-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 6-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 4-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 4-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 1-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 1-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 2-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 2-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata serve: prompt 23 tokens = 0 reused + 23 read in 456 ms (50.4 tok/s), 159 generated in 3010 ms (52.8 tok/s), drafts accepted 112 of 138, 1 checkpoints
+strata serve: suffix drafts: 1 windows, 1 of 5 drafts accepted
+strata serve: prompt 23 tokens = 16 reused + 7 read in 94 ms (74.3 tok/s), 159 generated in 2810 ms (56.6 tok/s), drafts accepted 114 of 133, 1 checkpoints
+strata serve: prompt 23 tokens = 16 reused + 7 read in 87 ms (80.1 tok/s), 159 generated in 2808 ms (56.6 tok/s), drafts accepted 114 of 133, 1 checkpoints
+strata serve: prompt 37 tokens = 0 reused + 37 read in 516 ms (71.7 tok/s), 32 generated in 526 ms (60.8 tok/s), drafts accepted 23 of 24, 1 checkpoints
+strata verify: captured the 5-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 5-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata serve: prompt 42 tokens = 0 reused + 42 read in 604 ms (69.5 tok/s), 4 generated in 160 ms (25.1 tok/s), drafts accepted 4 of 6, 1 checkpoints
+strata verify: captured the 3-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata verify: captured the 3-token window (upload <FIXME: Placeholder>, sync <FIXME: Placeholder>)
+strata serve: prompt 2129 tokens = 0 reused + 2129 read in 4975 ms (427.9 tok/s), 128 generated in 3189 ms (40.1 tok/s), drafts accepted 70 of 98, 1 checkpoints
+strata serve: prompt 2129 tokens = 2122 reused + 7 read in 90 ms (78.1 tok/s), 128 generated in 3101 ms (41.3 tok/s), drafts accepted 70 of 98, 1 checkpoints
+strata serve: prompt 1922 tokens = 0 reused + 1922 read in 4519 ms (425.3 tok/s), 256 generated in 4475 ms (57.2 tok/s), drafts accepted 186 of 208, 1 checkpoints
+strata serve: suffix drafts: 1 windows, 2 of 5 drafts accepted
+strata serve: prompt 2199 tokens = 2178 reused + 21 read in 342 ms (61.4 tok/s), 256 generated in 3587 ms (71.4 tok/s), drafts accepted 209 of 212, 2 checkpoints
+strata serve: suffix drafts: 37 windows, 185 of 185 drafts accepted

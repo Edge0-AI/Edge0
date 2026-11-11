@@ -1,0 +1,8 @@
+[long run0] prompt_n=2129 cache_n=0 prompt 427.9 tok/s | decode 128 tok 40.1 tok/s | drafts 70/98 | wall 8.2s | finish stop
+[long run1] prompt_n=7 cache_n=2122 prompt 78.1 tok/s | decode 128 tok 41.3 tok/s | drafts 70/98 | wall 3.2s | finish stop
+This code is a comprehensive integration test script for a batched inference engine (likely named "Strata") that verifies the correctness of multi-slot decoding, specifically ensuring that tokens generated in parallel slots match those generated in solo mode, even when long prompts are interleaved with other decoding operations or when requests are continued from checkpoints. The script sets up various scenarios involving different prompt lengths, slot assignments, and continuation logic to validate that the engine's internal state management, expert caching, and token generation remain consistent across different execution paths.
+
+```python
+def reverse_string(s: str) -> str:
+    return s[::-1]
+```

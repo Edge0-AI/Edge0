@@ -1,0 +1,63 @@
+{
+ "config": "iq2_xs_single_3090",
+ "runs": 3,
+ "aggregate": {
+  "ttft_s": {
+   "median": 2.171,
+   "min": 2.069,
+   "max": 2.811
+  },
+  "prefill_2600": {
+   "prompt_tok_s": {
+    "median": 188.3,
+    "min": 188.2,
+    "max": 188.8
+   },
+   "fresh_prompt_tokens": {
+    "median": 1748,
+    "min": 1747,
+    "max": 1750
+   },
+   "decode_tok_s": {
+    "median": 112.2,
+    "min": 106.2,
+    "max": 116.9
+   }
+  },
+  "prefill_10000": {
+   "prompt_tok_s": {
+    "median": 560.2,
+    "min": 560.0,
+    "max": 560.3
+   },
+   "fresh_prompt_tokens": {
+    "median": 6488,
+    "min": 6488,
+    "max": 6490
+   },
+   "decode_tok_s": {
+    "median": 101.1,
+    "min": 97.0,
+    "max": 114.8
+   }
+  },
+  "prefill_42000": {
+   "prompt_tok_s": {
+    "median": 618.1,
+    "min": 617.6,
+    "max": 618.3
+   },
+   "fresh_prompt_tokens": {
+    "median": 26990,
+    "min": 26989,
+    "max": 26992
+   },
+   "decode_tok_s": {
+    "median": 111.5,
+    "min": 105.1,
+    "max": 115.2
+   }
+  }
+ },
+ "failed_runs": []
+}

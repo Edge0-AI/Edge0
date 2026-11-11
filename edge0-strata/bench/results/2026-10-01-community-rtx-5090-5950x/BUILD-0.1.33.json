@@ -1,0 +1,20 @@
+{
+ "version": "0.1.33",
+ "source": "release",
+ "archs": [
+  75,
+  86,
+  89,
+  120
+ ],
+ "vision_archs": [
+  75,
+  86,
+  89,
+  120
+ ],
+ "ptx": true,
+ "cuda": "13.0",
+ "vision": "gpu",
+ "portable": true
+}

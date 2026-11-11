@@ -1,0 +1,54 @@
+{
+  "measured": "2026-10-07",
+  "installer": "unmodified setup.py from the measured commit, run by the image's docker-entrypoint.sh",
+  "model": {
+    "family": "coder",
+    "title": "Qwen3.8-Flash-Next Coder (ISTA-DASLab's coding version: half of each layer's experts)",
+    "repository": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-Coder-GGUF",
+    "revision": "5348543e0147355ac9cbcb031184a3546350988e",
+    "revision_date": "2026-09-29",
+    "revision_source": "setup.py HF_REVISIONS, the revision the installer pins",
+    "quantization": "IQ1_M (the Coder's only size; experts stored like IQ3_S, ~3.5 bits)"
+  },
+  "files": [
+    {
+      "path": "/data/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf",
+      "role": "shard 1: the part loaded at startup (experts to RAM, dense weights to the GPU)",
+      "bytes": 29608446496,
+      "sha256_local": "e11083ba855e7666b48ea3f2db6a9c3a20c18751a012cc24f948de91b7087fad",
+      "sha256_published_lfs": "e11083ba855e7666b48ea3f2db6a9c3a20c18751a012cc24f948de91b7087fad",
+      "matches": true
+    },
+    {
+      "path": "/data/models/coder-IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00002-of-00002.gguf",
+      "role": "shard 2: the PLE / n-gram table, stays on the SSD",
+      "bytes": 28800138432,
+      "sha256_local": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113",
+      "sha256_published_lfs": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113",
+      "matches": true
+    },
+    {
+      "path": "/data/models/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+      "role": "vision encoder (the Coder repository ships the original's mmproj)",
+      "bytes": 907543008,
+      "sha256_local": "b1a82259702816a5330d7bd7607cd9676b11780e79ff7348c21103ff3ce49bd0",
+      "sha256_published_lfs": "b1a82259702816a5330d7bd7607cd9676b11780e79ff7348c21103ff3ce49bd0",
+      "matches": true
+    }
+  ],
+  "hash_command": "sha256sum inside the container, compared with the repository's published LFS oids from the Hugging Face API at the pinned revision",
+  "mtp_draft_layer": {
+    "source": "Qwen/Qwen3.8-Flash-Next (the BF16 checkpoint's MTP block), fetched by tools/mtp_fetch.py",
+    "inventory": "31 tensors, 5.214 GB, in 28 shards",
+    "files": ["mtp-manifest.json", "mtp-inventory.md", "mtp-q2_0.gguf.report.json"],
+    "note": "The manifest carries a SHA-256 per tensor, which the fetcher verifies against the checkpoint's own hashes; the full BF16 shards were not downloaded. The installer then built mtp-q2_0.gguf and the runtime pack under /data/mtp/rt (6.5 GB on disk including the tensors)."
+  },
+  "prepared_pack": {
+    "path": "/data/packs/coder-iq1_m",
+    "bytes_on_disk": "1.4 GB (the installer's own pack; the experts themselves are served natively from shard 1)"
+  },
+  "notes": [
+    "All three model files matched the published hashes byte for byte, so the numbers below are for the published IQ1_M, not for a re-quantized or truncated copy.",
+    "The download and the pack preparation were done by the unmodified installer in the official image; nothing was quantized or repacked by hand."
+  ]
+}

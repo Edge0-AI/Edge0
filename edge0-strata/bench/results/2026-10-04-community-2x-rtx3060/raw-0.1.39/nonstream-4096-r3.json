@@ -1,0 +1,48 @@
+{
+ "request": {
+  "model": "qwen3.8-flash-next-iq3_s",
+  "max_tokens": 256,
+  "temperature": 0,
+  "stream": false
+ },
+ "prompt_chars": 16279,
+ "filler_repeats": 26,
+ "response": {
+  "id": "chatcmpl-a698da7ccd8b4d6d86038902",
+  "object": "chat.completion",
+  "created": 1791119670,
+  "model": "qwen3.8-flash-next-iq3_s",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "A mixture-of-experts layer uses a router to activate a small subset of smaller expert networks, keeping per-token compute roughly constant but increasing memory demands, so when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.",
+     "reasoning_content": "We need answer user's request: summarise text in exactly one sentence. Need produce final exactly one sentence. Text repeated many times about MoE layer replacing FFN with experts and router, compute constant, memory tradeoff, VRAM smaller than model, experts streamed, decode throughput sensitive to cache hit rate, PCIe, layout. Need one sentence. Ensure no extra sentence. Could be: \"A mixture-of-experts layer uses a router to activate a small subset of smaller expert networks, keeping per-token compute roughly constant but increasing memory demands, so when VRAM is insufficient, decode throughput depends on expert-cache hit rate, PCIe bandwidth, and cache layout.\" Exactly one sentence. Need maybe mention repeated? No. Final one sentence.\n"
+    },
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "prompt_tokens": 3197,
+   "completion_tokens": 204,
+   "total_tokens": 3401,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 3197,
+   "prompt_ms": 5062.4,
+   "prompt_per_token_ms": 1.583,
+   "prompt_per_second": 631.5,
+   "predicted_n": 204,
+   "predicted_ms": 4629.6,
+   "predicted_per_token_ms": 22.694,
+   "predicted_per_second": 44.1,
+   "draft_n": 185,
+   "draft_n_accepted": 131
+  }
+ }
+}

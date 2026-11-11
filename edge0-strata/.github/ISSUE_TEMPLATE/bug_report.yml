@@ -1,0 +1,101 @@
+name: Bug report
+description: Something in Strata doesn't work as documented
+title: "[Area] "
+labels: ["bug"]
+body:
+  - type: markdown
+    value: |
+      Thanks for the report. Please read [CONTRIBUTING.md](https://github.com/Niko1221/Strata/blob/main/CONTRIBUTING.md) first.
+
+      Search the [open and closed issues](https://github.com/Niko1221/Strata/issues?q=is%3Aissue) first: this may already be tracked, and new evidence belongs in that thread.
+
+      Write only what you saw. Do not guess at steps, errors, hardware or severity.
+
+      **The title must start with its area:** [Engine], [GUI], [TUI], [Benchmark], [Docs] or [Other]. Choose the same one below.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Start the issue title with the same area in square brackets, for example "[Engine] decode stops after 2 minutes". Pick Other if none fits.
+      options:
+        - "[Engine]  (speed, kernels, models, the server and API)"
+        - "[GUI]  (the desktop app)"
+        - "[TUI]  (the Terminal: strata launch, connect, monitor)"
+        - "[Benchmark]  (measurements and reports)"
+        - "[Docs]  (documentation)"
+        - "[Other]  (anything else, including setup and installation)"
+    validations:
+      required: true
+  - type: dropdown
+    id: how
+    attributes:
+      label: Desktop app, Terminal or source?
+      options:
+        - Desktop app (Windows, Linux or Mac)
+        - Terminal (the `strata` command)
+        - Source (START-HERE.bat, setup.sh or a build)
+        - Docker
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you got, and what you expected instead. Paste the exact error text if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Smallest steps or command that reproduce it
+      description: The shortest list of steps that shows the problem. If you cannot make it happen again, say so here.
+    validations:
+      required: false
+  - type: dropdown
+    id: reproduction-status
+    attributes:
+      label: Reproduction status
+      options:
+        - Reproduced locally
+        - Unconfirmed static analysis (I read code or ran a scanner; I did not see it fail)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Strata version
+      description: "In the app: Settings > About. In the Terminal: `strata --version`. From source: the About tab of the web page, or `engine` in `GET /v1/status`, or the git commit."
+      placeholder: "Strata 0.2.9 · engine 0.1.55"
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Graphics card, memory and system
+      description: The card and its VRAM, the RAM of the PC, and the operating system.
+      placeholder: "RTX 5070 12 GB · 64 GB RAM · Windows 11"
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model, size and settings
+      description: The model and size you started, the context, and whether pictures were on. Write what is relevant.
+      placeholder: "Qwen3.8-Flash-Next IQ2_XS · 128K context · pictures on"
+    validations:
+      required: false
+  - type: textarea
+    id: log
+    attributes:
+      label: Logs
+      description: |
+        The app: Settings > Engine > Diagnostics > View logs > Save logs, then drag the file in. The Terminal: paste the output of `strata doctor`. From source: drag in `strata-<model>.log` from your Strata folder.
+        Remove API keys, passwords and private text first.
+    validations:
+      required: false
+  - type: markdown
+    value: |
+      A couple of extras that help a lot:
+
+      - Check the [troubleshooting page](https://github.com/Niko1221/Strata/blob/main/docs/TROUBLESHOOTING.md) first, many reports are already solved there.

@@ -1,0 +1,49 @@
+P4 PREFILL ROOFLINE — 2026-10-09
+
+Finding: an active-layer expert cache is a useful target. Caching alone under the current all-layer chunk walk cannot retain a ~40 GiB expert set on one P4. Reordering prefill to reuse a layer before advancing is the mechanism that makes a roughly 0.6–1.1 GiB layer working set useful.
+
+MEASURED PREFILL
+One Tesla P4 (GPU 0, x16), Qwen3.8-Flash-Next-GSQ-RCO IQ3_XXS, int8 KV, 16,384 context/resident KV, MTP spec 2, 27 CPU workers + host, NUMA interleave, mmap experts, static placement, zero prompt reuse, one generated token per request. Prompt is maintenance-note filler followed by a Linux-administration question. Warm page cache; every measured request reported zero physical disk reads and zero major faults.
+
+Fixed 512-token chunks: one warmup, three measured repetitions per length; engine prompt timing includes the final token handled through the token path.
+  512 tokens: median 64.520194 tok/s; range 64.403326–64.588563; median 7.935500 s.
+  4,096 tokens: median 78.018453 tok/s; range 77.865837–78.081364; median 52.500400 s.
+  8,192 tokens: median 78.840339 tok/s; range 78.837304–78.847851; median 103.906200 s.
+
+Instrumented controls disabled CPU expert sharing to make the GPU work budget explicit. Each has one measured request per length after a 512-token warmup. Fixed-512 controls were 77.929/78.933 tok/s at 4K/8K, close to the repeated baseline. Auto selected a maximum 1,792-token chunk and reached 107.260/114.754 tok/s. These are profiling confirmations, not a repeated performance claim or a quality validation. All 16 requests completed and emitted the same single next token; no multi-token quality gate was run.
+
+EXACT EXPERT COPIES (counter at cudaMemcpyAsync enqueue sites; primary GPU only)
+Policy / prompt | host-to-GPU bytes | distinct streamed bytes | repeat factor | prompt tok/s
+  512 / 4,096 | 135.417242 GB | 29.545114 GB | 4.583406x | 77.928650
+  512 / 8,192 | 262.788941 GB | 30.871322 GB | 8.512397x | 78.933397
+  auto / 4,096 | 105.829222 GB | 42.600730 GB | 2.484212x | 107.259667
+  auto / 8,192 | 193.275469 GB | 42.600730 GB | 4.536905x | 114.753823
+
+The 263.9194 GB logical file-tier reads at 8K include CPU/tail activity and are not GPU traffic or disk traffic. The dedicated fixed-512 counter measured 262.7889408 GB of actual expert-copy payload, 30.8713216 GB distinct. About 88.25% of that payload repeats previously copied layer/expert pairs. “Distinct” includes any streamed experts that routing later does not use. It excludes experts that remained resident; it is a reuse opportunity for the observed schedule, not a promise that a new schedule will transfer exactly that amount.
+
+CACHE CAPACITY
+The native expert pack contains 42,912,972,800 bytes (39.965820 GiB) across 48 layers. All 512 experts of one layer occupy 637.5–1,137.5 MiB. In the 8K fixed-512 control, distinct streamed data averaged about 613 MiB/layer; individual layer peaks were not counted. The current profile cache has 796 slots / 1.31 GiB. Fixed-512 prefill borrows 220 slots (~0.36 GiB), while auto can borrow 621 (~1.02 GiB). A layer cache therefore needs a scratch/activation budget and may need to stream the largest layers in groups. The existing global decode cache should be restored after prefill.
+Dense projections are already GPU resident. Attention caches and recurrent state retain past state, but each new token still requires its attention, projections, and recurrence computation. Repeated expert weights are the main avoidable weight-transfer volume in this measurement. The token embedding and PLE have host-resident components; their phases were small here.
+
+MEASURED RESOURCE ROOFS (decimal GB/s; median of three)
+  vram_read: 147.402334 GB/s
+  h2d: 11.886827 GB/s
+  d2h: 12.385216 GB/s
+  host_read: 75.118952 GB/s
+Pinned H2D/D2H and VRAM read benchmarks used 256 MiB buffers on GPU 0, with host allocation on NUMA node 0. Host sequential read used a 2 GiB array, 28 physical cores, and memory interleaved across the sockets. These are bandwidth microbenchmarks, not application throughput. The host-buffer locality differs from the interleaved full-model test, so H2D is an attainable best-case reference.
+NVIDIA specifies up to 5.5 FP32 TFLOP/s and 22 INT8 TOP/s, with 192 GB/s nominal memory bandwidth. The actual read test achieved 147.4 GB/s. The SGEMM microbenchmark in roofs.jsonl is a dense-kernel reference, not the native IQ3 expert kernel.
+Source: https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-product-literature/184457-Tesla-P4-Datasheet-NV-Final-Letter-Web.pdf
+
+WHAT THE ROOFLINE DOES AND DOES NOT PREDICT
+At the measured 11.887 GB/s link rate, the fixed-512 8K expert payload has a 22.108-second copy-service floor. Copying its distinct payload once would take 2.597 seconds at that rate. The observed prompt takes ~103.8 seconds. Copy and compute overlap, so the 19.510-second difference is not a directly subtractable wall-time saving.
+The 8K fixed-512 compute-stream timeline is about 6.2% explicit copy wait, 29.6% grouping/gather/dequant/issue phases, 23.6% expert math/combine, and 40.7% other model stages. Event gaps include host issue and copy stalls. In particular, the “dequant” label also includes quantized group gathering and gaps; it must not be read as pure dequantization kernel time. The engine host-staging figure is cumulative/overlapping and is not added to request time.
+Holding all remaining phase times fixed: removing only explicit copy waits gives 1.066x; removing the entire wait+dequant phases gives 1.477x; removing every routed-expert phase, including its math, gives 2.460x. The last leaves ~42.2 seconds, or roughly 194 prompt tok/s. Those are sensitivity scenarios for the 512-token schedule, not universal bounds. Auto already changes both traffic and kernel batching. A future implementation must be compared with auto, and can change the phase balance.
+The plotted roofline counts only the useful routed-expert matrix work: 48 layers x top-10 x three 2560-by-640 products x 2 = 4.718592 billion equivalent operations/token. It omits dense, attention, recurrence, and quantization operations. Points use H2D bytes and full prompt time, so this is a partial-work transfer roofline, not a hardware-counter FLOP utilization measurement. The VRAM line illustrates the same byte volume served locally; actual GPU DRAM traffic was not measured. Arrows change arithmetic intensity under one-copy reuse while keeping runtime unchanged, not predicting speed.
+
+NEXT EXPERIMENT
+Use a temporary active-layer expert cache, process multiple 512-token attention/state chunks before leaving that layer, and group their routed rows by expert. Retain frequently reused expert groups; stream the remainder; place residuals in pinned host memory if required. Measure actual transfers, copy waits, gather/issue overhead, and grouped expert math separately. The target is to beat the existing auto policy, with a multi-token numerical/correctness gate. No layer-major implementation or feature speedup has been tested.
+
+PROVENANCE AND REPRODUCTION
+Baseline source: fb58e0dbc8399662c0e47c76578c6e878b14f6cf (Strata 0.1.41). Instrumented build is that source plus instrumentation.patch: 21 host-side lines behind STRATA_PREFILL_ROOFLINE. CUDA Release sm_61, CUDA 12.0 / GCC 12. Dependencies reuse revision 3cf03257f219afbe7334045ff7c6a06ac68c627d. No deployed serving configuration changed; all three P4s were idle at completion.
+p4-roofline/results.json and engine.log: repeated baseline, exact inputs, output token, timing and phase logs. p4-roofline/control/ and p4-roofline/auto/: byte-count controls and complete configs. roofs.jsonl / host-roofs.jsonl: bandwidth and dense GEMM measurements. p4_prefill_runner.py, p4_roofs.cu, host_read.cpp: measurement sources; README.md documents build flags and replay. native_experts.txt: per-layer blob sizes. roofline-summary.json: calculated values. p4-prefill-roofline.png/.svg: standalone figure.
+The issue #1670 description is inspiration only; its unpublished implementation has not been run. The RX 5500 XT and RTX 3070 were not used for this roofline.

@@ -1,0 +1,351 @@
+{
+ "corpus": "serve/fixtures/rcall_specimens.json",
+ "n_specimens": 37,
+ "widths": [
+  1,
+  2,
+  3,
+  7,
+  0,
+  100000
+ ],
+ "cases": [
+  {
+   "name": "act-natural-stop",
+   "expect_calls": [
+    "execute_code"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "act-first-text",
+   "expect_calls": [
+    "execute_code"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "act-two-adjacent",
+   "expect_calls": [
+    "execute_code",
+    "execute_code"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "envelope-undeclared",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "envelope-declared",
+   "expect_calls": [
+    "tool_call"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-backticks-midsentence",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-midsentence-whole-call",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-backticks-line-start",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-line-start-no-function",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-line-start-other-tag",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-indented",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-markdown-quote",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-backtick-block",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-tilde-block",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-tag-before-think-end",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-closed-span-fenced",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-unclosed-disclaimed",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "cut-max-tokens",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-midsentence-declared",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-trailing-prose",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-prose-between-calls",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mention-empty-span",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "known-miss-bare-function-opener",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "normal-call-after-think-end",
+   "expect_calls": [
+    "execute_code"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "mixed-declared-and-envelope",
+   "expect_calls": [
+    "execute_code"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-01-declared",
+   "expect_calls": [
+    "terminal"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-02-declared",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-03-envelope",
+   "expect_calls": [],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-04-declared",
+   "expect_calls": [
+    "terminal",
+    "web_extract"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-05-declared",
+   "expect_calls": [
+    "terminal"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-06-envelope",
+   "expect_calls": [
+    "todo_list"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-07-declared",
+   "expect_calls": [
+    "search_files"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-08-declared",
+   "expect_calls": [
+    "terminal"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-09-declared",
+   "expect_calls": [
+    "execute_code"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-10-declared",
+   "expect_calls": [
+    "terminal"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-11-declared",
+   "expect_calls": [
+    "terminal",
+    "terminal"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  },
+  {
+   "name": "live-12-declared",
+   "expect_calls": [
+    "web_extract"
+   ],
+   "runs": 12,
+   "mismatches": [],
+   "streamed_matches_whole": true,
+   "pass": true
+  }
+ ],
+ "totals": {
+  "specimens": 37,
+  "expected_to_act": 16,
+  "expected_to_stay_text": 21,
+  "failed": 0
+ }
+}

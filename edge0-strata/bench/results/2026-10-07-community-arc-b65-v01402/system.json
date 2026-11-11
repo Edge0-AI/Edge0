@@ -1,0 +1,89 @@
+{
+  "os": "Ubuntu 26.04.1 LTS",
+  "kernel": "7.0.0-38-generic",
+  "cpu": {
+    "Architecture": "x86_64",
+    "CPU(s)": "16",
+    "Model name": "12th Gen Intel(R) Core(TM) i5-12600K",
+    "Thread(s) per core": "2",
+    "Core(s) per socket": "10",
+    "Socket(s)": "1",
+    "CPU max MHz": "4900.0000"
+  },
+  "memtotal": "129273108 kB",
+  "ram_dimms_allowlist": [
+    "Size: 32 GB",
+    "Locator: Controller0-ChannelA-DIMM0",
+    "Type: DDR4",
+    "Speed: 3200 MT/s",
+    "Configured Memory Speed: 3200 MT/s",
+    "Size: 32 GB",
+    "Locator: Controller0-ChannelA-DIMM1",
+    "Type: DDR4",
+    "Speed: 3200 MT/s",
+    "Configured Memory Speed: 3200 MT/s",
+    "Size: 32 GB",
+    "Locator: Controller1-ChannelA-DIMM0",
+    "Type: DDR4",
+    "Speed: 3200 MT/s",
+    "Configured Memory Speed: 3200 MT/s",
+    "Size: 32 GB",
+    "Locator: Controller1-ChannelA-DIMM1",
+    "Type: DDR4",
+    "Speed: 3200 MT/s",
+    "Configured Memory Speed: 3200 MT/s"
+  ],
+  "gpu": {
+    "vendor": "0x8086",
+    "device": "0xe222",
+    "driver": "xe"
+  },
+  "power_limits_W": {
+    "power1_cap": 200.0
+  },
+  "packages": [
+    "intel-ocloc\t26.22.38646.7-1~26.04~ppa1",
+    "intel-opencl-icd\t26.22.38646.7-1~26.04~ppa1",
+    "libze-intel-gpu1\t26.22.38646.7-1~26.04~ppa1",
+    "libze1\t1.28.6-1~26.04~ppa1"
+  ],
+  "compiler": "Intel(R) oneAPI DPC++/C++ Compiler 2026.1.0 (2026.1.0.20260617)\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /opt/intel/oneapi/compiler/2026.1/bin/compiler\nConfiguration file: /opt/intel/oneapi/compiler/2026.1/bin/compiler/../icpx.cfg",
+  "storage": {
+    "blockdevices": [
+      {
+        "name": "nvme0n1",
+        "model": "Samsung SSD 980 1TB",
+        "size": "931.5G",
+        "rota": false,
+        "tran": "nvme"
+      }
+    ]
+  },
+  "ggml_commit": "3cf03257f219afbe7334045ff7c6a06ac68c627d",
+  "artifacts": "artifacts.json",
+  "python_runtime": {
+    "python": "3.14.4",
+    "packages": {
+      "numpy": "2.5.3",
+      "jinja2": "3.1.6",
+      "regex": "2026.9.10",
+      "pyyaml": "6.0.3",
+      "tqdm": "4.70.1",
+      "requests": "2.34.2",
+      "cmake": "4.4.3",
+      "ninja": "1.13.2",
+      "pillow": "12.3.0",
+      "psutil": "7.2.2"
+    }
+  },
+  "PCIe_link": {
+    "0000:00:01.0": {
+      "current_link_speed": "16.0 GT/s PCIe",
+      "current_link_width": "16"
+    },
+    "0000:01:00.0": {
+      "current_link_speed": "16.0 GT/s PCIe",
+      "current_link_width": "16"
+    }
+  }
+}

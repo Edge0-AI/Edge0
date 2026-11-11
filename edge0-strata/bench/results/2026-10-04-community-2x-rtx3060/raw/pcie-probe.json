@@ -1,0 +1,48 @@
+{
+ "request": {
+  "model": "qwen3.8-flash-next-iq3_s",
+  "max_tokens": 256,
+  "temperature": 0,
+  "stream": false
+ },
+ "prompt_chars": 16272,
+ "filler_repeats": 26,
+ "response": {
+  "id": "chatcmpl-954d340aab4a4f5a98f21050",
+  "object": "chat.completion",
+  "created": 1791085100,
+  "model": "qwen3.8-flash-next-iq3_s",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "Mixture-of-experts layers increase model capacity by routing each token to a few small experts, but when VRAM is insufficient, uncached experts streamed over PCIe from host memory or disk make decode throughput depend on expert-cache hit rate, link bandwidth, and cache layout.",
+     "reasoning_content": "We need answer user's request: summarise text above in exactly one sentence. Need produce final exactly one sentence. Need likely ignore repeated text. Need concise. Ensure one sentence. Could be: \"Mixture-of-experts layers increase model capacity by routing each token to a few small experts, but when VRAM is insufficient, uncached experts streamed over PCIe from host memory or disk make decode throughput depend on expert-cache hit rate, link bandwidth, and cache layout.\" That's one sentence. Need maybe mention repeated? No. Exactly one sentence. Ensure no extra.\n"
+    },
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "prompt_tokens": 3192,
+   "completion_tokens": 172,
+   "total_tokens": 3364,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "timings": {
+   "cache_n": 0,
+   "prompt_n": 3192,
+   "prompt_ms": 5446.1,
+   "prompt_per_token_ms": 1.706,
+   "prompt_per_second": 586.1,
+   "predicted_n": 172,
+   "predicted_ms": 4218.2,
+   "predicted_per_token_ms": 24.524,
+   "predicted_per_second": 40.8,
+   "draft_n": 143,
+   "draft_n_accepted": 111
+  }
+ }
+}

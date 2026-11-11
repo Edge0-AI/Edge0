@@ -1,0 +1,72 @@
+{
+ "label": "dev-3090",
+ "extra": [],
+ "gpus": "2",
+ "needles": [
+  {
+   "tokens": 2726,
+   "prompt_ms": 3424.8,
+   "pp_tok_s": 796.0,
+   "found": true,
+   "answer": "meadow-254<|im_end|>"
+  },
+  {
+   "tokens": 8379,
+   "prompt_ms": 8617.9,
+   "pp_tok_s": 972.3,
+   "found": true,
+   "answer": "juniper-766<|im_end|>"
+  },
+  {
+   "tokens": 16066,
+   "prompt_ms": 12820.1,
+   "pp_tok_s": 1253.2,
+   "found": true,
+   "answer": "falcon-174<|im_end|>"
+  },
+  {
+   "tokens": 27743,
+   "prompt_ms": 22901.1,
+   "pp_tok_s": 1211.4,
+   "found": true,
+   "answer": "willow-474<|im_end|>"
+  }
+ ],
+ "chat": {
+  "turn1_tokens": 6584,
+  "turn1_ms": 5657.8,
+  "turn2_tokens": 6660,
+  "reused": 6631,
+  "turn2_ms": 238.7,
+  "answer": "lantern-417<|im_end|>",
+  "ok": true
+ },
+ "decode": [
+  {
+   "name": "story",
+   "tok_s": 71.7,
+   "hit_rate": 0.9266798230257504,
+   "text": "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference between a gale and a hurricane by the way the glass rattled in its frame. Tonight, it was the latter. The sea was a churning black void, punctuated by whitecaps that looked like teeth.\n\nHe climbed the spiral stairs, his knees protesting with every step. The iron rungs were cold, slick with condensation that had leaked through the hairline cracks in the masonry. At the top, the lantern room hummed with the low, steady thrum of the rotating lens. It was a sound Elias had learned to sleep with, a heartbeat of the house.\n\nHe checked the clock. 11:42 PM. The light swept across the water, a slow, hypnotic arc. *Flash. Darkness. Flash. Darkness.*\n\nFor a moment, the beam caught something that wasn\u2019t water. A shape"
+  },
+  {
+   "name": "code",
+   "tok_s": 92.9,
+   "hit_rate": 0.8636411400016346,
+   "text": "```python\nimport csv\nfrom typing import List, Dict\n\n\ndef parse_csv(filepath: str) -> List[Dict[str, str]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header row\n    and values from the corresponding row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result = []\n    with open(filepath, 'r', newline='') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n```<|im_end|>"
+  }
+ ],
+ "engine_lines": [
+  "strata generate: expert cache auto: 17.31 GiB free, 700 MiB reserved -> 6704 slots",
+  "strata generate: expert cache 8730 slots, 16.62 GiB of VRAM; policy is",
+  "strata serve: the prompt path borrows 2315 cache slots (4.42 GiB)",
+  "strata serve: decode expert cache hit rate: 86.6% (4986 hits / 5756 lookups)",
+  "strata serve: decode expert cache hit rate: 87.1% (3757 hits / 4315 lookups)",
+  "strata serve: decode expert cache hit rate: 88.7% (3827 hits / 4314 lookups)",
+  "strata serve: decode expert cache hit rate: 92.1% (3975 hits / 4318 lookups)",
+  "strata serve: decode expert cache hit rate: 95.5% (4124 hits / 4320 lookups)",
+  "strata serve: decode expert cache hit rate: 94.3% (25793 hits / 27360 lookups)",
+  "strata serve: decode expert cache hit rate: 94.6% (4088 hits / 4320 lookups)",
+  "strata serve: decode expert cache hit rate: 92.7% (116454 hits / 125668 lookups)",
+  "strata serve: decode expert cache hit rate: 86.4% (73970 hits / 85649 lookups)"
+ ]
+}

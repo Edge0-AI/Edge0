@@ -1,0 +1,11 @@
+--- a/sycl/src/core/conversation_snapshot_test.cpp
++++ b/sycl/src/core/conversation_snapshot_test.cpp
+@@ -122,7 +122,7 @@
+     ~Fixture() {
+         for (void *p : device)
+             DPCT_CHECK_ERROR(sycl::free(p, dpct::get_in_order_queue()));
+-        for (void *p : host) DPCT_CHECK_ERROR(free(p));
++        for (void *p : host) DPCT_CHECK_ERROR(sycl::free(p, dpct::get_in_order_queue()));
+     }
+ };
+ bool equal(const ConversationKv& a,const ConversationKv& b) {

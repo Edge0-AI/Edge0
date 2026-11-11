@@ -1,0 +1,44 @@
+{
+  "strata_commit": "fb58e0dbc8399662c0e47c76578c6e878b14f6cf",
+  "ggml_revision": "3cf03257f219afbe7334045ff7c6a06ac68c627d",
+  "ggml_archive_sha256": "c076d7534afa0e5d0ec2a0d425b11e791c16f3de0d727221aea071cef156a280",
+  "binary_sha256": "0912ee4bdae9ad2ab3e231ef1b0cbefc0ccb52230d0afed1431155e2e8483a10",
+  "sdk_archive_sha256": "c40e8f2bd6630a7d11557c762b99c6fa8afb04c9bd0e51ed1675ee1ca24afb00",
+  "cmake_options": [
+    "CMAKE_BUILD_TYPE:STRING=Release",
+    "CMAKE_HIP_ARCHITECTURES:UNINITIALIZED=gfx1151",
+    "CMAKE_HIP_COMPILER:STRING=/data/ssd/llm-build/strata-sdk-7.14.1/install/lib/llvm/bin/clang++",
+    "STRATA_BUILD_CONVERSATION_TESTS:BOOL=OFF",
+    "STRATA_BUILD_TESTS:BOOL=OFF",
+    "STRATA_ENABLE_CUDA:BOOL=OFF",
+    "STRATA_ENABLE_HIP:BOOL=ON",
+    "STRATA_ENABLE_SYCL:BOOL=OFF",
+    "STRATA_GFX1012_PORTABLE_DOT:BOOL=OFF",
+    "STRATA_GGML_DIR:PATH=/data/ssd/llm-build/strata-ggml-pinned",
+    "STRATA_HIP_GFX906:BOOL=OFF",
+    "STRATA_ISA_FLOOR:STRING=",
+    "STRATA_MMQ_KQUANTS:BOOL=OFF",
+    "STRATA_NATIVE_EXPERTS:BOOL=ON",
+    "STRATA_ORACLE_BUILD_DIR:PATH=",
+    "STRATA_ORACLE_SOURCE_DIR:PATH=",
+    "STRATA_ORCA_Q4KS_MMQ:BOOL=OFF",
+    "STRATA_PLE_FIXTURE_DIR:PATH=/data/ssd/llm-src/Strata/bench/micro",
+    "STRATA_PORTABLE:BOOL=OFF",
+    "STRATA_PREFILL_MMQ:BOOL=ON",
+    "STRATA_Q6K_EXPERTS:BOOL=OFF",
+    "STRATA_WERROR:BOOL=OFF",
+    "STRATA_HAVE_AVXVNNI_INTRINSICS:INTERNAL=1",
+    "STRATA_ISA_FLOOR-STRINGS:INTERNAL=;avx;none"
+  ],
+  "compilers": {
+    "CXX": {
+      "COMPILER": "/usr/bin/c++",
+      "COMPILER_VERSION": "15.2.0"
+    },
+    "HIP": {
+      "COMPILER": "/data/ssd/llm-build/strata-sdk-7.14.1/install/lib/llvm/bin/clang++",
+      "COMPILER_VERSION": "23.0.0"
+    }
+  },
+  "cmake_version": "4.2.3"
+}

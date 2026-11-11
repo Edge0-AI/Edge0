@@ -1,0 +1,78 @@
+{
+ "label": "t75-5080",
+ "extra": [],
+ "gpus": "0",
+ "needles": [
+  {
+   "tokens": 2726,
+   "prompt_ms": 2158.8,
+   "pp_tok_s": 1262.7,
+   "found": true,
+   "answer": "meadow-254<|im_end|>"
+  },
+  {
+   "tokens": 8379,
+   "prompt_ms": 5060.0,
+   "pp_tok_s": 1655.9,
+   "found": true,
+   "answer": "juniper-766<|im_end|>"
+  }
+ ],
+ "chat": {
+  "turn1_tokens": 6584,
+  "turn1_ms": 3389.7,
+  "turn2_tokens": 6660,
+  "reused": 6632,
+  "turn2_ms": 213.5,
+  "answer": "lantern-417<|im_end|>",
+  "ok": true
+ },
+ "decode": [
+  {
+   "name": "story",
+   "tok_s": 80.4,
+   "reps": [
+    80.4
+   ],
+   "hit_rate": 0.855538332528651,
+   "text": "The wind didn\u2019t just blow; it screamed.\n\nElias had lived in the tower for thirty years, and he knew the difference between a gale and a hurricane by the way the glass rattled in its frame. Tonight, it was the latter. The sea was a churning black void, punctuated by whitecaps that looked like teeth.\n\nHe climbed the spiral stairs, his boots heavy with salt and exhaustion. The iron steps groaned under his weight, a sound that had become so familiar to him that he could sleep to it. But tonight, he wasn\u2019t sleeping. He was working.\n\nThe lens was the heart of the lighthouse. A massive, rotating Fresnel lens, a cathedral of glass and brass that turned with a mechanical hum. Elias checked the clockwork mechanism. It was smooth, rhythmic, a heartbeat in the dark. But the light itself was failing.\n\nHe climbed higher, into the lantern room. The wind battered the glass panes,"
+  },
+  {
+   "name": "code",
+   "tok_s": 87.5,
+   "reps": [
+    87.5
+   ],
+   "hit_rate": 0.7075461363025227,
+   "text": "```python\nimport csv\nfrom typing import List, Dict, Any\n\n\ndef parse_csv_to_dicts(filepath: str) -> List[Dict[str, Any]]:\n    \"\"\"\n    Parse a CSV file into a list of dictionaries.\n    \n    Each dictionary represents a row, with keys from the header and values from the row.\n    \n    Args:\n        filepath: Path to the CSV file.\n    \n    Returns:\n        A list of dictionaries, one per row (excluding the header).\n    \"\"\"\n    result: List[Dict[str, Any]] = []\n    with open(filepath, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            result.append(dict(row))\n    return result\n\n\n# Tests\ndef test_parse_csv_to_dicts():\n    import tempfile\n    import os\n    \n    # Create a temporary CSV file\n    with tempfile.NamedTemporaryFile"
+  }
+ ],
+ "stage_timing": [
+  "strata serve: stage 0: 39 windows; per window: wait for the GPU 17.252 ms, pool + plan 8.473 ms, host staging 0.611 ms, commit 0.525 ms",
+  "strata serve: stage 0: 47 windows; per window: wait for the GPU 18.018 ms, pool + plan 8.616 ms, host staging 0.607 ms, commit 0.534 ms",
+  "strata serve: stage 0: 169 windows; per window: wait for the GPU 15.223 ms, pool + plan 5.717 ms, host staging 0.688 ms, commit 0.467 ms",
+  "strata serve: stage 0: 243 windows; per window: wait for the GPU 16.500 ms, pool + plan 7.316 ms, host staging 0.742 ms, commit 0.481 ms"
+ ],
+ "engine_lines": [
+  "strata generate: expert cache auto: 9.15 GiB free, 700 MiB reserved -> 3415 slots",
+  "strata generate: expert cache 4294 slots, 8.18 GiB of VRAM; policy is",
+  "strata serve: the prompt path borrows 2343 cache slots (4.42 GiB)",
+  "strata serve: decode expert cache hit rate: 59.6% (2749 hits / 4610 lookups)",
+  "strata serve: decode expert cache hit rate: 64.2% (2136 hits / 3329 lookups)",
+  "strata serve: decode expert cache hit rate: 67.3% (2309 hits / 3432 lookups)",
+  "strata serve: decode expert cache hit rate: 75.5% (16316 hits / 21602 lookups)",
+  "strata serve: decode expert cache hit rate: 74.4% (2660 hits / 3573 lookups)",
+  "strata serve: decode expert cache hit rate: 83.4% (92664 hits / 111086 lookups)",
+  "strata serve: decode expert cache hit rate: 72.0% (70946 hits / 98601 lookups)",
+  "strata generate: expert cache auto: 9.15 GiB free, 700 MiB reserved -> 3415 slots",
+  "strata generate: expert cache 4293 slots, 8.17 GiB of VRAM; policy is",
+  "strata serve: the prompt path borrows 2343 cache slots (4.42 GiB)",
+  "strata serve: decode expert cache hit rate: 59.6% (2749 hits / 4610 lookups)",
+  "strata serve: decode expert cache hit rate: 64.2% (2136 hits / 3329 lookups)",
+  "strata serve: decode expert cache hit rate: 67.3% (2309 hits / 3432 lookups)",
+  "strata serve: decode expert cache hit rate: 75.5% (16316 hits / 21602 lookups)",
+  "strata serve: decode expert cache hit rate: 74.4% (2659 hits / 3572 lookups)",
+  "strata serve: decode expert cache hit rate: 85.6% (101004 hits / 118059 lookups)",
+  "strata serve: decode expert cache hit rate: 70.8% (71044 hits / 100409 lookups)"
+ ]
+}

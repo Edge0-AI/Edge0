@@ -1,0 +1,181 @@
+--- a/sycl/src/kernels/cuda/verify_kernels.dp.cpp
++++ b/sycl/src/kernels/cuda/verify_kernels.dp.cpp
+@@ -802,7 +802,9 @@
+ }
+ 
+ void gdn_conv_l2_multi(const float* history, const float* qkv, const float* conv_w, float* h, int channels,
+-                       int qk_heads, float eps, int n_tok, void* stream, int t_begin) {
++                       int qk_heads, float eps, int n_tok, void* stream, int t_begin, bool commit) {
++    if (commit) { std::fprintf(stderr, "gdn_conv_l2_multi: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     if (!history || !qkv || !conv_w || !h || channels % S != 0 || n_tok < 1 || n_tok > kVerifyMaxT) {
+         std::fprintf(stderr, "gdn_conv_l2_multi: invalid arguments\n");
+         std::exit(1);
+@@ -876,7 +878,9 @@
+ 
+ void gdn_step_norm_multi(float* state, const float* h, int conv_channels, const float* gate, const float* beta,
+                          const float* z, const float* gamma, float eps, float* y, int h_k, int h_v, int n_tok,
+-                         const int32_t* n_keep, void* stream, int t_out_begin) {
++                         const int32_t* n_keep, void* stream, int t_out_begin, void* xq_out) {
++    if (xq_out != nullptr) { std::fprintf(stderr, "gdn_step_norm_multi: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     if (!state || !h || !gate || !beta || !z || !gamma || !y || h_k <= 0 || h_v % h_k || n_tok < 1 ||
+         n_tok > kVerifyMaxT) {
+         std::fprintf(stderr, "gdn_step_norm_multi: invalid arguments\n");
+@@ -1120,7 +1124,9 @@
+ }
+ void resident_plan(const int32_t* ids, int n_entries, int k, const int32_t* res_layer, int n_expert,
+                    const uint8_t* cache_base, const unsigned long long* slot_off, long long blob, int32_t* plan,
+-                   long long capx, uint32_t* skip, uint32_t ring, void* stream) {
++                   long long capx, uint32_t* skip, uint32_t ring, void* stream, uint32_t* plan_err) {
++    if (plan_err != nullptr) { std::fprintf(stderr, "resident_plan: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     const unsigned long long* mir = nullptr;   // SYCL port: the layer's slice of the host-mirror table, if any
+     if (g_mirror_table != nullptr && g_mirror_res != nullptr && res_layer >= g_mirror_res)
+         mir = g_mirror_table + (res_layer - g_mirror_res);
+--- a/sycl/src/kernels/cuda/shared_expert.dp.cpp
++++ b/sycl/src/kernels/cuda/shared_expert.dp.cpp
+@@ -230,7 +230,9 @@
+ 
+ void shared_expert_multi(int n_tok, const float* x, const uint16_t* x_bf16, const NativeSharedWeights& nw,
+                          const uint16_t* gate_inp_bf16, float* gate, float* up, float* g, float* out, int64_t n_embd,
+-                         int64_t n_ff, void* stream) {
++                         int64_t n_ff, void* stream, const void* x_q8_1_ready, int lfuse) {
++    if (x_q8_1_ready != nullptr || lfuse != 0) { std::fprintf(stderr, "shared_expert_multi: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     if (n_tok < 1 || n_tok > 8 || !nw.q8_1 || !nw.gate_data || !nw.up_data || !nw.down_data || !stream)
+         throw std::invalid_argument("shared_expert_multi: needs 1..8 tokens, native weights, scratch and a stream");
+     dpct::queue_ptr cs = strata::q_of(stream);
+--- a/sycl/src/prefill/kernels.dp.cpp
++++ b/sycl/src/prefill/kernels.dp.cpp
+@@ -1501,7 +1501,9 @@
+     check("gr_norm");
+ }
+ void gr_norm_rs(const float* R, const float* w_norm, float eps, float* rs, uint16_t* xn16, int64_t T, void* stream,
+-                uint16_t* xn16_lo) {
++                uint16_t* xn16_lo, int64_t ldx) {
++    if (ldx != 0) { std::fprintf(stderr, "gr_norm_rs: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     {
+         auto exp_props = sycl::ext::oneapi::experimental::properties{
+             sycl::ext::oneapi::experimental::use_root_sync};
+@@ -1538,7 +1540,9 @@
+     check("gr_mix_r");
+ }
+ void gr_write_norm_rs(float* R, const float* bo, const float* inj, int64_t inj_ld, const float* w_norm_next, float eps,
+-                      float* rs, uint16_t* xn16, int64_t T, void* stream, uint16_t* xn16_lo) {
++                      float* rs, uint16_t* xn16, int64_t T, void* stream, uint16_t* xn16_lo, int64_t ldx) {
++    if (ldx != 0) { std::fprintf(stderr, "gr_write_norm_rs: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     {
+         auto exp_props = sycl::ext::oneapi::experimental::properties{
+             sycl::ext::oneapi::experimental::use_root_sync};
+@@ -1709,7 +1713,9 @@
+     check("gdn_conv");
+ }
+ void gdn_recurrence(float* state, const float* h, const float* gate, const float* beta, const float* z,
+-                    const float* gamma, float eps, float* y, uint16_t* y16, int64_t T, void* stream) {
++                    const float* gamma, float eps, float* y, uint16_t* y16, int64_t T, void* stream, int64_t ld16) {
++    if (ld16 != 0) { std::fprintf(stderr, "gdn_recurrence: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     static const bool serial = std::getenv("STRATA_GDN_REC_HEADS") != nullptr;   // the one-block-per-head kernel (A/B)
+     if (serial || T <= 0) {
+         /*
+@@ -2062,7 +2068,9 @@
+     }
+     check("split_q");
+ }
+-void gate_attn(const float* attn, const float* q_full, uint16_t* out16, int64_t T, void* stream) {
++void gate_attn(const float* attn, const float* q_full, uint16_t* out16, int64_t T, void* stream, int64_t ld16) {
++    if (ld16 != 0) { std::fprintf(stderr, "gate_attn: new optional path is not ported to SYCL\n"); std::exit(1); }
++
+     {
+         auto exp_props = sycl::ext::oneapi::experimental::properties{
+             sycl::ext::oneapi::experimental::use_root_sync};
+--- a/sycl/src/core/pinned.dp.cpp
++++ b/sycl/src/core/pinned.dp.cpp
+@@ -499,7 +499,10 @@
+ }
+ 
+ LoadStats load_experts_direct(const std::string& path, uint8_t* dst, const std::vector<uint64_t>& layer_off,
+-                              const std::vector<uint64_t>& layer_bytes, int threads, uint64_t chunk) {
++                              const std::vector<uint64_t>& layer_bytes, int threads, uint64_t chunk, const std::atomic<int>* ready) {
++    // Current SYCL arena registers synchronously; deferred registration is not enabled.
++    if (ready != nullptr) { LoadStats st; st.ok=false; st.error="SYCL deferred reader is not supported"; return st; }
++
+     LoadStats st;
+     st.ok = false;
+ #ifdef _WIN32
+@@ -640,7 +643,10 @@
+ }
+ 
+ LoadStats load_experts_ranges(const std::string& path, uint8_t* dst, const std::vector<uint64_t>& layer_off,
+-                              const std::vector<uint64_t>& layer_bytes, int threads, uint64_t chunk) {
++                              const std::vector<uint64_t>& layer_bytes, int threads, uint64_t chunk, const std::atomic<int>* ready) {
++    // Current SYCL arena registers synchronously; deferred registration is not enabled.
++    if (ready != nullptr) { LoadStats st; st.ok=false; st.error="SYCL deferred reader is not supported"; return st; }
++
+     LoadStats st;
+     const uint64_t layers = (uint64_t) layer_off.size();
+     st.layers = layers;
+--- a/sycl/src/core/expert_source.cpp
++++ b/sycl/src/core/expert_source.cpp
+@@ -863,6 +863,28 @@
+         }
+     }
+     fill_many(todo);
++}
++
++bool FileExpertSource::advise_pairs(const std::pair<int32_t, int32_t>* pairs, int64_t n) const {
++    if (base_ == nullptr || !direct_.empty() || !strata::platform::read_ahead_enabled()) return false;
++    for (int64_t i = 0; pairs != nullptr && i < n; ++i) {
++        const int64_t l = pairs[i].first, e = pairs[i].second;
++        if (l < 0 || e < 0 || l >= n_layers_ || e >= n_expert_) continue;
++        if (role_ptr_.empty()) {   // experts.bin: the blob is one contiguous range
++            if (const uint8_t* b = mapped_blob(l, e)) strata::platform::advise_willneed(b, layer_blob_bytes_[(size_t) l]);
++            continue;
++        }
++        for (int r = 0; r < 3; ++r) {
++            const size_t k = (size_t) (3 * l + r);
++            strata::platform::advise_willneed(role_ptr_[k] + (size_t) ((uint64_t) e * role_bytes_[k]), role_bytes_[k]);
++        }
++    }
++    return true;
++}
++
++uint64_t FileExpertSource::release(int64_t layer, int64_t expert) {
++    // File-page trimming is Windows-only upstream; Linux keeps its existing mapping.
++    (void)layer; (void)expert; return 0;
+ }
+ 
+ void FileExpertSource::fill_many(const std::vector<Fill>& todo) {
+--- a/sycl/src/core/vmm_stub.cpp
++++ b/sycl/src/core/vmm_stub.cpp
+@@ -0,0 +1,16 @@
++#include "strata/core/vmm.hpp"
++// SYCL has no CUDA VMM; elastic KV remains unavailable, as on HIP.
++namespace strata::core {
++bool vmm_available() { return false; }
++uint64_t vmm_granularity() { return 0; }
++VmmChunk vmm_chunk_new() { return 0; }
++void vmm_chunk_free(VmmChunk) {}
++bool VmmRange::reserve(uint64_t) { return false; }
++void VmmRange::release() {}
++int64_t VmmRange::mapped_count() const { return 0; }
++bool VmmRange::map_one(int64_t, VmmChunk) { return false; }
++bool VmmRange::set_access(int64_t, int64_t) { return false; }
++bool VmmRange::commit_run(int64_t, int64_t) { return false; }
++VmmChunk VmmRange::unmap(int64_t) { return 0; }
++}  // namespace strata::core
++
+--- a/sycl/CMakeLists.txt
++++ b/sycl/CMakeLists.txt
+@@ -135,7 +135,7 @@
+ # --- the GPU engine ------------------------------------------------------------------------------------------------
+ strata_resolve(_core src/core/device.cu src/core/pinned.cu src/platform/memory.cpp src/core/graph.cpp
+                      src/core/weights.cpp src/core/layout.cpp)
+-add_library(strata_core STATIC ${_core})
++add_library(strata_core STATIC ${_core} ${CMAKE_CURRENT_SOURCE_DIR}/src/core/vmm_stub.cpp)
+ target_link_libraries(strata_core PUBLIC strata_includes)
+ 
+ set(_kernel_cu dequant_s2 s2_gemv s_gemv s2_gemv_quads s2_gemv_fast router_top10 quantize_act rope sampler s2_gemv_q8

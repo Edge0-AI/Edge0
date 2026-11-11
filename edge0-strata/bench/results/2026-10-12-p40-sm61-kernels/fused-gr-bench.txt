@@ -1,0 +1,37 @@
+T 1 apply 0 inject 0 | old   82.0 us  fast   88.2 us | bitwise equal | hash 3b6a40f358273fc7
+T 1 apply 0 inject 1 | old   82.4 us  fast   87.7 us | bitwise equal | hash d89aaf8f8a29b1ca
+T 1 apply 1 inject 0 | old   86.4 us  fast   92.7 us | bitwise equal | hash 244ca8d38fc20acb
+T 1 apply 1 inject 1 | old   87.0 us  fast   93.4 us | bitwise equal | hash 032cee1fb5ebb356
+T 2 apply 0 inject 0 | old   92.4 us  fast  102.6 us | bitwise equal | hash c205fed067c34594
+T 2 apply 0 inject 1 | old   93.7 us  fast  103.0 us | bitwise equal | hash 2760f7098d2ab3fe
+T 2 apply 1 inject 0 | old   98.9 us  fast  107.1 us | bitwise equal | hash b9e0ac8e75ac7128
+T 2 apply 1 inject 1 | old  100.3 us  fast  106.8 us | bitwise equal | hash 6ef0e08a291dc600
+T 3 apply 0 inject 0 | old  107.7 us  fast  117.8 us | bitwise equal | hash 64c37a5c5a4595d5
+T 3 apply 0 inject 1 | old  108.2 us  fast  120.3 us | bitwise equal | hash d2559a578d205048
+T 3 apply 1 inject 0 | old  114.7 us  fast  123.1 us | bitwise equal | hash 6716ef3bd60accde
+T 3 apply 1 inject 1 | old  114.9 us  fast  125.1 us | bitwise equal | hash cfc5902711fce549
+T 4 apply 0 inject 0 | old  119.1 us  fast  131.3 us | bitwise equal | hash f1a133902db07a6f
+T 4 apply 0 inject 1 | old  119.2 us  fast  134.0 us | bitwise equal | hash b0b733dab4d44c71
+T 4 apply 1 inject 0 | old  125.7 us  fast  136.6 us | bitwise equal | hash a5d36b69ac08ff84
+T 4 apply 1 inject 1 | old  125.8 us  fast  138.9 us | bitwise equal | hash 9970362c2541e29a
+T 5 apply 0 inject 0 | old  192.2 us  fast  180.5 us | bitwise equal | hash a72a0230dc9fe66c
+T 5 apply 0 inject 1 | old  190.9 us  fast  182.9 us | bitwise equal | hash 20d0c6378bfb1105
+T 5 apply 1 inject 0 | old  192.8 us  fast  186.2 us | bitwise equal | hash 12389bbed13d809e
+T 5 apply 1 inject 1 | old  192.0 us  fast  188.4 us | bitwise equal | hash 20c5ab4e8a222ca7
+T 6 apply 0 inject 0 | old  197.6 us  fast  192.7 us | bitwise equal | hash 673139d39fd067f4
+T 6 apply 0 inject 1 | old  203.5 us  fast  197.3 us | bitwise equal | hash af84afae3cefb733
+T 6 apply 1 inject 0 | old  207.2 us  fast  198.6 us | bitwise equal | hash 98ffa7a944a3546e
+T 6 apply 1 inject 1 | old  213.7 us  fast  203.3 us | bitwise equal | hash aa3d90cb6f876497
+COLD(48 sets) fast 0 T 1 | read   88.3 us (events) | stamps median: norm  16.4 down  47.1 up  29.7 us (incl. a stamp kernel each)
+COLD(48 sets) fast 1 T 1 | read   94.2 us (events) | stamps median: norm  12.3 down  48.9 up  37.5 us (incl. a stamp kernel each)
+COLD(48 sets) fast 0 T 2 | read  101.3 us (events) | stamps median: norm  15.8 down  54.3 up  34.8 us (incl. a stamp kernel each)
+COLD(48 sets) fast 1 T 2 | read  106.7 us (events) | stamps median: norm  12.3 down  52.3 up  44.0 us (incl. a stamp kernel each)
+COLD(48 sets) fast 0 T 3 | read  115.8 us (events) | stamps median: norm  15.8 down  61.4 up  42.0 us (incl. a stamp kernel each)
+COLD(48 sets) fast 1 T 3 | read  126.0 us (events) | stamps median: norm  13.3 down  65.5 up  51.2 us (incl. a stamp kernel each)
+COLD(48 sets) fast 0 T 4 | read  126.1 us (events) | stamps median: norm  15.8 down  65.5 up  49.2 us (incl. a stamp kernel each)
+COLD(48 sets) fast 1 T 4 | read  140.0 us (events) | stamps median: norm  13.3 down  73.7 up  56.3 us (incl. a stamp kernel each)
+COLD(48 sets) fast 0 T 5 | read  192.3 us (events) | stamps median: norm  16.4 down 105.5 up  75.8 us (incl. a stamp kernel each)
+COLD(48 sets) fast 1 T 5 | read  188.8 us (events) | stamps median: norm  13.3 down 114.7 up  64.5 us (incl. a stamp kernel each)
+COLD(48 sets) fast 0 T 6 | read  213.5 us (events) | stamps median: norm  16.4 down 119.8 up  78.8 us (incl. a stamp kernel each)
+COLD(48 sets) fast 1 T 6 | read  203.9 us (events) | stamps median: norm  13.3 down 123.9 up  69.6 us (incl. a stamp kernel each)
+fused_gr_bench: 0 differing

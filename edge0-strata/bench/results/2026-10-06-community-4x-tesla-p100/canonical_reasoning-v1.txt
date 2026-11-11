@@ -1,0 +1,11 @@
+You are helping a small robotics club plan a weekend build. Work through each part carefully and show your reasoning.
+
+1. The club has 7 members and a budget of 412 dollars. A motor driver costs 18.50, a microcontroller 23.75, and each member wants one of each plus a shared 3D-printer spool at 27.90. After buying everything, they split the remainder evenly on batteries priced at 6.35 each. How many batteries can they buy in total, and how much money is left over?
+
+2. Two members disagree about wheel size. Alice says a larger wheel gives more torque at the ground; Ben says it gives more speed. Explain who is right, what tradeoff is actually involved, and how gear ratio changes the answer.
+
+3. Write a short, plain-English procedure (six to nine steps) for safely testing a new motor circuit for the first time, including what to check before applying power.
+
+4. Finally, propose one creative feature for the robot that would be unusual for a club project, and give two concrete risks with how you would mitigate each.
+
+Answer all four parts in order with clear headings.

@@ -1,0 +1,73 @@
+{
+  "_about": "Shared by tests/terminal/test_gpu_roles.py (strata_control/gpu_roles.py) and apps/host/tests/gpu-roles.test.mjs (apps/host/src/lib/gpu-roles.ts). Roles are keyed by card number.",
+  "hw": {
+    "one": [{"index": 0, "name": "NVIDIA GeForce RTX 4070 Ti", "vram_gb": 12, "speed": 100}],
+    "two": [{"index": 0, "name": "NVIDIA GeForce RTX 3060", "vram_gb": 12, "speed": 60}, {"index": 1, "name": "NVIDIA GeForce RTX 4070 Ti", "vram_gb": 12, "speed": 100}],
+    "equal": [{"index": 0, "name": "NVIDIA RTX A4000", "vram_gb": 16, "speed": 50}, {"index": 1, "name": "NVIDIA RTX A4000", "vram_gb": 16, "speed": 50.5}],
+    "three": [{"index": 0, "name": "NVIDIA GeForce RTX 3060", "vram_gb": 12, "speed": 60}, {"index": 1, "name": "NVIDIA GeForce RTX 4070 Ti", "vram_gb": 16, "speed": 100}, {"index": 2, "name": "NVIDIA GeForce RTX 2060", "vram_gb": 6, "speed": 45}],
+    "igpu": [{"index": 0, "name": "Intel(R) UHD Graphics 770", "vram_gb": 0, "integrated": true, "speed": 12}, {"index": 1, "name": "NVIDIA GeForce RTX 4060", "vram_gb": 8, "speed": 70}],
+    "igpu_only": [{"index": 0, "name": "AMD Radeon 780M", "vram_gb": 0, "integrated": true, "speed": 12}],
+    "bigger_slower": [{"index": 0, "name": "NVIDIA GeForce RTX 3090", "vram_gb": 24, "speed": 90}, {"index": 1, "name": "NVIDIA GeForce RTX 4070", "vram_gb": 12, "speed": 100}],
+    "small_second": [{"index": 0, "name": "NVIDIA GeForce RTX 4070 Ti", "vram_gb": 12, "speed": 100}, {"index": 1, "name": "NVIDIA GeForce RTX 3070", "vram_gb": 8, "speed": 70}],
+    "two_8gb": [{"index": 0, "name": "NVIDIA GeForce GTX 1080", "vram_gb": 8, "speed": 50}, {"index": 1, "name": "NVIDIA GeForce GTX 1080", "vram_gb": 8, "speed": 50}],
+    "tiny_second": [{"index": 0, "name": "NVIDIA GeForce GTX 1080", "vram_gb": 8, "speed": 50}, {"index": 1, "name": "NVIDIA GeForce GT 1030", "vram_gb": 2, "speed": 10}],
+    "cannot": [{"index": 0, "name": "NVIDIA GeForce GTX 1060", "vram_gb": 6, "usable": false, "problem": "too old"}, {"index": 1, "name": "NVIDIA GeForce RTX 4070 Ti", "vram_gb": 12, "speed": 100}],
+    "nospeed": [{"index": 0, "name": "NVIDIA GeForce RTX 3060", "vram_gb": 12}, {"index": 1, "name": "NVIDIA GeForce RTX 3090", "vram_gb": 24}]
+  },
+  "recommend": [
+    {"hw": "one", "roles": {"0": "main"}, "main": 0, "why": "only"},
+    {"hw": "two", "roles": {"0": "helper", "1": "main"}, "main": 1, "why": "faster"},
+    {"hw": "equal", "roles": {"0": "helper", "1": "main"}, "main": 1, "why": "same"},
+    {"hw": "three", "roles": {"0": "helper", "1": "main", "2": "off"}, "main": 1, "why": "faster"},
+    {"hw": "igpu", "roles": {"0": "off", "1": "main"}, "main": 1, "why": "only"},
+    {"hw": "igpu_only", "roles": {"0": "main"}, "main": 0, "why": "only"},
+    {"hw": "bigger_slower", "roles": {"0": "main", "1": "helper"}, "main": 0, "why": "memory"},
+    {"hw": "small_second", "roles": {"0": "main", "1": "off"}, "main": 0, "why": "faster"},
+    {"hw": "two_8gb", "roles": {"0": "helper", "1": "main"}, "main": 1, "why": "same"},
+    {"hw": "tiny_second", "roles": {"0": "main", "1": "off"}, "main": 0, "why": "only"},
+    {"hw": "cannot", "roles": {"0": "off", "1": "main"}, "main": 1, "why": "only"},
+    {"hw": "nospeed", "roles": {"0": "helper", "1": "main"}, "main": 1, "why": "memory"}
+  ],
+  "set_role": [
+    {"hw": "two", "roles": {"0": "helper", "1": "main"}, "card": 0, "role": "main", "after": {"0": "main", "1": "helper"}, "note": "old_main_helper:1"},
+    {"hw": "two", "roles": {"0": "helper", "1": "main"}, "card": 1, "role": "off", "after": {"0": "main", "1": "off"}, "note": "promoted:0"},
+    {"hw": "two", "roles": {"0": "helper", "1": "main"}, "card": 1, "role": "helper", "after": {"0": "main", "1": "helper"}, "note": "promoted:0"},
+    {"hw": "two", "roles": {"0": "off", "1": "main"}, "card": 1, "role": "helper", "after": {"0": "off", "1": "main"}, "note": "only_main"},
+    {"hw": "two", "roles": {"0": "helper", "1": "main"}, "card": 0, "role": "off", "after": {"0": "off", "1": "main"}, "note": null},
+    {"hw": "two", "roles": {"0": "off", "1": "main"}, "card": 0, "role": "helper", "after": {"0": "helper", "1": "main"}, "note": null},
+    {"hw": "two", "roles": {"0": "off", "1": "off"}, "card": 0, "role": "helper", "after": {"0": "main", "1": "off"}, "note": null},
+    {"hw": "three", "roles": {"0": "helper", "1": "main", "2": "off"}, "card": 2, "role": "helper", "after": {"0": "helper", "1": "main", "2": "helper"}, "note": null},
+    {"hw": "three", "roles": {"0": "helper", "1": "main", "2": "helper"}, "card": 1, "role": "off", "after": {"0": "main", "1": "off", "2": "helper"}, "note": "promoted:0"}
+  ],
+  "order": [
+    {"hw": "two", "roles": {"0": "helper", "1": "main"}, "gpu": [0, 1]},
+    {"hw": "two", "roles": {"0": "main", "1": "helper"}, "gpu": [1, 0]},
+    {"hw": "two", "roles": {"0": "off", "1": "main"}, "gpu": [1]},
+    {"hw": "three", "roles": {"0": "helper", "1": "main", "2": "helper"}, "gpu": [2, 0, 1]},
+    {"hw": "two", "roles": {"0": "off", "1": "off"}, "gpu": []}
+  ],
+  "warnings": [
+    {"hw": "igpu", "roles": {"0": "main", "1": "helper"}, "codes": ["igpu_main"], "fix": {"card": 1, "role": "main"}},
+    {"hw": "igpu", "roles": {"0": "off", "1": "main"}, "codes": []},
+    {"hw": "cannot", "roles": {"0": "helper", "1": "main"}, "codes": ["cannot_run"]},
+    {"hw": "two", "roles": {"0": "off", "1": "off"}, "codes": ["cpu_only"]},
+    {"hw": "two", "roles": {"0": "helper", "1": "main"}, "spill_gb": 7, "codes": ["low_memory"]},
+    {"hw": "two", "roles": {"0": "main", "1": "helper"}, "codes": []}
+  ],
+  "saved": [
+    {"cfg": {"gpu_roles": {"0": "helper", "1": "main"}, "gpu": [0, 1]}, "roles": {"0": "helper", "1": "main"}},
+    {"cfg": {"gpu_roles": {"0": "helper", "1": "main"}}, "roles": {"0": "helper", "1": "main"}},
+    {"cfg": {"gpu_roles": {"0": "helper", "1": "main"}, "gpu": [1, 0]}, "roles": null, "problem": "edited by hand"},
+    {"cfg": {"gpu_roles": {"0": "off", "1": "main"}, "gpu": 1}, "roles": {"0": "off", "1": "main"}},
+    {"cfg": {"gpu_roles": {"0": "off", "1": "off"}, "gpu": [], "gpu_none": true}, "roles": {"0": "off", "1": "off"}},
+    {"cfg": {"gpu_roles": {"0": "main", "1": "main"}}, "roles": null, "problem": "ignored"},
+    {"cfg": {"gpu": [1, 0]}, "roles": null}
+  ],
+  "legacy": [
+    {"hw": "two", "gpu": null, "roles": {"0": "helper", "1": "main"}},
+    {"hw": "two", "gpu": [1, 0], "gpu_order": "as_given", "roles": {"0": "main", "1": "helper"}},
+    {"hw": "two", "gpu": 1, "roles": {"0": "off", "1": "main"}},
+    {"hw": "two", "gpu": [1, 0], "roles": {"0": "helper", "1": "main"}},
+    {"hw": "equal", "gpu": [1, 0], "roles": {"0": "main", "1": "helper"}}
+  ]
+}

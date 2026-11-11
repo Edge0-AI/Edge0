@@ -1,0 +1,32 @@
+# Keep the image to the source only: everything generated is re-created on
+# first start (inside the container or on the /data volume).
+.git
+
+# local Python environment (rebuilt in the image)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# setup.py outputs and downloads (engine, packs, models, logs)
+/engine/
+/build/
+/build*/
+/dist/
+/packs/
+/mtp/
+/models/
+/Strata-data/
+# the folders docker/entrypoint.sh creates in a mounted data/ (a link to llama.cpp, the models, the keys): never part of a build (#3644)
+/data/install/
+/data/state/
+/data/home/
+/data/Strata-data/
+third_party/llama.cpp/
+third_party/*.zip
+*.done
+*.log
+strata-*.json
+strata-*.txt
+run-*.sh
+run-*.bat

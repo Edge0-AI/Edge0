@@ -1,0 +1,25 @@
+loading the vision encoder ...
+loading the model (the first start takes a minute or two) ...
+[strata] layer split across GPUs [0, 1] (25)
+[strata] starting the engine: reading the model's weights ...
+[strata] loading the experts into RAM (about 40 GB) and locking part of them for
+ the GPU.
+         YOUR PC CAN BE SLOW OR STOP RESPONDING FOR 1-3 MINUTES NOW - this is no
+rmal.
+         Please wait and don't close this window; the browser opens when it is r
+eady.
+[strata] experts loaded: 39.97 GiB at 6.40 GiB/s (19 s so far)
+[strata] filling the GPU's expert cache (12800 experts, 18.62 GiB of VRAM) ...
+[strata] almost ready ...
+ready: http://127.0.0.1:8080/v1  (OpenAI: /v1/chat/completions, Anthropic: /v1/m
+essages, context 262144 tokens, images on)
+       open http://127.0.0.1:8080/ in a browser to chat; close this window to st
+op the model
+       from other devices: http://192.168.x.x:8080/   (API: http://192.168.1
+78.114:8080/v1)
+       WARNING: no API key - anyone on your network can use this model. Add "api
+_key": "..." to the config (clients send it as their API key; the web page asks
+for it)
+[strata] done: 1 tokens in 0 s (12336.2 tok/s) (length, cancel=False), expert ca
+che 100.0% hit
+

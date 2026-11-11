@@ -1,0 +1,34 @@
+{
+ "exe": "~/llm/Strata/build-780m/strata",
+ "args": [
+  "--pack", "/data/packs/qwen-q2_0",
+  "--native", "/models/flash-next/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+  "--ple-gguf", "/models/flash-next/Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf",
+  "--expert-profile", "~/llm/Strata/data/expert-profile.bin",
+  "--expert-cache", "24576",
+  "--mmap-experts",
+  "--prefill", "auto",
+  "--spec", "2",
+  "--lookup-chain", "4",
+  "--mtp", "/data/mtp/rt",
+  "--max-context", "32768",
+  "--kv", "int8",
+  "--conversation-cache-mib", "12288",
+  "--conversation-cache-slots", "8",
+  "--vram-reserve-mib", "700"
+ ],
+ "cwd": "~/llm/Strata",
+ "tokenizer": "/data/packs/qwen-q2_0/tokenizer",
+ "model_name": "qwen3.8-flash-next",
+ "aliases": ["flash-next-q2"],
+ "port": 8080,
+ "backend": "hip",
+ "env": {
+  "STRATA_HIPBLASLT_TUNING": "~/llm/Strata/tools/hip/gfx1103-hipblaslt-100401.txt",
+  "STRATA_GDN_HEAD": "1", "STRATA_GDN_PP": "2", "STRATA_GDN_CONVL2": "1", "STRATA_GDN_NOY": "1",
+  "STRATA_CVEC_FUSE": "1", "STRATA_PF_PAD": "1",
+  "STRATA_Q8_PACKED": "1", "STRATA_Q6_PACKED": "1", "STRATA_MMVF_ROWS": "1", "STRATA_ATTN_LANECELL": "1",
+  "STRATA_EXPERT_V2": "1", "STRATA_TSUM": "1", "STRATA_LFUSE": "1", "STRATA_GDN_SPLIT": "1",
+  "STRATA_QFUSE": "1", "STRATA_PLE_BATCH": "1", "STRATA_SH_STREAM": "1"
+ }
+}

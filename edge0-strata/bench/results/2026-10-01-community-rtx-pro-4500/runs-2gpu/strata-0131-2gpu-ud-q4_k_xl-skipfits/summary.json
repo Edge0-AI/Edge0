@@ -1,0 +1,68 @@
+{
+ "label": "strata-0131-2gpu-ud-q4_k_xl-skipfits",
+ "base_url": "http://127.0.0.1:8080/v1",
+ "model": "qwen3.8-flash-next-ud-q4_k_xl",
+ "started": "2026-10-01T18:55:47+02:00",
+ "settings": {
+  "base_url": "http://127.0.0.1:8080/v1",
+  "model": "qwen3.8-flash-next-ud-q4_k_xl",
+  "label": "strata-0131-2gpu-ud-q4_k_xl-skipfits",
+  "prompts": "long128k",
+  "runs": 1,
+  "warmup": 1,
+  "max_tokens": null,
+  "auth_field": null,
+  "auth_header": "Authorization",
+  "auth_scheme": "Bearer",
+  "temperature": 0.0,
+  "top_k": 1,
+  "top_p": null,
+  "seed": null,
+  "no_think": true,
+  "extra_body": null,
+  "gpu": "GPU-627db4bb-f09b-e5d8-1911-a7cde5605dcc",
+  "journal_unit": null,
+  "out": "<bench-dir>/runs",
+  "timeout": 300
+ },
+ "prompts": {
+  "long128k": {
+   "max_tokens": 512,
+   "prompt_tokens_server": 127999,
+   "ttft_s": {
+    "median": 24.95,
+    "min": 24.95,
+    "max": 24.95,
+    "n": 1
+   },
+   "prefill_tok_s": {
+    "median": 5130.2,
+    "min": 5130.2,
+    "max": 5130.2,
+    "n": 1
+   },
+   "decode_tok_s": {
+    "median": 127.15,
+    "min": 127.15,
+    "max": 127.15,
+    "n": 1
+   },
+   "completion_tokens": {
+    "median": 512,
+    "min": 512,
+    "max": 512,
+    "n": 1
+   },
+   "errors": [],
+   "vram_mib_max": 31134.0,
+   "ram_used_gib_max": 126.9,
+   "power_w_mean": {
+    "median": 172.9,
+    "min": 172.9,
+    "max": 172.9,
+    "n": 1
+   }
+  }
+ },
+ "ended": "2026-10-01T18:56:47+02:00"
+}

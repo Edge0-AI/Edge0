@@ -1,0 +1,4 @@
+strata serve: prompt 32685 tokens = 0 reused + 32685 read in 92466 ms (353.5 tok/s), 256 generated in 5467 ms (46.8 tok/s), drafts accepted 168 of 215, 2 checkpoints
+strata serve: decode expert cache hit rate: 82.8% (106622 hits / 128734 lookups)
+strata serve: KV streaming: 97.32% of 1910208 block reads hit VRAM, 206.0 MiB read from RAM
+strata serve: suffix drafts: 3 windows, 9 of 15 drafts accepted
