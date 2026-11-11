@@ -93,9 +93,22 @@ Json probability(const edge0::TokenLogprob& p) {
     for(const auto& top:p.top) value["top_logprobs"].push_back(candidate(top));
     return value;
 }
+// OpenAI declares these optional request fields nullable, and clients send null to
+// mean "not set". Drop them before validation so null is treated like an absent field.
+Json without_nulls(const Json& body, bool chat) {
+    if(!body.is_object()) return body;
+    static const std::set<std::string> common={"temperature","top_p","top_logprobs","stream","parallel_tool_calls","store","metadata","user","service_tier","prompt_cache_key","safety_identifier"};
+    static const std::set<std::string> chat_only={"stream_options","seed","stop","presence_penalty","frequency_penalty","max_tokens","max_completion_tokens","logit_bias","logprobs","n","reasoning_effort"};
+    static const std::set<std::string> responses_only={"instructions","max_output_tokens","include","reasoning","truncation","background"};
+    Json j=body;
+    for(const auto* fields:{&common,chat ? &chat_only : &responses_only})
+        for(const auto& field:*fields) if(j.contains(field) && j[field].is_null()) j.erase(field);
+    return j;
 }
-Request parse(const Json& j, Protocol protocol, const std::string& alias) {
+}
+Request parse(const Json& body, Protocol protocol, const std::string& alias) {
     const bool chat=protocol==Protocol::chat;
+    const Json j=without_nulls(body,chat);
     std::set<std::string> allowed={"model","tools","tool_choice","parallel_tool_calls","stream","temperature","top_p","top_logprobs","store","metadata","user","service_tier","prompt_cache_key","promptCacheKey","safety_identifier"};
     const std::set<std::string> extra=chat ? std::set<std::string>{"messages","stream_options","seed","stop","presence_penalty","frequency_penalty","max_tokens","max_completion_tokens","logit_bias","logprobs","n","response_format","reasoning_effort","chat_template_kwargs","top_k","repetition_penalty"}
         : std::set<std::string>{"instructions","input","max_output_tokens","include","text","reasoning","truncation","background"};
