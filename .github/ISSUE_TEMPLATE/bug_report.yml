@@ -73,7 +73,7 @@ body:
     attributes:
       label: Engine build
       description: "The engine.version and engine.source_commit lines printed by: edge0-infer info"
-      placeholder: "engine.version: 0.1.0, engine.source_commit: ..."
+      placeholder: "engine.version: 0.2.0, engine.source_commit: ..."
     validations:
       required: false
 
