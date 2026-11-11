@@ -23,6 +23,7 @@
 
 ## 新闻
 
+- **【2026-11-13】** 发布 **`edge0-145b`** 与 **`edge0-120b`**：由 Qwen3.8-Flash-Next 派生的 latent MoE 模型，在 Linux 或 Windows 上用单张 NVIDIA GPU 运行。它们运行在 [edge0-strata](edge0-strata/EDGE0.md) 上，由 `edge0-infer serve` 与 `edge0-infer chat` 为它们启动；见[模型页](docs/models/edge0-145b.md)。
 - **【2026-11-04】** 发布**统一推理引擎 [`edge0-infer`](edge0-infer/README_zh.md)**：
   基于 [GGML](https://github.com/ggml-org/ggml)，一个引擎、一套原生 C++ API，
   在 macOS、iOS、Android、Windows 上运行同一个模型，并附带 CLI、OpenAI 兼容
@@ -124,6 +125,17 @@ edge0-infer 用自带的资产工具下载发布的 checkpoint，并转换成引
 | IFBench | 57.9 | 61.7 | 53.9 | 60.6 |
 | **平均** | **79.2** | **83.2** | **69.9** | **72.7** |
 
+`edge0-145b` 与 `edge0-120b`（**粗体**为该列最高；见[模型页](docs/models/edge0-145b.md#quality)）：
+
+| Model | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Edge0-145B** | **64.6** | **86.5** | 79.3 | 80.6 | 90.4 | 35.4 |
+| **Edge0-120B** | 50.0 | 75.0 | **81.0** | 79.3 | 87.4 | 31.0 |
+| DeepSeek-V4-Flash-0731 | 54.4 | 82.7 | 79.7 | 79.2 | 90.8 | 33.8 |
+| Qwen3.8-Flash-Next | 58.7 | 83.3 | 79.1 | **81.3** | **91.7** | 35.9 |
+| Qwen3.8-27B | 42.2 | 73.0 | **82.0** | 79.5 | 89.2 | 30.8 |
+| Claude-Opus-4.6 (Max) | / | 78.2 | 78.0 | 62.5 | 91.3 | **40.0** |
+
 ### 性能实测
 
 `edge0-35b`、`predicted` 路由，在 edge0-infer 上实测（每项为三个进程的最小值到最大值）：
@@ -139,6 +151,33 @@ edge0-infer 用自带的资产工具下载发布的 checkpoint，并转换成引
 
 各平台的内存指标不同，不能直接横向比较。测量方法、`actual` 路由的数据与
 复现命令见 [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures)。
+
+`edge0-145b` 与 `edge0-120b`，运行在 edge0-strata 上，单张 NVIDIA GPU（tok/s）：
+
+#### edge0-145b
+
+| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
+| --- | --- | ---: | ---: | ---: | ---: |
+| RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
+| RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
+| RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
+| RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
+| 16 GiB VRAM + 20 GiB RAM | Q3_K | 249 | 335 | 36.8 | 44.9 |
+
+#### edge0-120b
+
+| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
+| --- | --- | ---: | ---: | ---: | ---: |
+| RTX 5090 D 24 GB | Q3_K | 3236.7 | 4576.5 | 130.2 | **144.6** |
+| RTX 5090 D 24 GB | NVFP4 | 2668.5 | 4357.1 | 124.9 | 135.5 |
+| RTX 4090 24 GB | Q3_K | 2637.5 | 3551.1 | 95.0 | 104.9 |
+| RTX Spark N1X 60 GiB | Q3_K | 987.0 | 1081.7 | 47.2 | 68.4 |
+| RTX Spark N1X 60 GiB | NVFP4 | 996.4 | 1066.9 | 45.1 | 68.9 |
+| 16 GiB VRAM + 20 GiB RAM | Q3_K | 430 | 778 | 62.4 | 73.3 |
+| 16 GiB VRAM + 20 GiB RAM | NVFP4 | 361.1 | 619.7 | 51.3 | 59.9 |
+
+`16 GiB VRAM + 20 GiB RAM` 这几行仍是同一张 RTX 5090 D 24 GB，用 cgroup 限制为 16 GiB 显存与 20 GiB 内存。详见[模型页](docs/models/edge0-145b.md#speed-measured-one-card)。
 
 ## 快速开始
 

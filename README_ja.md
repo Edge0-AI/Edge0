@@ -23,6 +23,7 @@
 
 ## ニュース
 
+- **[2026-11-13]** **`edge0-145b`** と **`edge0-120b`** をリリースしました。Qwen3.8-Flash-Next から派生した latent MoE モデルで、Linux または Windows 上の NVIDIA GPU 1 枚で動作します。[edge0-strata](edge0-strata/EDGE0.md) で動作し、`edge0-infer serve` と `edge0-infer chat` がこれらのモデル用に起動します。[モデルページ](docs/models/edge0-145b.md)を参照してください。
 - **[2026-11-04]** **統合推論エンジン [`edge0-infer`](edge0-infer/README_ja.md)** をリリースしました。[GGML](https://github.com/ggml-org/ggml) をベースに、1 つのエンジンと 1 つのネイティブ C++ API で、同じモデルを macOS、iOS、Android、Windows で実行します。CLI、OpenAI 互換のローカルサーバー、デスクトップ・Android・iOS 向けのチャットアプリのサンプルも付属します。最初のリリースは `edge0-35b` をサポートし、`edge0-8b` は今後のリリースでサポートします。これまでの Python フレームワークと各プラットフォームのエンジンを置き換えるもので、以前のコードは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) に残しています。
 - **[2026-09-30]** **4 つのプラットフォーム — iOS、macOS、Android、Windows — 向けの edge0 推論エンジン**をリリースしました(ソースは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) を参照)。
 - **[2026-09-16]** 技術レポートが arXiv に掲載: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063)。
@@ -89,6 +90,17 @@
 | IFBench | 57.9 | 61.7 | 53.9 | 60.6 |
 | **平均** | **79.2** | **83.2** | **69.9** | **72.7** |
 
+`edge0-145b` と `edge0-120b`(**太字** = 列内の最高値。[モデルページ](docs/models/edge0-145b.md#quality)を参照):
+
+| Model | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Edge0-145B** | **64.6** | **86.5** | 79.3 | 80.6 | 90.4 | 35.4 |
+| **Edge0-120B** | 50.0 | 75.0 | **81.0** | 79.3 | 87.4 | 31.0 |
+| DeepSeek-V4-Flash-0731 | 54.4 | 82.7 | 79.7 | 79.2 | 90.8 | 33.8 |
+| Qwen3.8-Flash-Next | 58.7 | 83.3 | 79.1 | **81.3** | **91.7** | 35.9 |
+| Qwen3.8-27B | 42.2 | 73.0 | **82.0** | 79.5 | 89.2 | 30.8 |
+| Claude-Opus-4.6 (Max) | / | 78.2 | 78.0 | 62.5 | 91.3 | **40.0** |
+
 ### ベンチマーク
 
 `edge0-35b`、`predicted` ルーティング、edge0-infer で測定(各値は 3 プロセスの最小値〜最大値):
@@ -103,6 +115,33 @@
 | Windows Vulkan(両フェーズ、32 エキスパートスロット) | RTX 4070 SUPER、12 GB | 627 トークン | 3.75–3.76 s | 23.6–24.0 tok/s | GPU メモリ増加 5.35 GiB |
 
 メモリの指標はプラットフォームごとに異なり、直接比較できません。測定方法、`actual` ルーティングの数値、再現コマンドは [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures) を参照してください。
+
+`edge0-145b` と `edge0-120b`、edge0-strata、NVIDIA GPU 1 枚(tok/s):
+
+#### edge0-145b
+
+| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
+| --- | --- | ---: | ---: | ---: | ---: |
+| RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
+| RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
+| RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
+| RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
+| 16 GiB VRAM + 20 GiB RAM | Q3_K | 249 | 335 | 36.8 | 44.9 |
+
+#### edge0-120b
+
+| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
+| --- | --- | ---: | ---: | ---: | ---: |
+| RTX 5090 D 24 GB | Q3_K | 3236.7 | 4576.5 | 130.2 | **144.6** |
+| RTX 5090 D 24 GB | NVFP4 | 2668.5 | 4357.1 | 124.9 | 135.5 |
+| RTX 4090 24 GB | Q3_K | 2637.5 | 3551.1 | 95.0 | 104.9 |
+| RTX Spark N1X 60 GiB | Q3_K | 987.0 | 1081.7 | 47.2 | 68.4 |
+| RTX Spark N1X 60 GiB | NVFP4 | 996.4 | 1066.9 | 45.1 | 68.9 |
+| 16 GiB VRAM + 20 GiB RAM | Q3_K | 430 | 778 | 62.4 | 73.3 |
+| 16 GiB VRAM + 20 GiB RAM | NVFP4 | 361.1 | 619.7 | 51.3 | 59.9 |
+
+`16 GiB VRAM + 20 GiB RAM` の行は同じ RTX 5090 D 24 GB を cgroup で GPU メモリ 16 GiB、システムメモリ 20 GiB に制限したものです。詳細は[モデルページ](docs/models/edge0-145b.md#speed-measured-one-card)を参照してください。
 
 ## はじめに
 
