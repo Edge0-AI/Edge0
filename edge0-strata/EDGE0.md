@@ -62,7 +62,10 @@ In this directory:
   - the container image (`docker/`) and the NVIDIA DGX Spark engine build (`spark/`);
   - client test harnesses (`integrations/`);
   - the fork's own benchmark configurations and a debugging harness, which name paths of its
-    development machine (`bench/configs/strata-latent-*.json`, `tools/harness/mb_deadlock3.cu`).
+    development machine (`bench/configs/strata-latent-*.json`, `tools/harness/mb_deadlock3.cu`);
+  - upstream's published benchmark results (`bench/results/`), which measure other models, its
+    instructions for coding agents (`AGENTS.md`), which describe the upstream product and its
+    installers, and one large preview image (`docs/media/pagoda-preview.webp`).
 
   Some upstream documents, scripts and tests still mention these paths; they do not take part in the
   Linux CUDA build or in `serve/server.py`. `setup.py` and the `strata` launcher (`strata_cli/`,

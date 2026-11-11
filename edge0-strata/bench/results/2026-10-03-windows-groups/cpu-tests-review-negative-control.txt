@@ -1,3 +1,0 @@
-Host restore: still executes on group 0 processor 0
-
-Windows affinity test: lost CPU/group eligibility after host restore (error 122)

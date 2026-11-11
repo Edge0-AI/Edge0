@@ -1,1 +1,0 @@
-{"label":"speed-strata-fn-p40x2","ready_s":54.378960763,"gpu_mem_after_load":"0, 20285;1, 22259;","gpu_mem_after_bench":"0, 20487;1, 22377;","bench_rc":0,"server_cmd":"/srv/bench/src/Strata/run-iq2_xs-dual.sh"}

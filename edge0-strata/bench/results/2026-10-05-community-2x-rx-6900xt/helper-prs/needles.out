@@ -1,7 +1,0 @@
-  32k depth  10%: FOUND  (32,171 prompt tokens, 30 s)
-  32k depth  50%: FOUND  (32,171 prompt tokens, 30 s)
-  32k depth  90%: FOUND  (32,172 prompt tokens, 15 s)
- 128k depth  10%: FOUND  (125,451 prompt tokens, 124 s)
- 128k depth  50%: FOUND  (125,449 prompt tokens, 124 s)
- 128k depth  90%: FOUND  (125,449 prompt tokens, 110 s)
-6 of 6 found

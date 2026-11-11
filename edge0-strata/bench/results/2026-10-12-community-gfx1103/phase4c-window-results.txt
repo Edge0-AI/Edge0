@@ -1,6 +1,0 @@
-window-default-r1	13.72 tok/s
-window8192-r1	13.78 tok/s
-window4096-r1	14.07 tok/s
-window-default-r2	13.63 tok/s
-window8192-r2	12.95 tok/s
-window4096-r2	13.82 tok/s

@@ -1,5 +1,0 @@
-[wsl2]
-# Raise the WSL2 VM memory so the Strata container sees most of the host's 64 GB
-# instead of Docker Desktop's default 50 % (~31 GB). Strata's setup reads RAM from
-# /proc/meminfo, so with 31 GB visible it silently switched to low-RAM mode.
-memory=56GB

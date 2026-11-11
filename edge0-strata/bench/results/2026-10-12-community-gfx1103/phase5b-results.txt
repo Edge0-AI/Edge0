@@ -1,7 +1,0 @@
-== adaptive tier (default), IO prefetch on
-adapt-a1	RC=0	GTT-peak=26,7 GiB
-adapt-a2	RC=0	GTT-peak=26,7 GiB
-== --adapt-every 100000, IO prefetch on
-static-b1	RC=0	GTT-peak=26,7 GiB
-static-b2	RC=0	GTT-peak=26,7 GiB
-== resets: 0

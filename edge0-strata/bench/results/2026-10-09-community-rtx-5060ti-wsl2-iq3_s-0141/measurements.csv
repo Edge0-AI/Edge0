@@ -1,7 +1,0 @@
-condition,runs,prompt_tokens, reused_tokens,generated_tokens,prompt_tps,decode_tps,draft_accepted,draft_total,note
-decode-story,1,48,0,1400,45.4,48.2,737,1256,finish=length; single run
-decode-explan,1,47,0,1284,41.9,47.7,728,1180,finish=stop; single run
-prompt-4k,1,3820,0,5,343.0,,3,3,finish not recorded; single run
-prompt-20k,1,19196,0,4,598.3,,4,6,finish not recorded; single run
-esp-on,1,not recorded,,500,,,,"finish=length; scene written; single run"
-esp-off,1,not recorded,,106,,,,"finish=stop; refusal text; single run"

@@ -1,6 +1,0 @@
-text   tokens same top-1  mean KL  median KL  p99 KL ppl stock ppl proj
-code      511      92.8%    0.098     0.0031    1.69     2.594    2.982
-doc      1023      89.8%    0.058     0.0271    0.84    30.299   30.984
-chat     1023      89.6%    0.050     0.0265    0.33    18.409   18.485
-all 2557 tokens: mean KL 0.063, max 4.10, p99 1.00
-

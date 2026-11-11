@@ -1,7 +1,0 @@
-{"target": 4000, "prompt_n": 4089, "prompt_ms": 14776.4, "prompt_tps": 276.7, "pred_n": 128, "pred_tps": 16.4, "draft_n": 73, "draft_acc": 57, "wall_s": 22.6, "finish": "length"}
-{"target": 8000, "prompt_n": 8090, "prompt_ms": 25738.6, "prompt_tps": 314.3, "pred_n": 128, "pred_tps": 15.9, "draft_n": 75, "draft_acc": 55, "wall_s": 33.8, "finish": "length"}
-{"target": 16000, "prompt_n": 16090, "prompt_ms": 51137.1, "prompt_tps": 314.6, "pred_n": 128, "pred_tps": 16.2, "draft_n": 74, "draft_acc": 57, "wall_s": 59.0, "finish": "length"}
-{"target": 32000, "prompt_n": 32091, "prompt_ms": 103969.5, "prompt_tps": 308.7, "pred_n": 128, "pred_tps": 15.5, "draft_n": 77, "draft_acc": 56, "wall_s": 112.3, "finish": "length"}
-{"target": 64000, "prompt_n": 64091, "prompt_ms": 248265.4, "prompt_tps": 258.2, "pred_n": 128, "pred_tps": 12.1, "draft_n": 83, "draft_acc": 57, "wall_s": 258.9, "finish": "length"}
-{"target": 96000, "prompt_n": 96095, "prompt_ms": 445909.7, "prompt_tps": 215.5, "pred_n": 128, "pred_tps": 9.9, "draft_n": 81, "draft_acc": 55, "wall_s": 459.0, "finish": "length"}
-{"target": 128000, "prompt_n": 128097, "prompt_ms": 645432.8, "prompt_tps": 198.5, "pred_n": 128, "pred_tps": 9.8, "draft_n": 86, "draft_acc": 55, "wall_s": 658.5, "finish": "length"}

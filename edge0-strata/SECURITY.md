@@ -2,17 +2,15 @@
 
 ## Reporting a vulnerability
 
-Please report anything that should not be public until it is fixed **privately**, through GitHub's private
-vulnerability reporting: the repository's **Security** tab, **Report a vulnerability**
-([direct link](https://github.com/Niko1221/Strata/security/advisories/new)). Say what you found, how to reproduce it
-(the request, the config keys involved, the Strata version), and what an attacker gains. We answer there, fix it in
-a release, and credit you in the advisory unless you ask us not to.
+This directory is Edge0's fork of Strata (see [EDGE0.md](EDGE0.md)). Do not open a public issue for a security
+problem in it: email **samuel@edge0.ai**, as the Edge0 [contributing guide](../CONTRIBUTING.md#reporting-security-issues)
+describes. Say what you found, how to reproduce it and what an attacker gains. A problem that is also present in
+upstream Strata can be reported there as well, through the private vulnerability reporting of
+https://github.com/Niko1221/Strata.
 
-Ordinary hardening ideas and findings that are safe to discuss in public are welcome as an
-[issue](https://github.com/Niko1221/Strata/issues) (#544 collects audit findings) or as a pull request, which we
-review like our own code.
-
-Supported: the latest release. Fixes go into the next release, not into older ones.
+The rest of this file is upstream Strata's description of its own server. With Edge0, `edge0-infer` starts that
+server on a loopback port and is the only listener other machines can reach; its authentication is described in
+[Local server](../edge0-infer/docs/local-server.md#status-and-lan-authentication).
 
 ## What the server exposes
 

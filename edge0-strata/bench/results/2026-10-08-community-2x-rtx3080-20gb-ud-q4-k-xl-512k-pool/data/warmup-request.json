@@ -1,1 +1,0 @@
-{"model": "strata", "messages": [{"role": "user", "content": "Reply with exactly the word READY."}], "temperature": 0, "reasoning_effort": "none", "max_tokens": 16, "stream": true, "stream_options": {"include_usage": true}}

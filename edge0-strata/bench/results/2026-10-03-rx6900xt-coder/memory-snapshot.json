@@ -1,9 +1,0 @@
-{
-  "captured_at": "2026-10-03T20:48:35.4252807+09:00",
-  "phase": "default short inference",
-  "system_used_ram_gib": 71.896,
-  "gpu_dedicated_used_gib": 15.614,
-  "gpu_shared_used_gib": 25.484,
-  "engine_working_set_gib": 25.515,
-  "note": "Snapshot, not peak. GPU totals include other desktop applications; shared GPU memory includes host-mapped model memory and does not by itself establish paging."
-}

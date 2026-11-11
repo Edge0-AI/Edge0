@@ -1,2 +1,0 @@
-name, memory.total [MiB], memory.used [MiB], utilization.gpu [%], power.limit [W], power.draw [W], clocks.max.sm [MHz], pcie.link.gen.max, pcie.link.width.max, driver_version
-NVIDIA GeForce RTX 5090, 32607 MiB, 31493 MiB, 0 %, 402.50 W, 9.47 W, 3090 MHz, 4, 16, 617.14

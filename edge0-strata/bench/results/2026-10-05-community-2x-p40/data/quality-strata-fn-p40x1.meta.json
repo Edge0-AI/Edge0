@@ -1,1 +1,0 @@
-{"label":"quality-strata-fn-p40x1","ready_s":36.239488738,"gpu_mem_after_load":"0, 0;1, 22347;","gpu_mem_after_bench":"0, 0;1, 22619;","bench_rc":0,"server_cmd":"numactl --cpunodebind=1 --preferred=1 /srv/bench/src/Strata/run-iq2_xs.sh"}

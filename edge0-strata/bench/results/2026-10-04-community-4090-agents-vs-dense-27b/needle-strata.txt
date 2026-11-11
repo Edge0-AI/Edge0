@@ -1,4 +1,0 @@
-{"finish": "stop", "size": 60000, "prompt_n": 55586, "prefill_tps": 3494, "seconds": 17.3, "found": 3, "total": 3}
-{"finish": "stop", "size": 120000, "prompt_n": 117153, "prefill_tps": 3904, "seconds": 31.3, "found": 3, "total": 3}
-{"finish": "stop", "size": 200000, "prompt_n": 199544, "prefill_tps": 3833, "seconds": 53.7, "found": 3, "total": 3}
-{"summary": true, "found": 9, "total": 9}

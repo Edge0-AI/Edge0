@@ -1,7 +1,0 @@
-{
-  "moe": "Write a detailed technical explanation (about 400 words) of how a mixture-of-experts language model routes tokens to experts, and why expert caching on a GPU matters for decode speed.",
-  "code": "Write a Python module that implements an LRU cache with TTL expiry, thread safety and unit tests. Include docstrings.",
-  "prose": "Write a 400-word short story about a lighthouse keeper who discovers a message in a bottle from the future.",
-  "agentcode": "Implement a self-contained Python HTTP service for managing tasks using only the standard library. Include a SQLite repository, JSON request validation, GET/POST/PATCH/DELETE routes, structured errors, safe concurrent access, pagination, an executable main, and unittest coverage. Provide the complete code with no omitted bodies or ellipses. Explain important choices briefly.",
-  "longprose": "Explain in detail how a bicycle derailleur gear system works, step by step, for a beginner. Write at least 900 words."
-}

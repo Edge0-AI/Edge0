@@ -1,9 +1,0 @@
-{
-  "status": "ok",
-  "max_context": 65536,
-  "model": "qwen3.8-flash-next-coder-iq1_m",
-  "images": false,
-  "api_key": false,
-  "loaded": true,
-  "service": "strata"
-}
