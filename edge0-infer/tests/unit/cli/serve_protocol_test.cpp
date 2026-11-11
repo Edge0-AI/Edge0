@@ -55,6 +55,25 @@ void metrics_contract() {
     }
 }
 int main(int argc,char** argv) {
+    {
+        const auto request=Json::parse(R"({"model":"test","input":[
+            {"role":"user","content":"first"},
+            {"type":"reasoning","id":"rs_a","summary":[]},
+            {"role":"assistant","content":"answer"},
+            {"role":"user","content":"next"}]})");
+        auto parsed=portal::parse(request,Protocol::responses,"test");
+        CHECK(parsed.input.messages.size()==3);
+        CHECK(parsed.input.messages[1].content=="answer" && !parsed.input.messages[1].reasoning_content);
+        auto with_content=request;
+        with_content["input"][1]["content"]=Json::array({{{"type","reasoning_text"},{"text","reason"}}});
+        parsed=portal::parse(with_content,Protocol::responses,"test");
+        CHECK(parsed.input.messages.size()==3 && *parsed.input.messages[1].reasoning_content=="reason");
+        auto no_assistant=request;no_assistant["input"].erase(2);
+        parsed=portal::parse(no_assistant,Protocol::responses,"test");
+        CHECK(parsed.input.messages.size()==2 && parsed.input.messages[1].content=="next");
+        auto malformed=request;malformed["input"][1]["content"]=nullptr;
+        rejects(malformed,Protocol::responses);
+    }
     metrics_contract();
     CHECK(argc==2);
     std::ifstream input(argv[1]);Json fixtures;input>>fixtures;

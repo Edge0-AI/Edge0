@@ -210,7 +210,10 @@ Request parse(const Json& j, Protocol protocol, const std::string& alias) {
                     edge0::TextMessage msg{"tool",content(required(item,"output"),{"input_text"},"input.output")};msg.tool_call_id=str(required(item,"call_id"),"input.call_id");r.input.messages.push_back(std::move(msg));
                 } else if(type=="reasoning") {
                     keys(item,{"type","id","content","summary","status"},"input");
-                    auto text=content(required(item,"content"),{"reasoning_text"},"input.content");auto& msg=assistant();if(!msg.reasoning_content)msg.reasoning_content="";*msg.reasoning_content+=text;
+                    if (item.contains("content")) {
+                        auto text=content(item["content"],{"reasoning_text"},"input.content");
+                        auto& msg=assistant();if(!msg.reasoning_content)msg.reasoning_content="";*msg.reasoning_content+=text;
+                    }
                 } else bad("input.type","Unsupported input item","unsupported_value");
             }
         }
