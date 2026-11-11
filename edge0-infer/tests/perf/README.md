@@ -209,3 +209,17 @@ Do not measure concurrently with another device session or immediately after a s
 The engine reports `phys_footprint` with process lifetime scope; it is not a resettable
 per-request peak. A system-terminated process is a failure and must be investigated,
 not silently retried or treated as an unsupported configuration.
+
+## BPE merge microbenchmark
+
+The standalone CPU benchmark encodes an 8,192-byte word with a synthetic byte
+vocabulary and ranked pair merges. It verifies the exact token ID, warms the
+tokenizer once, then prints elapsed milliseconds for three encodings. It isolates
+merge scheduling on a long span and does not measure model inference throughput.
+
+```sh
+cmake --preset cpu
+cmake --build --preset cpu --target moe_app
+c++ -O2 -std=c++17 -Isrc -Iinclude tests/perf/bpe_merge_bench.cpp build/cpu/src/app/libmoe_app.a -pthread -o build/bpe_merge_bench
+build/bpe_merge_bench
+```
