@@ -50,8 +50,10 @@ int main(int argc,char** argv) {
         auto first=take(w.writable_regions(tx,0,0,8));
         CHECK(!w.writable_regions(tx,0,4,8)); CHECK(!w.writable_regions(tx,0,16,1));
         auto last=take(w.writable_regions(tx,0,8,8));
+        CHECK(!w.ready(tx));
         CHECK(first->write(7,data,2)); CHECK(!first->write(0,data,8));
         CHECK(!first->finish(Error{ErrorCategory::backend_error,"injected"}));
+        CHECK(!w.ready(tx));
         auto completion=std::async(std::launch::async,[&] { return w.complete(tx); });
         CHECK(completion.wait_for(20ms)==std::future_status::timeout);
         CHECK(!last->write(0,data+2,8)); CHECK(!last->finish()); CHECK(!completion.get());
@@ -72,6 +74,7 @@ int main(int argc,char** argv) {
         auto target=take(w.create_storage(backend,{{{GGML_TYPE_F32,{4}},1}}, edge0::exec::Purpose::resident_weights));
         tx=take(w.begin_write(target,{item(0,"custom")}));
         auto writer=take(w.writable_regions(tx,0,0,16)); CHECK(!writer->write(0,data,16)); CHECK(!writer->finish());
+        CHECK(w.ready(tx));
         auto binding=take(w.complete(tx)); CHECK(binding[0].generation==1);
         view=take(w.acquire_views(target,binding[0]));
         auto closing=std::async(std::launch::async,[&] { return w.close(target); });
