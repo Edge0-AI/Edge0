@@ -13,7 +13,7 @@ This page is the reference for running Edge0 145B with `edge0-infer`; [Getting s
 
 ## Model directory
 
-Use each released model folder as provided: one model and one expert format per folder, with files laid out flat. `edge0-infer` reads only the `model_name` field of the folder's `model.json` and ignores its other fields; a `model.json` that contains `architecture` is an asset manifest of the native engine instead. The folder also holds a `start.sh`, which `edge0-infer` does not use.
+Use each released model folder as provided: one model and one expert format per folder, with files laid out flat. `edge0-infer` reads only the `model_name` field of the folder's `model.json` and ignores its other fields (`architecture`, `args`, `env` and the rest); a `model.json` that contains `format_version` is an asset manifest of the native engine instead. The folder also holds a `start.sh` and a `model-bench.json`, which `edge0-infer` does not use.
 
 | model_name | Registration (default alias) | Expert format |
 | --- | --- | --- |
@@ -83,7 +83,7 @@ Generation requests are forwarded to edge0-strata unchanged, and `/health`, `/v1
 build/cpu/bin/edge0-infer chat --model "$EDGE0_145B"
 ```
 
-`chat` starts its own edge0-strata; it does not connect to a running `edge0-infer serve`. Do not run the two on the same GPU at the same time. To chat with a model that `serve` already runs, use an OpenAI-compatible client against it.
+`chat` starts its own edge0-strata; it does not connect to a running `edge0-infer serve`. Do not run the two on the same GPU at the same time. To chat with a model that `serve` already runs, use an OpenAI- or Anthropic-compatible client against it.
 
 The commands are those of the native chat (`/file`, `"""`, `/think on|off`, `/new`, `/regen`, `/quit`). Thinking is on unless `/think off` is given. Reasoning is printed to standard error between `[thinking]` and `[/thinking]`, the answer to standard output, and after each turn a line with the reused and computed tokens, the first-token time, the decode speed and the stop reason. Ctrl-C stops the current answer; at the prompt it stops edge0-strata and exits (exit code 130). edge0-strata's messages, including those printed while it loads, are written to a temporary log file whose path chat prints at start (the engine process's own output is not kept); the file is removed when chat ends normally. If edge0-strata fails to start or exits during the session, chat prints the last lines of its log, keeps the log file, prints its path and exits with code 1; invalid options exit with code 2 before anything starts.
 
@@ -123,7 +123,7 @@ the DLL. A missing runtime DLL can produce exit code `0xC0000135`.
 
 ## Known limitations
 
-- The native API does not support this model: `inspect_assets`, `resolve_load_configuration` and `load_model` return an `unsupported` error for a `model.json` that has neither `format_version` nor `architecture`, before reading any other file. Of the commands, only `serve`, `chat` and `inspect` (with or without `--json`, without `--digest`) accept it; `run`, `bench`, `describe`, `tokenize`, `prompt` and `forward` refuse it.
+- The native API does not support this model: `inspect_assets`, `resolve_load_configuration` and `load_model` return an `unsupported` error for a `model.json` that has no `format_version`, before reading any other file. Of the commands, only `serve`, `chat` and `inspect` (with or without `--json`, without `--digest`) accept it; `run`, `bench`, `describe`, `tokenize`, `prompt` and `forward` refuse it.
 - Concurrent requests wait in edge0-strata's queue instead of receiving 429 as with the native server.
 - `/status` holds no memory breakdown or expert statistics for this model; those fields are null. Progress of a request in flight is counted by `edge0-infer serve` from the text fragments it forwards (one token per fragment), and only for streaming requests; the finished records use the engine's own numbers (see the `Delegated` column of the [status fields](local-server.md#status-and-lan-authentication)).
 - Identical requests at temperature 0 can produce different answers: edge0-strata's decoding is not bit-for-bit repeatable.

@@ -149,7 +149,9 @@ def dialect_events(path, request, answer):
                                      'usage': {'input_tokens': 1, 'cache_creation_input_tokens': 5, 'cache_read_input_tokens': 0,
                                                'output_tokens': generated}}),
                   ('message_stop', {})]
-    return [('event: %s\ndata: %s\n\n' % (kind, json.dumps(with_top_object(dict(value, type=kind))))).encode() for kind, value in values]
+    return [('event: %s\ndata: %s\n\n' % (kind, json.dumps(with_top_object(dict(value, type=kind,
+            **({'sequence_number': 3 + i * 7} if path == '/v1/responses' else {})))))).encode()
+            for i, (kind, value) in enumerate(values)]
 
 
 def handler_for(fake):
@@ -214,6 +216,47 @@ def handler_for(fake):
                 request = json.loads(body)
             except ValueError:
                 self.send_json(400, {'error': {'message': 'invalid JSON', 'type': 'invalid_request_error'}})
+                return
+            if path == '/v1/messages/count_tokens':
+                fake.save_sent(self.send_json(int(request.get('fake_status', 200)), {'input_tokens': 17}))
+                return
+            if request.get('fake_error'):
+                if not request.get('stream'):
+                    fake.save_sent(self.send_json(429, {'error': {'message': 'fixture busy', 'code': 'fixture_busy'}}))
+                elif path == '/v1/chat/completions':
+                    self.stream([b'data: {"error":{"message":"fixture failure","code":"fixture_error"}}\n\n'])
+                else:
+                    kind = 'response.failed' if path == '/v1/responses' else 'error'
+                    value = {'type': kind, 'error': {'type': 'api_error', 'message': 'fixture failure'}}
+                    if path == '/v1/responses':
+                        value = {'type': kind, 'response': {'id': 'resp_fake', 'status': 'failed', 'error': {'code': 'fixture_error'}}}
+                    self.stream([('event: ' + kind + '\ndata: ' + json.dumps(value) + '\n\n').encode()])
+                return
+            if request.get('fake_failure'):
+                mode = request['fake_failure']
+                streaming = request.get('stream', False)
+                if streaming:
+                    data = (b'data: {"choices":[{"delta":{"content":"partial"}}]}\n\n'
+                            if path == '/v1/chat/completions' else b''.join(dialect_events(path, request, fake.answer)[:3]))
+                else:
+                    data = b'{"partial":'
+                if mode == 'before_event':
+                    data = b''
+                if mode == 'short_length':
+                    data = b'{"valid_but_short":true}'
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/event-stream' if streaming else 'application/json')
+                self.send_header('Connection', 'close')
+                if mode == 'short_length':
+                    self.send_header('Content-Length', str(len(data) + 50))
+                self.end_headers()
+                self.wfile.write(data)
+                self.wfile.flush()
+                fake.save_sent(data)
+                self.close_connection = True
+                if mode == 'exit':
+                    fake.stop_child()
+                    os._exit(4)
                 return
             if isinstance(request.get('max_tokens'), int) and request['max_tokens'] < 1:
                 self.send_json(400, {'error': {'message': 'max_tokens must be at least 1', 'type': 'invalid_request_error',
@@ -298,7 +341,7 @@ def serve(argv):
     fake = Fake(config, record)
     fake.child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(3600)'])
     fake.log('process.json', {'pid': os.getpid(), 'pgid': os.getpgid(0) if os.name != 'nt' else None,
-                              'child': fake.child.pid, 'argv': argv, 'path': os.environ.get('PATH', ''), 'python': sys.executable})
+                              'child': fake.child.pid, 'strata_api_key_present': 'STRATA_API_KEY' in os.environ, 'argv': argv, 'path': os.environ.get('PATH', ''), 'python': sys.executable})
     if os.environ.get('FAKE_STRATA_FAIL_START'):
         print('fake strata: failing on purpose', flush=True)
         fake.stop_child()
@@ -385,7 +428,16 @@ def self_test():
                 assert code == 200 and len(deltas) == len(ANSWER.split(' ')) and ''.join(deltas) == ANSWER, (path, deltas)
             requests = [json.loads(line) for line in (root / 'record' / 'requests.jsonl').read_text().splitlines()]
             assert [r['path'] for r in requests] == ['/v1/chat/completions'] * 3 + ['/v1/responses', '/v1/messages'] * 2
-            child = json.loads((root / 'record' / 'process.json').read_text())['child']
+            assert call('POST', '/v1/messages/count_tokens', {'x': 7})[2] == b'{"input_tokens": 17}'
+            assert json.loads((root / 'record' / 'requests.jsonl').read_text().splitlines()[-1])['body'] == '{"x": 7}'
+            for stream in (False, True):
+                code, kind, data = call('POST', '/v1/chat/completions', {'stream': stream, 'fake_failure': 'disconnect'})
+                assert code == 200 and b'partial' in data and b'[DONE]' not in data
+                assert process.poll() is None
+            assert call('POST', '/v1/responses', {'stream': True, 'fake_failure': 'before_event'})[2] == b''
+            process_info = json.loads((root / 'record' / 'process.json').read_text())
+            assert process_info['strata_api_key_present'] == ('STRATA_API_KEY' in env)
+            child = process_info['child']
         finally:
             process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
             assert process.wait(10) == 0
@@ -401,6 +453,37 @@ def self_test():
                                   '--ready-file', str(root / 'ready2.json')], env=dict(env, FAKE_STRATA_FAIL_START='5'),
                                  capture_output=True)
         assert failing.returncode == 5 and not (root / 'ready2.json').exists()
+    for stream in (False, True):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'config.json').write_text('{}')
+            ready = root / 'ready.json'
+            process = subprocess.Popen([sys.executable, __file__, '--engine', 'strata', '--config', str(root / 'config.json'),
+                                        '--port', '0', '--ready-file', str(ready)],
+                                       env=dict(os.environ, FAKE_STRATA_RECORD=str(root / 'record')))
+            try:
+                for _ in range(200):
+                    if ready.exists() and ready.read_text().endswith('\n'): break
+                    time.sleep(0.05)
+                port = json.loads(ready.read_text())['bound_port']
+                connection = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
+                connection.request('POST', '/v1/chat/completions', json.dumps({'stream': stream, 'fake_failure': 'exit'}))
+                response = connection.getresponse()
+                data = bytearray()
+                reset = False
+                try:
+                    while chunk := response.read(1024):
+                        data.extend(chunk)
+                except ConnectionResetError:
+                    # Windows may report the engine's abrupt exit as RST instead of EOF.
+                    reset = True
+                finally:
+                    connection.close()
+                assert response.status == 200 and b'[DONE]' not in data
+                assert b'partial' in data or reset
+                assert process.wait(10) == 4
+            finally:
+                if process.poll() is None: process.terminate(); process.wait(10)
     print('PASS fake strata: command line, ready file, status, streaming with timings, echo, records, failure, child cleanup')
 
 

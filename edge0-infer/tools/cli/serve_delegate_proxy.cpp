@@ -63,9 +63,9 @@ struct Forward {
     std::mutex mutex;
     std::condition_variable changed;
     std::deque<std::string> chunks;
-    bool headers = false, done = false, failed = false;
+    bool headers = false, done = false, failed = false, complete = false;
     int status = 0;
-    std::string content_type, body;
+    std::string content_type, body, failure_code, failure_message;
     std::atomic<bool> cancel{false};
     std::unique_ptr<httplib::Client> client;
     std::thread worker;
@@ -153,6 +153,7 @@ int serve(int argc, char** argv, const Match& match) {
         log("edge0-strata: ready (pid " + std::to_string(engine.pid()) + ", port " + std::to_string(upstream_port) + ")");
         auto fetch_status = [&]() -> Json {
             httplib::Client client("127.0.0.1", upstream_port);
+            client.set_tcp_nodelay(true);
             client.set_connection_timeout(1);
             client.set_read_timeout(3);
             auto response = client.Get("/v1/status");
@@ -185,6 +186,11 @@ int serve(int argc, char** argv, const Match& match) {
             log(record_json(record).dump());
         };
         auto finish = [&](const std::shared_ptr<Forward>& f, int http_status) {
+            {
+                std::lock_guard<std::mutex> lock(state_mutex);
+                active.erase(f);
+                idle.notify_all();
+            }
             ProxyRecord record;
             record.time = timestamp();
             record.endpoint = f->endpoint;
@@ -208,13 +214,12 @@ int serve(int argc, char** argv, const Match& match) {
                     if (error.contains("param") && error["param"].is_string()) record.param = error["param"];
                 }
             }
+            if (!f->failure_code.empty()) {record.code = f->failure_code;record.message = f->failure_message;}
             save(record);
-            std::lock_guard<std::mutex> lock(state_mutex);
-            active.erase(f);
-            idle.notify_all();
         };
 
         httplib::Server server;
+        server.set_tcp_nodelay(true);
         server.set_socket_options([](socket_t socket) {
 #ifdef _WIN32
             const auto option = SO_EXCLUSIVEADDRUSE;
@@ -232,7 +237,7 @@ int serve(int argc, char** argv, const Match& match) {
         };
         server.set_error_handler([&](const httplib::Request& req, httplib::Response& res) {
             if (res.status == 413) send_error(res, 413, "Request body too large", "request_too_large", req.path);
-            else if (res.body.empty()) send_error(res, res.status, "Unknown endpoint", "not_found", req.path);
+            else if (res.body.empty()) res.set_content(proxy_error(res.status, req.path).dump(), "application/json");
         });
         server.set_pre_routing_handler([&](const httplib::Request& req, httplib::Response& res) {
             if (portal::authorized(req.remote_addr, api_token, req.get_header_value("Authorization"), req.get_header_value("x-api-key")))
@@ -258,6 +263,7 @@ int serve(int argc, char** argv, const Match& match) {
                 // tools written for edge0-strata, such as its benchmark, recognize the proxy.
                 Json body{{"status", "ok"}};
                 httplib::Client client("127.0.0.1", upstream_port);
+                client.set_tcp_nodelay(true);
                 client.set_connection_timeout(1);
                 client.set_read_timeout(3);
                 if (auto upstream = client.Get("/health"); upstream && upstream->status == 200) {
@@ -278,6 +284,7 @@ int serve(int argc, char** argv, const Match& match) {
                     return;
                 }
                 httplib::Client client("127.0.0.1", upstream_port);
+                client.set_tcp_nodelay(true);
                 client.set_connection_timeout(5);
                 client.set_read_timeout(60);
                 auto upstream = client.Get(path);
@@ -289,6 +296,27 @@ int serve(int argc, char** argv, const Match& match) {
                 res.set_content(upstream->body, upstream->has_header("Content-Type") ? upstream->get_header_value("Content-Type")
                                                                                       : std::string("application/octet-stream"));
             });
+        server.Post("/v1/messages/count_tokens", [&](const httplib::Request& req, httplib::Response& res) {
+            if (!healthy()) {
+                send_error(res, 503, stopping ? "Server shutting down" : "edge0-strata has exited",
+                           stopping ? "shutting_down" : "engine_exited", req.path);
+                return;
+            }
+            httplib::Client client("127.0.0.1", upstream_port);
+            client.set_tcp_nodelay(true);
+            client.set_connection_timeout(5);
+            client.set_read_timeout(60);
+            client.set_path_encode(false);
+            httplib::Headers headers;
+            for (const char* name : {"Accept", "anthropic-version", "anthropic-beta"})
+                if (req.has_header(name)) headers.emplace(name, req.get_header_value(name));
+            auto upstream = client.Post(req.target.empty() ? req.path : req.target, headers, req.body,
+                                        req.get_header_value("Content-Type"));
+            if (!upstream) {send_error(res, 502, "edge0-strata did not answer", "upstream_unavailable", req.path);return;}
+            res.status = upstream->status;
+            res.set_content(upstream->body, upstream->has_header("Content-Type") ? upstream->get_header_value("Content-Type")
+                                                                               : "application/octet-stream");
+        });
         auto model_object = [&] {
             return Json{{"id", options.alias}, {"object", "model"}, {"created", 0}, {"owned_by", "local"},
                         {"context_length", context ? Json(*context) : Json(nullptr)},
@@ -333,6 +361,7 @@ int serve(int argc, char** argv, const Match& match) {
             auto f = std::make_shared<Forward>();
             f->endpoint = req.path;
             f->source = req.remote_addr;
+            f->accounting.endpoint = req.path;
             {
                 const auto body = Json::parse(req.body, nullptr, false);
                 f->stream = !body.is_discarded() && body.is_object() && body.contains("stream") && body["stream"] == true;
@@ -346,11 +375,20 @@ int serve(int argc, char** argv, const Match& match) {
                 finish(f, 503);
                 return;
             }
+            f->client = std::make_unique<httplib::Client>("127.0.0.1", upstream_port);
+            f->client->set_tcp_nodelay(true);
+            ActiveGuard guard([&] {
+                f->abort();
+                if (f->worker.joinable()) f->worker.join();
+                f->failure_code = "internal_error";
+                f->failure_message = "Internal error";
+                finish(f, 500);
+            });
             {
                 std::lock_guard<std::mutex> lock(state_mutex);
                 active.insert(f);
             }
-            f->client = std::make_unique<httplib::Client>("127.0.0.1", upstream_port);
+            guard.arm();
             f->client->set_connection_timeout(5);
             f->client->set_read_timeout(24 * 3600);
             f->client->set_write_timeout(60);
@@ -380,7 +418,7 @@ int serve(int argc, char** argv, const Match& match) {
             f->worker = std::thread([raw, upstream] {
                 auto result = raw->client->send(upstream);
                 std::lock_guard<std::mutex> lock(raw->mutex);
-                raw->failed = !result && !raw->headers;
+                raw->failed = !result;
                 raw->done = true;
                 raw->changed.notify_all();
             });
@@ -391,26 +429,29 @@ int serve(int argc, char** argv, const Match& match) {
                     if (!f->headers && req.is_connection_closed()) { f->client_gone = true; lock.unlock(); f->abort(); lock.lock(); }
                 }
             }
-            if (f->failed || !f->headers) {
+            auto incomplete = [&, f] {
+                for (int i = 0; i < 20 && !f->client_gone && !stopping && engine.running(); ++i)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                const int status = f->client_gone ? 499 : stopping || !engine.running() ? 503 : 502;
+                f->failure_code = f->client_gone ? "cancelled" : stopping ? "shutting_down" : status == 503 ? "engine_exited" : "engine_unavailable";
+                f->failure_message = f->client_gone ? "Client disconnected" : stopping ? "Server shutting down" : status == 503 ? "edge0-strata has exited" : "edge0-strata did not finish its response";
+                f->status = status;
+                f->body = error_body(f->failure_message, f->failure_code, status, f->endpoint).dump();
+            };
+            if (!f->headers) {
                 if (f->worker.joinable()) f->worker.join();
-                // One status for the client, the log and /status: 503 when edge0-strata has exited (its exit is
-                // noticed within a moment of the connection failing), 502 when it is running but did not answer.
-                for (int i = 0; i < 20 && !f->client_gone && engine.running(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                const int status = f->client_gone ? 499 : engine.running() ? 502 : 503;
-                f->body = (status == 499   ? error_body("Client disconnected", "cancelled",status,req.path)
-                           : status == 503 ? error_body("edge0-strata has exited", "engine_exited",503,req.path)
-                                           : error_body("edge0-strata did not answer", "engine_unavailable",status,req.path))
-                              .dump();
-                res.status = status;
+                incomplete();
+                res.status = f->status;
                 res.set_content(f->body, "application/json");
-                finish(f, status);
+                finish(f, f->status);
+                guard.release();
                 return;
             }
             res.status = f->status;
             if (f->content_type.compare(0, 17, "text/event-stream") == 0) {
                 res.set_chunked_content_provider(
                     f->content_type,
-                    [f, &req](std::size_t, httplib::DataSink& sink) {
+                    [f, &req, incomplete, &options](std::size_t, httplib::DataSink& sink) {
                         std::unique_lock<std::mutex> lock(f->mutex);
                         for (;;) {
                             while (!f->chunks.empty()) {
@@ -439,7 +480,21 @@ int serve(int argc, char** argv, const Match& match) {
                                 return false;
                             }
                         }
+                        f->complete = !f->failed && f->accounting.complete;
                         lock.unlock();
+                        if (!f->complete) {
+                            incomplete();
+                            if (f->client_gone) return false;
+                            portal::Request request;
+                            request.protocol = f->endpoint == "/v1/messages" ? portal::Protocol::messages
+                                : f->endpoint == "/v1/responses" ? portal::Protocol::responses : portal::Protocol::chat;
+                            portal::Encoder encoder(request, options.alias, "");
+                            const portal::Failure error(f->status, f->failure_message, f->failure_code);
+                            // A truncated last line must not consume the appended event as part of its data.
+                            if (!sink.write("\n\n", 2)) {f->client_gone = true;return false;}
+                            for (const auto& event : encoder.fail(error, f->accounting.response_id, f->accounting.next_sequence))
+                                if (!sink.write(event.data(), event.size())) {f->client_gone = true;return false;}
+                        }
                         sink.done();
                         return true;
                     },
@@ -448,6 +503,7 @@ int serve(int argc, char** argv, const Match& match) {
                         if (f->worker.joinable()) f->worker.join();
                         finish(f, f->status);
                     });
+                guard.release();
                 return;
             }
             {
@@ -460,6 +516,16 @@ int serve(int argc, char** argv, const Match& match) {
                 f->chunks.clear();
             }
             if (f->worker.joinable()) f->worker.join();
+            const bool json_content = f->content_type.find("application/json") != std::string::npos || f->content_type.find("+json") != std::string::npos;
+            f->complete = !f->failed && (!json_content || !Json::parse(f->body, nullptr, false).is_discarded());
+            if (!f->complete) {
+                incomplete();
+                res.status = f->status;
+                res.set_content(f->body, "application/json");
+                finish(f, f->status);
+                guard.release();
+                return;
+            }
             try {
                 const auto parsed = Json::parse(f->body, nullptr, false);
                 // Under the forward's mutex: /status copies the accounting of a request that is still active.
@@ -471,6 +537,7 @@ int serve(int argc, char** argv, const Match& match) {
             }
             res.set_content(f->body, f->content_type.empty() ? "application/json" : f->content_type.c_str());
             finish(f, f->status);
+            guard.release();
         };
         for (const char* path : {"/v1/chat/completions", "/v1/responses", "/v1/messages"}) server.Post(path, forward);
 

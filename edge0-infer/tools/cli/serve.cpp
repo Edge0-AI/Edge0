@@ -176,7 +176,7 @@ int serve_command(int argc,char** argv) {
         hooks.generate=[&](const portal::Request& request,edge0::OutputReceiver receiver){
             return edge0::generate(session,request.input,configuration,request.overrides,std::move(receiver),&*active_token);
         };
-        portal::Engine engine(std::move(hooks));httplib::Server server;
+        portal::Engine engine(std::move(hooks));httplib::Server server;server.set_tcp_nodelay(true);
         server.set_socket_options([](socket_t socket) {
             // A second server must not share an existing listener's port.
 #ifdef _WIN32
@@ -202,7 +202,7 @@ int serve_command(int argc,char** argv) {
         };
         server.set_error_handler([&](const httplib::Request& req,httplib::Response& res){
             if(res.status==413)send_error(req,res,portal::Failure(413,"Request body too large","request_too_large"));
-            else if(res.body.empty())send_error(req,res,portal::Failure(res.status,"Unknown endpoint","not_found"));
+            else if(res.body.empty())send_error(req,res,portal::http_failure(res.status));
         });
         server.set_pre_routing_handler([&](const httplib::Request& req, httplib::Response& res) {
             const bool allowed = portal::authorized(req.remote_addr, api_token, req.get_header_value("Authorization"), req.get_header_value("x-api-key"));

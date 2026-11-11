@@ -561,8 +561,11 @@ def authentication(cli, root):
         assert request(server.port, 'POST', '/v1/messages', body, {'x-api-key': 'SECRET_KEY_731'}, host=address)[0] == 200
         before = len(requests_seen(record))
         code, _, payload = request(server.port, 'POST', '/v1/messages/count_tokens', body, {'x-api-key': 'SECRET_KEY_731'}, host=address)
-        assert code == 404 and json.loads(payload)['error']['type'] == 'not_found_error'
-        assert len(requests_seen(record)) == before
+        assert code == 200 and json.loads(payload) == {'input_tokens': 17}
+        assert len(requests_seen(record)) == before + 1
+        code, _, payload = request(server.port, 'POST', '/v1/messages/count_tokens', body, host=address)
+        assert code == 401 and json.loads(payload)['error']['type'] == 'authentication_error'
+        assert len(requests_seen(record)) == before + 1
         assert 'SECRET_KEY_731' not in json.dumps(status) + server.text()
     finally:
         assert server.stop() == 0
@@ -632,6 +635,19 @@ def lifecycle(cli, root):
     else:
         server = Running(cli, model, engine, record)
         assert server.stop(signal.SIGINT) == 0
+        assert_no_leftovers(record)
+    # edge0-strata itself killed outright (kill -9): the launcher passes the signal on as its own exit status
+    # (128 + 9) instead of failing on it, and stopping afterwards leaves nothing.
+    if os.name != 'nt':
+        record = root / 'l-engine-kill'
+        server = Running(cli, model, engine, record)
+        try:
+            os.kill(process_record(record)['pid'], signal.SIGKILL)
+            assert server.wait_for(lambda text: 'edge0-strata exited (exit code ' in text), server.text()
+            assert 'edge0-strata exited (exit code 137)' in server.text(), server.text()
+            assert 'Traceback' not in server.text(), server.text()
+        finally:
+            assert server.stop() == 0
         assert_no_leftovers(record)
     # edge0-infer killed outright (kill -9): the launcher left in edge0-strata's process group stops it.
     for attempt in range(5):
@@ -757,11 +773,11 @@ def model_formats(cli, root):
                 for flag, filename in (('--pack', ''), ('--native', 'model-skeleton.gguf'),
                                        ('--native-dense-gguf', 'model-skeleton.gguf'),
                                        ('--expert-profile', 'profile.bin')):
-                    assert argv[argv.index(flag) + 1] == str(model / filename)
-                assert config['env']['STRATA_LATENT_A'] == str(model / 'experts.bin')
-                assert config['env']['STRATA_LATENT_LABELS'] == str(model / 'labels.bin')
+                    assert Path(argv[argv.index(flag) + 1]) == model / filename
+                assert Path(config['env']['STRATA_LATENT_A']) == model / 'experts.bin'
+                assert Path(config['env']['STRATA_LATENT_LABELS']) == model / 'labels.bin'
                 assert config['env']['STRATA_LAT_FUSED_Q3K'] == ('1' if experts == 'q3k' else '0')
-                assert config['env']['STRATA_LATENT_DENSE'] == str(model / f'latent_dense_{du}.bin')
+                assert Path(config['env']['STRATA_LATENT_DENSE']) == model / f'latent_dense_{du}.bin'
                 assert config['env']['STRATA_LATENT_DENSE_FMT'] == du[1:]
                 assert 'log' not in config and config['exe'] != 'ignored'
             finally:
@@ -856,12 +872,144 @@ def platform_launch(cli, root):
     assert_no_leftovers(record)
 
 
+def interrupted_responses(cli, root):
+    engine = make_engine(root / 'interrupt-engine')
+    model = make_model(root / 'interrupt-model')
+    for stream in (False, True):
+        for mode in ('disconnect', 'exit'):
+            for path in ('/v1/chat/completions', '/v1/responses', '/v1/messages'):
+                record = root / ('interrupt-' + str(stream) + '-' + mode + '-' + path.rsplit('/', 1)[-1])
+                server = Running(cli, model, engine, record)
+                try:
+                    body = {'model': ALIAS, 'stream': stream, 'fake_failure': mode}
+                    code, _, wire = request(server.port, 'POST', path, body)
+                    expected_status = 503 if mode == 'exit' else 502
+                    expected_code = 'engine_exited' if mode == 'exit' else 'engine_unavailable'
+                    if stream:
+                        assert code == 200
+                        prefix = sent(record, 1)
+                        assert wire.startswith(prefix)
+                        extra = data_events(wire[len(prefix):])
+                        assert len(extra) == 1, wire
+                        error = extra[0]
+                        if path == '/v1/responses':
+                            prior = data_events(prefix)
+                            assert error['type'] == 'response.failed'
+                            assert error['response']['id'] == prior[0]['response']['id']
+                            assert error['sequence_number'] == max(e['sequence_number'] for e in prior) + 1
+                            assert error['response']['error']['code'] == expected_code
+                            assert b'event: response.failed\n' in wire
+                        elif path == '/v1/messages':
+                            assert error['type'] == 'error'
+                            assert error['error']['type'] == ('overloaded_error' if mode == 'exit' else 'api_error')
+                            assert b'event: error\n' in wire
+                        else:
+                            assert error['error']['code'] == expected_code and b'[DONE]' not in wire
+                    else:
+                        assert code == expected_status and b'partial' not in wire, (code, wire)
+                        error = json.loads(wire)['error']
+                        if path != '/v1/messages': assert error['code'] == expected_code
+                        else: assert error['type'] == ('overloaded_error' if mode == 'exit' else 'api_error')
+                    deadline = time.time() + 10
+                    while True:
+                        status = json.loads(request(server.port, 'GET', '/status')[2])
+                        if status['current'] is None and status['last'] is not None: break
+                        assert time.time() < deadline, status
+                        time.sleep(0.02)
+                    assert status['last']['http_status'] == expected_status and status['last']['code'] == expected_code, status['last']
+                    assert status['last']['stop_reason'] == 'failed'
+                    if mode == 'disconnect':
+                        assert request(server.port, 'POST', path, {'model': ALIAS})[0] == 200
+                    else:
+                        code, _, wire = request(server.port, 'POST', '/v1/messages/count_tokens', {})
+                        assert code == 503 and json.loads(wire)['error']['type'] == 'overloaded_error'
+                finally:
+                    assert server.stop() == 0
+                assert_no_leftovers(record)
+    record = root / 'interrupt-before-event'
+    server = Running(cli, model, engine, record)
+    try:
+        code, _, wire = request(server.port, 'POST', '/v1/responses', {'stream': True, 'fake_failure': 'before_event'})
+        events = data_events(wire)
+        assert code == 200 and len(events) == 1
+        assert events[0]['type'] == 'response.failed' and events[0]['sequence_number'] == 0
+        assert events[0]['response']['id'].startswith('resp_') and events[0]['response']['error']['code'] == 'engine_unavailable'
+        code, _, wire = request(server.port, 'POST', '/v1/chat/completions', {'fake_failure': 'short_length'})
+        assert code == 502 and json.loads(wire)['error']['code'] == 'engine_unavailable', (code, wire)
+        index = 2
+        for path in ('/v1/chat/completions', '/v1/responses', '/v1/messages'):
+            for stream in (False, True):
+                code, _, wire = request(server.port, 'POST', path, {'stream': stream, 'fake_error': True})
+                index += 1
+                assert code == (200 if stream else 429) and wire == sent(record, index), (code, wire)
+        # Wait for the provider's completion callback before comparing the history.
+        deadline = time.time() + 10
+        while json.loads(request(server.port, 'GET', '/status')[2])['current'] is not None:
+            assert time.time() < deadline
+            time.sleep(0.02)
+        before = json.loads(request(server.port, 'GET', '/status')[2])
+        for response_status in (200, 422):
+            body = {'messages': [], 'fake_status': response_status}
+            code, _, wire = request(server.port, 'POST', '/v1/messages/count_tokens?beta=true', body)
+            assert code == response_status and wire == b'{"input_tokens": 17}'
+            seen = requests_seen(record)[-1]
+            assert seen['target'] == '/v1/messages/count_tokens?beta=true' and json.loads(seen['body']) == body
+        after = json.loads(request(server.port, 'GET', '/status')[2])
+        for key in ('current', 'last', 'recent_requests', 'totals'): assert before[key] == after[key], key
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    print('PASS interrupted responses: three protocols, disconnect/exit, before first event, short Content-Length, count_tokens')
+
+
+def launch_handshake(cli, root):
+    import shlex
+    engine = make_engine(root / 'handshake-engine')
+    model = make_model(root / 'handshake-model')
+    record = root / 'handshake-environment'
+    env = environment(record)
+    env['STRATA_API_KEY'] = 'k'
+    server = Running(cli, model, engine, record, env=env)
+    try:
+        assert not process_record(record)['strata_api_key_present'], 'STRATA_API_KEY leaked to engine'
+        assert request(server.port, 'POST', '/v1/chat/completions', {'messages': [{'role': 'user', 'content': 'hi'}]})[0] == 200
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    if os.name == 'nt':
+        print('SKIP pipe handshake wrappers: Windows uses CreateProcessW PID')
+        return
+    wrapper = root / 'python-wrapper'
+    # Exercise continuation reads too: the prefix inside a long unrelated line must not be accepted.
+    noise = 'wrapper banner ' + 'x' * 300 + 'edge0-launcher-pid 1'
+    wrapper.write_text('#!/bin/sh\nprintf "%s\\n" ' + shlex.quote(noise) + '\nexec ' + shlex.quote(sys.executable) + ' "$@"\n')
+    wrapper.chmod(0o755)
+    record = root / 'handshake-banner'
+    server = Running(cli, model, engine, record, ['--strata-python', str(wrapper)])
+    try:
+        assert request(server.port, 'POST', '/v1/chat/completions', {'messages': [{'role': 'user', 'content': 'hi'}]})[0] == 200
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    wrapper.write_text('#!/bin/sh\nprintf "wrapper did not start python\\n"\nexit 7\n')
+    record = root / 'handshake-no-python'
+    result = subprocess.run([str(cli), 'serve', '--model', str(model), '--port', '0',
+                             '--strata-dir', str(engine), '--strata-python', str(wrapper)],
+                            env=environment(record), capture_output=True, text=True, timeout=30)
+    assert result.returncode != 0 and 'wrapper did not start python' in result.stderr, result.stderr
+    assert 'Listening:' not in result.stderr and not record.exists()
+    assert not list(temp_dir(record).iterdir())
+    print('PASS launch handshake: environment cleared, banner skipped, missing PID reported, no leftovers')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cli', required=True)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as folder:
         root = Path(folder)
+        launch_handshake(args.cli, root)
+        interrupted_responses(args.cli, root)
         inspect_defaults(args.cli, root)
         refusals(args.cli, root)
         failures(args.cli, root)

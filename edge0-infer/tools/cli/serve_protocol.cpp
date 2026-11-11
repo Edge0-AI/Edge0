@@ -10,6 +10,11 @@ namespace portal {
 Failure::Failure(int s, std::string message, std::string c, std::string p)
     : std::runtime_error(std::move(message)), status(s), code(std::move(c)), param(std::move(p)) {}
 std::string Failure::message() const { return param.empty() ? std::string(what()) : std::string(what()) + ": " + param; }
+Failure http_failure(int status) {
+    if(status==404)return Failure(status,"Unknown endpoint","not_found");
+    if(status>=400 && status<500)return Failure(status,"Bad request","invalid_request");
+    return Failure(status,"Internal error","internal_error");
+}
 Json Failure::body(Protocol protocol) const {
     if(protocol==Protocol::messages) {
         const char* type="api_error";
@@ -195,7 +200,7 @@ Request parse_messages(const Json& j,const std::string& alias,bool count_only) {
                     msg.content+=str(field(block,"text",path+".text"),path+".text");
                 } else if(type=="tool_result" && msg.role=="user") {
                     keys(block,{"type","tool_use_id","content","is_error","cache_control"},path);
-                    edge0::TextMessage tool{"tool",messages_text(field(block,"content",path+".content"),path+".content")};
+                    edge0::TextMessage tool{"tool",block.contains("content")?messages_text(block["content"],path+".content"):std::string{}};
                     tool.tool_call_id=str(field(block,"tool_use_id",path+".tool_use_id"),path+".tool_use_id");
                     if(block.contains("is_error"))boolean(block["is_error"],path+".is_error");
                     r.input.messages.push_back(std::move(tool));has_result=true;
@@ -482,33 +487,34 @@ std::vector<std::string> Encoder::accept_message(const edge0::OutputEvent& e) {
     using K=edge0::OutputKind;
     std::vector<std::string> records;
     if(e.kind==K::token_logprob)return records;
-    if(e.kind==K::tool_call_rejected) {
-        const auto it=call_indices_.find(e.index);
-        if(it!=call_indices_.end()) {
-            output_[it->second]["rejected"]=true;
-            if(active_>=0 && std::size_t(active_)==it->second)close(records);
-        }
-        return records;
-    }
-    if(e.kind==K::tool_call_end) {close(records);return records;}
-    if(e.kind==K::tool_call_arguments) {
-        const auto it=call_indices_.find(e.index);
-        if(it==call_indices_.end())throw std::logic_error("Tool arguments without begin");
-        auto& text=output_[it->second]["arguments"];
-        text=text.get<std::string>()+e.text;
-        records.push_back(event("content_block_delta",{{"index",it->second},{"delta",{{"type","input_json_delta"},{"partial_json",e.text}}}}));
-        return records;
-    }
-    const bool tool=e.kind==K::tool_call_begin;
-    const bool think=e.kind==K::reasoning;
-    const std::string type=tool?"tool_use":think?"thinking":"text";
-    if(tool || active_<0 || output_[active_]["type"]!=type) {
+    if(e.kind==K::tool_call_rejected) {pending_calls_.erase(e.index);return records;}
+    if(e.kind==K::tool_call_begin) {
         close(records);
-        Json block=tool?Json{{"type",type},{"id",e.tool_call.id},{"name",e.tool_call.name},{"input",Json::object()}}
-            :think?Json{{"type",type},{"thinking",""},{"signature",""}}:Json{{"type",type},{"text",""}};
+        pending_calls_[e.index]={e.tool_call,{}};
+        return records;
+    }
+    if(e.kind==K::tool_call_arguments || e.kind==K::tool_call_end) {
+        const auto it=pending_calls_.find(e.index);
+        if(it==pending_calls_.end())throw std::logic_error("Tool event without begin");
+        if(e.kind==K::tool_call_arguments) {it->second.arguments+=e.text;return records;}
+        const auto& pending=it->second;
+        Json block={{"type","tool_use"},{"id",pending.call.id},{"name",pending.call.name},{"input",Json::object()}};
+        const auto index=output_.size();
+        records.push_back(event("content_block_start",{{"index",index},{"content_block",block}}));
+        if(!pending.arguments.empty())records.push_back(event("content_block_delta",{{"index",index},
+            {"delta",{{"type","input_json_delta"},{"partial_json",pending.arguments}}}}));
+        records.push_back(event("content_block_stop",{{"index",index}}));
+        output_.push_back(std::move(block));
+        pending_calls_.erase(it);
+        return records;
+    }
+    const bool think=e.kind==K::reasoning;
+    const std::string type=think?"thinking":"text";
+    if(active_<0 || output_[active_]["type"]!=type) {
+        close(records);
+        Json block=think?Json{{"type",type},{"thinking",""},{"signature",""}}:Json{{"type",type},{"text",""}};
         active_=static_cast<int>(output_.size());output_.push_back(block);
         records.push_back(event("content_block_start",{{"index",active_},{"content_block",block}}));
-        if(tool) {call_indices_[e.index]=std::size_t(active_);output_[active_]["arguments"]="";return records;}
     }
     auto& text=output_[active_][think?"thinking":"text"];text=text.get<std::string>()+e.text;
     records.push_back(event("content_block_delta",{{"index",active_},{"delta",{{"type",think?"thinking_delta":"text_delta"},{think?"thinking":"text",e.text}}}}));
@@ -529,13 +535,15 @@ Json Encoder::message(const edge0::GenerationResult* r) const {
         }
         value["content"].push_back(std::move(block));
     }
+    const bool has_tool=std::any_of(value["content"].begin(),value["content"].end(),
+        [](const Json& block){return block["type"]=="tool_use";});
     const char* stop="end_turn";
     switch(r->stop_reason) {
         case edge0::StopReason::length:stop="max_tokens";break;
         case edge0::StopReason::capacity:stop="model_context_window_exceeded";break;
         case edge0::StopReason::stop_string:stop="stop_sequence";break;
-        case edge0::StopReason::tool_calls:stop="tool_use";break;
-        case edge0::StopReason::end_of_generation:if(!r->tool_calls.empty())stop="tool_use";break;
+        case edge0::StopReason::tool_calls:if(has_tool)stop="tool_use";break;
+        case edge0::StopReason::end_of_generation:if(has_tool)stop="tool_use";break;
         default:break;
     }
     value["stop_reason"]=stop;
@@ -574,10 +582,12 @@ std::vector<std::string> Encoder::finish(const edge0::GenerationResult& r,const 
     }
     records.push_back(event(reason(r)=="length"?"response.incomplete":"response.completed",{{"response",complete(r,memory)}}));return records;
 }
-std::vector<std::string> Encoder::fail(const Failure& error) {
+std::vector<std::string> Encoder::fail(const Failure& error, const std::string& response_id, std::optional<std::size_t> next_sequence) {
     if(request_.protocol==Protocol::messages)return {event("error",error.body(Protocol::messages))};
     if(request_.protocol==Protocol::chat)return {"data: "+error.body().dump()+"\n\n"};
     auto value=response(nullptr,"failed");value["error"]={{"code",error.code},{"message",error.message()}};
+    if(!response_id.empty())value["id"]=response_id;
+    if(next_sequence)sequence_=*next_sequence;
     return {event("response.failed",{{"response",value}})};
 }
 }

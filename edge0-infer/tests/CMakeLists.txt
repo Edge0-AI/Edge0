@@ -885,7 +885,8 @@ moe_add_test(NAME moe_test_fake_strata LEVEL L1 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/integration/fake_strata.py" --self-test)
 if(MOE_BUILD_CLI)
     add_executable(moe_test_strata_registry unit/cli/strata_registry_test.cpp
-        "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_registry.cpp" "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_status.cpp")
+        "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_registry.cpp" "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_status.cpp"
+        "${PROJECT_SOURCE_DIR}/tools/cli/serve_protocol.cpp")
     target_include_directories(moe_test_strata_registry PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include")
     target_include_directories(moe_test_strata_registry SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/nlohmann-json")
     moe_warnings(moe_test_strata_registry)

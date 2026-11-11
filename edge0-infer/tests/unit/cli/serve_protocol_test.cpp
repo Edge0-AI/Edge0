@@ -109,6 +109,14 @@ void messages_parse_contract() {
     CHECK(r.input.messages[1].content=="answer" && r.input.messages[1].tool_calls[0].arguments_json=="{\"z\":1,\"a\":2}");
     CHECK(r.input.messages[2].role=="tool" && r.input.messages[2].tool_call_id=="one" && r.input.messages[2].content=="result");
     CHECK(r.input.messages[3].tool_call_id=="two" && r.input.messages[4].content=="after");
+    auto missing=j;missing["messages"][1]["content"][1].erase("content");
+    CHECK(parse(missing).input.messages[2].content.empty());
+    for(const auto& value:Json::array({nullptr,42,true,Json::object()})) {
+        missing["messages"][1]["content"][1]["content"]=value;
+        invalid(missing,"messages.content.content");
+    }
+    missing["messages"][1]["content"][1].erase("content");
+    missing["messages"][1]["content"][1].erase("tool_use_id");invalid(missing,"messages.content.tool_use_id");
     j["messages"][1]["content"].erase(0);CHECK(parse(j).input.messages.size()==4);
     j["messages"][0]["content"][2]["input"]=Json::array();invalid(j,"messages.content.input");
     for(const auto* type:{"image","document","search_result","redacted_thinking","server_tool_use","thinking","tool_use"}) {
@@ -120,7 +128,9 @@ void messages_parse_contract() {
 void messages_encoding_contract() {
     portal::Request request;request.protocol=Protocol::messages;
     auto payload=[](const std::string& wire){return Json::parse(wire.substr(wire.find("data: ")+6));};
-    for(bool rejected:{false,true}) {
+    // Success, rejected last, rejected first, all rejected, and unfinished calls.
+    for(int mode=0;mode<5;++mode) {
+        const bool rejected=mode!=0;
         portal::Encoder encoder(request,"test","1");
         auto wire=encoder.begin(12);auto start=payload(wire[0]);
         CHECK(start["type"]=="message_start" && start["message"]["content"].empty());
@@ -136,14 +146,18 @@ void messages_encoding_contract() {
         r.input.resize(12);r.reused_tokens=5;r.generated_count=8;r.reasoning_tokens=3;r.request_summary.first_token_seconds=0.2;
         for(std::size_t i=0;i<2;++i) {
             e.kind=edge0::OutputKind::tool_call_begin;e.index=i+7;e.tool_call={"call_"+std::to_string(i),"f",""};send(e);
+            const auto before=wire.size();
             e.kind=edge0::OutputKind::tool_call_arguments;e.text="{\"a\":";send(e);
-            if(rejected && i==1) {e.kind=edge0::OutputKind::tool_call_rejected;e.rejected={e.index,e.text,"truncated"};send(e);r.rejected_tool_calls.push_back(e.rejected);}
-            else {e.text="1}";send(e);e.kind=edge0::OutputKind::tool_call_end;send(e);r.tool_calls.push_back({e.tool_call.id,"f","{\"a\":1}"});}
+            if(mode==3 || mode==4 || (mode==1 && i==1) || (mode==2 && i==0)) {e.kind=edge0::OutputKind::tool_call_rejected;e.rejected={e.index,e.text,"truncated"};if(mode!=4)send(e);r.rejected_tool_calls.push_back(e.rejected);CHECK(wire.size()==before);}
+            else {e.text="1}";send(e);CHECK(wire.size()==before);e.kind=edge0::OutputKind::tool_call_end;send(e);
+                CHECK(wire.size()==before+3);CHECK(payload(wire[before])["type"]=="content_block_start");
+                CHECK(payload(wire[before+1])["delta"]["partial_json"]=="{\"a\":1}");
+                CHECK(payload(wire[before+2])["type"]=="content_block_stop");r.tool_calls.push_back({e.tool_call.id,"f","{\"a\":1}"});}
         }
         const auto tail=encoder.finish(r);wire.insert(wire.end(),tail.begin(),tail.end());const auto full=encoder.complete(r);
         CHECK(full["type"]=="message" && full["role"]=="assistant" && full["model"]=="test");
-        CHECK(full["id"].get<std::string>().find("msg_")==0 && full["stop_reason"]=="tool_use" && full["stop_sequence"].is_null());
-        CHECK(full["content"].size()==(rejected?3:4));
+        CHECK(full["id"].get<std::string>().find("msg_")==0 && full["stop_reason"]==(r.tool_calls.empty()?"end_turn":"tool_use") && full["stop_sequence"].is_null());
+        CHECK(full["content"].size()==2+r.tool_calls.size());
         CHECK(full["usage"]==Json({{"input_tokens",7},{"cache_read_input_tokens",5},{"cache_creation_input_tokens",nullptr},{"output_tokens",8},{"output_tokens_details",{{"thinking_tokens",3}}}}));
         CHECK(full["metrics"]["first_token_seconds"]==0.2);
         Json blocks=Json::array();std::vector<std::string> types;int active=-1;std::size_t stops=0;
@@ -164,19 +178,27 @@ void messages_encoding_contract() {
                 if(rejected)CHECK(v["rejected_tool_calls"]==full["rejected_tool_calls"]);
             }
         }
-        CHECK(stops==4 && types.front()=="message_start" && types[types.size()-2]=="message_delta" && types.back()=="message_stop");
-        if(rejected) {CHECK(full["rejected_tool_calls"].size()==1);blocks.erase(3);}
+        CHECK(stops==full["content"].size() && types.front()=="message_start" && types[types.size()-2]=="message_delta" && types.back()=="message_stop");
+        if(rejected)CHECK(full["rejected_tool_calls"].size()==r.rejected_tool_calls.size());
         for(auto& block:blocks)if(block["type"]=="tool_use") {block["input"]=Json::parse(block["arguments"].get<std::string>());block.erase("arguments");}
         CHECK(blocks==full["content"]);
         r.configuration.thinking=false;CHECK(encoder.complete(r)["content"][0]["type"]=="text");
         r.tool_calls.clear();
-        for(const auto& pair:std::vector<std::pair<edge0::StopReason,std::string>>{{edge0::StopReason::end_of_generation,"end_turn"},{edge0::StopReason::length,"max_tokens"},{edge0::StopReason::capacity,"model_context_window_exceeded"},{edge0::StopReason::stop_string,"stop_sequence"},{edge0::StopReason::tool_calls,"tool_use"}}) {
+        for(const auto& pair:std::vector<std::pair<edge0::StopReason,std::string>>{{edge0::StopReason::end_of_generation,"end_turn"},{edge0::StopReason::length,"max_tokens"},{edge0::StopReason::capacity,"model_context_window_exceeded"},{edge0::StopReason::stop_string,"stop_sequence"},{edge0::StopReason::tool_calls,"end_turn"}}) {
             r.stop_reason=pair.first;r.matched_stop="END";const auto value=encoder.complete(r);CHECK(value["stop_reason"]==pair.second);
             CHECK(value["stop_sequence"]==(pair.first==edge0::StopReason::stop_string?Json("END"):Json(nullptr)));
         }
         for(auto stop:{edge0::StopReason::cancelled,edge0::StopReason::failed}) {
             r.stop_reason=stop;auto fail=encoder.finish(r);CHECK(fail.size()==1 && payload(fail[0])["type"]=="error");
         }
+    }
+    {
+        portal::Encoder encoder(request,"test","1");edge0::OutputEvent e;
+        e.kind=edge0::OutputKind::tool_call_begin;e.tool_call={"empty","f","{}"};
+        CHECK(encoder.accept(e).empty());e.kind=edge0::OutputKind::tool_call_end;
+        auto wire=encoder.accept(e);CHECK(wire.size()==2);
+        CHECK(payload(wire[0])["type"]=="content_block_start" && payload(wire[0])["index"]==0);
+        CHECK(payload(wire[1])["type"]=="content_block_stop" && payload(wire[1])["index"]==0);
     }
     for(const auto& pair:std::vector<std::pair<int,std::string>>{{400,"invalid_request_error"},{401,"authentication_error"},{404,"not_found_error"},{413,"request_too_large"},{429,"rate_limit_error"},{500,"api_error"},{503,"overloaded_error"}}) {
         portal::Failure f(pair.first,"bad","code","field");auto b=f.body(Protocol::messages);
@@ -185,6 +207,15 @@ void messages_encoding_contract() {
     }
 }
 int main(int argc,char** argv) {
+    for(int status:{400,405,414,404,500,503}) {
+        const auto failure=portal::http_failure(status);
+        CHECK(failure.status==status);
+        CHECK(failure.code==(status==404?"not_found":status<500?"invalid_request":"internal_error"));
+        CHECK(failure.message()==(status==404?"Unknown endpoint":status<500?"Bad request":"Internal error"));
+        CHECK(failure.body()["error"]["code"]==failure.code);
+    }
+    CHECK(portal::http_failure(400).body(Protocol::messages)["error"]["type"]=="invalid_request_error");
+    CHECK(portal::http_failure(500).body(Protocol::messages)["error"]["type"]=="api_error");
     metrics_contract();
     messages_parse_contract();
     messages_encoding_contract();

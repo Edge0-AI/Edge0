@@ -186,6 +186,7 @@ int chat(int argc, char** argv, const Match& match) {
 
             Turn turn;
             httplib::Client client("127.0.0.1", port);
+            client.set_tcp_nodelay(true);
             client.set_connection_timeout(5);
             client.set_read_timeout(24 * 3600);
             {

@@ -1,4 +1,6 @@
 #include "serve_delegate_status.h"
+#include "serve_protocol.h"
+#include <limits>
 
 #include <exception>
 
@@ -122,10 +124,28 @@ void account_sse(Accounting& a, std::string& pending, const char* data, std::siz
         if (line.compare(0, 5, "data:") != 0) continue;
         auto payload = line.substr(5);
         if (!payload.empty() && payload.front() == ' ') payload.erase(0, 1);
-        if (payload == "[DONE]") continue;
+        if (payload == "[DONE]") {
+            if (a.endpoint == "/v1/chat/completions") a.complete = true;
+            continue;
+        }
         const auto value = Json::parse(payload, nullptr, false);
         if (value.is_discarded()) continue;
         try {
+            const auto type = text(value, "type");
+            if (a.endpoint == "/v1/responses") {
+                if (type == "response.completed" || type == "response.incomplete" || type == "response.failed") a.complete = true;
+                if (value.contains("response") && value["response"].is_object()) {
+                    const auto id = text(value["response"], "id");
+                    if (!id.empty()) a.response_id = id;
+                }
+                const auto id = text(value, "response_id");
+                if (!id.empty()) a.response_id = id;
+                if (value.contains("sequence_number") && value["sequence_number"].is_number_integer() && value["sequence_number"] >= 0) {
+                    const auto n = value["sequence_number"].get<std::uint64_t>();
+                    if (n < std::numeric_limits<std::size_t>::max()) a.next_sequence = std::max(a.next_sequence, static_cast<std::size_t>(n) + 1);
+                }
+            } else if (a.endpoint == "/v1/messages" && (type == "message_stop" || type == "error")) a.complete = true;
+            else if (a.endpoint == "/v1/chat/completions" && value.contains("error")) a.complete = true;
             account(a, value);
             if (const auto fragments = content_fragments(value)) {
                 a.streamed_tokens = a.streamed_tokens.value_or(0) + fragments;
@@ -137,6 +157,11 @@ void account_sse(Accounting& a, std::string& pending, const char* data, std::siz
         }
     }
     pending.erase(0, start);
+}
+
+StatusJson proxy_error(int status, const std::string& path) {
+    return portal::http_failure(status).body(
+            path == "/v1/messages" || path.rfind("/v1/messages/", 0) == 0 ? portal::Protocol::messages : portal::Protocol::chat);
 }
 
 std::string stop_reason(const std::string& finish) {

@@ -6,6 +6,8 @@
 #endif
 #include <httplib.h>
 #include <csignal>
+#include <cerrno>
+#include <limits>
 #include <cstdio>
 #include <cstdlib>
 #include <cwchar>
@@ -30,10 +32,11 @@ namespace {
 #ifndef _WIN32
 const char* launcher_source =
     "import os, signal, sys, time\n"
+    "os.environ.pop('STRATA_API_KEY', None)\n"
     "log = sys.argv[1]\n"
     "if os.name != 'nt':\n"
     "    os.setpgid(0, 0)\n"
-    "sys.stdout.write(str(os.getpid()) + '\\n')\n"
+    "sys.stdout.write('edge0-launcher-pid ' + str(os.getpid()) + '\\n')\n"
     "sys.stdout.flush()\n"
     "null = os.open(os.devnull, os.O_RDONLY)\n"
     "os.dup2(null, 0)\n"
@@ -73,7 +76,8 @@ const char* launcher_source =
     "if orphaned is not None:\n"
     "    os.killpg(0, signal.SIGKILL)  # nobody is left to stop what the server leaves behind\n"
     "if os.WIFSIGNALED(status):\n"
-    "    signal.signal(os.WTERMSIG(status), signal.SIG_DFL)\n"
+    "    if os.WTERMSIG(status) not in (signal.SIGKILL, signal.SIGSTOP):  # those two cannot be set, and act by default\n"
+    "        signal.signal(os.WTERMSIG(status), signal.SIG_DFL)\n"
     "    os.kill(os.getpid(), os.WTERMSIG(status))\n"
     "os._exit(os.WEXITSTATUS(status) if os.WIFEXITED(status) else 1)\n";
 
@@ -177,6 +181,7 @@ std::vector<wchar_t> child_environment(const std::vector<fs::path>& directories)
         }
     } catch (...) { FreeEnvironmentStringsW(block); throw; }
     FreeEnvironmentStringsW(block);
+    values.erase(L"STRATA_API_KEY");
     if (!directories.empty()) {
         std::wstring prefix;
         for (const auto& directory : directories) prefix += directory.wstring() + L";";
@@ -304,15 +309,38 @@ void Engine::start() {
     std::mutex mutex;
     std::condition_variable announced;
     bool have_pid = false;
-    monitor_ = std::thread([this, pipe, &mutex, &announced, &have_pid] {
-        char line[64] = {};
-        const bool got = std::fgets(line, sizeof line, pipe) != nullptr;
+    std::string first_line;
+    monitor_ = std::thread([this, pipe, &mutex, &announced, &have_pid, &first_line] {
+        std::string line;
+        bool first = true, oversized = false;
+        long reported = 0;
+        const std::string prefix = "edge0-launcher-pid ";
+        for (;;) {
+            const int c = std::fgetc(pipe);
+            if (c != EOF && c != '\n') {
+                if (line.size() < 128) line += static_cast<char>(c);
+                else oversized = true;
+                continue;
+            }
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (first) {first_line = line.substr(0, 64);first = false;}
+            if (!oversized && line.compare(0, prefix.size(), prefix) == 0) {
+                const auto digits = line.substr(prefix.size());
+                if (!digits.empty() && digits.find_first_not_of("0123456789") == std::string::npos) {
+                    errno = 0;
+                    const long value = std::strtol(digits.c_str(), nullptr, 10);
+                    if (errno != ERANGE && value > 0 && value <= std::numeric_limits<pid_t>::max()) reported = value;
+                }
+            }
+            if (reported > 0 || c == EOF) break;
+            line.clear();oversized = false;
+        }
         {
             std::lock_guard<std::mutex> lock(mutex);
-            if (got) pid_ = std::strtol(line, nullptr, 10);
+            pid_ = reported;
             have_pid = true;
+            announced.notify_all();
         }
-        announced.notify_all();
         const int status = pclose(pipe);
         code_ = decode_status(status);
         exited_ = true;
@@ -320,6 +348,10 @@ void Engine::start() {
     {
         std::unique_lock<std::mutex> lock(mutex);
         announced.wait(lock, [&] { return have_pid; });
+    }
+    if (pid_ <= 0) {
+        monitor_.join();
+        throw std::runtime_error("Cannot start edge0-strata: no launcher PID from --strata-python; first output: " + first_line);
     }
 #endif
     const auto started = std::chrono::steady_clock::now();
@@ -341,6 +373,7 @@ void Engine::start() {
         }
         if (port_ > 0) {
             httplib::Client client("127.0.0.1", port_);
+            client.set_tcp_nodelay(true);
             client.set_connection_timeout(2);
             client.set_read_timeout(5);
             if (auto response = client.Get("/health"); response && response->status == 200) return;

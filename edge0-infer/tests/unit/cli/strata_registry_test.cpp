@@ -61,11 +61,18 @@ int main() {
     for (const auto* other : {R"({"architecture": "edge0_35b", "format_version": 1})", R"({"architecture": "edge0-145b"})", "{}",
                               "[]", R"({"architecture": 145})", "not json",
                               R"({"model_name":"edge0-145b-q3k","architecture":"edge0_35b","format_version":1})",
-                              R"({"model_name":"edge0-145b-q3k","architecture":null})",
                               R"({"architecture":"edge0_145b","format_version":1})",
                               R"({"model_name":12})", R"({"model_name":"unknown"})"}) {
         write(model / "model.json", other);
         CHECK(!detect(model));
+    }
+    // The released model.json carries architecture and the engine's own settings; only model_name decides.
+    for (const auto* released : {R"({"model_name":"edge0-145b-q3k","architecture":"latent sparse MoE","build":"Q3_K",
+                                    "args":["--pack","."],"env":{"STRATA_LATENT_A":"./experts.bin"}})",
+                                 R"({"model_name":"edge0-145b-q3k","architecture":null})"}) {
+        write(model / "model.json", released);
+        const auto found = detect(model);
+        CHECK(found && found->registration == &registration && found->experts == "q3k");
     }
     fs::remove(model / "model.json");
     CHECK(!detect(model));  // every other file present, still native
@@ -362,6 +369,46 @@ int main() {
     }
 
     // Response accounting: plain JSON, SSE split at arbitrary points, other dialects.
+    {
+        bool active = true;int finished = 0;
+        try {ActiveGuard guard([&]{active=false;++finished;});guard.arm();throw std::runtime_error("fixture");}
+        catch (const std::runtime_error&) {}
+        CHECK(!active && finished==1);
+        {ActiveGuard guard([&]{++finished;});guard.arm();++finished;guard.release();}
+        CHECK(finished==2);
+        {ActiveGuard guard([&]{++finished;});}
+        CHECK(finished==2);
+        CHECK(proxy_error(404)["error"]["code"]=="not_found");
+        for(int status:{400,405}) {
+            const auto error=proxy_error(status)["error"];
+            CHECK(error["code"]=="invalid_request" && error["message"]=="Bad request");
+        }
+        CHECK(proxy_error(500)["error"]["code"]=="internal_error");
+        CHECK(proxy_error(500,"/v1/messages")["error"]["type"]=="api_error");
+    }
+    for(const auto& entry:std::vector<std::pair<std::string,std::string>>{
+        {"/v1/chat/completions","data: [DONE]\n\n"},
+        {"/v1/chat/completions","data: {\"error\":{\"message\":\"bad\"}}\n\n"},
+        {"/v1/responses","data: {\"type\":\"response.completed\"}\n\n"},
+        {"/v1/responses","data: {\"type\":\"response.incomplete\"}\n\n"},
+        {"/v1/responses","data: {\"type\":\"response.failed\"}\n\n"},
+        {"/v1/messages","data: {\"type\":\"message_stop\"}\n\n"},
+        {"/v1/messages","data: {\"type\":\"error\"}\n\n"}}) {
+        Accounting a;a.endpoint=entry.first;std::string pending;
+        const std::string partial="data: {\"delta\":\"hello\"}\n\n";
+        account_sse(a,pending,partial.data(),partial.size());CHECK(!a.complete);
+        for(char c:entry.second)account_sse(a,pending,&c,1);
+        CHECK(a.complete);
+    }
+    {
+        Accounting a;a.endpoint="/v1/responses";std::string pending;
+        const std::string wire="data: {\"response\":{\"id\":\"resp_seen\"},\"sequence_number\":14}\n\n"
+                               "data: {\"sequence_number\":3}\n\n";
+        account_sse(a,pending,wire.data(),wire.size());
+        CHECK(a.response_id=="resp_seen" && a.next_sequence==15 && !a.complete);
+        const std::string wrong="data: [DONE]\n\n";
+        account_sse(a,pending,wrong.data(),wrong.size());CHECK(!a.complete);
+    }
     Accounting plain;
     account(plain, Json::parse(R"({"choices":[{"finish_reason":"length"}],"usage":{"prompt_tokens":13,"completion_tokens":14},
         "timings":{"cache_n":3,"prompt_n":10,"prompt_ms":163.3,"prompt_per_second":61.2,"predicted_n":14,"predicted_ms":222.5,"predicted_per_second":62.9}})"));

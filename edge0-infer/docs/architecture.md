@@ -4,7 +4,7 @@ An overview of how `edge0-infer` is organized. It names the parts and how they w
 
 ## Two layers
 
-`edge0-infer` has two layers. The upper layer is the program you run: the commands `run`, `chat`, `serve` and `inspect`, the OpenAI-compatible server of `serve`, and the chat applications that use it. The lower layer is the engine that computes the model. Each model runs on the engine built for it:
+`edge0-infer` has two layers. The upper layer is the program you run: the commands `run`, `chat`, `serve` and `inspect`, the local server of `serve`, and the chat applications that use it. The lower layer is the engine that computes the model. Each model runs on the engine built for it:
 
 | Model | Engine | Hardware | How `edge0-infer` uses the engine |
 | --- | --- | --- | --- |

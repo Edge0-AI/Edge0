@@ -1,4 +1,4 @@
-"""Chat twice and call Responses using a local OpenAI-compatible server."""
+"""Chat twice and call Responses using a local server."""
 import argparse
 from openai import OpenAI
 parser = argparse.ArgumentParser()

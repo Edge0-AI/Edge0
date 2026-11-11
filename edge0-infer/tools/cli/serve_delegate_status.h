@@ -6,6 +6,8 @@
 #include <chrono>
 #include <cstdint>
 #include <deque>
+#include <functional>
+#include <utility>
 #include <optional>
 #include <string>
 #include <vector>
@@ -24,7 +26,9 @@ struct Accounting {
     // these is used once the request ends: its record keeps only the engine's own numbers.
     std::optional<std::int64_t> streamed_tokens;
     std::optional<double> first_token_seconds;
-    bool saw_content = false, streaming = false;
+    bool saw_content = false, streaming = false, complete = false;
+    std::string endpoint, response_id;
+    std::size_t next_sequence = 0;
     std::string finish;  // the external engine's finish reason, as sent
 };
 // Folds one JSON body or SSE data object into the accounting (later values win).
@@ -80,6 +84,20 @@ struct DelegateStatusInput {
     ProxyHistory history;
 };
 StatusJson status_json(const DelegateStatusInput&);
+// Arm only after registration; release after finishing or handing ownership to a provider.
+class ActiveGuard {
+public:
+    explicit ActiveGuard(std::function<void()> finish) : finish_(std::move(finish)) {}
+    ActiveGuard(const ActiveGuard&) = delete;
+    ActiveGuard& operator=(const ActiveGuard&) = delete;
+    ~ActiveGuard() noexcept { if (armed_) { try { finish_(); } catch (...) {} } }
+    void arm() noexcept { armed_ = true; }
+    void release() noexcept { armed_ = false; }
+private:
+    std::function<void()> finish_;
+    bool armed_ = false;
+};
+StatusJson proxy_error(int status, const std::string& path = {});
 // Replaces system.memory with the external engine's machine.ram reading.
 StatusJson system_memory(const StatusJson& portal_system, const StatusJson& external);
 }

@@ -9,7 +9,7 @@ Every setting belongs to one of four scopes. The scope decides when the value is
 | [Model options](#model-options) | The model is loaded | One loaded model; each model declares its own | `LoadOverrides::model_options` |
 | [Generation](#generation) | Each request | One generation call | `GenerationOverrides` in `edge0/generation.h` |
 
-The reference CLI (`edge0-infer`) and the OpenAI-compatible server use the same settings and defaults as the native API; the CLI flag names are given below. Settings that only exist in the CLI or the server are listed under [Command options](#command-options).
+The reference CLI (`edge0-infer`) and the local server use the same settings and defaults as the native API; the CLI flag names are given below. Settings that only exist in the CLI or the server are listed under [Command options](#command-options).
 
 ## How a value is chosen
 

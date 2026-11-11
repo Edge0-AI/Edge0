@@ -53,7 +53,14 @@ int main() {
     CHECK(!service_resolved && external(service_resolved.error()));
     const auto service_loaded = edge0::load_model(runtime.value(), configuration);
     CHECK(!service_loaded && external(service_loaded.error()));
-    for (const auto* malformed : {R"({"architecture":"edge0_35b"})", R"({"format_version":1})",
+    // A released model.json also names an architecture, but has no format_version: it is not an asset manifest.
+    for (const auto* foreign : {R"({"model_name":"edge0-145b-q3k","architecture":"latent sparse MoE","args":[]})",
+                                R"({"architecture":"edge0_35b"})"}) {
+        std::ofstream(root / "model.json") << foreign;
+        const auto refused_foreign = edge0::inspect_assets({root.string(), false});
+        CHECK(!refused_foreign && external(refused_foreign.error()));
+    }
+    for (const auto* malformed : {R"({"format_version":1})", R"({"format_version":2,"architecture":"edge0_35b"})",
                                   R"({"format_version":null,"architecture":null})"}) {
         std::ofstream(root / "model.json") << malformed;
         const auto invalid = edge0::inspect_assets({root.string(), false});

@@ -383,12 +383,12 @@ Result<Catalog> open_catalog(const std::string &directory, Integrity integrity,
         if (parser.pos != parser.text.size())
             return invalid("model.json", "trailing JSON");
         auto version = obj.find("format_version"), arch = obj.find("architecture");
-        if (version == obj.end() && arch == obj.end())
+        if (version == obj.end())
             return Error{ErrorCategory::unsupported,
-                         "model.json is not an Edge0 asset manifest (it has neither format_version nor architecture); "
+                         "model.json is not an Edge0 asset manifest (it has no format_version); "
                          "models that run on an external engine (such as Edge0 145B) are served with "
                          "`edge0-infer serve` or `edge0-infer chat`"};
-        if (version == obj.end() || !std::holds_alternative<std::int64_t>(version->second) ||
+        if (!std::holds_alternative<std::int64_t>(version->second) ||
             std::get<std::int64_t>(version->second) != 1)
             return invalid("model.json", "unsupported format_version");
         if (arch == obj.end() || !std::holds_alternative<std::string>(arch->second) ||

@@ -29,7 +29,7 @@ If another process is already listening on the same local address and port, a se
 | POST | `/v1/chat/completions` | Chat completion or SSE chunks |
 | POST | `/v1/responses` | Response or typed SSE events |
 | POST | `/v1/messages` | Anthropic message or typed SSE events |
-| POST | `/v1/messages/count_tokens` | Input token count; native models only |
+| POST | `/v1/messages/count_tokens` | Input token count |
 
 Every request includes `model` equal to the alias. Send the complete conversation
 on every turn. The native library renders templates, tokenizes, validates tools,
@@ -63,7 +63,14 @@ until it is ready, and only then prints the `Listening:` line. It acts as a prox
   endpoints, passed through unchanged (status, `Content-Type` and body) for its tools,
   such as its benchmark `tools/strata_bench.py`. They return 503 once
   edge0-strata has exited.
-- `/v1/messages/count_tokens` is not provided in delegated mode (404).
+- `POST /v1/messages/count_tokens` is forwarded unchanged, including its response
+  status and content. It does not enter the active request set, request history or totals.
+- If the engine disconnects before completing a response, a non-streaming request
+  returns 503 (`engine_exited`) when the engine has exited, or 502 (`engine_unavailable`)
+  when it is still running; partial content is discarded. A stream already started
+  ends with one protocol error event (Chat error object, Responses `response.failed`,
+  or Messages `error`). The request record carries the failure status and code.
+  Complete engine error responses are forwarded unchanged.
 - Authentication, `--api-key-file`, `--host`, `--port`, `--alias`,
   `--max-body-bytes` and `--write-timeout-seconds` work as for native models.
   `--context` sets edge0-strata's `--max-context`. `--device` accepts `cuda` or
@@ -131,8 +138,8 @@ are accepted without an effect. `store` never enables persistence.
 | `functions`, `function_call`, `modalities`, `audio`, `prediction`, `web_search_options`, `verbosity` | Rejected | Rejected | Not accepted |
 | Message `name`, `refusal`, `audio`; encrypted reasoning; nontext input | Rejected | Rejected | Not accepted |
 | `system` | Use system message | Use instructions | String or text blocks, concatenated into the first system message |
-| `tool_result` | Use tool message | Use function_call_output | tool_use_id required; content string/text blocks; is_error accepted without rendering effect; results precede same-turn user text, in block order; result-only turns add no empty user message |
-| `tool_use` | Use tool_calls | Use function_call | id, name, input object; input serialized compactly in original key order |
+| `tool_result` | Use tool message | Use function_call_output | tool_use_id required; content optional (empty text when omitted), otherwise string/text blocks; is_error accepted without rendering effect; results precede same-turn user text, in block order; result-only turns add no empty user message |
+| `tool_use` | Use tool_calls | Use function_call | id, name, input object; input serialized compactly in original key order; streamed tool blocks appear only after the call ends, with at most one parameter delta; rejected calls emit no block |
 | `thinking` history block | Use reasoning_content | Use reasoning item | thinking text; signature accepted without validation |
 | `thinking` control | Use reasoning controls | Use reasoning controls | type enabled/adaptive enables, disabled disables; positive integer budget_tokens accepted without limiting thinking length; between_tools/display rejected |
 | `stop_sequences` | Use stop | Not accepted | String array |
@@ -172,13 +179,16 @@ and `tool_use` (with an object `input`). Thinking appears only when enabled.
 Streaming emits `message_start`, then each block's `content_block_start`,
 `content_block_delta` (`thinking_delta`, `text_delta`, or `input_json_delta`), and
 `content_block_stop`, followed by `message_delta` and `message_stop`. Block indices
-start at zero and are contiguous. No ping events are sent. Rejected calls do not
-appear in complete content; a block already streamed still closes normally and is
-identified by the `rejected_tool_calls` extension on `message_delta`.
+start at zero and match the complete content indices. No ping events are sent.
+Tool blocks are buffered until the call ends, then sent as start, at most one delta
+containing all parameters, and stop. Rejected or unfinished calls emit no blocks
+and do not appear in complete content; they are listed in `rejected_tool_calls`,
+also carried by `message_delta`.
 
 Messages `stop_reason` is `end_turn`, `tool_use`, `max_tokens`,
 `model_context_window_exceeded`, or `stop_sequence`; only the last has a non-null
-`stop_sequence`, containing the matched string. Its usage reports uncached input
+`stop_sequence`, containing the matched string. `tool_use` requires a tool block in
+content; when all calls are rejected the reason is `end_turn`. Its usage reports uncached input
 as `input_tokens`, reused input as `cache_read_input_tokens`, generated tokens
 including thinking as `output_tokens`, and thinking tokens as
 `output_tokens_details.thinking_tokens`. `cache_creation_input_tokens` is null.

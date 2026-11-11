@@ -127,7 +127,7 @@ static std::optional<std::string> model_name_of(const fs::path& directory) {
     std::ifstream input(directory / "model.json", std::ios::binary);
     if (!input) return std::nullopt;
     const auto value = Json::parse(input, nullptr, false);
-    if (value.is_discarded() || !value.is_object() || value.contains("architecture") || !value.contains("model_name") || !value["model_name"].is_string())
+    if (value.is_discarded() || !value.is_object() || value.contains("format_version") || !value.contains("model_name") || !value["model_name"].is_string())
         return std::nullopt;
     return value["model_name"].get<std::string>();
 }
