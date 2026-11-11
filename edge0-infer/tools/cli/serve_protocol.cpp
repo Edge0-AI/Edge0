@@ -169,7 +169,7 @@ Request parse(const Json& j, Protocol protocol, const std::string& alias) {
         if(j.contains("top_k"))r.overrides.top_k=integer(j["top_k"],"top_k");
         if(j.contains("logprobs"))r.overrides.logprobs=boolean(j["logprobs"],"logprobs");
         if(j.contains("logit_bias")) {
-            if(!j["logit_bias"].is_object())bad("logit_bias");r.overrides.logit_bias=std::map<std::int32_t,double>{};
+            if(!j["logit_bias"].is_object()){bad("logit_bias");}r.overrides.logit_bias=std::map<std::int32_t,double>{};
             for(auto it=j["logit_bias"].begin();it!=j["logit_bias"].end();++it) {
                 const auto& key=it.key(); if(key.empty() || key.find_first_not_of("0123456789")!=std::string::npos)bad("logit_bias");
                 std::uint64_t n=0;for(char c:key) {n=n*10+unsigned(c-'0');if(n>INT32_MAX)bad("logit_bias");}
@@ -196,7 +196,7 @@ Request parse(const Json& j, Protocol protocol, const std::string& alias) {
             bool group=false;
             auto assistant=[&]() -> edge0::TextMessage& {if(!group) {r.input.messages.push_back({"assistant",""});group=true;}return r.input.messages.back();};
             for(const auto& item:input) {
-                if(!item.is_object())bad("input");const auto type=item.contains("type") ? str(item["type"],"input.type") : "message";
+                if(!item.is_object()){bad("input");}const auto type=item.contains("type") ? str(item["type"],"input.type") : "message";
                 if(type=="message") {
                     keys(item,{"type","role","content","id","status"},"input");auto role=str(required(item,"role"),"input.role");if(role=="developer")role="system";
                     auto text=content(required(item,"content"),{"input_text","output_text"},"input.content");
@@ -242,7 +242,7 @@ Failure failure(const edge0::Error& e, bool shutdown) {
 }
 std::string identifier(const std::string& prefix) {
     std::random_device random;std::ostringstream out;out<<prefix<<std::hex<<std::setfill('0');
-    for(int i=0;i<3;++i)out<<std::setw(8)<<static_cast<std::uint32_t>(random());return out.str();
+    for(int i=0;i<3;++i){out<<std::setw(8)<<static_cast<std::uint32_t>(random());}return out.str();
 }
 Encoder::Encoder(const Request& r,std::string alias,std::string version)
     : request_(r),alias_(std::move(alias)),fingerprint_("edge0-infer-"+version),id_(identifier(r.protocol==Protocol::chat?"chatcmpl-":"resp_")),

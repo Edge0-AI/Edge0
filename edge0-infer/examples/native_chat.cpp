@@ -27,7 +27,7 @@ int main(int argc,char** argv) {
                 conversation.messages.push_back({"user",text});
                 auto result=take(edge0::generate(session,conversation,configuration,{},[](const edge0::OutputEvent& event)->std::optional<edge0::Error>{
                     if(event.kind==edge0::OutputKind::answer)std::cout<<event.text<<std::flush;
-                    if(!std::cout)return edge0::Error{edge0::ErrorCategory::backend_error,"Output failed"};return {};
+                    if(!std::cout){return edge0::Error{edge0::ErrorCategory::backend_error,"Output failed"};}return {};
                 }));
                 if(result.error || result.stop_reason==edge0::StopReason::cancelled || result.stop_reason==edge0::StopReason::failed)throw std::runtime_error("Generation failed");
                 std::cout<<'\n';std::cerr<<"reused_tokens="<<result.reused_tokens<<'\n';

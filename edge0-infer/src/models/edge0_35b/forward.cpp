@@ -869,7 +869,7 @@ Result<std::unique_ptr<ForwardResult>> forward(const std::shared_ptr<model::Load
                 std::vector<std::int32_t> ids(std::size_t(ggml_nelements(route.second)));
                 check(plan->read_output(route.second,ids.data(),0,ids.size()*sizeof(std::int32_t)));
                 result->bytes_read+=ids.size()*sizeof(std::int32_t);
-                if(!first) trace<<','; first=false;
+                if(!first){trace<<',';} first=false;
                 trace<<"{\"layer\":"<<route.first;
                 for(const auto* name:{"actual","executed"}) {
                     trace<<",\""<<name<<"\":[";

@@ -205,7 +205,7 @@ Result<LoadConfiguration> resolve_load_configuration(const RuntimeReference& run
     auto resources=RuntimeAccess::acquire(runtime); if(!resources) return resources.error();
     { std::lock_guard<std::mutex> lock(resources.value().registry->mutex);
       if(resources.value().registry->callback_thread==std::this_thread::get_id()) return busy(); }
-    auto catalog=model::open_catalog(directory); if(!catalog) return catalog.error();
+    auto catalog=model::open_catalog(directory,app::compiled_adapters()); if(!catalog) return catalog.error();
     auto adapter=model::select_adapter(catalog.value(),app::compiled_adapters()); if(!adapter) return adapter.error();
     auto assets=model::check_compatibility(catalog.value(),*adapter.value()); if(!assets) return assets.error();
     auto declaration=adapter.value()->describe_weight_storage(assets.value().indexes,overrides.model_options);
@@ -252,7 +252,7 @@ Result<ModelReference> load_model(const RuntimeReference& runtime,const LoadConf
         const auto policy=hooks->policies.find(request.stage_policy);
         if(policy!=hooks->policies.end()) request.policy_override=policy->second;
     }
-    auto catalog=model::open_catalog(configuration.directory); if(!catalog) return catalog.error();
+    auto catalog=model::open_catalog(configuration.directory,app::compiled_adapters()); if(!catalog) return catalog.error();
     auto selected=app::select_compiled(catalog.value()); if(!selected) return selected.error();
     const auto* compute=selected.value().compute;
     request.supports_handoff=compute->supports_handoff();

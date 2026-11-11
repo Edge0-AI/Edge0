@@ -2,6 +2,8 @@
 
 How to measure the Edge0 35B on each supported platform: what is measured, a quick one-off measurement, and the standard measurement that produces a comparable report. Run every command from the engine's top-level directory (`edge0-infer/`) after building and getting the model assets as described in [Getting started](getting-started.md).
 
+`bench` and the standard measurement run only on the native engine. The measured speed of Edge0 145B and Edge0 120B is on their model page, `docs/models/edge0-145b.md` in the Edge0 repository.
+
 ## What is measured
 
 | Metric | Meaning |

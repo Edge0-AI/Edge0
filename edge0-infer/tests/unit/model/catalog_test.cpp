@@ -36,6 +36,18 @@ int main() {
     auto bad = [&](const std::string &name) {
         error(open_catalog(t.path.string()), ErrorCategory::asset_invalid, name);
     };
+    {
+        // Restricted to known architectures: a foreign one is refused (unsupported, naming the known
+        // ones) before assets.tsv is read; a known one opens as before.
+        const std::vector<std::string> known{"test"}, foreign{"edge0_35b", "other"};
+        CHECK(open_catalog(t.path.string(), Integrity::size_only, &known));
+        fs::remove(t.path / "assets.tsv");
+        error(open_catalog(t.path.string(), Integrity::size_only, &foreign), ErrorCategory::unsupported,
+              "architecture test is not compiled into this library (compiled: edge0_35b, other)");
+        error(open_catalog(t.path.string(), Integrity::size_only, &foreign), ErrorCategory::unsupported, "edge0-infer serve");
+        bad("assets.tsv");
+    }
+    setup();
     write(t.path / "model.json",
           R"({"format_version":1,"architecture":"test","ignored_note":"\ud83d\ude00"})");
     CHECK(open_catalog(t.path.string()));

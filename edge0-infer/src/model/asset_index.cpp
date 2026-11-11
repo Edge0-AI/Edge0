@@ -315,7 +315,11 @@ std::optional<Error> check_tensor_names(const gguf_context *parsed, const AssetF
         return invalid(file.filename, "cannot locate GGUF tensor names");
     std::uint64_t position = gguf_get_data_offset(metadata.get());
     const std::uint64_t end = gguf_get_data_offset(parsed);
-    std::unique_ptr<FILE, decltype(&std::fclose)> input(std::fopen(file.path.c_str(), "rb"), std::fclose);
+    // A deleter type rather than decltype(&std::fclose): GCC warns that the template argument drops fclose's attributes.
+    struct CloseFile {
+        void operator()(FILE* handle) const { std::fclose(handle); }
+    };
+    std::unique_ptr<FILE, CloseFile> input(std::fopen(file.path.c_str(), "rb"));
     if (!input)
         return invalid(file.filename, "cannot read GGUF tensor names");
     // Prevent stdio read-ahead across the header/payload boundary.
@@ -361,7 +365,8 @@ std::optional<Error> check_tensor_names(const gguf_context *parsed, const AssetF
     return std::nullopt;
 }
 } // namespace
-Result<Catalog> open_catalog(const std::string &directory, Integrity integrity) {
+Result<Catalog> open_catalog(const std::string &directory, Integrity integrity,
+                             const std::vector<std::string> *architectures) {
     if (directory.find('\0') != std::string::npos)
         return invalid("model.json", "directory contains NUL");
     const auto root = std::filesystem::path(directory);
@@ -378,6 +383,11 @@ Result<Catalog> open_catalog(const std::string &directory, Integrity integrity) 
         if (parser.pos != parser.text.size())
             return invalid("model.json", "trailing JSON");
         auto version = obj.find("format_version"), arch = obj.find("architecture");
+        if (version == obj.end() && arch == obj.end())
+            return Error{ErrorCategory::unsupported,
+                         "model.json is not an Edge0 asset manifest (it has neither format_version nor architecture); "
+                         "models that run on an external engine (such as Edge0 145B) are served with "
+                         "`edge0-infer serve` or `edge0-infer chat`"};
         if (version == obj.end() || !std::holds_alternative<std::int64_t>(version->second) ||
             std::get<std::int64_t>(version->second) != 1)
             return invalid("model.json", "unsupported format_version");
@@ -387,6 +397,18 @@ Result<Catalog> open_catalog(const std::string &directory, Integrity integrity) 
         out.architecture = std::get<std::string>(arch->second);
     } catch (const std::exception &e) {
         return invalid("model.json", e.what());
+    }
+    if (architectures &&
+        std::find(architectures->begin(), architectures->end(), out.architecture) == architectures->end()) {
+        // Decided before assets.tsv or any weight file is read: the directory belongs to an
+        // implementation this library does not have, such as a model run by an external engine.
+        std::string known;
+        for (const auto &name : *architectures)
+            known += (known.empty() ? "" : ", ") + name;
+        return Error{ErrorCategory::unsupported,
+                     "architecture " + out.architecture + " is not compiled into this library (compiled: " + known +
+                         "); models that run on an external engine (such as Edge0 145B) are served with "
+                         "`edge0-infer serve` or `edge0-infer chat`"};
     }
     std::ifstream in(root / "assets.tsv");
     std::string line;

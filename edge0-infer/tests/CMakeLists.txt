@@ -191,6 +191,8 @@ moe_warnings(moe_test_platform_runtime)
 moe_add_test(NAME moe_test_platform_runtime LEVEL L1 COMMAND moe_test_platform_runtime)
 moe_add_test(NAME check_runtime_backends LEVEL L0 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/unit/checks/check_runtime_backends.py" "${PROJECT_SOURCE_DIR}")
+moe_add_test(NAME check_strata_files LEVEL L0 COMMAND ${moe_python}
+    "${PROJECT_SOURCE_DIR}/tests/unit/cli/check_strata_files.py" "${PROJECT_SOURCE_DIR}")
 
 add_executable(moe_test_exec_budget unit/exec/budget_test.cpp)
 target_include_directories(moe_test_exec_budget PRIVATE "${PROJECT_SOURCE_DIR}")
@@ -866,4 +868,26 @@ if(MOE_BUILD_CLI)
     target_link_libraries(moe_test_serve_status PRIVATE edge0::edge0)
     moe_warnings(moe_test_serve_status)
     moe_add_test(NAME moe_test_serve_status LEVEL L1 COMMAND moe_test_serve_status)
+endif()
+
+# Delegated models (such as Edge0 145B): the native API refuses their directories;
+# edge0-infer serve and chat start and proxy edge0-strata, tested with a fake engine.
+add_executable(moe_test_delegated_directory unit/app/delegated_directory_test.cpp)
+target_include_directories(moe_test_delegated_directory PRIVATE "${PROJECT_SOURCE_DIR}")
+target_link_libraries(moe_test_delegated_directory PRIVATE edge0::edge0)
+moe_warnings(moe_test_delegated_directory)
+moe_add_test(NAME moe_test_delegated_directory LEVEL L1 COMMAND moe_test_delegated_directory)
+moe_add_test(NAME moe_test_fake_strata LEVEL L1 COMMAND ${moe_python}
+    "${PROJECT_SOURCE_DIR}/tests/integration/fake_strata.py" --self-test)
+if(MOE_BUILD_CLI)
+    add_executable(moe_test_strata_registry unit/cli/strata_registry_test.cpp
+        "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_registry.cpp" "${PROJECT_SOURCE_DIR}/tools/cli/serve_delegate_status.cpp")
+    target_include_directories(moe_test_strata_registry PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include")
+    target_include_directories(moe_test_strata_registry SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/nlohmann-json")
+    moe_warnings(moe_test_strata_registry)
+    moe_add_test(NAME moe_test_strata_registry LEVEL L1 COMMAND moe_test_strata_registry)
+    moe_add_test(NAME moe_test_serve_strata LEVEL L2 COMMAND ${moe_python}
+        "${PROJECT_SOURCE_DIR}/tests/integration/serve_strata_test.py" --cli $<TARGET_FILE:edge0-infer>)
+    moe_add_test(NAME moe_test_chat_strata LEVEL L2 COMMAND ${moe_python}
+        "${PROJECT_SOURCE_DIR}/tests/integration/chat_strata_test.py" --cli $<TARGET_FILE:edge0-infer>)
 endif()

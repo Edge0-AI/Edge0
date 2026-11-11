@@ -67,6 +67,10 @@ struct CompatibleAssets {
     AssetView indexes;
     std::vector<std::string> unused_roles;
 };
+// open_catalog that refuses an architecture none of the registry's adapters implements
+// (unsupported) before reading assets.tsv.
+Result<Catalog> open_catalog(const std::string &directory, const AdapterRegistry &registry,
+                             Integrity integrity = Integrity::size_only);
 Result<const Adapter *> select_adapter(const Catalog &catalog, const AdapterRegistry &registry);
 Result<CompatibleAssets> check_compatibility(const Catalog &catalog, const Adapter &adapter);
 } // namespace edge0::model

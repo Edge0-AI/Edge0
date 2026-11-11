@@ -24,8 +24,13 @@ target_sources(edge0-infer PRIVATE sampling.cpp)
 target_sources(edge0-infer PRIVATE output.cpp)
 
 target_sources(edge0-infer PRIVATE serve.cpp serve_protocol.cpp serve_engine.cpp serve_status.cpp)
+# Delegated models: edge0-strata started and proxied by the Portal.
+target_sources(edge0-infer PRIVATE serve_delegate_registry.cpp serve_delegate_commands.cpp serve_delegate_process.cpp serve_delegate_status.cpp serve_delegate_proxy.cpp serve_delegate_chat.cpp)
 target_include_directories(edge0-infer SYSTEM PRIVATE
     "${PROJECT_SOURCE_DIR}/third_party/cpp-httplib" "${PROJECT_SOURCE_DIR}/third_party/nlohmann-json")
+# The HTTP client never sends "Expect: 100-continue": edge0-strata's HTTP/1.0 server does not
+# answer it, and the client would wait a second before sending every body of 1 KiB or more.
+target_compile_definitions(edge0-infer PRIVATE CPPHTTPLIB_EXPECT_100_THRESHOLD=0)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     # Only the App wrapper needs a signing team; the library builds for iOS without one.

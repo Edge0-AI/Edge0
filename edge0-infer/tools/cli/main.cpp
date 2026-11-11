@@ -1,5 +1,6 @@
 #include "edge0/generation.h"
 #include "console_input.h"
+#include "serve_delegate.h"
 namespace cli {
 const char* sampling_help();
 bool sampling_option(const std::string&, const std::string&, edge0::GenerationOverrides&);
@@ -84,8 +85,8 @@ int main(int argc, char **argv) {
     SetConsoleCP(CP_UTF8);
     // Write stdout in binary mode so a bare '\n' stays one byte instead of the
     // CRLF the CRT's text mode would emit. The reference answers and the exact
-    // byte comparisons in the tests require identical output on every platform
-    // (decision 2); the console renders a lone '\n' correctly.
+    // byte comparisons in the tests require identical output on every
+    // platform; the console renders a lone '\n' correctly.
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
     struct Command {
@@ -95,8 +96,11 @@ int main(int argc, char **argv) {
     const Command commands[] = {{"serve", serve_command}, {"chat", chat_command}, {"bench", bench_command}, {"describe", describe_command}, {"run", run_command}, {"forward", forward_command}, {"info", info_command}, {"inspect", inspect_command}, {"tokenize", text_command}, {"prompt", text_command}};
     if (argc >= 2)
         for (const auto &command : commands)
-            if (argv[1] == std::string(command.name))
+            if (argv[1] == std::string(command.name)) {
+                // A delegated model (model.json has a registered model_name) never reaches the native library.
+                if (const auto delegated = delegate::dispatch(command.name, argc, argv)) return *delegated;
                 return command.run(argc, argv);
+            }
     std::cerr << "Usage: edge0-infer <command> [options]\n"
                  "Commands: info, describe, inspect, tokenize, prompt, run, chat, serve, bench, forward\n"
                  "Run edge0-infer <command> --help for the options of a command.\n";

@@ -217,7 +217,7 @@ int run_turns(const std::string& turns_file, const std::string& replay_file, con
             generated=take(edge0::generate_chat_check(session,chat,configuration,turn_overrides,options,receiver,token ? &*token : nullptr));
             chat.messages = cli::completed_history(chat.messages, previous, generated.result);
         } else {
-            if(message_mode)throw std::runtime_error("Mixed turn modes"); token_mode=true;
+            if(message_mode){throw std::runtime_error("Mixed turn modes");} token_mode=true;
             std::vector<std::int32_t> input;
             if(turn.has("input") && fields==1)input=json_tokens(turn.at("input"));
             else if(turn.has("same") && fields==1 && turn.at("same").boolean())input=last_input;

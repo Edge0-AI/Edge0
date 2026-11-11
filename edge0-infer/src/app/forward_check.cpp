@@ -32,7 +32,7 @@ Result<ForwardCheckReport> forward_check(const RuntimeReference& runtime,const F
         CheckSession owner;
         model::LoadRequest request;
         request.directory=options.model_directory; request.device=options.device;
-        auto catalog=model::open_catalog(request.directory); if(!catalog)return catalog.error();
+        auto catalog=model::open_catalog(request.directory,app::compiled_adapters()); if(!catalog)return catalog.error();
         auto selected=app::select_compiled(catalog.value()); if(!selected)return selected.error();
         owner.compute=selected.value().compute;
         auto assets=model::check_compatibility(catalog.value(),*selected.value().adapter);
@@ -44,14 +44,14 @@ Result<ForwardCheckReport> forward_check(const RuntimeReference& runtime,const F
         // Limit the Result scope: it also owns the loaded model.
         {
             auto loaded=model::load(request,{selected.value().adapter},resources.budget,resources.backends);
-            if(!loaded)return loaded.error(); owner.model=loaded.value();
+            if(!loaded){return loaded.error();} owner.model=loaded.value();
         }
         report.weight_activity.applicable=!owner.model->pools.empty();
         auto declarations=owner.compute->describe_states(owner.model->assets.definition);
         if(!declarations)return declarations.error();
         {
             auto kv=session::KVCache::create(resources.budget,owner.model->stages.prefill,1024,declarations.value().kv);
-            if(!kv)return kv.error(); owner.kv=kv.value();
+            if(!kv){return kv.error();} owner.kv=kv.value();
         }
         if(auto error=owner.compute->initialize_session(owner.model,*owner.kv,owner.states,resources.budget,owner.model->stages))return *error;
         report.vocabulary=owner.model->assets.definition.vocabulary_size;
@@ -62,7 +62,8 @@ Result<ForwardCheckReport> forward_check(const RuntimeReference& runtime,const F
             models::ForwardRequest forward;
             forward.tokens=step<0?options.input:std::vector<std::int32_t>{options.generated[std::size_t(step)]};
             if(split && step==-2) forward.tokens={options.input.begin(),options.input.end()-1};
-            if(split && step==-1) forward.tokens={options.input.back()};
+            // assign(), not = {x}: GCC 12 at -O3 reports a false array-bounds error for a one-element initializer list.
+            if(split && step==-1) forward.tokens.assign(1,options.input.back());
             forward.step={e,std::int64_t(forward.tokens.size())};
             forward.route_trace=options.route_trace;
             forward.phase=step<0?exec::Phase::prefill:exec::Phase::decode;

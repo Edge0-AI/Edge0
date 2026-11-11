@@ -14,6 +14,12 @@ Result<std::uint64_t> parse_count(const std::string& text) {
     }
     return value;
 }
+Result<Catalog> open_catalog(const std::string &directory, const AdapterRegistry &registry, Integrity integrity) {
+    std::vector<std::string> architectures;
+    for (auto *adapter : registry)
+        architectures.push_back(adapter->id());
+    return open_catalog(directory, integrity, &architectures);
+}
 Result<const Adapter *> select_adapter(const Catalog &catalog, const AdapterRegistry &registry) {
     std::string known;
     for (auto *adapter : registry) {

@@ -141,7 +141,7 @@ int main(int argc,char** argv) {
             Session whole(model,budget),split(model,budget),silent(model,budget),other(model,budget);
             models::ForwardRequest invalid{{},{0,0},exec::Phase::prefill,{0},{}};
             CHECK(!edge::forward(model,invalid,*whole.kv,whole.states,budget));
-            invalid.tokens={1}; invalid.step={1024,1};
+            invalid.tokens.assign(1,1); invalid.step={1024,1};
             CHECK(!edge::forward(model,invalid,*whole.kv,whole.states,budget));
             std::cout<<"case="<<name<<" lora="<<lora<<'\n';
             const bool preceding_failure=numerical_failure; numerical_failure=false;

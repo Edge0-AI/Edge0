@@ -1,10 +1,25 @@
 # Architecture
 
-An overview of how the engine is organized. It names the parts and how they work together; the headers in [`include/edge0/`](../include/edge0/) and the [configuration reference](configuration.md) are the precise reference.
+An overview of how `edge0-infer` is organized. It names the parts and how they work together; the headers in [`include/edge0/`](../include/edge0/) and the [configuration reference](configuration.md) are the precise reference.
 
-## The pieces
+## Two layers
 
-The engine is a native library that applications call in process. The reference CLI `edge0-infer` and its `serve` command are applications of the same library; they add no engine logic of their own.
+`edge0-infer` has two layers. The upper layer is the program you run: the commands `run`, `chat`, `serve` and `inspect`, the OpenAI-compatible server of `serve`, and the chat applications that use it. The lower layer is the engine that computes the model. Each model runs on the engine built for it:
+
+| Model | Engine | Hardware | How `edge0-infer` uses the engine |
+| --- | --- | --- | --- |
+| Edge0 35B | Native engine | GGML backends: Metal, CPU, Vulkan | A library in this directory, called in process; applications can also call it through the [native API](native-api.md) |
+| Edge0 145B, Edge0 120B | edge0-strata | NVIDIA GPU with CUDA | A separate engine in `edge0-strata/` of the Edge0 repository, a fork of [Strata](https://github.com/Niko1221/Strata); `edge0-infer` starts it as a child process and talks to it over a loopback port |
+
+`edge0-infer` picks the engine from the model folder given with `--model`; there is nothing to choose. A `model.json` with an `architecture` field is an asset manifest of the native engine. A `model.json` whose `model_name` names an Edge0 145B or Edge0 120B folder selects edge0-strata: `edge0-infer` starts the engine with that model's configuration template from `edge0-strata/edge0/models/`, waits until it is ready, and then forwards generation requests to it. `serve` keeps answering `/health`, `/v1/models` and `/status` itself, and `chat` keeps its own commands, so clients see the same interface for every model. The pages [Edge0 145B](edge0-145b.md) and [Edge0 120B](edge0-120b.md) describe this path; edge0-strata's own build and its launch contract with `edge0-infer` are in `edge0-strata/EDGE0.md`.
+
+The rest of this page describes the native engine.
+
+## Native engine
+
+### The pieces
+
+The native engine is a library that applications call in process. For its models, `edge0-infer` and its `serve` command are applications of the same library; they add no engine logic of their own.
 
 | Part | Source | What it does |
 | --- | --- | --- |
@@ -18,30 +33,31 @@ The engine is a native library that applications call in process. The reference 
 
 Outside the library, the [asset tools](../tools/assets/README.md) convert and check model files before they are used.
 
-## One request
+### One request
 
 1. The application opens a session and sends the whole conversation for each turn.
 2. The engine renders and tokenizes the conversation and compares the tokens with what the session has already computed. Only the tokens after the common prefix are computed again (see [Multi-turn reuse](#multi-turn-reuse)).
 3. Prefill computes the new prompt tokens in chunks. Decode then produces one token per step: the model implementation states which weights it needs, the weight manager makes them ready, and the execution layer runs the graph.
 4. Each new token is sampled, decoded to text and streamed back to the application. The turn ends at an end token, a stop string, a length limit, a complete tool call, or a cancel request.
 
-## Experts on demand
+### Experts on demand
 
 A mixture-of-experts layer uses only a few of its experts for each token. The engine keeps a fixed number of expert slots per layer and reads the experts a token needs from the asset files into those slots; experts already in a slot are reused. Memory use therefore depends on the slot count, not on the model size. Prefill, which needs many experts at once, reads them through a staging area instead of the slots.
 
 With `predicted` routing, the 35B's pre-router predicts the experts the later layers will need for the next token, and the engine reads them in the background while the current token is still computing. With `actual` routing, every layer computes its router first and waits for the experts it chose. [Routing modes](benchmarking.md#routing-modes) compares the two.
 
-## Multi-turn reuse
+### Multi-turn reuse
 
 A session keeps the tokens it has computed. When the next turn arrives, the engine keeps the computed state up to the first token that differs and computes only the rest. Attention caches can be cut at any position; recurrent state, such as the 35B's linear-attention layers, cannot. For that state the engine saves one checkpoint per turn, just before the last prompt token, and restores it when the difference lies after it. A difference before the checkpoint, such as an edited earlier message, makes the engine compute the conversation again from the start. [Known limitations](limitations.md) explains when the tokens can differ.
 
-## Backends and platforms
+### Backends and platforms
 
 | Platform | Prefill | Decode |
 | --- | --- | --- |
 | macOS | Metal or CPU | Metal or CPU |
 | iOS | Metal | Metal |
 | Android | CPU | CPU |
+| Linux | CPU | CPU |
 | Windows | CPU or Vulkan | CPU or Vulkan |
 
 By default both phases use the same backend; prefill can be moved to a different one (for example `--device cpu --prefill-device metal`).

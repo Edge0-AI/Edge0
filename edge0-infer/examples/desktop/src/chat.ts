@@ -138,8 +138,11 @@ export class SseAccumulator {
     const delta = payload.choices?.[0]?.delta;
     if (typeof delta?.content === 'string') this.message.content += delta.content;
     if (typeof delta?.reasoning_content === 'string') this.message.reasoning_content += delta.reasoning_content;
-    // Metrics are accepted only on the final usage event, never inferred locally.
-    if (payload.usage && (!payload.choices || payload.choices.length === 0)) {
+    // The final event carries `usage`, and the numbers come with it: Edge0's own engine sends them as `metrics` in
+    // an event of its own (choices: []), while a delegated engine - edge0-strata - sends one last chunk that also
+    // holds the finishing choice and reports its figures as `timings`.  Both are accepted here; nothing is inferred
+    // locally, every figure is the engine's own report.
+    if (payload.usage) {
       const metrics: Metrics = {};
       if (valid(payload.usage.completion_tokens)) metrics.generated_count = payload.usage.completion_tokens;
       if (valid(payload.usage.prompt_tokens)) metrics.input_tokens = payload.usage.prompt_tokens;
@@ -147,6 +150,16 @@ export class SseAccumulator {
       for (const key of ['first_token_seconds', 'decode_tokens_per_second', 'memory_peak_bytes'] as const) {
         if (valid(payload.metrics?.[key])) metrics[key] = payload.metrics[key];
       }
+      const timings = payload.timings ?? {};
+      if (!valid(metrics.first_token_seconds) && valid(timings.prompt_ms) && timings.prompt_ms > 0) {
+        metrics.first_token_seconds = timings.prompt_ms / 1000;
+      }
+      if (!valid(metrics.decode_tokens_per_second) && valid(timings.predicted_per_second)) {
+        metrics.decode_tokens_per_second = timings.predicted_per_second;
+      }
+      if (!valid(metrics.input_tokens) && valid(timings.prompt_n)) metrics.input_tokens = timings.prompt_n;
+      if (!valid(metrics.reused_tokens) && valid(timings.cache_n)) metrics.reused_tokens = timings.cache_n;
+      if (!valid(metrics.generated_count) && valid(timings.predicted_n)) metrics.generated_count = timings.predicted_n;
       this.message.metrics = metrics;
     }
   }

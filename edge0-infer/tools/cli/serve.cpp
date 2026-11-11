@@ -44,7 +44,7 @@ Options options(int argc,char** argv) {
     Options o;
     for(int i=2;i<argc;++i) {
         const std::string key=argv[i];if(key=="--verbose") {o.verbose=true;continue;}if(key=="--no-warmup"){o.warmup=false;continue;}
-        if(i+1>=argc)throw std::runtime_error("Missing option value");const std::string value=argv[++i];
+        if(i+1>=argc){throw std::runtime_error("Missing option value");}const std::string value=argv[++i];
         if(cli::runtime_option(key,value,o.runtime)) {}
         else if(cli::stage_option(key,value,o.load)) {}
         else if(key=="--model")o.directory=value;else if(key=="--device")o.device=value;else if(key=="--host")o.host=value;
@@ -79,7 +79,7 @@ struct Watch {
 }
 int serve_command(int argc,char** argv) {
     for(int i=2;i<argc;++i)if(std::string(argv[i])=="--help") {
-        std::cout<<"Usage: edge0-infer serve --model <directory> [--device cpu|metal|vulkan] [--prefill-device cpu|metal|vulkan] [--stage-policy <name>] [--alias <name>] [--host <address>] [--api-key-file <path>] [--port <0..65535>] [--context <n>] [--prefill-chunk <n>] [--model-option <name=value>] [--max-tokens <n>] [--no-warmup] [--session-idle-seconds <s>] [--max-body-bytes <n>] [--write-timeout-seconds <s>] [--verbose] [--out <directory> (development)] [--hold-file <path> (development)]"<<cli::sampling_help()<<'\n';return 0;
+        std::cout<<"Usage: edge0-infer serve --model <directory> [--device cpu|metal|vulkan] [--prefill-device cpu|metal|vulkan] [--stage-policy <name>] [--alias <name>] [--host <address>] [--api-key-file <path>] [--port <0..65535>] [--context <n>] [--prefill-chunk <n>] [--model-option <name=value>] [--max-tokens <n>] [--no-warmup] [--session-idle-seconds <s>] [--max-body-bytes <n>] [--write-timeout-seconds <s>] [--verbose] [--out <directory> (development)] [--hold-file <path> (development)]"<<cli::sampling_help()<<"\nFor a delegated model (such as Edge0 145B or Edge0 120B, run on edge0-strata): [--strata-dir <directory>] (the edge0-strata directory) [--strata-python <path>] (its Python interpreter) [--strata-ready-timeout <s>] (seconds to wait until it is ready) [--strata-arg <argument>]... (one engine command-line word, repeatable)\n";return 0;
     }
     try {
         auto o=options(argc,argv);interrupted=false;
@@ -111,7 +111,7 @@ int serve_command(int argc,char** argv) {
                 if(done)return true;
                 if(session){if(!edge0::release_session(session))return false;session.reset();}
                 if(model){if(!edge0::unload_model(model))return false;model.reset();}
-                if(!edge0::finish_runtime_use(runtime))return false;done=true;return true;
+                if(!edge0::finish_runtime_use(runtime)){return false;}done=true;return true;
             }
             ~Cleanup(){if(!done && !close())log("Cleanup failed");}
         } cleanup{runtime,model,session};
@@ -122,7 +122,7 @@ int serve_command(int argc,char** argv) {
         if(o.warmup) {
             edge0::GenerationOverrides warm;warm.max_tokens=1;warm.temperature=0;
             auto r=take(edge0::generate(session,std::vector<edge0::TextMessage>{{"user","Hello"}},configuration,warm));
-            if(r.error || r.stop_reason==edge0::StopReason::failed || r.stop_reason==edge0::StopReason::cancelled)throw std::runtime_error("Warmup failed");take(edge0::reset_conversation(session));
+            if(r.error || r.stop_reason==edge0::StopReason::failed || r.stop_reason==edge0::StopReason::cancelled){throw std::runtime_error("Warmup failed");}take(edge0::reset_conversation(session));
         }
         const auto version=capabilities.engine_version;
         const auto started = std::chrono::steady_clock::now();

@@ -33,6 +33,48 @@ immediately. A disconnected client cancels generation. Output writes have a
 bounded timeout. SIGINT/SIGTERM stop acceptance, cancel and wait for active work,
 then release the session, unload the model, and finish the runtime.
 
+## Delegated models
+
+A model directory whose `model.json` has no `architecture` and has a registered delegated `model_name`, such
+as [Edge0 145B](edge0-145b.md) (`edge0_145b`) and [Edge0 120B](edge0-120b.md) (`edge0_120b`), runs on the external engine edge0-strata
+instead of the native library. `serve` then starts edge0-strata on a free loopback port, waits
+until it is ready, and only then prints the `Listening:` line. It acts as a proxy:
+
+- `POST /v1/chat/completions`, `/v1/responses` and `/v1/messages` are forwarded
+  unchanged: the request body, and the response status, `Content-Type` and body
+  (server-sent events chunk by chunk, including the engine's `timings`). The request
+  rules and outputs are edge0-strata's, not the ones in the rest of this page.
+  Concurrent requests wait in edge0-strata's queue instead of receiving 429. A client
+  that disconnects also disconnects the forwarded request.
+- `GET /health`, `/v1/models`, `/v1/models/{id}` and `/status` are answered by
+  `edge0-infer serve` in the formats on this page. `/health` also carries the fields of
+  edge0-strata's own `/health` answer (such as `service` and `loaded`); `status` is
+  `edge0-infer serve`'s.
+- `GET /v1/status`, `/metrics` and `/props` are edge0-strata's own description
+  endpoints, passed through unchanged (status, `Content-Type` and body) for its tools,
+  such as its benchmark `tools/strata_bench.py`. They return 503 once
+  edge0-strata has exited.
+- Authentication, `--api-key-file`, `--host`, `--port`, `--alias`,
+  `--max-body-bytes` and `--write-timeout-seconds` work as for native models.
+  `--context` sets edge0-strata's `--max-context`. `--device` accepts `cuda` or
+  `cuda:<n>` (default `cuda:0`), and `--prefill-device` must equal it if given.
+  `--model-option` takes the model's options (see the model page). Other options of the
+  native engine, including sampling defaults, `--prefill-chunk` and `--no-warmup`, are
+  rejected; send sampling fields in each request instead.
+- `--strata-dir <directory>` locates edge0-strata (otherwise `EDGE0_STRATA_DIR`, then an
+  `edge0-strata/` directory beside an ancestor of the `edge0-infer` executable).
+  `--strata-python <path>` selects its Python (default `.venv` inside it).
+  `--strata-ready-timeout <seconds>` bounds the wait for it to load (default 1800).
+  `--strata-arg <argument>` (repeatable) passes one word of edge0-strata's engine command
+  line, appended in order after the launch template's arguments; an option the template
+  already sets, `--max-context` (use `--context`) and an empty value are rejected before
+  anything starts. See Options for [Edge0 145B](edge0-145b.md#options) and [Edge0 120B](edge0-120b.md#options) for its uses and an example.
+- If edge0-strata cannot be found, has an unsupported launch contract version, fails to
+  start, exits before it is ready or is not ready in time, `serve` exits with an error
+  before listening. If it exits later, generation requests and `/health` return 503.
+  SIGINT/SIGTERM stop acceptance, wait up to 60 seconds for forwarded requests to
+  finish, then stop edge0-strata (SIGTERM, then SIGKILL after 60 seconds).
+
 ## Request compatibility
 
 Unknown fields are rejected with 400, including unknown nested control fields.
@@ -198,192 +240,227 @@ service instances. Final computed counts include decode forwards; live progress
 computed counts cover input only. `generated_tokens` in final records excludes end
 markers, matching native `generated_count`; live progress counts accepted tokens.
 
+For a delegated model the `Delegated` column states where each field comes from:
+`portal` fields are `edge0-infer serve`'s own values, as for native models (`system.thermal`
+and `system.app_memory_limit` describe the machine); `mapped` fields come from
+edge0-strata's `/v1/status` (`engine.version`, the GPU in `engine.devices` named after
+`--device`, `model.context_length`, and `system.memory` from its machine reading, with
+source `edge0-strata`) and are null when it does not report them; `recorded` fields are
+recorded by the proxy from what it forwarded and are null when the response does not
+carry them; `n/a` fields do not apply and are null when required (an object then has no
+children) and absent when optional. Recorded values come from the forwarded response:
+`stop_reason` from the finish reason (Chat `finish_reason`, the Responses object's
+`status`, Messages `stop_reason`), `input_tokens` and `generated_tokens` from `usage`
+(for `/v1/messages`, `input_tokens` is the request's whole input, `input_tokens` +
+`cache_creation_input_tokens` + `cache_read_input_tokens` with a missing one counted as
+0, taken from `message_start` when streaming), `reused_tokens` from `timings.cache_n`,
+`first_token_seconds` and `decode_seconds` from `timings.prompt_ms` and
+`timings.predicted_ms`, and the per-request rates from `timings.prompt_per_second` and
+`timings.predicted_per_second`. `total_seconds` is the proxy's handling time. In totals,
+prefill speed is summed `timings.prompt_n` over summed prompt time and decode speed is
+summed `timings.predicted_n` over summed decode time. A forwarded request answered with
+429 counts as busy, with another 4xx status as an invalid request; `current` is the
+oldest forwarded request still in progress.
+
+While a delegated request runs, `current` is counted from what the proxy has forwarded
+so far, one token per streamed fragment that carries text (Chat `content`,
+`reasoning_content` and tool-call `arguments`; Responses text, reasoning and tool-input
+`delta` events; Messages `text_delta`, `thinking_delta` and `input_json_delta`). A
+fragment is not always exactly one token. For a streaming request, `phase` is `prefill`
+until the first such fragment and `decode` after it, `generated_tokens` is the number
+of fragments forwarded (null before the first), and `first_token_seconds` is the
+request's age when the first one was forwarded (absent before it). For a non-streaming
+request nothing is forwarded until it ends, so `phase` and `generated_tokens` are null.
+`input_tokens` and `reused_tokens` are filled in once the forwarded data carries them
+(Messages `message_start` carries the input at the start; Chat reports both only in its
+last chunk) and are null until then. Finished records (`last`, `recent_requests`,
+`totals`) use only the numbers the engine reports, never the forwarded count.
+
 <!-- status-fields-begin -->
-| Field | Type | Presence | Meaning |
-| --- | --- | --- | --- |
-| `instance` | object | required | instance |
-| `listen` | object | required | listen |
-| `engine` | object | required | engine |
-| `model` | object | required | model |
-| `totals` | object | required | totals |
-| `memory` | object | required | memory |
-| `system` | object | required | system |
-| `current` | object or null | required | current |
-| `last` | object or null | required | last |
-| `recent_requests` | array | required | recent requests |
-| `recent_requests[]` | object | required | recent requests[] |
-| `instance.id` | string | required | id |
-| `instance.started_at` | string | required | started at |
-| `instance.pid` | integer | required | pid |
-| `instance.uptime_seconds` | number | required | uptime seconds |
-| `listen.host` | string | required | host |
-| `listen.port` | integer | required | port |
-| `listen.auth` | boolean | required | auth |
-| `engine.version` | string | required | version |
-| `engine.source_commit` | string | required | source commit |
-| `engine.source_modified` | string | required | source modified |
-| `engine.source_reason` | string | required | source reason |
-| `engine.ggml_origin` | string | required | ggml origin |
-| `engine.ggml_version` | string | required | ggml version |
-| `engine.backends` | array | required | backends |
-| `engine.backends[]` | object | required | backends[] |
-| `engine.devices` | array | required | devices |
-| `engine.devices[]` | object | required | devices[] |
-| `engine.backends[].name` | string | required | name |
-| `engine.backends[].compiled` | string | required | compiled |
-| `engine.backends[].initializable` | string | required | initializable |
-| `engine.backends[].verified` | string | required | verified |
-| `engine.backends[].reason` | string | required | reason |
-| `engine.devices[].name` | string | required | name |
-| `engine.devices[].backend` | string | required | backend |
-| `engine.devices[].description` | string | required | description |
-| `engine.devices[].memory_total_bytes` | integer | required | memory total bytes |
-| `engine.devices[].memory_free_bytes` | integer | required | memory free bytes |
-| `model.alias` | string | required | alias |
-| `model.directory` | string | required | directory |
-| `model.device` | string | required | device |
-| `model.prefill_device` | string | required | prefill device |
-| `model.context_length` | integer | required | context length |
-| `current.endpoint` | string | required | endpoint |
-| `current.source` | string | required | source |
-| `current.phase` | string | required | phase |
-| `current.started_steady_seconds` | number | required | started steady seconds |
-| `current.elapsed_seconds` | number | required | elapsed seconds |
-| `current.input_tokens` | integer | required | input tokens |
-| `current.reused_tokens` | integer | required | reused tokens |
-| `current.computed_tokens` | integer | required | computed tokens |
-| `current.pending_tokens` | integer | required | pending tokens |
-| `current.generated_tokens` | integer | required | generated tokens |
-| `current.first_token_seconds` | number | optional | first token seconds |
-| `current.decode_elapsed_seconds` | number | optional | decode elapsed seconds |
-| `current.prefill_tokens_per_second` | number or null | optional | prefill tokens per second |
-| `current.decode_tokens_per_second` | number or null | optional | decode tokens per second |
-| `last.time` | string | required | time |
-| `last.endpoint` | string | required | endpoint |
-| `last.source` | string | required | source |
-| `last.http_status` | integer | required | http status |
-| `last.stream` | boolean | required | stream |
-| `last.total_seconds` | number | required | total seconds |
-| `last.stop_reason` | string | required | stop reason |
-| `last.reuse_method` | string or null | required | reuse method |
-| `last.error_stage` | integer | required | error stage |
-| `last.input_tokens` | integer | required | input tokens |
-| `last.reused_tokens` | integer or null | required | reused tokens |
-| `last.computed_tokens` | integer or null | required | computed tokens |
-| `last.generated_tokens` | integer or null | required | generated tokens |
-| `last.first_token_seconds` | number or null | required | first token seconds |
-| `last.decode_tokens_per_second` | number or null | required | decode tokens per second |
-| `last.prefill_tokens_per_second` | number or null | required | prefill tokens per second |
-| `last.decode_seconds` | number or null | required | decode seconds |
-| `last.decode_forwards` | integer or null | required | decode forwards |
-| `last.checkpoint_restored` | boolean or null | required | checkpoint restored |
-| `last.experts` | object | optional | experts |
-| `last.experts.demand` | integer | required | demand |
-| `last.experts.hits` | integer | required | hits |
-| `last.experts.loads` | integer | required | loads |
-| `last.experts.bytes` | integer | required | bytes |
-| `last.ended_at` | string | required | ended at |
-| `recent_requests[].time` | string | required | time |
-| `recent_requests[].endpoint` | string | required | endpoint |
-| `recent_requests[].source` | string | required | source |
-| `recent_requests[].http_status` | integer | required | http status |
-| `recent_requests[].stream` | boolean | required | stream |
-| `recent_requests[].total_seconds` | number | required | total seconds |
-| `recent_requests[].stop_reason` | string | optional | stop reason |
-| `recent_requests[].reuse_method` | string or null | optional | reuse method |
-| `recent_requests[].error_stage` | integer | optional | error stage |
-| `recent_requests[].input_tokens` | integer | optional | input tokens |
-| `recent_requests[].reused_tokens` | integer or null | optional | reused tokens |
-| `recent_requests[].computed_tokens` | integer or null | optional | computed tokens |
-| `recent_requests[].generated_tokens` | integer or null | optional | generated tokens |
-| `recent_requests[].first_token_seconds` | number or null | optional | first token seconds |
-| `recent_requests[].decode_tokens_per_second` | number or null | optional | decode tokens per second |
-| `recent_requests[].prefill_tokens_per_second` | number or null | optional | prefill tokens per second |
-| `recent_requests[].decode_seconds` | number or null | optional | decode seconds |
-| `recent_requests[].decode_forwards` | integer or null | optional | decode forwards |
-| `recent_requests[].checkpoint_restored` | boolean or null | optional | checkpoint restored |
-| `recent_requests[].experts` | object | optional | experts |
-| `recent_requests[].experts.demand` | integer | required | demand |
-| `recent_requests[].experts.hits` | integer | required | hits |
-| `recent_requests[].experts.loads` | integer | required | loads |
-| `recent_requests[].experts.bytes` | integer | required | bytes |
-| `recent_requests[].code` | string | optional | code |
-| `recent_requests[].message` | string | optional | message |
-| `recent_requests[].param` | string | optional | param |
-| `totals.requests` | integer | required | requests |
-| `totals.rejected_busy` | integer | required | rejected busy |
-| `totals.rejected_invalid` | integer | required | rejected invalid |
-| `totals.unauthorized` | integer | required | unauthorized |
-| `totals.input_tokens` | integer | required | input tokens |
-| `totals.reused_tokens` | integer | required | reused tokens |
-| `totals.computed_tokens` | integer | required | computed tokens |
-| `totals.generated_tokens` | integer | required | generated tokens |
-| `totals.checkpoint_restores` | integer | required | checkpoint restores |
-| `totals.continued_turns` | integer | required | continued turns |
-| `totals.decode_seconds` | number | required | decode seconds |
-| `totals.first_token_seconds_mean` | number | optional | first token seconds mean |
-| `totals.prefill_tokens_per_second` | number | optional | prefill tokens per second |
-| `totals.decode_tokens_per_second` | number | optional | decode tokens per second |
-| `totals.experts` | object | optional | experts |
-| `totals.experts.demand` | integer | required | demand |
-| `totals.experts.hits` | integer | required | hits |
-| `totals.experts.loads` | integer | required | loads |
-| `totals.experts.bytes` | integer | required | bytes |
-| `memory.ledger` | object | required | ledger |
-| `memory.ledger.limit_bytes` | integer | required | limit bytes |
-| `memory.ledger.current_bytes` | integer | required | current bytes |
-| `memory.ledger.peak_bytes` | integer | required | peak bytes |
-| `memory.ledger.scope` | string | required | scope |
-| `memory.ledger.by_purpose` | object | required | by purpose |
-| `memory.ledger.by_purpose.resident_weights` | integer | required | resident weights |
-| `memory.ledger.by_purpose.experts` | integer | required | experts |
-| `memory.ledger.by_purpose.session_state` | integer | required | session state |
-| `memory.ledger.by_purpose.workspace` | integer | required | workspace |
-| `memory.ledger.by_purpose.transfer` | integer | required | transfer |
-| `memory.ledger.by_purpose.staging` | integer | required | staging |
-| `memory.ledger.by_purpose.metadata` | integer | required | metadata |
-| `memory.ledger.by_device` | object | required | by device |
-| `memory.ledger.by_device.*` | object | optional | * |
-| `memory.ledger.by_device.*.current_bytes` | integer | required | current bytes |
-| `memory.ledger.by_device.*.peak_bytes` | integer | required | peak bytes |
-| `memory.ledger.by_device.*.memory` | string | required | `system` or `dedicated`; callers aggregate these groups separately |
-| `memory.resident` | object | required | resident |
-| `memory.resident.scope` | string | required | scope |
-| `memory.resident.reason` | string | required | reason |
-| `memory.resident.source` | string | required | source |
-| `memory.resident.values` | object or null | required | values |
-| `memory.resident.values.current_bytes` | integer or null | required | current bytes |
-| `memory.resident.values.peak_bytes` | integer or null | required | peak bytes |
-| `memory.resident.values.current_reason` | string | required | current reason |
-| `memory.resident.values.peak_reason` | string | required | peak reason |
-| `memory.physical` | object | required | physical |
-| `memory.physical.scope` | string | required | scope |
-| `memory.physical.reason` | string | required | reason |
-| `memory.physical.source` | string | required | source |
-| `memory.physical.values` | object or null | required | values |
-| `memory.physical.values.current_bytes` | integer or null | required | current bytes |
-| `memory.physical.values.peak_bytes` | integer or null | required | peak bytes |
-| `memory.physical.values.current_reason` | string | required | current reason |
-| `memory.physical.values.peak_reason` | string | required | peak reason |
-| `system.memory` | object | required | memory |
-| `system.memory.total` | object | required | total |
-| `system.memory.total.bytes` | integer or null | required | bytes |
-| `system.memory.total.source` | string | required | source |
-| `system.memory.total.reason` | string | required | reason |
-| `system.memory.available` | object | required | available |
-| `system.memory.available.bytes` | integer or null | required | bytes |
-| `system.memory.available.source` | string | required | source |
-| `system.memory.available.reason` | string | required | reason |
-| `system.app_memory_limit` | object | required | app memory limit |
-| `system.app_memory_limit.bytes` | integer or null | required | bytes |
-| `system.app_memory_limit.source` | string | required | source |
-| `system.app_memory_limit.reason` | string | required | reason |
-| `system.thermal` | object | required | thermal |
-| `system.thermal.state` | string or null | required | state |
-| `system.thermal.source` | string | required | source |
-| `system.thermal.reason` | string | required | reason |
-| `system.app_memory_limit.current_physical_bytes` | integer or null | required | iOS phys_footprint reading used in the limit calculation; null elsewhere |
-<!-- status-fields-end -->
+| Field | Type | Presence | Delegated | Meaning |
+| --- | --- | --- | --- | --- |
+| `instance` | object | required | portal | instance |
+| `listen` | object | required | portal | listen |
+| `engine` | object | required | portal | engine |
+| `model` | object | required | portal | model |
+| `totals` | object | required | recorded | totals |
+| `memory` | object | required | portal | memory |
+| `system` | object | required | portal | system |
+| `current` | object or null | required | recorded | current |
+| `last` | object or null | required | recorded | last |
+| `recent_requests` | array | required | recorded | recent requests |
+| `recent_requests[]` | object | required | recorded | recent requests[] |
+| `instance.id` | string | required | portal | id |
+| `instance.started_at` | string | required | portal | started at |
+| `instance.pid` | integer | required | portal | pid |
+| `instance.uptime_seconds` | number | required | portal | uptime seconds |
+| `listen.host` | string | required | portal | host |
+| `listen.port` | integer | required | portal | port |
+| `listen.auth` | boolean | required | portal | auth |
+| `engine.version` | string | required | mapped | version |
+| `engine.source_commit` | string | required | n/a | source commit |
+| `engine.source_modified` | string | required | n/a | source modified |
+| `engine.source_reason` | string | required | n/a | source reason |
+| `engine.ggml_origin` | string | required | n/a | ggml origin |
+| `engine.ggml_version` | string | required | n/a | ggml version |
+| `engine.backends` | array | required | n/a | backends |
+| `engine.backends[]` | object | required | n/a | backends[] |
+| `engine.devices` | array | required | mapped | devices |
+| `engine.devices[]` | object | required | mapped | devices[] |
+| `engine.backends[].name` | string | required | n/a | name |
+| `engine.backends[].compiled` | string | required | n/a | compiled |
+| `engine.backends[].initializable` | string | required | n/a | initializable |
+| `engine.backends[].verified` | string | required | n/a | verified |
+| `engine.backends[].reason` | string | required | n/a | reason |
+| `engine.devices[].name` | string | required | mapped | name |
+| `engine.devices[].backend` | string | required | mapped | backend |
+| `engine.devices[].description` | string | required | mapped | description |
+| `engine.devices[].memory_total_bytes` | integer | required | mapped | memory total bytes |
+| `engine.devices[].memory_free_bytes` | integer | required | mapped | memory free bytes |
+| `model.alias` | string | required | portal | alias |
+| `model.directory` | string | required | portal | directory |
+| `model.device` | string | required | portal | device |
+| `model.prefill_device` | string | required | portal | prefill device |
+| `model.context_length` | integer | required | mapped | context length |
+| `current.endpoint` | string | required | recorded | endpoint |
+| `current.source` | string | required | recorded | source |
+| `current.phase` | string | required | recorded | phase |
+| `current.started_steady_seconds` | number | required | recorded | started steady seconds |
+| `current.elapsed_seconds` | number | required | recorded | elapsed seconds |
+| `current.input_tokens` | integer | required | recorded | input tokens |
+| `current.reused_tokens` | integer | required | recorded | reused tokens |
+| `current.computed_tokens` | integer | required | n/a | computed tokens |
+| `current.pending_tokens` | integer | required | n/a | pending tokens |
+| `current.generated_tokens` | integer | required | recorded | generated tokens |
+| `current.first_token_seconds` | number | optional | recorded | first token seconds |
+| `current.decode_elapsed_seconds` | number | optional | n/a | decode elapsed seconds |
+| `current.prefill_tokens_per_second` | number or null | optional | n/a | prefill tokens per second |
+| `current.decode_tokens_per_second` | number or null | optional | n/a | decode tokens per second |
+| `last.time` | string | required | recorded | time |
+| `last.endpoint` | string | required | recorded | endpoint |
+| `last.source` | string | required | recorded | source |
+| `last.http_status` | integer | required | recorded | http status |
+| `last.stream` | boolean | required | recorded | stream |
+| `last.total_seconds` | number | required | recorded | total seconds |
+| `last.stop_reason` | string | required | recorded | stop reason |
+| `last.reuse_method` | string or null | required | n/a | reuse method |
+| `last.error_stage` | integer | required | n/a | error stage |
+| `last.input_tokens` | integer | required | recorded | input tokens |
+| `last.reused_tokens` | integer or null | required | recorded | reused tokens |
+| `last.computed_tokens` | integer or null | required | n/a | computed tokens |
+| `last.generated_tokens` | integer or null | required | recorded | generated tokens |
+| `last.first_token_seconds` | number or null | required | recorded | first token seconds |
+| `last.decode_tokens_per_second` | number or null | required | recorded | decode tokens per second |
+| `last.prefill_tokens_per_second` | number or null | required | recorded | prefill tokens per second |
+| `last.decode_seconds` | number or null | required | recorded | decode seconds |
+| `last.decode_forwards` | integer or null | required | n/a | decode forwards |
+| `last.checkpoint_restored` | boolean or null | required | n/a | checkpoint restored |
+| `last.experts` | object | optional | n/a | experts |
+| `last.experts.demand` | integer | required | n/a | demand |
+| `last.experts.hits` | integer | required | n/a | hits |
+| `last.experts.loads` | integer | required | n/a | loads |
+| `last.experts.bytes` | integer | required | n/a | bytes |
+| `last.ended_at` | string | required | recorded | ended at |
+| `recent_requests[].time` | string | required | recorded | time |
+| `recent_requests[].endpoint` | string | required | recorded | endpoint |
+| `recent_requests[].source` | string | required | recorded | source |
+| `recent_requests[].http_status` | integer | required | recorded | http status |
+| `recent_requests[].stream` | boolean | required | recorded | stream |
+| `recent_requests[].total_seconds` | number | required | recorded | total seconds |
+| `recent_requests[].stop_reason` | string | optional | recorded | stop reason |
+| `recent_requests[].reuse_method` | string or null | optional | n/a | reuse method |
+| `recent_requests[].error_stage` | integer | optional | n/a | error stage |
+| `recent_requests[].input_tokens` | integer | optional | recorded | input tokens |
+| `recent_requests[].reused_tokens` | integer or null | optional | recorded | reused tokens |
+| `recent_requests[].computed_tokens` | integer or null | optional | n/a | computed tokens |
+| `recent_requests[].generated_tokens` | integer or null | optional | recorded | generated tokens |
+| `recent_requests[].first_token_seconds` | number or null | optional | recorded | first token seconds |
+| `recent_requests[].decode_tokens_per_second` | number or null | optional | recorded | decode tokens per second |
+| `recent_requests[].prefill_tokens_per_second` | number or null | optional | recorded | prefill tokens per second |
+| `recent_requests[].decode_seconds` | number or null | optional | recorded | decode seconds |
+| `recent_requests[].decode_forwards` | integer or null | optional | n/a | decode forwards |
+| `recent_requests[].checkpoint_restored` | boolean or null | optional | n/a | checkpoint restored |
+| `recent_requests[].experts` | object | optional | n/a | experts |
+| `recent_requests[].experts.demand` | integer | required | n/a | demand |
+| `recent_requests[].experts.hits` | integer | required | n/a | hits |
+| `recent_requests[].experts.loads` | integer | required | n/a | loads |
+| `recent_requests[].experts.bytes` | integer | required | n/a | bytes |
+| `recent_requests[].code` | string | optional | recorded | code |
+| `recent_requests[].message` | string | optional | recorded | message |
+| `recent_requests[].param` | string | optional | recorded | param |
+| `totals.requests` | integer | required | recorded | requests |
+| `totals.rejected_busy` | integer | required | recorded | rejected busy |
+| `totals.rejected_invalid` | integer | required | recorded | rejected invalid |
+| `totals.unauthorized` | integer | required | recorded | unauthorized |
+| `totals.input_tokens` | integer | required | recorded | input tokens |
+| `totals.reused_tokens` | integer | required | recorded | reused tokens |
+| `totals.computed_tokens` | integer | required | n/a | computed tokens |
+| `totals.generated_tokens` | integer | required | recorded | generated tokens |
+| `totals.checkpoint_restores` | integer | required | n/a | checkpoint restores |
+| `totals.continued_turns` | integer | required | n/a | continued turns |
+| `totals.decode_seconds` | number | required | recorded | decode seconds |
+| `totals.first_token_seconds_mean` | number | optional | recorded | first token seconds mean |
+| `totals.prefill_tokens_per_second` | number | optional | recorded | prefill tokens per second |
+| `totals.decode_tokens_per_second` | number | optional | recorded | decode tokens per second |
+| `totals.experts` | object | optional | n/a | experts |
+| `totals.experts.demand` | integer | required | n/a | demand |
+| `totals.experts.hits` | integer | required | n/a | hits |
+| `totals.experts.loads` | integer | required | n/a | loads |
+| `totals.experts.bytes` | integer | required | n/a | bytes |
+| `memory.ledger` | object | required | n/a | ledger |
+| `memory.ledger.limit_bytes` | integer | required | n/a | limit bytes |
+| `memory.ledger.current_bytes` | integer | required | n/a | current bytes |
+| `memory.ledger.peak_bytes` | integer | required | n/a | peak bytes |
+| `memory.ledger.scope` | string | required | n/a | scope |
+| `memory.ledger.by_purpose` | object | required | n/a | by purpose |
+| `memory.ledger.by_purpose.resident_weights` | integer | required | n/a | resident weights |
+| `memory.ledger.by_purpose.experts` | integer | required | n/a | experts |
+| `memory.ledger.by_purpose.session_state` | integer | required | n/a | session state |
+| `memory.ledger.by_purpose.workspace` | integer | required | n/a | workspace |
+| `memory.ledger.by_purpose.transfer` | integer | required | n/a | transfer |
+| `memory.ledger.by_purpose.staging` | integer | required | n/a | staging |
+| `memory.ledger.by_purpose.metadata` | integer | required | n/a | metadata |
+| `memory.ledger.by_device` | object | required | n/a | by device |
+| `memory.ledger.by_device.*` | object | optional | n/a | * |
+| `memory.ledger.by_device.*.current_bytes` | integer | required | n/a | current bytes |
+| `memory.ledger.by_device.*.peak_bytes` | integer | required | n/a | peak bytes |
+| `memory.ledger.by_device.*.memory` | string | required | n/a | `system` or `dedicated`; callers aggregate these groups separately |
+| `memory.resident` | object | required | n/a | resident |
+| `memory.resident.scope` | string | required | n/a | scope |
+| `memory.resident.reason` | string | required | n/a | reason |
+| `memory.resident.source` | string | required | n/a | source |
+| `memory.resident.values` | object or null | required | n/a | values |
+| `memory.resident.values.current_bytes` | integer or null | required | n/a | current bytes |
+| `memory.resident.values.peak_bytes` | integer or null | required | n/a | peak bytes |
+| `memory.resident.values.current_reason` | string | required | n/a | current reason |
+| `memory.resident.values.peak_reason` | string | required | n/a | peak reason |
+| `memory.physical` | object | required | n/a | physical |
+| `memory.physical.scope` | string | required | n/a | scope |
+| `memory.physical.reason` | string | required | n/a | reason |
+| `memory.physical.source` | string | required | n/a | source |
+| `memory.physical.values` | object or null | required | n/a | values |
+| `memory.physical.values.current_bytes` | integer or null | required | n/a | current bytes |
+| `memory.physical.values.peak_bytes` | integer or null | required | n/a | peak bytes |
+| `memory.physical.values.current_reason` | string | required | n/a | current reason |
+| `memory.physical.values.peak_reason` | string | required | n/a | peak reason |
+| `system.memory` | object | required | mapped | memory |
+| `system.memory.total` | object | required | mapped | total |
+| `system.memory.total.bytes` | integer or null | required | mapped | bytes |
+| `system.memory.total.source` | string | required | mapped | source |
+| `system.memory.total.reason` | string | required | mapped | reason |
+| `system.memory.available` | object | required | mapped | available |
+| `system.memory.available.bytes` | integer or null | required | mapped | bytes |
+| `system.memory.available.source` | string | required | mapped | source |
+| `system.memory.available.reason` | string | required | mapped | reason |
+| `system.app_memory_limit` | object | required | portal | app memory limit |
+| `system.app_memory_limit.bytes` | integer or null | required | portal | bytes |
+| `system.app_memory_limit.source` | string | required | portal | source |
+| `system.app_memory_limit.reason` | string | required | portal | reason |
+| `system.thermal` | object | required | portal | thermal |
+| `system.thermal.state` | string or null | required | portal | state |
+| `system.thermal.source` | string | required | portal | source |
+| `system.thermal.reason` | string | required | portal | reason |
+| `system.app_memory_limit.current_physical_bytes` | integer or null | required | portal | iOS phys_footprint reading used in the limit calculation; null elsewhere |<!-- status-fields-end -->
 
 Memory ledger purpose and device totals each equal current bytes. Device peaks are independent and do not sum to the overall peak. Physical and resident process metrics are distinct from ledger reservations and must not be added together. System values carry their actual platform source and an unavailability reason.
 
