@@ -715,6 +715,9 @@ if(MOE_BUILD_CLI)
 endif()
 
 if(MOE_BUILD_CLI)
+    moe_add_test(NAME moe_test_serve_sdk_anthropic LEVEL L2 COMMAND ${moe_python}
+        "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py" --with anthropic==2.8.0
+        "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_anthropic_test.py" --cli $<TARGET_FILE:edge0-infer>)
     moe_add_test(NAME moe_test_serve_sdk LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py"
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_test.py" --cli $<TARGET_FILE:edge0-infer>)
@@ -734,6 +737,7 @@ if(MOE_BUILD_CLI)
     endif()
     moe_add_test(NAME moe_test_serve_35b LEVEL L3 DEVICE COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py"
+        --with openai==3.26.1 --with anthropic==2.8.0
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_35b_test.py"
         --cli $<TARGET_FILE:edge0-infer> --decode $<TARGET_FILE:moe_portal_decode>
         --backend ${_moe_serve_35b_backend})

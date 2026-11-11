@@ -251,7 +251,7 @@ votre propre projet CMake, voir [Getting started](edge0-infer/docs/getting-start
 **edge0-infer**
 
 - [Getting started](edge0-infer/docs/getting-started.md) : compilation, ressources du modèle, exécution, discussion et serveur sur chaque plateforme
-- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [Serveur compatible OpenAI](edge0-infer/docs/openai-compatible-server.md)
+- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [Serveur local](edge0-infer/docs/local-server.md)
 - [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
 - [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
 - [Outils de ressources du modèle et ajout d'un modèle](edge0-infer/tools/assets/README.md)

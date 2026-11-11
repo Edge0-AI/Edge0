@@ -51,7 +51,7 @@ def events(record):
 
 
 def status_table():
-    document = (ROOT / 'docs/openai-compatible-server.md').read_text()
+    document = (ROOT / 'docs/local-server.md').read_text()
     table = document.split('<!-- status-fields-begin -->')[1].split('<!-- status-fields-end -->')[0]
     fields = {}
     for line in table.splitlines():
@@ -556,6 +556,13 @@ def authentication(cli, root):
         assert requests_seen(record)[-1]['target'] == '/v1/messages?beta=true' and requests_seen(record)[-1]['path'] == '/v1/messages'
         status = json.loads(request(server.port, 'GET', '/status')[2])
         assert status['listen']['auth'] is True and status['totals']['unauthorized'] == 13 and status['totals']['requests'] == 3
+        code, _, payload = request(server.port, 'POST', '/v1/messages', body, host=address)
+        assert code == 401 and json.loads(payload)['error']['type'] == 'authentication_error'
+        assert request(server.port, 'POST', '/v1/messages', body, {'x-api-key': 'SECRET_KEY_731'}, host=address)[0] == 200
+        before = len(requests_seen(record))
+        code, _, payload = request(server.port, 'POST', '/v1/messages/count_tokens', body, {'x-api-key': 'SECRET_KEY_731'}, host=address)
+        assert code == 404 and json.loads(payload)['error']['type'] == 'not_found_error'
+        assert len(requests_seen(record)) == before
         assert 'SECRET_KEY_731' not in json.dumps(status) + server.text()
     finally:
         assert server.stop() == 0

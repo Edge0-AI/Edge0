@@ -242,7 +242,7 @@ your own CMake project, see [Getting started](edge0-infer/docs/getting-started.m
 **edge0-infer**
 
 - [Getting started](edge0-infer/docs/getting-started.md): build, model assets, run, chat and serve on every platform
-- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [OpenAI-compatible server](edge0-infer/docs/openai-compatible-server.md)
+- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [Local server](edge0-infer/docs/local-server.md)
 - [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
 - [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
 - [Model asset tools and adding a model](edge0-infer/tools/assets/README.md)

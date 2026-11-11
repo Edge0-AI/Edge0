@@ -1,10 +1,10 @@
 # Getting started
 
-From a fresh clone to a chat and a local OpenAI-compatible server. `edge0-infer` is the `edge0-infer/` directory of the [Edge0 repository](https://github.com/Edge0-AI/Edge0): after cloning, `cd edge0-infer` and run every command from there. Paths in these documents are relative to that directory.
+From a fresh clone to a chat and a local OpenAI- and Anthropic-compatible server. `edge0-infer` is the `edge0-infer/` directory of the [Edge0 repository](https://github.com/Edge0-AI/Edge0): after cloning, `cd edge0-infer` and run every command from there. Paths in these documents are relative to that directory.
 
 ## Two layers
 
-`edge0-infer` is the program you run: `run`, `chat`, `serve` (an OpenAI-compatible server) and `inspect`, and the chat applications built on them, with the same commands for every model. Below it, each model runs on the engine built for it; `edge0-infer` picks the engine from the model folder given with `--model`, so there is nothing to choose:
+`edge0-infer` is the program you run: `run`, `chat`, `serve` (an OpenAI- and Anthropic-compatible server) and `inspect`, and the chat applications built on them, with the same commands for every model. Below it, each model runs on the engine built for it; `edge0-infer` picks the engine from the model folder given with `--model`, so there is nothing to choose:
 
 | Model | Engine | Hardware | Where the engine is |
 | --- | --- | --- | --- |
@@ -153,7 +153,7 @@ The server loads and warms the model, then listens on `http://127.0.0.1:8000/v1`
 uv run --no-project --with openai==3.26.1 python examples/openai_client.py --model edge0_35b
 ```
 
-Endpoints, request fields and limits are in the [server guide](openai-compatible-server.md).
+Endpoints, request fields and limits are in the [server guide](local-server.md).
 
 For Edge0 145B and Edge0 120B, `serve` starts edge0-strata and forwards generation requests to it; clients use the model name `edge0_145b` or `edge0_120b`. See Serve for [Edge0 145B](edge0-145b.md#serve) and [Edge0 120B](edge0-120b.md#serve):
 
@@ -262,7 +262,7 @@ Text generation and tokenization run entirely on the device; Python is only host
 
 To measure performance on the device, see [Benchmarking](benchmarking.md#android).
 
-For an OpenAI-compatible server:
+For an OpenAI- and Anthropic-compatible server:
 
 ```sh
 tests/platform/android-cli serve --model "$MOE_ASSETS_35B" --device cpu --port 0

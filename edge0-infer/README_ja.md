@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README_zh.md) | 日本語 | [Español](README_es.md) | [Français](README_fr.md)
 
-`edge0-infer` は、混合エキスパート（MoE）言語モデルを手元のハードウェアで実行します。CLI、ローカルの OpenAI 互換サーバー、チャットアプリを備え、どのモデルも同じコマンドで使えます。各モデルはそれぞれ専用のエンジンで動作し、`edge0-infer` がモデルフォルダからエンジンを自動で選ぶため、選択する必要はありません。
+`edge0-infer` は、混合エキスパート（MoE）言語モデルを手元のハードウェアで実行します。CLI、ローカルの OpenAI／Anthropic 互換サーバー、チャットアプリを備え、どのモデルも同じコマンドで使えます。各モデルはそれぞれ専用のエンジンで動作し、`edge0-infer` がモデルフォルダからエンジンを自動で選ぶため、選択する必要はありません。
 
 - **Edge0 35B**（LoRA と学習済み pre-router を備えた Qwen3.6-35B-A3B）は、このディレクトリの**ネイティブエンジン**で動作します。ネイティブエンジンは [GGML](https://github.com/ggml-org/ggml) をベースにネイティブ C++ API を備え、macOS、iOS、Android、Linux、Windows で動作します。エキスパートの重みはストレージから必要に応じて固定数のスロットに読み込まれるため、デバイスのメモリ予算より大きなモデルでも、すべての重みを読み込まずに実行できます。Apple M5 Mac ではデコードが毎秒約 25 トークン、物理メモリフットプリントのピークが約 3.4 GiB です。各プラットフォームの数値は [Benchmarking](docs/benchmarking.md#reference-figures) を参照してください。
 - **Edge0 145B** と **Edge0 120B** は **edge0-strata** で動作します。[Strata](https://github.com/Niko1221/Strata) のフォークで、Edge0 リポジトリの `edge0-strata/` にあり、Linux または Windows の NVIDIA GPU で動作します。[Edge0 145B](docs/edge0-145b.md) と [Edge0 120B](docs/edge0-120b.md) を参照してください。
@@ -30,7 +30,7 @@ cmake --preset mac-metal && cmake --build --preset mac-metal
 build/mac-metal/bin/edge0-infer info
 ```
 
-次に、モデルアセットをダウンロードして変換し、単発のプロンプト、チャット、またはローカルの OpenAI 互換サーバーを実行します。
+次に、モデルアセットをダウンロードして変換し、単発のプロンプト、チャット、またはローカルの OpenAI／Anthropic 互換サーバーを実行します。
 
 ```sh
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "一文で自己紹介してください。"
@@ -49,7 +49,7 @@ Edge0 145B と Edge0 120B では、edge0-strata をビルドしてから `edge0-
 - [Edge0 120B](docs/edge0-120b.md)：edge0-strata でこのモデルを実行する
 - [Configuration reference](docs/configuration.md)：ランタイム、ロード、モデル、生成の設定とそのデフォルト値、CLI フラグ
 - [Native API](docs/native-api.md)：プロセス内でのエンジンの利用：ライフサイクル、ストリーミング、マルチターン、並行処理、キャンセル
-- [OpenAI-compatible local server](docs/openai-compatible-server.md)：エンドポイント、リクエストフィールド、制限
+- [Local server](docs/local-server.md)：エンドポイント、リクエストフィールド、制限
 - [Architecture](docs/architecture.md)：2 つの層、ネイティブエンジンの構成、リクエストがエンジン内をどう流れるか
 - [Known limitations](docs/limitations.md)：注意すべき動作
 - [Benchmarking](docs/benchmarking.md)：測定方法、推奨設定、参考値

@@ -14,6 +14,116 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from serve_support import Server, events, tiny
 
 
+def messages_contract(cli, model, root, backend):
+    endpoint = '/v1/messages'
+    base = {'model': 'test', 'max_tokens': 4, 'messages': [{'role': 'user', 'content': 'hello'}], 'temperature': 0}
+    runs = []
+    for stream in (False, True):
+        with Server(cli, model, root / f'messages-{stream}', backend) as server:
+            history = list(base['messages'])
+            turns = []
+            for turn in range(2):
+                body = dict(base, messages=history, stream=stream)
+                counted = dict(body); counted.pop('stream'); counted.pop('max_tokens')
+                before = json.loads(server.request('/status')[1])['totals']['requests']
+                code, raw = server.request(endpoint + '/count_tokens', counted)
+                assert code == 200, raw
+                count = json.loads(raw)['input_tokens']
+                assert json.loads(server.request('/status')[1])['totals']['requests'] == before
+                code, raw = server.request(endpoint, body)
+                assert code == 200, raw
+                if stream:
+                    records = events(raw)
+                    assert records[0]['type'] == 'message_start' and records[-1]['type'] == 'message_stop'
+                    answer = ''.join(e['delta']['text'] for e in records if e['type'] == 'content_block_delta' and e['delta']['type'] == 'text_delta')
+                    final = records[-2]; usage = final['usage']
+                    assert final['type'] == 'message_delta' and 'metrics' in final
+                else:
+                    final = json.loads(raw); usage = final['usage']
+                    assert final['type'] == 'message' and 'metrics' in final
+                    answer = ''.join(b['text'] for b in final['content'] if b['type'] == 'text')
+                tokens, result = server.evidence(turn + 1)[-1]
+                assert count == len(tokens['input']) == result['input_count']
+                assert usage['input_tokens'] == result['input_count'] - result['reused_tokens']
+                assert usage['cache_read_input_tokens'] == result['reused_tokens']
+                assert usage['output_tokens'] == result['generated_count'] and usage['cache_creation_input_tokens'] is None
+                assert usage['output_tokens_details']['thinking_tokens'] == result['reasoning_tokens']
+                if stream:
+                    initial = records[0]['message']['usage']
+                    assert initial['input_tokens'] == usage['input_tokens'] and initial['cache_read_input_tokens'] == usage['cache_read_input_tokens']
+                turns.append((tokens, answer))
+                history += [{'role': 'assistant', 'content': answer}, {'role': 'user', 'content': 'again'}]
+            runs.append(turns)
+            for bad in (dict(base, unknown=True), dict(base, tool_choice={'type': 'any'}),
+                        dict(base, messages=[{'role': 'user', 'content': [{'type': 'image'}]}]),
+                        dict(base, messages=[{'role': 'assistant', 'content': 'prefix'}]),
+                        {k: v for k, v in base.items() if k != 'max_tokens'}):
+                code, raw = server.request(endpoint, bad)
+                assert code == 400 and json.loads(raw)['type'] == 'error', raw
+                assert json.loads(raw)['error']['type'] == 'invalid_request_error'
+            code, raw = server.request(endpoint, body)
+            assert code == 200, raw
+            assert server.evidence(3)[-1][1]['reused_tokens'] > 0
+            status = json.loads(server.request('/status')[1])
+            invalid = [r for r in status['recent_requests'] if r['http_status'] == 400 and r.get('param') == 'unknown']
+            assert len(invalid) == 1 and invalid[0]['code'] == 'unsupported_parameter'
+            assert invalid[0]['message'].endswith(': unknown') and invalid[0] in [json.loads(line) for line in server.lines if line.startswith('{')]
+    assert runs[0] == runs[1], 'Messages complete and streaming tokens/text differ'
+    tool = {'name': 'f', 'description': 'function', 'input_schema': {'type': 'object', 'properties': {'z': {'type': 'integer'}}}}
+    arguments = {'z': 1, 'a': 2}
+    history = [{'role': 'user', 'content': 'first'}, {'role': 'assistant', 'content': 'reply'},
+               {'role': 'user', 'content': 'call'}, {'role': 'assistant', 'content': [{'type': 'text', 'text': 'calling'}, {'type': 'tool_use', 'id': 'c', 'name': 'f', 'input': arguments}]},
+               {'role': 'user', 'content': [{'type': 'tool_result', 'tool_use_id': 'c', 'content': 'result'}]}]
+    chat = [{'role': 'system', 'content': 'system'}, *history[:3],
+            {'role': 'assistant', 'content': 'calling', 'tool_calls': [{'id': 'c', 'type': 'function', 'function': {'name': 'f', 'arguments': json.dumps(arguments, separators=(',', ':'))}}]},
+            {'role': 'tool', 'tool_call_id': 'c', 'content': 'result'}]
+    with Server(cli, model, root / 'messages-equivalence', backend) as server:
+        assert server.request('/v1/chat/completions', dict(base, messages=chat, tools=[{'type': 'function', 'function': {'name': 'f', 'description': 'function', 'parameters': tool['input_schema']}}]))[0] == 200
+        code, raw = server.request(endpoint, dict(base, messages=history, system='system', tools=[tool]))
+        assert code == 200, raw
+        evidence = server.evidence(2)
+        assert evidence[0][0]['input'] == evidence[1][0]['input']
+    for disconnect in (False, True):
+        hold = root / f'messages-hold-{disconnect}'; hold.touch()
+        with Server(cli, model, root / f'messages-active-{disconnect}', backend, ['--hold-file', str(hold)]) as server:
+            conn = http.client.HTTPConnection('127.0.0.1', server.port)
+            conn.request('POST', endpoint, json.dumps(dict(base, stream=True)), {'Content-Type': 'application/json'})
+            response = conn.getresponse()
+            while True:
+                line = response.readline().decode()
+                assert line, 'stream ended before hold'
+                if line.startswith('data: ') and json.loads(line[6:])['type'] == 'content_block_delta': break
+            code, raw = server.request(endpoint + '/count_tokens', base)
+            assert code == 200 and json.loads(raw)['input_tokens'] > 0
+            code, raw = server.request(endpoint, base)
+            assert code == 429 and json.loads(raw)['error']['type'] == 'rate_limit_error'
+            if disconnect:
+                response.fp.raw._sock.shutdown(socket.SHUT_RDWR);response.close();conn.close()
+                with server.changed:
+                    assert server.changed.wait_for(lambda: any(r.get('stop_reason') == 'cancelled' for r in server.summaries()), timeout=30)
+                hold.unlink()
+                assert server.request(endpoint, base)[0] == 200
+            else:
+                hold.unlink();response.read();conn.close()
+            status = json.loads(server.request('/status')[1])
+            busy = [r for r in status['recent_requests'] if r['http_status'] == 429]
+            assert len(busy) == 1 and busy[0]['code'] == 'busy' and busy[0] in [json.loads(line) for line in server.lines if line.startswith('{')]
+            assert all(r['endpoint'] == endpoint for r in status['recent_requests'])
+    addresses = socket.gethostbyname_ex(socket.gethostname())[2]
+    address = next(v for v in addresses if not v.startswith(('127.', '169.254.')))
+    key = root / 'messages-key';key.write_text('messages-secret')
+    with Server(cli, model, root / 'messages-auth', backend, ['--host', '0.0.0.0', '--api-key-file', str(key)]) as server:
+        for token, expected in ((None, 401), ('wrong', 401), ('messages-secret', 200)):
+            conn = http.client.HTTPConnection(address, server.port)
+            headers = {'Content-Type': 'application/json'}
+            if token is not None: headers['x-api-key'] = token
+            conn.request('POST', endpoint, json.dumps(base), headers)
+            response = conn.getresponse(); value = json.loads(response.read());conn.close()
+            assert response.status == expected, value
+            if expected == 401: assert value['type'] == 'error' and value['error']['type'] == 'authentication_error'
+    print('PASS Messages equivalence, usage, count_tokens, rejection, cancellation, records and x-api-key')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cli', required=True)
@@ -35,6 +145,8 @@ def main():
                     'thinking_default': description['thinking']['default']}
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
+        if args.case in ('all', 'messages'):
+            messages_contract(args.cli, model, root, args.backend)
         if args.case in ('all', 'status'):
             from serve_status_test import run
             run(args.cli, model, root, args.backend)

@@ -1,6 +1,7 @@
 #include "serve_delegate.h"
 #include "serve_delegate_status.h"
 #include "serve_status.h"
+#include "serve_protocol.h"
 #include "edge0/diagnostics.h"
 #include <httplib.h>
 #include <condition_variable>
@@ -51,7 +52,8 @@ std::string timestamp() {
         << std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000 << 'Z';
     return out.str();
 }
-Json error_body(const std::string& message, const std::string& code) {
+Json error_body(const std::string& message, const std::string& code, int status=500, const std::string& path={}) {
+    if(path=="/v1/messages" || path.rfind("/v1/messages/",0)==0)return portal::Failure(status,message,code).body(portal::Protocol::messages);
     return {{"error", {{"message", message}, {"type", "server_error"}, {"code", code}, {"param", nullptr}}}};
 }
 
@@ -224,18 +226,18 @@ int serve(int argc, char** argv, const Match& match) {
         server.new_task_queue = [] { return new httplib::ThreadPool(16); };
         server.set_payload_max_length(args.max_body);
         server.set_write_timeout(args.write_timeout);
-        auto send_error = [](httplib::Response& res, int status, const std::string& message, const std::string& code) {
+        auto send_error = [](httplib::Response& res, int status, const std::string& message, const std::string& code, const std::string& path=std::string{}) {
             res.status = status;
-            res.set_content(error_body(message, code).dump(), "application/json");
+            res.set_content(error_body(message, code, status, path).dump(), "application/json");
         };
-        server.set_error_handler([&](const httplib::Request&, httplib::Response& res) {
-            if (res.status == 413) send_error(res, 413, "Request body too large", "request_too_large");
-            else if (res.body.empty()) send_error(res, res.status, "Unknown endpoint", "not_found");
+        server.set_error_handler([&](const httplib::Request& req, httplib::Response& res) {
+            if (res.status == 413) send_error(res, 413, "Request body too large", "request_too_large", req.path);
+            else if (res.body.empty()) send_error(res, res.status, "Unknown endpoint", "not_found", req.path);
         });
         server.set_pre_routing_handler([&](const httplib::Request& req, httplib::Response& res) {
-            if (portal::authorized(req.remote_addr, api_token, req.get_header_value("Authorization")))
+            if (portal::authorized(req.remote_addr, api_token, req.get_header_value("Authorization"), req.get_header_value("x-api-key")))
                 return httplib::Server::HandlerResponse::Unhandled;
-            send_error(res, 401, "Invalid API key", "invalid_api_key");
+            send_error(res, 401, "Invalid API key", "invalid_api_key", req.path);
             ProxyRecord record;
             record.time = timestamp();
             record.endpoint = req.path;
@@ -337,8 +339,8 @@ int serve(int argc, char** argv, const Match& match) {
                 f->accounting.streaming = f->stream;
             }
             if (!healthy()) {
-                f->body = stopping ? error_body("Server shutting down", "shutting_down").dump()
-                                   : error_body("edge0-strata has exited", "engine_exited").dump();
+                f->body = stopping ? error_body("Server shutting down", "shutting_down",503,req.path).dump()
+                                   : error_body("edge0-strata has exited", "engine_exited",503,req.path).dump();
                 res.status = 503;
                 res.set_content(f->body, "application/json");
                 finish(f, 503);
@@ -395,9 +397,9 @@ int serve(int argc, char** argv, const Match& match) {
                 // noticed within a moment of the connection failing), 502 when it is running but did not answer.
                 for (int i = 0; i < 20 && !f->client_gone && engine.running(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 const int status = f->client_gone ? 499 : engine.running() ? 502 : 503;
-                f->body = (status == 499   ? error_body("Client disconnected", "cancelled")
-                           : status == 503 ? error_body("edge0-strata has exited", "engine_exited")
-                                           : error_body("edge0-strata did not answer", "engine_unavailable"))
+                f->body = (status == 499   ? error_body("Client disconnected", "cancelled",status,req.path)
+                           : status == 503 ? error_body("edge0-strata has exited", "engine_exited",503,req.path)
+                                           : error_body("edge0-strata did not answer", "engine_unavailable",status,req.path))
                               .dump();
                 res.status = status;
                 res.set_content(f->body, "application/json");

@@ -90,7 +90,7 @@ To make a turn stoppable, create a token with `create_cancel_token(runtime)` and
 - A token serves one generation; create a new one for each turn. A token that was cancelled before the turn starts ends the turn before any computation, leaving the session unchanged; a cancel requested after `generate` returns has no effect.
 - `request_cancel` is a single lock-free atomic store and may be called from a signal handler. Keep the token alive during the call, and stop requesting cancels before finishing the runtime.
 
-The OpenAI-compatible server has no separate cancel endpoint: closing the HTTP request cancels the generation ([server guide](openai-compatible-server.md)).
+The OpenAI-compatible server has no separate cancel endpoint: closing the HTTP request cancels the generation ([server guide](local-server.md)).
 
 ## Diagnostics
 

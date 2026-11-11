@@ -1,4 +1,7 @@
-# OpenAI-compatible local server
+# Local server
+
+The native server provides OpenAI Chat Completions and Responses, and Anthropic Messages.
+Validated Python SDKs: `openai==3.26.1` and `anthropic==2.8.0`.
 
 Start the server and the example client as in [Getting started](getting-started.md#serve).
 
@@ -25,6 +28,8 @@ If another process is already listening on the same local address and port, a se
 | GET | `/v1/models/{id}` | Model or 404 |
 | POST | `/v1/chat/completions` | Chat completion or SSE chunks |
 | POST | `/v1/responses` | Response or typed SSE events |
+| POST | `/v1/messages` | Anthropic message or typed SSE events |
+| POST | `/v1/messages/count_tokens` | Input token count; native models only |
 
 Every request includes `model` equal to the alias. Send the complete conversation
 on every turn. The native library renders templates, tokenizes, validates tools,
@@ -32,6 +37,10 @@ and decides prefix reuse. One inference may run at a time; another receives 429
 immediately. A disconnected client cancels generation. Output writes have a
 bounded timeout. SIGINT/SIGTERM stop acceptance, cancel and wait for active work,
 then release the session, unload the model, and finish the runtime.
+
+The token-count endpoint uses the same input rules as Messages, with optional `max_tokens`
+and no `stream`. It returns `{"input_tokens": N}` without taking the generation gate,
+creating a session, changing its state, or entering request counters (401s are recorded).
 
 ## Delegated models
 
@@ -54,6 +63,7 @@ until it is ready, and only then prints the `Listening:` line. It acts as a prox
   endpoints, passed through unchanged (status, `Content-Type` and body) for its tools,
   such as its benchmark `tools/strata_bench.py`. They return 503 once
   edge0-strata has exited.
+- `/v1/messages/count_tokens` is not provided in delegated mode (404).
 - Authentication, `--api-key-file`, `--host`, `--port`, `--alias`,
   `--max-body-bytes` and `--write-timeout-seconds` work as for native models.
   `--context` sets edge0-strata's `--max-context`. `--device` accepts `cuda` or
@@ -81,45 +91,54 @@ Unknown fields are rejected with 400, including unknown nested control fields.
 Tool parameter schemas are passed through as schema data. Fields marked ignored
 are accepted without an effect. `store` never enables persistence.
 
-| Fields | Chat Completions | Responses |
-| --- | --- | --- |
-| `model` | Required alias | Required alias |
-| `messages` | Nonempty; system, developer (system), user, assistant, tool | Not accepted |
-| `content` | String or text parts; assistant may use null | Message string or input_text/output_text parts |
-| `instructions`, `input` | Not accepted | Optional system instruction; required string or ordered items |
-| `tool_calls`, `tool_call_id` | Assistant function calls; matched tool results | function_call and function_call_output items |
-| `reasoning_content` | Assistant history extension | reasoning items with reasoning_text content |
-| `tools` | Function wrapper, preserving key order | Flat function definition converted to a wrapper |
-| `strict` | false or omitted only | false or omitted only |
-| `tool_choice` | auto or none | auto or none |
-| `parallel_tool_calls` | Boolean | Boolean |
-| `stream` | Boolean | Boolean |
-| `stream_options.include_usage` | Optional final usage chunk | Not accepted |
-| `temperature`, `top_p` | Native range validation | Native range validation |
-| `max_tokens`, `max_completion_tokens` | Output limit including reasoning; must agree if both supplied | Not accepted |
-| `max_output_tokens` | Not accepted | Output limit including reasoning |
-| `seed` | Unsigned integer | Not accepted |
-| `stop` | String or string array | Not accepted |
-| `presence_penalty`, `frequency_penalty` | Native range validation | Not accepted |
-| `logit_bias` | Integer token ID keys and numeric biases | Not accepted |
-| `logprobs` | Boolean | Use include |
-| `top_logprobs` | Requires logprobs enabled | Requires include enabled |
-| `include` | Not accepted | Only message.output_text.logprobs |
-| `n` | Only 1 | Not accepted |
-| `response_format` | Only type text | Not accepted |
-| `text.format` | Not accepted | Only type text; verbosity rejected |
-| `reasoning_effort` | none disables; minimal/low/medium/high enable | Use reasoning.effort |
-| `chat_template_kwargs.enable_thinking` | Boolean extension; conflicting controls rejected | Not accepted |
-| `reasoning.effort` | Not accepted | Same on/off mapping as Chat |
-| `reasoning.summary` | Not accepted | null or auto; no summary is generated |
-| `top_k`, `repetition_penalty` | Native extensions | Not accepted |
-| `truncation` | Not accepted | Only disabled |
-| `background` | Not accepted | Only false; ignored |
-| `user`, `metadata`, `store`, `service_tier`, `prompt_cache_key`, `safety_identifier` | Ignored | Ignored; store echoed false |
-| `promptCacheKey` | Alias of prompt_cache_key; string; ignored | Same as Chat |
-| `previous_response_id`, `conversation` | Rejected | Rejected; send complete history |
-| `functions`, `function_call`, `modalities`, `audio`, `prediction`, `web_search_options`, `verbosity` | Rejected | Rejected |
-| Message `name`, `refusal`, `audio`; encrypted reasoning; nontext input | Rejected | Rejected |
+| Fields | Chat Completions | Responses | Messages |
+| --- | --- | --- | --- |
+| `model` | Required alias | Required alias | Required alias |
+| `messages` | Nonempty; system, developer (system), user, assistant, tool | Not accepted | Nonempty user/assistant history; final role must be user |
+| `content` | String or text parts; assistant may use null | Message string or input_text/output_text parts | String or text/tool_result (user), text/thinking/tool_use (assistant) blocks |
+| `instructions`, `input` | Not accepted | Optional system instruction; required string or ordered items | Not accepted |
+| `tool_calls`, `tool_call_id` | Assistant function calls; matched tool results | function_call and function_call_output items | Not accepted |
+| `reasoning_content` | Assistant history extension | reasoning items with reasoning_text content | Not accepted |
+| `tools` | Function wrapper, preserving key order | Flat function definition converted to a wrapper | name, description, input_schema; optional type custom; converted to function wrapper |
+| `strict` | false or omitted only | false or omitted only | false or omitted only |
+| `tool_choice` | auto or none | auto or none | Object: type auto or none; disable_parallel_tool_use inverts native parallel flag; any/tool rejected |
+| `parallel_tool_calls` | Boolean | Boolean | Not accepted |
+| `stream` | Boolean | Boolean | Boolean; rejected for count_tokens |
+| `stream_options.include_usage` | Optional final usage chunk | Not accepted | Not accepted |
+| `temperature`, `top_p` | Native range validation | Native range validation | Native range validation; SDK 2.8.0 uses extra_body |
+| `max_tokens`, `max_completion_tokens` | Output limit including reasoning; must agree if both supplied | Not accepted | max_tokens required, includes thinking; max_completion_tokens rejected |
+| `max_output_tokens` | Not accepted | Output limit including reasoning | Not accepted |
+| `seed` | Unsigned integer | Not accepted | Not accepted |
+| `stop` | String or string array | Not accepted | Not accepted |
+| `presence_penalty`, `frequency_penalty` | Native range validation | Not accepted | Not accepted |
+| `logit_bias` | Integer token ID keys and numeric biases | Not accepted | Not accepted |
+| `logprobs` | Boolean | Use include | Not accepted |
+| `top_logprobs` | Requires logprobs enabled | Requires include enabled | Not accepted |
+| `include` | Not accepted | Only message.output_text.logprobs | Not accepted |
+| `n` | Only 1 | Not accepted | Not accepted |
+| `response_format` | Only type text | Not accepted | Not accepted |
+| `text.format` | Not accepted | Only type text; verbosity rejected | Not accepted |
+| `reasoning_effort` | none disables; minimal/low/medium/high enable | Use reasoning.effort | Not accepted |
+| `chat_template_kwargs.enable_thinking` | Boolean extension; conflicting controls rejected | Not accepted | Not accepted |
+| `reasoning.effort` | Not accepted | Same on/off mapping as Chat | Not accepted |
+| `reasoning.summary` | Not accepted | null or auto; no summary is generated | Not accepted |
+| `top_k`, `repetition_penalty` | Native extensions | Not accepted | top_k accepted (extra_body in SDK 2.8.0); repetition_penalty rejected |
+| `truncation` | Not accepted | Only disabled | Not accepted |
+| `background` | Not accepted | Only false; ignored | Not accepted |
+| `user`, `metadata`, `store`, `service_tier`, `prompt_cache_key`, `safety_identifier` | Ignored | Ignored; store echoed false | metadata.user_id and service_tier ignored; remaining fields rejected |
+| `promptCacheKey` | Alias of prompt_cache_key; string; ignored | Same as Chat | Not accepted |
+| `previous_response_id`, `conversation` | Rejected | Rejected; send complete history | Not accepted |
+| `functions`, `function_call`, `modalities`, `audio`, `prediction`, `web_search_options`, `verbosity` | Rejected | Rejected | Not accepted |
+| Message `name`, `refusal`, `audio`; encrypted reasoning; nontext input | Rejected | Rejected | Not accepted |
+| `system` | Use system message | Use instructions | String or text blocks, concatenated into the first system message |
+| `tool_result` | Use tool message | Use function_call_output | tool_use_id required; content string/text blocks; is_error accepted without rendering effect; results precede same-turn user text, in block order; result-only turns add no empty user message |
+| `tool_use` | Use tool_calls | Use function_call | id, name, input object; input serialized compactly in original key order |
+| `thinking` history block | Use reasoning_content | Use reasoning item | thinking text; signature accepted without validation |
+| `thinking` control | Use reasoning controls | Use reasoning controls | type enabled/adaptive enables, disabled disables; positive integer budget_tokens accepted without limiting thinking length; between_tools/display rejected |
+| `stop_sequences` | Use stop | Not accepted | String array |
+| `cache_control` | Not accepted | Not accepted | Accepted without effect; prefix reuse is automatic |
+| `output_config`, `container`, `inference_geo`, `speed`, `diagnostics`, `user_profile_id`, `workspace_id`, `mcp_servers` | Rejected | Rejected | Rejected |
+| Images, documents, search_result, redacted_thinking, server_tool_use and other nontext blocks | Rejected | Rejected | Rejected |
 
 Field names are matched exactly. `promptCacheKey` is the only accepted alias;
 other camelCase spellings are unknown fields and are rejected.
@@ -128,6 +147,10 @@ All enabled reasoning effort levels mean the same thing. The model default appli
 when controls are absent. A model that cannot enable reasoning rejects the request.
 Responses coalesces adjacent reasoning, assistant messages and function calls into
 one native assistant message. User/system messages and tool results end that group.
+
+The server does not negotiate `anthropic-version` or `anthropic-beta` headers.
+Messages has no prefill-prefix continuation, hosted tools, JSON output constraints,
+Files, Batches or Anthropic Models endpoints. `GET /v1/models` keeps its OpenAI format.
 
 ## Output and errors
 
@@ -143,7 +166,36 @@ parts/deltas; done events close parts and items. `sequence_number` increases on
 every event. The final event contains the complete response. Reasoning has an
 empty `summary`; rejected started function calls have incomplete status.
 
-Usage includes input, generated, cached, reasoning and total token counts from the
+Messages returns a `message` with an `id` prefixed `msg_`, assistant role, model alias,
+and content blocks in generation order: `thinking` (with empty `signature`), `text`,
+and `tool_use` (with an object `input`). Thinking appears only when enabled.
+Streaming emits `message_start`, then each block's `content_block_start`,
+`content_block_delta` (`thinking_delta`, `text_delta`, or `input_json_delta`), and
+`content_block_stop`, followed by `message_delta` and `message_stop`. Block indices
+start at zero and are contiguous. No ping events are sent. Rejected calls do not
+appear in complete content; a block already streamed still closes normally and is
+identified by the `rejected_tool_calls` extension on `message_delta`.
+
+Messages `stop_reason` is `end_turn`, `tool_use`, `max_tokens`,
+`model_context_window_exceeded`, or `stop_sequence`; only the last has a non-null
+`stop_sequence`, containing the matched string. Its usage reports uncached input
+as `input_tokens`, reused input as `cache_read_input_tokens`, generated tokens
+including thinking as `output_tokens`, and thinking tokens as
+`output_tokens_details.thinking_tokens`. `cache_creation_input_tokens` is null.
+At stream start, input and reuse come from live generation progress; if unavailable,
+input uses the admission count and reuse is null. Initial output is zero; final
+`message_delta.usage` contains the final counts and replaces the initial values.
+
+Messages errors (including 401, and errors under `/v1/messages/`) have the form
+`{"type":"error","error":{"type":"invalid_request_error","message":"..."}}`.
+HTTP 400/401/404/413/429/500/503 map respectively to `invalid_request_error`,
+`authentication_error`, `not_found_error`, `request_too_large`, `rate_limit_error`,
+`api_error`, and `overloaded_error`. Field errors end with `: <field path>`.
+After streaming starts, failure or cancellation emits only an `error` event and
+closes without `message_delta` or `message_stop`. Request logs retain the sent
+failure's code, message and field path even though this error body has no code/param.
+
+Chat/Responses usage includes input, generated, cached, reasoning and total token counts from the
 library. Logprobs cover answer tokens only, include raw byte arrays, and replace
 invalid UTF-8 in their text representation. Pending logprobs accompany the next
 answer delta or final content event.
@@ -155,7 +207,7 @@ answer delta or final content event.
 | Length or capacity | length | incomplete, max_output_tokens |
 | Failure or cancellation | Error | failed |
 
-Errors have `error.message`, `error.type`, `error.param`, and `error.code`.
+Chat/Responses errors have `error.message`, `error.type`, `error.param`, and `error.code`.
 When an error concerns a specific field, `error.param` holds its path and
 `error.message` ends with it, as `<description>: <path>` (for example
 `Unknown field: promptCacheKey` or `Unknown field: messages.name`), so clients
@@ -182,13 +234,13 @@ released and rebuilt before later work; requests already executed are not retrie
 Default stderr logs contain request metadata and timing, not conversation text.
 An inference request rejected before generation starts logs one JSON line with
 `endpoint`, `http_status`, `code`, and `message`, plus `param` when the error
-concerns a field; these match the error body returned to the client.
+concerns a field; these come from the same failure used to format the response.
 `--out` explicitly writes per-request tokens and results for development.
 `--hold-file` is a development option that pauses after the first nonempty output
 while that file exists; cancellation and disconnect detection remain active.
 
-Compatibility tests target the pinned official Python SDK `openai==3.26.1`,
-including both stream accumulators. Missing offline SDK packages are reported as
+Compatibility tests target pinned official Python SDKs `openai==3.26.1` and
+`anthropic==2.8.0`, including their stream accumulators and Messages token counting. Missing offline SDK packages are reported as
 skipped tests. See [examples](../examples/README.md) for native and HTTP clients.
 
 ## Engine extensions
@@ -206,19 +258,25 @@ Completed generation output includes a top-level `metrics` object alongside `usa
 
 Unavailable fields are omitted. Process peaks cover the entire process lifetime, not just this request. The snapshot is taken after generation, from the same runtime. Clients may derive prefill speed as `(prompt_tokens - prompt_tokens_details.cached_tokens) / first_token_seconds` from Chat usage (or the corresponding `input_tokens` and `input_tokens_details` in Responses), when both counts are available, their difference is positive and the time is positive. Generated tokens do not contribute. These are engine measurements, not HTTP or UI timings. Errors, cancellations and Chat streams without requested usage do not include metrics.
 
+Messages includes the same `metrics` object in the complete response and final
+`message_delta`. Its prefill rate is `usage.input_tokens / first_token_seconds`
+when both are positive; the input count already excludes reused tokens.
+
 ## Status and LAN authentication
 
 `GET /status` is available during generation and does not take the generation gate.
 `--api-key-file <path>` reads a token, trimming surrounding whitespace. An absent,
 unreadable or empty file fails before model loading. A non-loopback listener
 requires a token. Every non-loopback request, including health, model and status
-queries, must send `Authorization: Bearer <token>`. IPv4 loopback (127/8), IPv6
+queries, must send `Authorization: Bearer <token>` or `x-api-key: <token>`.
+Either matching header authorizes the request, even if the other is incorrect;
+neither header is forwarded to edge0-strata. IPv4 loopback (127/8), IPv6
 loopback and IPv4-mapped loopback clients are exempt, even with an incorrect header.
 Tokens and conversation contents are never included in status or request logs.
 
 Each inference request and every 401 produces one JSON record in stderr and in
-`recent_requests`, newest first, capped at 100. Successful health and status queries
-are excluded. `last` is the last request that entered generation; rejected requests
+`recent_requests`, newest first, capped at 100. Successful health, status and token-count queries
+are excluded. Messages is an inference endpoint, just like Chat and Responses. `last` is the last request that entered generation; rejected requests
 do not replace it. Times use UTC ISO 8601 with millisecond precision. `total_seconds`
 for generated requests is the native request duration; for rejected requests it is
 HTTP handling duration. Native final timing values match the development `--out`

@@ -39,7 +39,7 @@ struct History {
     void add(const RequestRecord&);
 };
 bool loopback(const std::string&);
-bool authorized(const std::string& source, const std::string& token, const std::string& authorization);
+bool authorized(const std::string& source, const std::string& token, const std::string& authorization, const std::string& api_key = {});
 Json memory_json(const edge0::MemorySnapshot&);
 Json system_json(const edge0::SystemStatus&);
 Json engine_json(const edge0::Capabilities&);

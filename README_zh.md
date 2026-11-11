@@ -244,7 +244,7 @@ Android、Windows、iOS 的构建，以及在自己的 CMake 工程中使用引�
 **edge0-infer**
 
 - [Getting started](edge0-infer/docs/getting-started.md)：各平台的构建、模型资产、运行、对话与服务
-- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [OpenAI 兼容服务](edge0-infer/docs/openai-compatible-server.md)
+- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [本地服务](edge0-infer/docs/local-server.md)
 - [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
 - [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
 - [模型资产工具与接入新模型](edge0-infer/tools/assets/README.md)

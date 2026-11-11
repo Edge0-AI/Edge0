@@ -2,7 +2,7 @@
 
 English | [Chinese](README_zh.md) | [Japanese](README_ja.md) | [Español](README_es.md) | [Français](README_fr.md)
 
-`edge0-infer` runs mixture-of-experts (MoE) language models on your own hardware: a CLI, a local OpenAI-compatible server and chat applications, with the same commands for every model. Each model runs on the engine built for it, and `edge0-infer` picks the engine from the model folder; there is nothing to choose:
+`edge0-infer` runs mixture-of-experts (MoE) language models on your own hardware: a CLI, a local OpenAI- and Anthropic-compatible server and chat applications, with the same commands for every model. Each model runs on the engine built for it, and `edge0-infer` picks the engine from the model folder; there is nothing to choose:
 
 - **Edge0 35B** (Qwen3.6-35B-A3B with a LoRA and a trained pre-router) runs on the **native engine** in this directory, built on [GGML](https://github.com/ggml-org/ggml) and with a native C++ API, on macOS, iOS, Android, Linux and Windows. Expert weights are loaded from storage on demand into a fixed pool of slots, so a model larger than the device memory budget runs without loading all of its weights. On an Apple M5 Mac it decodes at about 25 tokens per second with a peak physical footprint of about 3.4 GiB; figures for every platform are in [Benchmarking](docs/benchmarking.md#reference-figures).
 - **Edge0 145B** and **Edge0 120B** run on **edge0-strata**, a fork of [Strata](https://github.com/Niko1221/Strata) in `edge0-strata/` of the Edge0 repository, on an NVIDIA GPU on Linux or Windows; see [Edge0 145B](docs/edge0-145b.md) and [Edge0 120B](docs/edge0-120b.md).
@@ -28,7 +28,7 @@ cmake --preset mac-metal && cmake --build --preset mac-metal
 build/mac-metal/bin/edge0-infer info
 ```
 
-Then download and convert the model assets, and run a prompt, a chat or a local OpenAI-compatible server:
+Then download and convert the model assets, and run a prompt, a chat or a local OpenAI- and Anthropic-compatible server:
 
 ```sh
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "Introduce yourself in one sentence."
@@ -47,7 +47,7 @@ For Edge0 145B and Edge0 120B, build edge0-strata and run `edge0-infer serve --m
 - [Edge0 120B](docs/edge0-120b.md): running this model on edge0-strata
 - [Configuration reference](docs/configuration.md): runtime, load, model and generation settings, their defaults and the CLI flags
 - [Native API](docs/native-api.md): using the engine in process: lifecycle, streaming, multi-turn, concurrency and cancellation
-- [OpenAI-compatible local server](docs/openai-compatible-server.md): endpoints, request fields and limits
+- [Local server](docs/local-server.md): endpoints, request fields and limits
 - [Architecture](docs/architecture.md): the two layers, how the native engine is organized and how a request flows through it
 - [Known limitations](docs/limitations.md): behavior to be aware of
 - [Benchmarking](docs/benchmarking.md): how to measure, recommended settings and reference figures

@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README_zh.md) | [日本語](README_ja.md) | Español | [Français](README_fr.md)
 
-`edge0-infer` ejecuta modelos de lenguaje de mezcla de expertos (MoE) en tu propio hardware: una CLI, un servidor local compatible con OpenAI y aplicaciones de chat, con los mismos comandos para todos los modelos. Cada modelo se ejecuta en el motor preparado para él, y `edge0-infer` elige el motor a partir de la carpeta del modelo; no hay nada que elegir:
+`edge0-infer` ejecuta modelos de lenguaje de mezcla de expertos (MoE) en tu propio hardware: una CLI, un servidor local compatible con OpenAI y Anthropic y aplicaciones de chat, con los mismos comandos para todos los modelos. Cada modelo se ejecuta en el motor preparado para él, y `edge0-infer` elige el motor a partir de la carpeta del modelo; no hay nada que elegir:
 
 - **Edge0 35B** (Qwen3.6-35B-A3B con un LoRA y un pre-router entrenado) se ejecuta en el **motor nativo** de este directorio, construido sobre [GGML](https://github.com/ggml-org/ggml) y con una API nativa en C++, en macOS, iOS, Android, Linux y Windows. Los pesos de los expertos se cargan desde el almacenamiento bajo demanda en un conjunto fijo de ranuras, de modo que un modelo más grande que el presupuesto de memoria del dispositivo se ejecuta sin cargar todos sus pesos. En un Mac con Apple M5 decodifica a unos 25 tokens por segundo, con un pico de huella física de unos 3,4 GiB; las cifras de cada plataforma están en [Benchmarking](docs/benchmarking.md#reference-figures).
 - **Edge0 145B** y **Edge0 120B** se ejecutan en **edge0-strata**, un fork de [Strata](https://github.com/Niko1221/Strata) en `edge0-strata/` del repositorio Edge0, en una GPU NVIDIA con Linux o Windows; consulta [Edge0 145B](docs/edge0-145b.md) y [Edge0 120B](docs/edge0-120b.md).
@@ -30,7 +30,7 @@ cmake --preset mac-metal && cmake --build --preset mac-metal
 build/mac-metal/bin/edge0-infer info
 ```
 
-Después descarga y convierte los recursos del modelo, y ejecuta una instrucción, un chat o un servidor local compatible con OpenAI:
+Después descarga y convierte los recursos del modelo, y ejecuta una instrucción, un chat o un servidor local compatible con OpenAI y Anthropic:
 
 ```sh
 build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "Preséntate en una frase."
@@ -49,7 +49,7 @@ Para Edge0 145B y Edge0 120B, compila edge0-strata y ejecuta `edge0-infer serve 
 - [Edge0 120B](docs/edge0-120b.md): ejecutar este modelo en edge0-strata
 - [Configuration reference](docs/configuration.md): ajustes de runtime, carga, modelo y generación, sus valores por defecto y las opciones de la CLI
 - [Native API](docs/native-api.md): uso del motor dentro del proceso: ciclo de vida, streaming, varios turnos, concurrencia y cancelación
-- [OpenAI-compatible local server](docs/openai-compatible-server.md): endpoints, campos de la solicitud y límites
+- [Local server](docs/local-server.md): endpoints, campos de la solicitud y límites
 - [Architecture](docs/architecture.md): las dos capas, cómo está organizado el motor nativo y cómo fluye una solicitud por él
 - [Known limitations](docs/limitations.md): comportamientos a tener en cuenta
 - [Benchmarking](docs/benchmarking.md): cómo medir, ajustes recomendados y cifras de referencia

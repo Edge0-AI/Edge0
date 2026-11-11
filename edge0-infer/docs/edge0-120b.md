@@ -75,7 +75,7 @@ curl http://127.0.0.1:8000/v1/chat/completions -H "Content-Type: application/jso
   -d '{"model": "edge0_120b", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
-Generation requests are forwarded to edge0-strata unchanged, and `/health`, `/v1/models` and `/status` are answered by `edge0-infer serve` in its own formats (`/health` also carries edge0-strata's own fields, and edge0-strata's `/v1/status`, `/metrics` and `/props` are passed through, so its tools work against `edge0-infer serve`); see [Delegated models](openai-compatible-server.md#delegated-models) for the options, the forwarding rules and what each `/status` field holds.
+Generation requests are forwarded to edge0-strata unchanged, and `/health`, `/v1/models` and `/status` are answered by `edge0-infer serve` in its own formats (`/health` also carries edge0-strata's own fields, and edge0-strata's `/v1/status`, `/metrics` and `/props` are passed through, so its tools work against `edge0-infer serve`); see [Delegated models](local-server.md#delegated-models) for the options, the forwarding rules and what each `/status` field holds.
 
 ## Chat
 
@@ -125,5 +125,5 @@ the DLL. A missing runtime DLL can produce exit code `0xC0000135`.
 
 - The native API does not support this model: `inspect_assets`, `resolve_load_configuration` and `load_model` return an `unsupported` error for a `model.json` that has neither `format_version` nor `architecture`, before reading any other file. Of the commands, only `serve`, `chat` and `inspect` (with or without `--json`, without `--digest`) accept it; `run`, `bench`, `describe`, `tokenize`, `prompt` and `forward` refuse it.
 - Concurrent requests wait in edge0-strata's queue instead of receiving 429 as with the native server.
-- `/status` holds no memory breakdown or expert statistics for this model; those fields are null. Progress of a request in flight is counted by `edge0-infer serve` from the text fragments it forwards (one token per fragment), and only for streaming requests; the finished records use the engine's own numbers (see the `Delegated` column of the [status fields](openai-compatible-server.md#status-and-lan-authentication)).
+- `/status` holds no memory breakdown or expert statistics for this model; those fields are null. Progress of a request in flight is counted by `edge0-infer serve` from the text fragments it forwards (one token per fragment), and only for streaming requests; the finished records use the engine's own numbers (see the `Delegated` column of the [status fields](local-server.md#status-and-lan-authentication)).
 - Identical requests at temperature 0 can produce different answers: edge0-strata's decoding is not bit-for-bit repeatable.

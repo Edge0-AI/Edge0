@@ -1,9 +1,19 @@
-"""Use the pinned offline SDK; unavailable packages are an explicit skip."""
+"""Use pinned offline SDKs; unavailable packages are an explicit skip."""
+import argparse
 import subprocess
 import sys
-command = ['uv', 'run', '--no-project', '--offline', '--with', 'openai==3.26.1', 'python', '-I']
-probe = subprocess.run([*command, '-c', 'import openai; assert openai.__version__ == "3.26.1"'], capture_output=True, text=True)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--with', dest='packages', action='append')
+parser.add_argument('script')
+parser.add_argument('arguments', nargs=argparse.REMAINDER)
+args = parser.parse_args()
+command = ['uv', 'run', '--no-project', '--offline']
+for package in args.packages or ['openai==3.26.1']:
+    command += ['--with', package]
+command += ['python', '-I']
+probe = subprocess.run([*command, '-c', 'pass'], capture_output=True, text=True)
 if probe.returncode:
     print('SKIP: pinned offline SDK unavailable')
     raise SystemExit(77)
-raise SystemExit(subprocess.call([*command, *sys.argv[1:]]))
+raise SystemExit(subprocess.call([*command, args.script, *args.arguments]))
