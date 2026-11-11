@@ -29,6 +29,24 @@ void bpe_test() {
     }
     require(rejected,"unknown pre-tokenizer reports actual and supported names");
   }
+  {
+    auto missing_merge = d;
+    missing_merge.merges = {edge0::text::unicode_byte_to_utf8(0xc3) + " " +
+                            edge0::text::unicode_byte_to_utf8(0xa9)};
+    Bpe fallback(missing_merge);
+    require(fallback.encode("\u00e9", false) == std::vector<int32_t>({0xc3, 0xa9}),
+            "missing merged token falls back to complete byte-alphabet symbols");
+    edge0::text::TokenData incomplete;
+    incomplete.tokens = {"a"}; incomplete.types = {1};
+    Bpe partial(incomplete);
+    require(partial.encode("a", false) == std::vector<int32_t>({0}), "known byte remains encodable");
+    bool rejected = false;
+    try { partial.encode("b", false); }
+    catch (const edge0::text::TextError& error) {
+      rejected = error.code == edge0::text::Error::incompatible;
+    }
+    require(rejected, "missing byte token must not silently discard input");
+  }
   Bpe b(d);
   require(b.encode("abc", false) == std::vector<int32_t>({97, 257}),
           "rank priority");
