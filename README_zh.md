@@ -84,8 +84,8 @@ MoE 模型跑在消费级硬件上——峰值内存由**激活**专家集而非
 |---|---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4bit，40 层，256 专家，prerouter K=4 | 原生引擎 ✅ |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4bit，24 层，128 专家，prerouter K=8 | 原生引擎（计划中） |
-| [`edge0-145b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | Q3_K 或 NVFP4 latent 专家（1792），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | Q3_K 或 NVFP4 latent 专家（1280），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | coming soon | Q3_K 或 NVFP4 latent 专家（1792），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | coming soon | Q3_K 或 NVFP4 latent 专家（1280），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
 
 两个已发布的 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.6-35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重。

@@ -2,7 +2,7 @@
 
 Two latent mixture-of-experts models for a single NVIDIA GPU, derived from Qwen3.8-Flash-Next: Edge0 145B and Edge0 120B. Their experts read compressed inputs, and both models run on [edge0-strata](../../edge0-strata/EDGE0.md), a fork of [Strata](https://github.com/Niko1221/Strata) whose scheduling of CPU, GPU and PCIe work they depend on. [edge0-infer](../../edge0-infer/README.md) starts edge0-strata for `serve` and `chat`, so the commands and endpoints are those of the other models.
 
-Model card: `<MODEL_CARD_URL>`
+Model card: coming soon.
 
 ## Model profile
 

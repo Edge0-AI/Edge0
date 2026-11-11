@@ -169,7 +169,7 @@ other asset digests is flagged, not combined.
 
 ## Android CPU measurements
 
-Build and push as described in the [Android guide](../../docs/getting-started.md#android-cpu).
+Build and push as described in the [Android guide](../../docs/getting-started.md#android).
 Use `--platform android` with `sweep.py`; pass the cross-compiled binary as `--cli` so
 its hash identifies the measured executable. Commands execute through `android-cli`.
 On Android the sweep uses the 627-token `library-report-prompt-head.txt` by default (`--prompt long` selects

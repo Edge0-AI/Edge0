@@ -78,8 +78,8 @@ las cabezas prerouter entrenadas funcionan en conjunto como una sola unidad.
 |---|---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4 bits, 40 capas, 256 expertos, prerouter K=4 | Motor nativo ✅ |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4 bits, 24 capas, 128 expertos, prerouter K=8 | Motor nativo (previsto) |
-| [`edge0-145b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | coming soon | expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | coming soon | expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
 
 Los dos checkpoints publicados se construyen sobre modelos base sparse-MoE abiertos
 (Qwen3.6-35B-A3B y el híbrido bailing Ling 3.0, respectivamente) e incluyen

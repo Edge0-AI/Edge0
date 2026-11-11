@@ -517,7 +517,8 @@ int serve(int argc, char** argv, const Match& match) {
             }
             if (f->worker.joinable()) f->worker.join();
             const bool json_content = f->content_type.find("application/json") != std::string::npos || f->content_type.find("+json") != std::string::npos;
-            f->complete = !f->failed && (!json_content || !Json::parse(f->body, nullptr, false).is_discarded());
+            const auto parsed = json_content ? Json::parse(f->body, nullptr, false) : Json(nullptr);
+            f->complete = !f->failed && (!json_content || !parsed.is_discarded());
             if (!f->complete) {
                 incomplete();
                 res.status = f->status;
@@ -527,7 +528,6 @@ int serve(int argc, char** argv, const Match& match) {
                 return;
             }
             try {
-                const auto parsed = Json::parse(f->body, nullptr, false);
                 // Under the forward's mutex: /status copies the accounting of a request that is still active.
                 std::lock_guard<std::mutex> lock(f->mutex);
                 account(f->accounting, parsed);

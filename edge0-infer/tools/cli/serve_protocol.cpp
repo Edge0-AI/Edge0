@@ -497,6 +497,7 @@ std::vector<std::string> Encoder::accept_message(const edge0::OutputEvent& e) {
         const auto it=pending_calls_.find(e.index);
         if(it==pending_calls_.end())throw std::logic_error("Tool event without begin");
         if(e.kind==K::tool_call_arguments) {it->second.arguments+=e.text;return records;}
+        close(records);  // a text or thinking block still open ends before the tool block starts
         const auto& pending=it->second;
         Json block={{"type","tool_use"},{"id",pending.call.id},{"name",pending.call.name},{"input",Json::object()}};
         const auto index=output_.size();

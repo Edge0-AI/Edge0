@@ -118,7 +118,7 @@ The report records the effective configuration printed by the engine, the measur
 
 ## Android
 
-- Build with the `android-cpu` preset and push the binary and assets as in [Getting started](getting-started.md#android-cpu); set `ANDROID_SERIAL` and `MOE_ANDROID_ROOT`. Commands run on the device through `tests/platform/android-cli`.
+- Build with the `android-cpu` preset and push the binary and assets as in [Getting started](getting-started.md#android); set `ANDROID_SERIAL` and `MOE_ANDROID_ROOT`. Commands run on the device through `tests/platform/android-cli`.
 - Keep the device charging and the screen on for the whole measurement; the script refuses to start a process otherwise. Turn on the system performance mode by hand: it cannot be queried, so note it with the results.
 - Prefill on the CPU is slow (about 34 tokens per second on a cool device, lower after long load), so the 627-token prompt is the default; the 3,084-token prompt takes over two minutes per process before decoding starts.
 - After long continuous load the system lowers the CPU frequency limits and decode slows down noticeably. The snapshots record the per-cluster frequency limits before and after each process; measure on a cool device.
@@ -126,7 +126,7 @@ The report records the effective configuration printed by the engine, the measur
 
 ## iOS
 
-- Build, install and push the assets as in [Getting started](getting-started.md#ios-metal); export `MOE_IOS_TEAM` and `MOE_IOS_DEVICE`. Commands run in the App on the device through `tests/platform/ios-cli`.
+- Build, install and push the assets as in [Getting started](getting-started.md#ios); export `MOE_IOS_TEAM` and `MOE_IOS_DEVICE`. Commands run in the App on the device through `tests/platform/ios-cli`.
 - Connect the device with a USB data cable, keep it unlocked with the App in the foreground, and set Auto-Lock to Never; the script refuses to start a process when the device is not wired or is locked. Do not use the App by hand during a measurement: starting a command ends the running App.
 - iOS limits the memory of each App far below the device memory and terminates an App that exceeds the limit. On the reference iPhone the limit was about 3.29 GiB (`os_proc_available_memory` at App start); the snapshots record the available process memory before and after each process. A terminated process is a failure, not a result.
 - Battery and charging state, numeric temperature and CPU frequency are not available; the snapshots record the system thermal state instead.

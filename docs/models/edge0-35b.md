@@ -19,4 +19,4 @@ Release checkpoint: [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0
 
 ## Running with edge0-infer
 
-[Getting started](../../edge0-infer/docs/getting-started.md) downloads the release checkpoint, converts it into the engine's assets and runs a prompt, a chat or an OpenAI-compatible server. The model's load options (routing mode, LoRA, expert slots, how experts are read) are listed under [Model options](../../edge0-infer/docs/configuration.md#model-options); measured speed and memory on each platform are under [Benchmarking](../../edge0-infer/docs/benchmarking.md#reference-figures).
+[Getting started](../../edge0-infer/docs/getting-started.md) downloads the release checkpoint, converts it into the engine's assets and runs a prompt, a chat or an OpenAI- and Anthropic-compatible server. The model's load options (routing mode, LoRA, expert slots, how experts are read) are listed under [Model options](../../edge0-infer/docs/configuration.md#model-options); measured speed and memory on each platform are under [Benchmarking](../../edge0-infer/docs/benchmarking.md#reference-figures).

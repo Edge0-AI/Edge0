@@ -9861,12 +9861,7 @@ def main() -> int:
     esp_choice = (a.experimental_speed_projection or "").strip()
     if family in ("qwen", "coder"):                   # the Coder: the same model's residual stream
         if not esp_choice:
-            say()
-            say("  EXPERIMENTAL - speed projection: a small control vector applied while the model runs (layers 4-44).")
-            say("  It changes how the model answers: its package describes it as a refusal-direction projection (the")
-            say("  model declines far fewer requests). Off unless you choose it; when on, the web app can switch it off")
-            say("  per chat. Details: data/experimental-speed-projection/README.md")
-            esp_choice = "on" if ask("Turn on the experimental speed projection?", ["y", "n"], "n", a.yes) == "y" else "off"
+            esp_choice = "off"  # Edge0 does not ship the vector (see EDGE0.md); a path given explicitly is still used
         if esp_choice.lower() not in ("off", "no", "n", "0"):
             esp = ESP_VECTOR if esp_choice.lower() in ("on", "yes", "y", "1") else Path(esp_choice).expanduser().resolve()
             if not esp.is_file():

@@ -141,7 +141,7 @@ Windows checklist below. App tests are independent of the engine's ctest suite.
 
 ## Assets and first launch
 
-Prepare assets using the [asset guide](../../docs/getting-started.md#get-the-model-assets).
+Prepare assets using the [asset guide](../../docs/getting-started.md#get-a-model).
 Build `edge0-infer` using the [build guide](../../docs/getting-started.md).
 On Choose a model, expand Other location… to enter the full executable path
 and one asset directory per line. This section starts collapsed, including on

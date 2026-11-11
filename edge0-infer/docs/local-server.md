@@ -44,7 +44,7 @@ creating a session, changing its state, or entering request counters (401s are r
 
 ## Delegated models
 
-A model directory whose `model.json` has no `architecture` and has a registered delegated `model_name`, such
+A model directory whose `model.json` has no `format_version` (so it is not an Edge0 asset manifest) and has a registered delegated `model_name`, such
 as [Edge0 145B](edge0-145b.md) (`edge0_145b`) and [Edge0 120B](edge0-120b.md) (`edge0_120b`), runs on the external engine edge0-strata
 instead of the native library. `serve` then starts edge0-strata on a free loopback port, waits
 until it is ready, and only then prints the `Listening:` line. It acts as a proxy:

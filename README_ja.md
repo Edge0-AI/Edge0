@@ -61,8 +61,8 @@
 |---|---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit、40 層、256 エキスパート、prerouter K=4 | ネイティブエンジン ✅ |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit、24 層、128 エキスパート、prerouter K=8 | ネイティブエンジン(予定) |
-| [`edge0-145b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | Q3_K または NVFP4 latent エキスパート（1792）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | `<MODEL_CARD_URL>` | Q3_K または NVFP4 latent エキスパート（1280）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | coming soon | Q3_K または NVFP4 latent エキスパート（1792）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | coming soon | Q3_K または NVFP4 latent エキスパート（1280）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
 
 公開済みの 2 つのチェックポイントはいずれもオープンのスパース MoE ベースモデル(それぞれ Qwen3.6-35B-A3B と Ling 3.0 bailing hybrid)上に構築されており、本フレームワークのために実施された LoRA と prerouter の訓練成果物を同梱しています。edge0-infer は付属のアセットツールで公開チェックポイントをダウンロードし、エンジン用のモデルアセットに変換します([はじめに](#はじめに)を参照)。
 `edge0-145b` と `edge0-120b` は単一の NVIDIA GPU 向けの latent-MoE です。edge0-strata 上で動作し、`edge0-infer serve` と `edge0-infer chat` がそれを起動します([edge0-145b と edge0-120b](docs/models/edge0-145b.md) を参照)。

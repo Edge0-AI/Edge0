@@ -64,7 +64,7 @@ struct Match {
     // involved option has no complete value, since no option choice can supply it.
     std::vector<std::string> alternatives(const std::map<std::string, std::string>& options) const;
 };
-// A match when model.json has no architecture and names a registered model; otherwise the native library decides.
+// A match when model.json has no format_version (not an asset manifest) and names a registered model; otherwise the native library decides.
 std::optional<Match> detect(const std::filesystem::path& directory);
 // The directory named by --model, if any.
 std::optional<std::string> model_argument(int argc, char** argv);

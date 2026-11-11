@@ -69,13 +69,16 @@ In this directory:
   - upstream's control vector for Qwen3.8-Flash-Next (`data/experimental-speed-projection/`), which
     removes the model's refusals and was not made for the Edge0 models. The engine option of the
     same name is unchanged and has no file to load here;
+  - the tests of upstream's own product rather than the engine: the terminal app (`tests/terminal/`), the
+    desktop app (`tests/desktop/`), the Intel engine (`tests/sycl/`) and the Docker, SYCL and AMD setup
+    tests in `tools/`;
   - upstream's working notes and test logs (`docs/work/`), its GitHub configuration (`.github/`:
     funding, issue forms and workflows for the upstream repository), its `Dockerfile`, which copies
     from the removed `docker/`, and its product README in seven other languages (`README.*.md`).
     `README.md` is replaced by a short pointer to this file; the original is in the upstream
     repository.
 
-  Some upstream documents, scripts and tests still mention these paths; they do not take part in the
+  Some upstream documents and scripts still mention these paths; they do not take part in the
   Linux CUDA build or in `serve/server.py`. `setup.py` and the `strata` launcher (`strata_cli/`,
   `strata_control/`) are kept unchanged but are not how `edge0-infer` runs this engine; their
   parts that use the removed directories no longer work.

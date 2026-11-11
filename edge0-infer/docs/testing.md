@@ -23,7 +23,7 @@ The tests are CTest tests. Each one carries a level label, `L0` to `L4`, ordered
    ```
 
 2. For `L2`, generate the tiny fixtures as described in the [asset tools guide](../tools/assets/README.md#tiny-fixtures) and export their directory as `MOE_TINY`. This needs only three small text files of the 35B source, not the full weights; keep `MOE_SOURCE_35B` exported: the asset tools' fixture test needs it and is otherwise skipped.
-3. For `L3` and `L4`, convert the 35B as described in [Getting started](getting-started.md#get-the-model-assets) and export `MOE_ASSETS_35B`.
+3. For `L3` and `L4`, convert the 35B as described in [Getting started](getting-started.md#get-a-model) and export `MOE_ASSETS_35B`.
 
 ## Running
 
