@@ -79,6 +79,16 @@ def _value(f: BinaryIO, type: int) -> Value:
         n = _unpack(f, 'Q')
         if et == 9 or n > 10_000_000:
             raise ValueError('unsupported or oversized GGUF array')
+        if et in SCALARS:
+            # Numeric arrays can contain a vocabulary-sized score/type table.
+            # Read bounded blocks instead of dispatching once per scalar.
+            values = []
+            fmt = SCALARS[et]
+            width = struct.calcsize('<' + fmt)
+            for start in range(0, n, 8192):
+                count = min(8192, n - start)
+                values.extend(struct.unpack('<' + str(count) + fmt, _read(f, count * width)))
+            return Value(type, values, et)
         return Value(type, [_value(f, et).data for _ in range(n)], et)
     raise ValueError(f'unsupported metadata type {type}')
 
