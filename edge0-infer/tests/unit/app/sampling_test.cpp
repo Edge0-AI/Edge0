@@ -3,8 +3,55 @@
 #include <cmath>
 #include <limits>
 #include <iostream>
+#include <algorithm>
+#include <cstdlib>
+#include <new>
+namespace allocation_probe {
+bool active=false;
+std::size_t maximum=0,large=0;
+constexpr std::size_t threshold=32768;
+// Keep the deallocator out of line so GCC does not diagnose an inlined free
+// against the matching replacement operator new used by this test.
+#if defined(__GNUC__)
+__attribute__((noinline))
+#elif defined(_MSC_VER)
+__declspec(noinline)
+#endif
+void release(void* p) noexcept {std::free(p);}
+}
+void* operator new(std::size_t bytes) {
+    if (allocation_probe::active) {
+        allocation_probe::maximum=std::max(allocation_probe::maximum,bytes);
+        if (bytes>=allocation_probe::threshold) ++allocation_probe::large;
+    }
+    if (auto* p=std::malloc(bytes?bytes:1)) return p;
+    throw std::bad_alloc();
+}
+void operator delete(void* p) noexcept {allocation_probe::release(p);}
+void operator delete(void* p,std::size_t) noexcept {allocation_probe::release(p);}
+void* operator new[](std::size_t bytes) {return ::operator new(bytes);}
+void operator delete[](void* p) noexcept {allocation_probe::release(p);}
+void operator delete[](void* p,std::size_t) noexcept {allocation_probe::release(p);}
+
 using namespace edge0;
 int main() {
+    {
+        std::vector<float> row(262144);
+        std::vector<std::int32_t> expected(row.size());
+        for (std::size_t i=0;i<row.size();++i) {row[i]=float(i%97);expected[i]=static_cast<std::int32_t>(i);}
+        std::partial_sort(expected.begin(),expected.begin()+20,expected.end(),[&](auto a,auto b) {
+            return row[a]>row[b] || (row[a]==row[b] && a<b);
+        });
+        for (std::size_t count:{0,1,20}) {
+            allocation_probe::maximum=0;allocation_probe::active=true;
+            const auto result=app::raw_logprob(row,12345,count);
+            allocation_probe::active=false;
+            std::cout << "count=" << count << " max_allocation=" << allocation_probe::maximum << "\n";
+            CHECK(allocation_probe::maximum<4096);
+            CHECK(result.top.size()==count && std::isfinite(result.logprob));
+            for (std::size_t i=0;i<count;++i) CHECK(result.top[i].token==expected[i]);
+        }
+    }
     {
         GenerationConfiguration c;c.temperature=0;c.logit_bias={{0,4}};c.repetition_penalty=2;
         c.presence_penalty=1;c.frequency_penalty=.5;
