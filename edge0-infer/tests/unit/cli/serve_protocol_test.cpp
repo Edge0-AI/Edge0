@@ -54,8 +54,37 @@ void metrics_contract() {
         }
     }
 }
+void response_truncated_item_status() {
+    const Json request={{"model","test"},{"input","hello"}};
+    for (const auto reason : {edge0::StopReason::length, edge0::StopReason::capacity,
+                             edge0::StopReason::end_of_generation, edge0::StopReason::stop_string}) {
+        for (const auto kind : {edge0::OutputKind::answer, edge0::OutputKind::reasoning}) {
+            portal::Encoder encoder(portal::parse(request,Protocol::responses,"test"),"test","1");
+            encoder.begin();
+            edge0::OutputEvent event;
+            event.kind=kind==edge0::OutputKind::answer?edge0::OutputKind::reasoning:edge0::OutputKind::answer;
+            event.text="earlier";encoder.accept(event);
+            event.kind=kind;event.text="partial";encoder.accept(event);
+            edge0::GenerationResult result;result.stop_reason=reason;
+            const auto records=encoder.finish(result);
+            const auto full=encoder.complete(result);
+            const bool truncated=reason==edge0::StopReason::length || reason==edge0::StopReason::capacity;
+            const std::string status=truncated?"incomplete":"completed";
+            CHECK(full["output"][0]["status"]=="completed");
+            CHECK(full["output"][1]["status"]==status);
+            bool found=false;
+            for (const auto& record : records) {
+                const auto value=Json::parse(record.substr(record.find("data: ")+6));
+                if(value["type"]!="response.output_item.done")continue;
+                found=true;CHECK(value["item"]["status"]==status);
+            }
+            CHECK(found);
+        }
+    }
+}
 int main(int argc,char** argv) {
     metrics_contract();
+    response_truncated_item_status();
     CHECK(argc==2);
     std::ifstream input(argv[1]);Json fixtures;input>>fixtures;
     for(const auto& fixture:fixtures) {
