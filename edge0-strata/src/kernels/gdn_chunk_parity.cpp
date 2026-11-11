@@ -231,7 +231,7 @@ void run_case(int64_t T, uint64_t seed) {
     // The bounds are the measured errors of this build on the V100 with ~3x margin (rel uses a 1e-4 floor on
     // the reference magnitude).  The recurrence is the FP32 floor; the FMA chunked path reorders the sums
     // (FP32-level, not bit-exact - qsa_prompt_attn.hpp's precedent); the wmma chunked path additionally
-    // stages q/k/v and the state through FP16 (the reference's "f32 -> f16 暂存"), which is the error level
+    // stages q/k/v and the state through FP16 (the reference's f32 -> f16 staging), which is the error level
     // llama.cpp-v100's FlashQLA sm70 path ships with.  The y rows compared here are the recurrence kernels'
     // raw output (0.1.38's norm keeps its FP32 store out); the last line reads the norm's FP16 copy instead.
     expect("recurrence vs host ref (y)", e_yr, 5e-6f, 1e-2f);

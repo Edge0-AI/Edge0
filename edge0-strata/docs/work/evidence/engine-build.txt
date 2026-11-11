@@ -1,6 +1,0 @@
-# Engine build — Apple Silicon Metal, from the pinned sources
-# repo: 04cedad9d4f0a78492596b1a180626781dbbdad7
-strata 0.1.44.1-metal
-/Users/nikoveit/Documents/deepseek-harness/strata-work/strata-rebuild/build-metal/strata: Mach-O 64-bit executable arm64
-ggml: 0.24.0 @ 3cf03257f (matches metal/CMakeLists.txt and setup.py's pin)
-metal-cpp: metal-cpp_26.zip sha256 4df3c078b9aadcb516212e9cb03004cbc5ce9a3e9c068fa3144d021db585a3a4 (matches metal/setup_mac.py)

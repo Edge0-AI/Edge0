@@ -221,7 +221,7 @@ __global__ void __launch_bounds__(128) gdn_chunk_fwd_kernel(float* __restrict__ 
 // W += K^T (delta * decay) on the tensor cores with W itself as the f32 accumulator fragments - the state
 // never leaves the registers across chunks.  W's f16 image exists only as the U GEMM's operand.
 //
-// Precision: the FP16 staging is the reference's "f32 -> f16 暂存" (10-bit mantissa on the operands);
+// Precision: the FP16 staging is the reference's f32 -> f16 staging (10-bit mantissa on the operands);
 // accumulations, the solve and the state are f32.  FP32-level, not bit-exact - see gdn_chunk_parity.
 #if !defined(__HIPCC__)
 

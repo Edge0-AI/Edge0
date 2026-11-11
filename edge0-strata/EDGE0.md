@@ -65,7 +65,15 @@ In this directory:
     development machine (`bench/configs/strata-latent-*.json`, `tools/harness/mb_deadlock3.cu`);
   - upstream's published benchmark results (`bench/results/`), which measure other models, its
     instructions for coding agents (`AGENTS.md`), which describe the upstream product and its
-    installers, and one large preview image (`docs/media/pagoda-preview.webp`).
+    installers, and one large preview image (`docs/media/pagoda-preview.webp`);
+  - upstream's control vector for Qwen3.8-Flash-Next (`data/experimental-speed-projection/`), which
+    removes the model's refusals and was not made for the Edge0 models. The engine option of the
+    same name is unchanged and has no file to load here;
+  - upstream's working notes and test logs (`docs/work/`), its GitHub configuration (`.github/`:
+    funding, issue forms and workflows for the upstream repository), its `Dockerfile`, which copies
+    from the removed `docker/`, and its product README in seven other languages (`README.*.md`).
+    `README.md` is replaced by a short pointer to this file; the original is in the upstream
+    repository.
 
   Some upstream documents, scripts and tests still mention these paths; they do not take part in the
   Linux CUDA build or in `serve/server.py`. `setup.py` and the `strata` launcher (`strata_cli/`,

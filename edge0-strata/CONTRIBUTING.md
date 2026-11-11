@@ -10,7 +10,7 @@ You should be able to explain every changed line and answer review questions abo
 1. Search [issues](https://github.com/Niko1221/Strata/issues) and
    [pull requests](https://github.com/Niko1221/Strata/pulls), including closed discussions. Add new evidence to an
    existing thread when it covers your problem.
-2. Read [AGENTS.md](AGENTS.md) and the documentation for the component you want to change.
+2. Read [EDGE0.md](EDGE0.md) and the documentation for the component you want to change.
 3. Get maintainer agreement on scope before substantial features, refactors, architecture changes, or changes to
    defaults. Describe the user problem, proposed behavior, and tradeoffs in an issue first. Agreement on scope
    does not guarantee a merge. Focused fixes and benchmark reports can go straight to a PR.
@@ -60,8 +60,8 @@ an AI-generated summary of the diff is not a substitute for this explanation.
 - Keep unrelated formatting, cleanup, dependency changes, and speculative abstractions out of the PR.
 - Add documentation where it changes what a user or developer needs to know. Avoid repeated summaries,
   speculative roadmaps, and generated documentation with no actionable information.
-- Preserve existing behavior outside the intended change. New features are opt-in; follow the default-path
-  and performance requirements in [AGENTS.md](AGENTS.md).
+- Preserve existing behavior outside the intended change. New features are opt-in and must not
+  slow down or change the default path.
 - Read the complete diff, including generated files, before submitting. Remove debugging output, secrets,
   private paths, and accidental files.
 - Prefer a small relevant regression check over tests that only restate the implementation. Documentation-only

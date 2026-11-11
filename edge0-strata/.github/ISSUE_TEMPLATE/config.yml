@@ -1,5 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: Troubleshooting and known issues
-    url: https://github.com/Niko1221/Strata/blob/main/docs/TROUBLESHOOTING.md
-    about: Symptom-to-fix table for crashes, out of memory, hangs, and port problems.

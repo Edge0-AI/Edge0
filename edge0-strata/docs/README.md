@@ -44,7 +44,6 @@ Use the guide for your GPU and operating system. Model and feature support can d
 - [Install for a user](AI_SETUP.md)
 - [Verified facts, model availability and API reference](AI_REFERENCE.md)
 - [Articles and videos](MEDIA_KIT.md)
-- [Repository instructions for agents](../AGENTS.md)
 
 ## Which instructions apply?
 
