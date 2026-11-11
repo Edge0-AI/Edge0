@@ -25,12 +25,14 @@ Behaviour is controlled with environment variables:
 Run with --self-test to check the fake itself.
 """
 import argparse
+import faulthandler
 import http.client
 import http.server
 import json
 import os
 from pathlib import Path
 import signal
+import socketserver
 import subprocess
 import sys
 import tempfile
@@ -152,6 +154,15 @@ def dialect_events(path, request, answer):
     return [('event: %s\ndata: %s\n\n' % (kind, json.dumps(with_top_object(dict(value, type=kind,
             **({'sequence_number': 3 + i * 7} if path == '/v1/responses' else {})))))).encode()
             for i, (kind, value) in enumerate(values)]
+
+
+class Server(http.server.ThreadingHTTPServer):
+    """http.server's server without its reverse lookup of the bound address (socket.getfqdn): nothing here uses
+    the host name, and on some machines (GitHub's macOS runners) that lookup takes tens of seconds."""
+
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
 
 
 def handler_for(fake):
@@ -332,6 +343,8 @@ def serve(argv):
     parser.add_argument('--port', type=int, default=8095)
     parser.add_argument('--ready-file')
     parser.add_argument('--gpu')
+    if hasattr(signal, 'SIGUSR1'):
+        faulthandler.register(signal.SIGUSR1)  # a test that waits too long asks where this process is stuck
     args = parser.parse_args(argv)
     config = json.loads(Path(args.config).read_text())
     record = os.environ.get('FAKE_STRATA_RECORD')
@@ -350,7 +363,7 @@ def serve(argv):
         fake.stop_child()
         return int(os.environ['FAKE_STRATA_FAIL_START'])
     time.sleep(float(os.environ.get('FAKE_STRATA_READY_DELAY', '0') or 0))
-    server = http.server.ThreadingHTTPServer((args.host, args.port), handler_for(fake))
+    server = Server((args.host, args.port), handler_for(fake))
     server.daemon_threads = True
 
     def terminate(*_):
@@ -375,6 +388,14 @@ def serve(argv):
     return 0
 
 
+def stuck(process):
+    """A fake that is alive but not ready: have it print its threads' stacks (POSIX), then fail."""
+    if hasattr(signal, 'SIGUSR1'):
+        process.send_signal(signal.SIGUSR1)
+        time.sleep(1)
+    raise AssertionError('fake not ready after 30 s (its stacks are printed above on POSIX)')
+
+
 def self_test():
     with tempfile.TemporaryDirectory() as root:
         root = Path(root)
@@ -390,7 +411,8 @@ def self_test():
             deadline = time.monotonic() + 30
             while not (ready.exists() and ready.read_text().endswith('\n')):
                 assert process.poll() is None, f'fake exited before it was ready (code {process.returncode})'
-                assert time.monotonic() < deadline, 'fake not ready after 30 s'
+                if time.monotonic() >= deadline:
+                    stuck(process)
                 time.sleep(0.05)
             port = json.loads(ready.read_text())['bound_port']
 
@@ -479,7 +501,8 @@ def self_test():
                 deadline = time.monotonic() + 30
                 while not (ready.exists() and ready.read_text().endswith('\n')):
                     assert process.poll() is None, f'fake exited before it was ready (code {process.returncode})'
-                    assert time.monotonic() < deadline, 'fake not ready after 30 s'
+                    if time.monotonic() >= deadline:
+                        stuck(process)
                     time.sleep(0.05)
                 port = json.loads(ready.read_text())['bound_port']
                 connection = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
