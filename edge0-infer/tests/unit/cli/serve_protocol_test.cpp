@@ -54,8 +54,40 @@ void metrics_contract() {
         }
     }
 }
+void response_done_logprobs() {
+    const Json request={{"model","test"},{"input","hello"},
+                        {"include",Json::array({"message.output_text.logprobs"})}};
+    for (bool pending : {false, true}) {
+        portal::Encoder encoder(portal::parse(request,Protocol::responses,"test"),"test","1");
+        encoder.begin();
+        for (const auto* text : {"a", "b"}) {
+            edge0::OutputEvent event;event.kind=edge0::OutputKind::token_logprob;
+            event.logprob.section=edge0::OutputKind::answer;event.logprob.bytes=text;event.logprob.logprob=-0.5;
+            encoder.accept(event);event.kind=edge0::OutputKind::answer;event.text=text;encoder.accept(event);
+        }
+        if (pending) {
+            edge0::OutputEvent event;event.kind=edge0::OutputKind::token_logprob;
+            event.logprob.section=edge0::OutputKind::answer;event.logprob.bytes="";event.logprob.logprob=-1;
+            encoder.accept(event);
+        }
+        edge0::GenerationResult result;result.stop_reason=edge0::StopReason::end_of_generation;
+        const auto records=encoder.finish(result);
+        const auto full=encoder.complete(result);
+        bool found=false;
+        for (const auto& record : records) {
+            const auto value=Json::parse(record.substr(record.find("data: ")+6));
+            if(value["type"]!="response.output_text.done")continue;
+            found=true;
+            CHECK(value["text"]=="ab");
+            CHECK(value["logprobs"].size()==(pending?3u:2u));
+            CHECK(value["logprobs"]==full["output"][0]["content"][0]["logprobs"]);
+        }
+        CHECK(found);
+    }
+}
 int main(int argc,char** argv) {
     metrics_contract();
+    response_done_logprobs();
     CHECK(argc==2);
     std::ifstream input(argv[1]);Json fixtures;input>>fixtures;
     for(const auto& fixture:fixtures) {
