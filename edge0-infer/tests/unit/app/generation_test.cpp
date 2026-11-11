@@ -428,6 +428,26 @@ void thinking_tools_tests() {
     }
 }
 int main() {
+    {
+        Fixture f;f.compute.tail_failure=true;
+        const ReplayInput input{{0},{{0,1,BlockPhase::prefill,true}}};
+        const auto result=replay_check(f.session,input);
+        CHECK(!result && result.error().message=="tail read failed");
+        CHECK(!f.compute.pending && f.compute.finishes.size()==1);
+        CHECK(f.compute.finishes.back()==models::FinishReason::normal);
+        CHECK(!take(query_session_check(f.session)).valid);
+        const auto again=generate_tokens_check(f.session,{0},f.config);
+        CHECK(!again && again.error().category==ErrorCategory::session_invalid);
+    }
+    {
+        Fixture f;f.compute.fail_at=0;f.compute.finish_failure=true;
+        const ReplayInput input{{0},{{0,1,BlockPhase::prefill,true}}};
+        const auto result=replay_check(f.session,input);
+        CHECK(!result && result.error().message=="before submit");
+        CHECK(f.compute.finishes.size()==1 && f.compute.finishes.back()==models::FinishReason::failure);
+        CHECK(!take(query_session_check(f.session)).valid);
+        f.compute.finish_failure=false;
+    }
     CHECK(app::reuse_method(session::ReuseKind::first)==ReuseMethod::first);
     CHECK(app::reuse_method(session::ReuseKind::keep)==ReuseMethod::keep);
     CHECK(app::reuse_method(session::ReuseKind::truncate)==ReuseMethod::truncate);
