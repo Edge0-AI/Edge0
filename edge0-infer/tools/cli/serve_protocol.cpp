@@ -328,13 +328,13 @@ std::vector<std::string> Encoder::accept(const edge0::OutputEvent& e) {
     if(e.kind==K::tool_call_begin) {open(records,e);call_indices_[e.index]=std::size_t(active_);return records;}
     if(e.kind==K::tool_call_arguments) {
         auto it=call_indices_.find(e.index);if(it==call_indices_.end())throw std::logic_error("Tool arguments without begin");
-        auto& item=output_[it->second];item["arguments"]=item["arguments"].get<std::string>()+e.text;
+        auto& item=output_[it->second];item["arguments"].get_ref<std::string&>().append(e.text);
         records.push_back(event("response.function_call_arguments.delta",{{"output_index",it->second},{"item_id",item["id"]},{"delta",e.text}}));return records;
     }
     if(e.kind==K::answer || e.kind==K::reasoning) {
         const std::string type=e.kind==K::answer?"message":"reasoning";
         if(active_<0 || output_[active_]["type"]!=type)open(records,e);
-        auto& item=output_[active_];auto& part=item["content"][0];part["text"]=part["text"].get<std::string>()+e.text;
+        auto& item=output_[active_];auto& part=item["content"][0];part["text"].get_ref<std::string&>().append(e.text);
         Json value={{"output_index",active_},{"item_id",item["id"]},{"content_index",0},{"delta",e.text}};
         if(e.kind==K::answer) {value["logprobs"]=pending_probs_;for(const auto& p:pending_probs_)part["logprobs"].push_back(p);pending_probs_=Json::array();}
         records.push_back(event(e.kind==K::answer?"response.output_text.delta":"response.reasoning_text.delta",value));

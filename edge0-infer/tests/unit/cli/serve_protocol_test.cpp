@@ -3,6 +3,36 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <algorithm>
+#include <cstdlib>
+#include <new>
+namespace allocation_probe {
+bool active=false;
+std::size_t maximum=0,large=0;
+constexpr std::size_t threshold=32768;
+// Keep the deallocator out of line so GCC does not diagnose an inlined free
+// against the matching replacement operator new used by this test.
+#if defined(__GNUC__)
+__attribute__((noinline))
+#elif defined(_MSC_VER)
+__declspec(noinline)
+#endif
+void release(void* p) noexcept {std::free(p);}
+}
+void* operator new(std::size_t bytes) {
+    if (allocation_probe::active) {
+        allocation_probe::maximum=std::max(allocation_probe::maximum,bytes);
+        if (bytes>=allocation_probe::threshold) ++allocation_probe::large;
+    }
+    if (auto* p=std::malloc(bytes?bytes:1)) return p;
+    throw std::bad_alloc();
+}
+void operator delete(void* p) noexcept {allocation_probe::release(p);}
+void operator delete(void* p,std::size_t) noexcept {allocation_probe::release(p);}
+void* operator new[](std::size_t bytes) {return ::operator new(bytes);}
+void operator delete[](void* p) noexcept {allocation_probe::release(p);}
+void operator delete[](void* p,std::size_t) noexcept {allocation_probe::release(p);}
+
 using portal::Json;
 using portal::Protocol;
 void rejects(const Json& j,Protocol p,int status=400) {
@@ -55,6 +85,25 @@ void metrics_contract() {
     }
 }
 int main(int argc,char** argv) {
+    for (auto kind:{edge0::OutputKind::answer,edge0::OutputKind::reasoning,edge0::OutputKind::tool_call_arguments}) {
+        portal::Request request;request.protocol=Protocol::responses;
+        portal::Encoder encoder(request,"test","1");
+        edge0::OutputEvent event;
+        if (kind==edge0::OutputKind::tool_call_arguments) {
+            event.kind=edge0::OutputKind::tool_call_begin;event.tool_call={"call_a","f",""};encoder.accept(event);
+        }
+        event.kind=kind;event.text=std::string(1024,'x');
+        allocation_probe::large=0;allocation_probe::active=true;
+        for (int i=0;i<256;++i) encoder.accept(event);
+        allocation_probe::active=false;
+        std::cout << "large_response_allocations=" << allocation_probe::large << "\n";
+        CHECK(allocation_probe::large<=8);
+        edge0::GenerationResult result;result.stop_reason=edge0::StopReason::end_of_generation;
+        encoder.finish(result);
+        const auto full=encoder.complete(result);
+        const auto actual=kind==edge0::OutputKind::tool_call_arguments?full["output"][0]["arguments"]:full["output"][0]["content"][0]["text"];
+        CHECK(actual==std::string(256*1024,'x'));
+    }
     metrics_contract();
     CHECK(argc==2);
     std::ifstream input(argv[1]);Json fixtures;input>>fixtures;
