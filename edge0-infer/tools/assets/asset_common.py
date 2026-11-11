@@ -33,12 +33,13 @@ def snapshot(root: Path) -> dict[str, str]:
     return {str(p.relative_to(root)): sha256(p) for p in sorted(root.rglob('*')) if p.is_file()}
 
 
-def verify_source(source: Path, lock: dict, names=None) -> None:
+def verify_source(source: Path, lock: dict, names=None, *, digests: dict[str, str] | None = None) -> None:
     for name in names if names is not None else lock['files']:
         path = source / name
         if not path.is_file():
             raise ValueError(f'missing source file: {name}')
-        if sha256(path) != lock['files'][name]:
+        digest = sha256(path) if digests is None else digests.get(name)
+        if digest != lock['files'][name]:
             raise ValueError(f'source digest mismatch: {name}')
 
 

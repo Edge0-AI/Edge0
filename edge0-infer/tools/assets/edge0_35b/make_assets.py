@@ -53,8 +53,8 @@ def make_assets(source: Path, out: Path, lock: dict | None = None, converter: Pa
     if partial.exists() or partial.is_symlink():
         raise ValueError(f'an earlier run left {partial}; delete it and rerun')
     lock = lock if lock is not None else read_json(Path(__file__).with_name('source.lock.json'))
-    verify_source(source, lock)
     before = snapshot(source)
+    verify_source(source, lock, digests=before)
     partial.mkdir(parents=True, exist_ok=False)
     try:
         _convert(source, out, partial, lock, converter, before)
