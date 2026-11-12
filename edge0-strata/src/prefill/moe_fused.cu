@@ -1407,11 +1407,13 @@ void experts_latent(const WideBatch& b, const LatentGeom& g, int n_expert, int64
     const int64_t tiles = (n + kTileRows - 1) / kTileRows + (b.e1 - b.e0);
     const unsigned g_gu = (unsigned) std::min<int64_t>(tiles * 5, (int64_t) d.sms * d.occ_gu);
     const unsigned g_d = (unsigned) std::min<int64_t>(tiles * 7, (int64_t) d.sms * d.occ_d);
+#if !defined(__HIPCC__)   // amd-hip port: the latent A kernels are CUDA-only (lat_dev().ok is false on HIP, so this is not reached)
     latent_kernel<true><<<g_gu, LTHREADS, lat_smem_bytes(), s>>>(b, tb, g, (const uint8_t*) xa, src,
                                                                  (uint8_t*) hbuf, nullptr);
     ck(cudaGetLastError(), "experts_latent gu");
     latent_kernel<false><<<g_d, LTHREADS, lat_smem_bytes(), s>>>(b, tb, g, (const uint8_t*) hbuf, src, nullptr, dm);
     ck(cudaGetLastError(), "experts_latent down");
+#endif   // !__HIPCC__ (amd-hip port)
     ck(cudaGetLastError(), "experts_latent");
 }
 

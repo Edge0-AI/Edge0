@@ -1534,11 +1534,13 @@ void experts_latent_q3k(const WideBatch& b, const LatentGeom& g, int n_expert, i
     const int64_t nfb_d = (int64_t) std::max<int64_t>(1, (int64_t) (g.ell >> 8));
     const unsigned g_gu = (unsigned) std::min<int64_t>(tiles * nfb_gu, (int64_t) d.sms * d.occ_gu);
     const unsigned g_d = (unsigned) std::min<int64_t>(tiles * nfb_d, (int64_t) d.sms * d.occ_d);
+#if !defined(__HIPCC__)   // amd-hip port: the latent A kernels are CUDA-only (lat_dev().ok is false on HIP, so this is not reached)
     latent_kernel_q3k<true><<<g_gu, LTHREADS, lat_smem_bytes(), s>>>(b, tb, g, (const uint8_t*) xa, src,
                                                                  (uint8_t*) hbuf, nullptr);
     ck(cudaGetLastError(), "experts_latent_q3k gu");
     latent_kernel_q3k<false><<<g_d, LTHREADS, lat_smem_bytes(), s>>>(b, tb, g, (const uint8_t*) hbuf, src, nullptr, dm);
     ck(cudaGetLastError(), "experts_latent_q3k down");
+#endif   // !__HIPCC__ (amd-hip port)
     ck(cudaGetLastError(), "experts_latent_q3k");
 }
 
