@@ -25,25 +25,19 @@
 
 ## News
 
-<p><small>13 November 2026</small><br>
-<strong><a href="docs/models/edge0-145b.md">145B and 120B models</a></strong><br>
-Latent MoE models for one NVIDIA GPU, in Q3_K and NVFP4.</p>
+<p>
+<a href="docs/models/edge0-145b.md"><img src="assets/edge0-release/news/news-2026-11-13.svg" alt="13 November 2026 · 145B and 120B models · Latent MoE models for one NVIDIA GPU, in Q3_K and NVFP4." width="620"></a><br>
+<a href="edge0-infer/README.md"><img src="assets/edge0-release/news/news-2026-11-04.svg" alt="4 November 2026 · Unified inference engine · A GGML-based engine with a shared C++ API, local server and chat examples." width="620"></a><br>
+<a href="https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer"><img src="assets/edge0-release/news/news-2026-09-30.svg" alt="30 September 2026 · Engines for four platforms · iOS, macOS, Android and Windows engines; archived at pre-edge0-infer." width="620"></a>
+</p>
 
-<p><small>4 November 2026</small><br>
-<strong><a href="edge0-infer/README.md">Unified inference engine</a></strong><br>
-A GGML-based engine with a shared C++ API, local server and chat examples.</p>
+<details>
+<summary>More updates</summary>
 
-<p><small>30 September 2026</small><br>
-<strong><a href="https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer">Engines for four platforms</a></strong><br>
-iOS, macOS, Android and Windows engines; archived at pre-edge0-infer.</p>
-
-<p><small>16 September 2026</small><br>
-<strong><a href="https://arxiv.org/abs/2609.18063">35B technical report</a></strong><br>
-Serving 35B MoEs from SSD with trained routing prediction.</p>
-
-<p><small>8 September 2026</small><br>
-<strong><a href="https://huggingface.co/Edge0/Edge0-35B-A3B-preview">First open-source release</a></strong><br>
-The edge0 framework and 35B / 8B preview models on Hugging Face and ModelScope.</p>
+<p>
+<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/news/news-2026-09-16.svg" alt="16 September 2026 · 35B technical report · Serving 35B MoEs from SSD with trained routing prediction." width="620"></a><br>
+<a href="https://huggingface.co/Edge0/Edge0-35B-A3B-preview"><img src="assets/edge0-release/news/news-2026-09-08.svg" alt="8 September 2026 · First open-source release · The edge0 framework and 35B / 8B preview models on Hugging Face and ModelScope." width="620"></a>
+</p>
 
 <details>
 <summary>Full release notes</summary>
@@ -53,6 +47,8 @@ The edge0 framework and 35B / 8B preview models on Hugging Face and ModelScope.<
 - **[2026-09-30]** We released the **edge0 inference engines for four platforms — iOS, macOS, Android and Windows** (source at tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer)).
 - **[2026-09-16]** Our technical report is on arXiv: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063).
 - **[2026-09-08]** Initial open-source release of **edge0**, together with both model tiers — [`Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) and [`Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) — on Hugging Face and ModelScope.
+
+</details>
 
 </details>
 
