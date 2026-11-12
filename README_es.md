@@ -1,141 +1,151 @@
-<div align="center">
+<p align="center"><img src="assets/edge0-release/hero.png" alt="Edge0" width="100%"></p>
 
-<img src="assets/20260908-223115.jpg" alt="edge0" width="100%">
+<h1 align="center">Edge0</h1>
 
-# edge0
+<p align="center">Un framework de inferencia MoE en streaming de código abierto</p>
 
-**Un framework de inferencia MoE en streaming de código abierto — SSD expert offload + Recover-LoRA + predicción de enrutamiento del prerouter.**
+<br>
 
-**macOS** · **iOS** · **Android** · **Linux** · **Windows** — un programa para todos los modelos Edge0.
+<p align="center">Piensa en grande. Ejecútalo aquí.<br>Disperso por diseño.</p>
 
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--35B--A3B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-35B-A3B-preview)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
-[![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--35B--A3B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview)
-[![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--8B--A1B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--145B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-145B-q3k)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--120B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-120B-q3k)
-[![arXiv](https://img.shields.io/badge/arXiv-2609.18063-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2609.18063)
-[![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2FEdge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/Edge0)
-[![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://edge0.ai/discord)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
+<br>
 
-[English](README.md) | [中文](README_zh.md) | [日本語](README_ja.md) | Español | [Français](README_fr.md)
+<p align="center">macOS · iOS · Android · Linux · Windows<br>Un programa para todos los modelos Edge0</p>
 
-</div>
+<p align="center"><sub>Proyecto</sub><br>
+<img src="assets/edge0-release/badge-group-divider.svg" alt="" width="540" height="16"><br>
+<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/windows-releases-badge.svg" alt="Windows / Download" height="18"></a>
+</p>
+
+<p align="center"><sub>Última versión</sub><br>
+<img src="assets/edge0-release/badge-group-divider.svg" alt="" width="540" height="16"><br>
+<a href="https://huggingface.co/Edge0/Edge0-145B-q3k"><img src="assets/edge0-release/badges/Edge0-145B-q3k-badge.svg" alt="Edge0 / 145B-Q3_K" height="18"></a> <a href="https://huggingface.co/Edge0/Edge0-145B-NVFP4"><img src="assets/edge0-release/badges/Edge0-145B-NVFP4-badge.svg" alt="Edge0 / 145B-NVFP4" height="18"></a> <a href="https://huggingface.co/Edge0/Edge0-120B-q3k"><img src="assets/edge0-release/badges/Edge0-120B-q3k-badge.svg" alt="Edge0 / 120B-Q3_K" height="18"></a> <a href="https://huggingface.co/Edge0/Edge0-120B-NVFP4"><img src="assets/edge0-release/badges/Edge0-120B-NVFP4-badge.svg" alt="Edge0 / 120B-NVFP4" height="18"></a>
+</p>
+
+<p align="center"><sub>Versión anterior</sub><br>
+<img src="assets/edge0-release/badge-group-divider.svg" alt="" width="540" height="16"><br>
+<a href="https://huggingface.co/Edge0/Edge0-35B-A3B-preview"><img src="assets/edge0-release/badges/Edge0-35B-A3B-preview-hf-badge.svg" alt="Hugging Face / Edge0-35B-A3B-preview" height="18"></a> <a href="https://huggingface.co/Edge0/Edge0-8B-A1B-preview"><img src="assets/edge0-release/badges/Edge0-8B-A1B-preview-hf-badge.svg" alt="Hugging Face / Edge0-8B-A1B-preview" height="18"></a> <a href="https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview"><img src="assets/edge0-release/badges/Edge0-35B-A3B-preview-modelscope-badge.svg" alt="ModelScope / Edge0-35B-A3B-preview" height="18"></a> <a href="https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview"><img src="assets/edge0-release/badges/Edge0-8B-A1B-preview-modelscope-badge.svg" alt="ModelScope / Edge0-8B-A1B-preview" height="18"></a>
+</p>
+
+<p align="center"><a href="README.md">English</a> · <a href="README_zh.md">中文</a> · <a href="README_ja.md">日本語</a> · Español · <a href="README_fr.md">Français</a></p>
+
+<p align="center"><a href="#news">Novedades</a> · <a href="#about">Acerca de</a> · <a href="#models">Modelos</a> · <a href="#quality">Calidad</a> · <a href="#benchmark">Rendimiento</a> · <a href="#getting-started">Primeros pasos</a></p>
+
+<br>
+
+<a name="news"></a>
 
 ## Novedades
 
-- **[2026-11-13]** Lanzamos **`edge0-145b`** y **`edge0-120b`**, modelos latent mixture-of-experts derivados de Qwen3.8-Flash-Next para una sola GPU NVIDIA en Linux o Windows. Se ejecutan en [edge0-strata](edge0-strata/EDGE0.md), que `edge0-infer serve` y `edge0-infer chat` inician para ellos; consulta la [página del modelo](docs/models/edge0-145b.md). Pesos en Hugging Face: [`Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [`Edge0-145B-NVFP4`](https://huggingface.co/Edge0/Edge0-145B-NVFP4) · [`Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [`Edge0-120B-NVFP4`](https://huggingface.co/Edge0/Edge0-120B-NVFP4).
-- **[2026-11-04]** Lanzamos el **motor de inferencia unificado [`edge0-infer`](edge0-infer/README_es.md)**: construido sobre [GGML](https://github.com/ggml-org/ggml), un solo motor y una sola API nativa en C++ ejecutan el mismo modelo en macOS, iOS, Android y Windows, con una CLI, un servidor local compatible con OpenAI y ejemplos de aplicaciones de chat para escritorio, Android e iOS. La primera versión admite `edge0-35b`; `edge0-8b` llegará en una versión posterior. Sustituye al framework de Python y a los motores de cada plataforma; el código anterior se conserva en la etiqueta [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer).
-- **[2026-09-30]** Lanzamos los **motores de inferencia de edge0 para cuatro plataformas — iOS, macOS, Android y Windows** (código fuente en la etiqueta [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer)).
-- **[2026-09-16]** Nuestro informe técnico está en arXiv: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063).
-- **[2026-09-08]** Primera versión de código abierto de **edge0**, junto con los dos niveles de modelos — [`Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) y [`Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) — en Hugging Face y ModelScope.
+<p><a href="docs/models/edge0-145b.md"><img src="assets/edge0-release/news/es/news-2026-11-13.svg" alt="13 noviembre 2026 · Modelos de 145B y 120B · MoE latentes para una sola GPU NVIDIA, en Q3_K y NVFP4." width="527"></a></p>
+
+<p><a href="edge0-infer/README.md"><img src="assets/edge0-release/news/es/news-2026-11-04.svg" alt="4 noviembre 2026 · Motor de inferencia unificado · Un motor GGML con API común de C++, servidor local y ejemplos de chat." width="527"></a></p>
+
+<p><a href="https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer"><img src="assets/edge0-release/news/es/news-2026-09-30.svg" alt="30 septiembre 2026 · Motores para cuatro plataformas · Motores para iOS, macOS, Android y Windows; archivados en pre-edge0-infer." width="527"></a></p>
+
+<details open>
+<summary>Más novedades</summary>
+
+<p><a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/news/es/news-2026-09-16.svg" alt="16 septiembre 2026 · Informe técnico de 35B · Ejecución de MoE de 35B desde SSD con predicción de enrutamiento entrenada." width="527"></a></p>
+
+<p><a href="https://huggingface.co/Edge0/Edge0-35B-A3B-preview"><img src="assets/edge0-release/news/es/news-2026-09-08.svg" alt="8 septiembre 2026 · Primera publicación abierta · El framework edge0 y los modelos 35B / 8B preliminares en Hugging Face y ModelScope." width="527"></a></p>
+
+<details>
+<summary>Notas de publicación completas</summary>
+
+- **[2026-11-13]** Publicamos **`edge0-145b`** y **`edge0-120b`**, modelos de mezcla de expertos latentes derivados de Qwen3.8-Flash-Next, para una sola GPU NVIDIA en Linux o Windows. Utilizan [edge0-strata](edge0-strata/EDGE0.md), que `edge0-infer serve` y `edge0-infer chat` inician para estos modelos; consulta la [página de modelos](docs/models/edge0-145b.md). Pesos en Hugging Face: [`Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [`Edge0-145B-NVFP4`](https://huggingface.co/Edge0/Edge0-145B-NVFP4) · [`Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [`Edge0-120B-NVFP4`](https://huggingface.co/Edge0/Edge0-120B-NVFP4).
+- **[2026-11-04]** Publicamos el **motor de inferencia unificado [`edge0-infer`](edge0-infer/README.md)**: basado en [GGML](https://github.com/ggml-org/ggml), un motor y una API nativa de C++ ejecutan el mismo modelo en macOS, iOS, Android y Windows, con CLI, servidor local compatible con OpenAI y ejemplos de aplicaciones de chat para escritorio, Android e iOS. La primera versión admite `edge0-35b`; `edge0-8b` llegará en una versión posterior. Sustituye al framework de Python y a los motores específicos de cada plataforma; el código anterior se conserva en la etiqueta [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer).
+- **[2026-09-30]** Publicamos los **motores de inferencia edge0 para cuatro plataformas: iOS, macOS, Android y Windows** (código en la etiqueta [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer)).
+- **[2026-09-16]** Nuestro informe técnico está disponible en arXiv: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063).
+- **[2026-09-08]** Primera publicación de **edge0** como código abierto, junto con los dos tamaños de modelo —[`Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) y [`Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)— en Hugging Face y ModelScope.
+
+</details>
+
+</details>
+
+<a name="previous-release"></a>
+
+<details open>
+<summary><h2>Versión anterior</h2></summary>
+
+→ [Guía de la versión 35B / 8B](docs/legacy-models_es.md) — Descargas de modelos, arquitectura, evaluaciones, plataformas compatibles e instrucciones de instalación.
+
+</details>
+
+<a name="about"></a>
 
 ## Acerca de
 
-**edge0** es un framework de inferencia MoE en streaming de código abierto.
-Generaliza la receta probada en producción — **SSD expert offload +
-Recover-LoRA + predicción de enrutamiento del prerouter** — en un framework
-extensible que ejecuta grandes modelos sparse-MoE en hardware de consumo: la
-memoria pico está limitada por el conjunto de expertos *activos*, no por el
-número de parámetros.
+<p>Edge0 es un framework de inferencia MoE en streaming de código abierto para ejecutar grandes modelos dispersos en hardware de consumo.</p>
 
-### Mecanismos principales
+Úsalo desde la línea de comandos, un servidor API local o la aplicación Edge0 Chat.
 
-- **SSD expert offload**: los pesos de los expertos se transmiten desde el
-  almacenamiento bajo demanda; la memoria pico está limitada por el conjunto
-  activo, no por el número de parámetros.
-- **Prerouter**: una cabeza entrenada predice el enrutamiento de expertos un
-  paso por delante, de modo que las cargas de expertos se solapan con el
-  forward pass en lugar de bloquearlo — **hasta +59%** de throughput de
-  decode; la ganancia crece con la latencia del almacenamiento, el tamaño del
-  modelo y el ancho de enrutamiento *K*.
-- **Recover-LoRA**: la base int4 se mantiene congelada y los adaptadores LoRA
-  se entrenan por destilación desde el teacher FP, recuperando la mayor parte
-  de la pérdida de cuantización a 4 bits (consulta [Calidad](#calidad)). Los
-  adaptadores se guardan aparte de la base y pueden activarse o desactivarse
-  por separado.
+La última versión permite ejecutar modelos MoE latentes de 145B y 120B en una sola GPU NVIDIA.
+
+Ambos se entrenan de forma nativa a 4 bits y se ofrecen en Q3_K y NVFP4 para tareas de agentes locales.
+
+[`edge0-infer`](edge0-infer/README.md) proporciona los comandos comunes `serve` y `chat` y selecciona el motor a partir de la carpeta del modelo. Los modelos actuales utilizan [edge0-strata](edge0-strata/EDGE0.md), un fork de Strata; la versión anterior de 35B utiliza el [motor nativo basado en GGML](docs/legacy-models_es.md#native-engine-design).
+
+<a name="platforms"></a>
 
 ### Plataformas
 
-[`edge0-infer`](edge0-infer/README_es.md) es el programa que ejecutas (CLI, servidor local compatible con OpenAI y Anthropic, aplicaciones de chat), con los mismos comandos para todos los modelos. Cada modelo se ejecuta en el motor preparado para él, y edge0-infer elige el motor a partir de la carpeta del modelo; no hay nada que elegir: `edge0-35b` se ejecuta en el **motor nativo** de `edge0-infer/` (construido sobre GGML, con una API nativa en C++), y `edge0-145b` y `edge0-120b` en **edge0-strata**, en [`edge0-strata/`](edge0-strata/EDGE0.md), un fork de Strata.
+La compatibilidad depende del modelo y de su motor.
 
-| Plataforma | `edge0-35b` (motor nativo) | `edge0-145b`, `edge0-120b` (edge0-strata) |
-|---|---|---|
-| **macOS** (Apple Silicon) | Metal, CPU | — |
-| **iOS** | Metal | — |
-| **Android** | CPU | — |
-| **Linux** | CPU | GPU NVIDIA (CUDA 13) |
-| **Windows** | CPU, Vulkan | GPU NVIDIA (CUDA 13) |
+| Plataforma | `edge0-145b`, `edge0-120b` (edge0-strata) | `edge0-35b` (motor nativo) |
+| --- | --- | --- |
+| **Linux** | NVIDIA GPU (CUDA 13) | CPU |
+| **Windows** | NVIDIA GPU (CUDA 13) | CPU, Vulkan |
+| **macOS** (Apple Silicon) | — | Metal, CPU |
+| **iOS** | — | Metal |
+| **Android** | — | CPU |
 
-Mediciones: [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures) para `edge0-35b` y la [página del modelo](docs/models/edge0-145b.md) para `edge0-145b` y `edge0-120b`. En el motor nativo, el prefill y el decode pueden ejecutarse en backends distintos del mismo dispositivo, por ejemplo prefill en Metal y decode en CPU. Los ejemplos de aplicaciones de chat para escritorio (macOS, Windows), Android e iOS están en [`edge0-infer/examples/`](edge0-infer/examples/README.md#chat-applications).
+Para la última versión, sigue la [instalación de 145B / 120B](#getting-started). La [guía de la versión anterior](docs/legacy-models_es.md#platforms) cubre los backends nativos, las compilaciones por plataforma y los ejemplos de chat. El checkpoint de 8B está disponible; su compatibilidad con el motor nativo está prevista.
 
-### Modelos
+<a name="models"></a>
 
-El framework incluye dos niveles de modelos, `edge0-35b` y `edge0-8b`. Cada nivel es una versión de
-extremo a extremo: el checkpoint publicado, los adaptadores LoRA entrenados y
-las cabezas prerouter entrenadas funcionan en conjunto como una sola unidad.
+## Modelos
 
-| Nivel | Checkpoint publicado | Perfil de inferencia | Motor |
+<p>145B / 120B es la serie MoE latente actual, derivada de Qwen3.8-Flash-Next y entrenada de forma nativa a 4 bits.</p>
+
+Se ejecuta en edge0-strata mediante `edge0-infer serve` y `edge0-infer chat`, en Linux o Windows con una GPU NVIDIA y CUDA 13.
+
+**145B Q3_K · RTX 5090 D 24 GB:** 121.2 tok/s de decodificación de agente · 3554.9 tok/s de prefill de 16K.
+
+| Tamaño | Checkpoint publicado | Perfil de inferencia | Motor |
 |---|---|---|---|
-| `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4 bits, 40 capas, 256 expertos, prerouter K=4 | Motor nativo ✅ |
-| `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4 bits, 24 capas, 128 expertos, prerouter K=8 | Motor nativo (previsto) |
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
 
-Los dos checkpoints publicados se construyen sobre modelos base sparse-MoE abiertos
-(Qwen3.6-35B-A3B y el híbrido bailing Ling 3.0, respectivamente) e incluyen
-el entrenamiento de LoRA y prerouter realizado para este framework.
-edge0-infer descarga el checkpoint publicado con sus herramientas de recursos
-y lo convierte en los recursos de modelo del motor (consulta
-[Primeros pasos](#primeros-pasos)).
-`edge0-145b` y `edge0-120b` forman un nivel latent-MoE aparte para una sola GPU NVIDIA; se ejecutan con edge0-strata, que `edge0-infer serve` y `edge0-infer chat` inician (consulta [edge0-145b y edge0-120b](docs/models/edge0-145b.md)).
+<a name="model-overview--145b-q3_k"></a>
 
-### Diseño
+<details open>
+<summary><h3>Resumen del modelo · 145B Q3_K</h3></summary>
 
-- **Basado en GGML, el mismo código en todas las plataformas**: la biblioteca
-  nativa solo depende de GGML, incluido sin modificaciones en una versión
-  fija; la compilación no descarga nada;
-- **Una API nativa**: las aplicaciones enlazan el target de CMake
-  `edge0::edge0` e incluyen las cabeceras de `include/edge0/` para usar el
-  motor dentro del proceso; la CLI de referencia y el servidor local
-  usan los mismos ajustes y valores por defecto que la API nativa;
-- **Expertos bajo demanda**: los expertos enrutados se leen del almacenamiento
-  bajo demanda en un número fijo de ranuras por capa, de modo que un modelo
-  más grande que el presupuesto de memoria del dispositivo se ejecuta sin
-  cargarlo entero;
-- **Dos modos de enrutamiento**: `predicted` (por defecto) usa el prerouter
-  para preparar en segundo plano los expertos del siguiente token mientras se
-  calcula el actual; `actual` es el cálculo original del modelo, para
-  comparar;
-- **Reutilización entre turnos**: en una conversación de varios turnos
-  normalmente solo se calcula el mensaje nuevo de cada turno y se reutilizan
-  los resultados anteriores.
+Q3_K · RTX 5090 D 24 GB. El prefill usa una entrada de 16K tokens. Las puntuaciones de calidad son resultados por modelo.
 
-Consulta la [arquitectura de edge0-infer](edge0-infer/docs/architecture.md).
+<a href="assets/edge0-release/model-overview-145B-q3k.svg"><img src="assets/edge0-release/model-overview-145B-q3k.svg" alt="Edge0-145B Q3_K: arquitectura, calidad, decodificación de agente a 121.2 tok/s, prefill a 3554.9 tok/s y tamaño de los pesos por formato" width="1600"></a>
 
-### Calidad
+</details>
 
-Todos los benchmarks fueron ejecutados por nosotros con
-[OpenCompass](https://github.com/open-compass/opencompass) bajo configuraciones
-y parámetros idénticos tanto para los modelos edge0 (int4 + adaptadores
-entrenados + enrutamiento prerouter) como para los modelos base fp16
-originales. La pérdida del pipeline edge0 es pequeña: **3.9 puntos de media
-para edge0-35b, 2.8 para edge0-8b** (MMLU-Pro incluso supera a la base).
-Máximo 100:
+<a name="quality"></a>
 
-| Benchmark | edge0-35b (int4) | Qwen3.6-35B-A3B (fp16) | edge0-8b (int4) | Ling 3.0 tiny (fp16) |
-|---|---:|---:|---:|---:|
-| AIME 2026 | 86.6 | 92.7 | 63.3 | 73.3 |
-| HumanEval | 90.9 | 95.1 | 91.5 | 92.7 |
-| GPQA-Diamond | 79.8 | 81.8 | 70.7 | 71.2 |
-| MMLU-Pro | 81.0 | 84.6 | 70.1 | 65.8 |
-| IFBench | 57.9 | 61.7 | 53.9 | 60.6 |
-| **Media** | **79.2** | **83.2** | **69.9** | **72.7** |
+## Calidad
 
-`edge0-145b` y `edge0-120b` (**negrita** = mejor de la columna; consulta la [página del modelo](docs/models/edge0-145b.md#quality)):
+### 145B / 120B
 
-| Model | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
+Seis evaluaciones, seis modelos. Cuanto más alto, mejor. Las puntuaciones se presentan por modelo, no como evaluaciones separadas de Q3_K y NVFP4.
+
+<a href="assets/edge0-release/quality-overview.svg"><img src="assets/edge0-release/quality-overview.svg" alt="Comparación de seis modelos en DeepSWE 1.1, Terminal-Bench 2.1, HLE, GPQA-Diamond, IFBench y AA-LCR; escala 0–100, valores ausentes indicados" width="1400"></a>
+
+[Puntuaciones copiables y nombres completos de los modelos](docs/models/edge0-145b.md#quality)
+
+<details>
+<summary>Puntuaciones copiables · los seis modelos</summary>
+
+La negrita indica la mejor puntuación de cada columna.
+
+| Modelo | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | **Edge0-145B** | **64.6** | **86.5** | 79.3 | 80.6 | 90.4 | 35.4 |
 | **Edge0-120B** | 51.3 | 75.3 | 81.0 | 79.3 | 87.4 | 31.0 |
@@ -144,169 +154,233 @@ Máximo 100:
 | Qwen3.8-27B | 42.2 | 73.0 | **82.0** | 79.5 | 89.2 | 30.8 |
 | Claude-Opus-4.6 (Max) | / | 78.2 | 78.0 | 62.5 | 91.3 | **40.0** |
 
-### Benchmark
+</details>
 
-`edge0-35b` con enrutamiento `predicted`, medido con edge0-infer (cada rango va del mínimo al máximo de tres procesos):
+<a name="speed"></a>
 
-| Plataforma | Dispositivo | Prompt | Primer token | Velocidad de decode | Pico de memoria |
-|---|---|---|---|---|---|
-| macOS Metal | Apple M5, 16 GiB | 3084 tokens | 5.60–5.87 s | 24.8–24.9 tok/s | 3.43 GiB (`phys_footprint`) |
-| macOS CPU | Apple M5, 16 GiB | 627 tokens | 11.5–11.7 s | 21.7–22.3 tok/s | 2.96 GiB (`phys_footprint`) |
-| iOS Metal | iPhone 17 Pro Max, 12 GB | 627 tokens | 8.20–8.26 s | 13.2 tok/s | 3.05 GiB (`phys_footprint`) |
-| Android CPU | OnePlus PKR110, 16 GB | 627 tokens | 18.4–18.8 s | 11.4–11.8 tok/s | 2.82 GiB (RSS) |
-| Windows CPU | Intel Core i5-12400, 32 GB | 627 tokens | 16.9–17.3 s | 7.3–8.2 tok/s | 2.86 GiB (conjunto de trabajo) |
-| Windows Vulkan (ambas fases, 32 ranuras de expertos) | RTX 4070 SUPER, 12 GB | 627 tokens | 3.75–3.76 s | 23.6–24.0 tok/s | Aumento de memoria de GPU 5.35 GiB |
+<a name="benchmark"></a>
 
-Las métricas de memoria difieren entre plataformas y no se pueden comparar directamente. El método de medición, las cifras con enrutamiento `actual` y los comandos para reproducirlas están en [Benchmarking](edge0-infer/docs/benchmarking.md#reference-figures).
+## Rendimiento
 
-`edge0-145b` y `edge0-120b` en edge0-strata, una GPU NVIDIA (tok/s):
+<a name="145b--120b-1"></a>
 
-#### edge0-145b
+### 145B / 120B
 
-| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
-| --- | --- | ---: | ---: | ---: | ---: |
+Todas las tasas se expresan en tok/s. La cifra destacada corresponde a **145B Q3_K** en RTX 5090 D 24 GB.
+
+<details open>
+<summary>Velocidad de 145B · todos los equipos y formatos</summary>
+
+Las filas resaltadas corresponden a Q3_K. Haz clic en la tabla para verla a tamaño completo.
+
+<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Tabla completa de siete filas de Edge0-145B: prefill de 4K y 16K, decodificación de chat y agente, todos los equipos y formatos medidos" width="1400"></a>
+
+<details>
+<summary>Datos copiables de velocidad de 145B</summary>
+
+| Equipo | Formato | Prefill 4K | Prefill 16K | Decodificación de chat | Decodificación de agente |
+|---|---|---:|---:|---:|---:|
 | RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
 | RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
 | RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
 | RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
 | RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
+| Apple M2 Ultra (Metal) | Q3_K | 755.6 | 800.3 | 60.9 | 57.0 |
 | 16 GiB VRAM + 20 GiB RAM | Q3_K | 249 | 335 | 36.8 | 44.9 |
 
-#### edge0-120b
+</details>
 
-| Machine | Build | 4K prefill | 16K prefill | Chat decode | Agent decode |
-| --- | --- | ---: | ---: | ---: | ---: |
+</details>
+
+<details>
+<summary>Condiciones de medición de 145B · presupuesto limitado y residencia en memoria</summary>
+
+Las filas `16 GiB VRAM + 20 GiB RAM` también usan la RTX 5090 D 24 GB, limitada mediante cgroup a un presupuesto de 16 GiB de VRAM y 20 GiB de RAM del sistema; no se trata de otra tarjeta. Con la residencia activada, **Q3_K** (40.81 GiB de pesos) ocupa 23.14 GiB VRAM + 31.28 GiB RAM, y **NVFP4** (47.79 GiB) ocupa 23.25 GiB VRAM + 38.27 GiB RAM en la misma tarjeta. Los conjuntos de expertos son disjuntos: nada se contabiliza dos veces.
+
+El presupuesto de 16 GiB VRAM + 20 GiB RAM es un límite de prueba, no un requisito mínimo del sistema. La fila Apple M2 Ultra es una medición con Metal, no un anuncio de disponibilidad para macOS.
+
+</details>
+
+<details open>
+<summary>Velocidad de 120B · todos los equipos y formatos</summary>
+
+<a href="assets/edge0-release/speed-120B.svg"><img src="assets/edge0-release/speed-120B.svg" alt="Tabla completa de ocho filas de velocidad de Edge0-120B" width="1400"></a>
+
+<details>
+<summary>Datos copiables de velocidad de 120B</summary>
+
+| Equipo | Formato | Prefill 4K | Prefill 16K | Decodificación de chat | Decodificación de agente |
+|---|---|---:|---:|---:|---:|
 | RTX 5090 D 24 GB | Q3_K | 3236.7 | 4576.5 | 130.2 | **144.6** |
 | RTX 5090 D 24 GB | NVFP4 | 2668.5 | 4357.1 | 124.9 | 135.5 |
 | RTX 4090 24 GB | Q3_K | 2637.5 | 3551.1 | 95.0 | 104.9 |
 | RTX Spark N1X 60 GiB | Q3_K | 987.0 | 1081.7 | 47.2 | 68.4 |
 | RTX Spark N1X 60 GiB | NVFP4 | 996.4 | 1066.9 | 45.1 | 68.9 |
+| Apple M2 Ultra (Metal) | Q3_K | 867.6 | 908.7 | 60.4 | 63.0 |
 | 16 GiB VRAM + 20 GiB RAM | Q3_K | 430 | 778 | 62.4 | 73.3 |
 | 16 GiB VRAM + 20 GiB RAM | NVFP4 | 361.1 | 619.7 | 51.3 | 59.9 |
 
-Las filas `16 GiB VRAM + 20 GiB RAM` son la misma RTX 5090 D 24 GB, limitada por cgroup a 16 GiB de memoria de GPU y 20 GiB de memoria del sistema. Los detalles están en la [página del modelo](docs/models/edge0-145b.md#speed-measured-one-card).
+</details>
+
+Las filas `16 GiB VRAM + 20 GiB RAM` también usan la RTX 5090 D 24 GB, limitada mediante cgroup a un presupuesto de 16 GiB de VRAM y 20 GiB de RAM del sistema; no se trata de otra tarjeta. Con la residencia activada, **Q3_K** (27.98 GiB de pesos) ocupa 22.93 GiB VRAM + 18.40 GiB RAM, y **NVFP4** (32.96 GiB) ocupa 23.02 GiB VRAM + 23.40 GiB RAM en la misma tarjeta. Los conjuntos de expertos son disjuntos: nada se contabiliza dos veces.
+
+</details>
+
+<a name="in-action"></a>
+
+<details open>
+<summary><h2>En acción</h2></summary>
+
+<p align="center"><a href="assets/edge0-release/showcase.mp4"><img src="assets/edge0-release/showcase-poster.svg" alt="Reproducir la demostración de Edge0-145B de 2 minutos y 1 segundo" width="480"></a></p>
+
+<p align="center">Grabado con Edge0-145B · <a href="assets/edge0-release/showcase.mp4">Abrir vídeo ↗</a></p>
+
+<details>
+<summary>Cinco demostraciones · guía de capítulos</summary>
+
+| Tiempo | Demostración |
+| --- | --- |
+| 0:00 | Chat y programación locales |
+| 0:36 | Producción de vídeo |
+| 0:58 | Manhattan en 3D |
+| 1:19 | Creación de un entorno de catedral |
+| 1:38 | Diseño de PCB |
+
+[Marcadores de capítulos (VTT)](assets/edge0-release/showcase-chapters.vtt)
+
+</details>
+
+</details>
+
+<a name="architecture"></a>
+
+## Arquitectura
+
+El MoE latente comprime las entradas de los expertos y mantiene la atención a anchura completa. El modelo de 145B usa una anchura latente de 1792; el de 120B, de 1280. Ambos enrutan cada token a 10 de los 512 expertos, además de un experto compartido.
+
+<details open>
+<summary>Detalles de arquitectura · diagrama y configuración</summary>
+
+<a href="assets/edge0-release/arch-145B.svg"><img src="assets/edge0-release/arch-145B.svg" alt="Arquitectura y enrutamiento de expertos de Edge0-145B" width="1760"></a>
+
+[Configuración completa, enrutamiento y perfiles de ambos modelos](docs/models/edge0-145b.md#model-profile).
+
+</details>
+
+<a name="quick-start"></a>
+
+<a name="getting-started"></a>
 
 ## Primeros pasos
 
-Ejecuta los siguientes comandos en `edge0-infer/`. Necesitas CMake 3.21 o
-posterior, Ninja, un compilador de C++17/C11, uv y Git; el 35B necesita unos
-18 GB para los pesos originales y unos 20 GB para los recursos convertidos,
-más otro tanto de espacio libre durante la conversión.
+### 145B / 120B · edge0-strata
 
-### 1) Compilar
+Cada carpeta de modelo (Q3_K o NVFP4, Edge0-145B o Edge0-120B) se ejecuta mediante `edge0-infer`, desde la línea de comandos o la aplicación de escritorio Edge0 Chat. Conserva la estructura de la carpeta: `edge0-infer` identifica el modelo mediante `model_name` en su `model.json`.
 
-```bash
-cd edge0-infer
-cmake --preset mac-metal && cmake --build --preset mac-metal
-build/mac-metal/bin/edge0-infer info        # debe mostrar una línea: model.0: edge0_35b
-```
+Para 145B y 120B, usa `serve` o `chat`; `run` corresponde al motor nativo.
 
-En máquinas sin Metal usa `--preset cpu`, `build/cpu/bin/edge0-infer` y
-`--device cpu` en los comandos siguientes.
+<details>
+<summary>Notas sobre plataformas y documentación</summary>
 
-### 2) Obtener un modelo
+Las instrucciones de compilación están destinadas a GPU NVIDIA con CUDA 13 en Linux o Windows (x64 o ARM64). Las mediciones de Apple M2 Ultra usan Metal; no establecen la disponibilidad de una versión para macOS.
 
-**edge0-35b (motor nativo).** Descarga y convierte los recursos del modelo:
+</details>
+
+<details>
+<summary>Instrucciones de compilación y línea de comandos</summary>
+
+**1. Compilar.** Clona el repositorio y compila las dos partes. Ejecuta los siguientes comandos de inicio desde `edge0-infer/`:
 
 ```bash
-export MOE_SOURCE_35B=<directorio para los pesos originales>
-export MOE_ASSETS_35B=<directorio para los recursos convertidos>
-
-uv sync --project tools/assets
-assets_py() { uv run --project tools/assets --offline --no-sync python -I "$@"; }
-
-assets_py tools/assets/edge0_35b/fetch_source.py download --out "$MOE_SOURCE_35B"
-assets_py tools/assets/edge0_35b/make_assets.py --source "$MOE_SOURCE_35B" --out "$MOE_ASSETS_35B"
-assets_py tools/assets/check_assets.py check "$MOE_ASSETS_35B"
+git clone https://github.com/Edge0-AI/Edge0.git edge0
 ```
 
-Se descarga `Edge0/Edge0-35B-A3B-preview` de Hugging Face y se verifica con
-la revisión y los resúmenes fijados.
+- **edge0-strata**, el motor: sigue «Build (Linux, NVIDIA)» o «Build (Windows, NVIDIA)» en [edge0-strata/EDGE0.md](edge0-strata/EDGE0.md).
+- **edge0-infer**: sigue «Build» (Linux) o «Windows» en [edge0-infer/docs/getting-started.md](edge0-infer/docs/getting-started.md).
 
-**edge0-145b y edge0-120b (edge0-strata).** Compila edge0-strata como indica [`edge0-strata/EDGE0.md`](edge0-strata/EDGE0.md) y usa una carpeta de modelo publicada (consulta [edge0-145b y edge0-120b](docs/models/edge0-145b.md)).
-
-### 3) Ejecutar
+**2. Ejecutar desde la línea de comandos.** Indica una sola carpeta de modelo, como `Edge0-145B-q3k`, no la carpeta que contiene varios modelos. En Windows el programa es `build\windows\bin\edge0-infer.exe`.
 
 ```bash
-# una instrucción
-build/mac-metal/bin/edge0-infer run   --model "$MOE_ASSETS_35B" --device metal --user "Preséntate en una frase."
-# chat de varios turnos
-build/mac-metal/bin/edge0-infer chat  --model "$MOE_ASSETS_35B" --device metal
-# servidor (compatible con OpenAI y Anthropic, por defecto http://127.0.0.1:8000)
-build/mac-metal/bin/edge0-infer serve --model "$MOE_ASSETS_35B" --device metal
+build/cpu/bin/edge0-infer serve --model /path/to/Edge0-145B-q3k
 ```
 
-Para edge0-145b y edge0-120b, `chat` y `serve` reciben la carpeta del modelo de la misma forma (`--model <carpeta del modelo>`); `run` es para el motor nativo.
+Una vez cargados los pesos, muestra `Listening: http://127.0.0.1:8000 model=<name>`, donde `<name>` es `edge0_145b`, y ofrece endpoints compatibles con OpenAI y Anthropic:
 
-Para las compilaciones de Android, Windows e iOS, y para usar el motor desde
-tu propio proyecto CMake, consulta [Getting started](edge0-infer/docs/getting-started.md).
+```bash
+curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '{"model":"edge0_145b","messages":[{"role":"user","content":"hi"}],"max_tokens":64}'
+```
+
+`edge0-infer chat --model /path/to/Edge0-145B-q3k` abre una sesión interactiva. Más opciones: [edge0-infer/docs/edge0-145b.md](edge0-infer/docs/edge0-145b.md).
+
+</details>
+
+<details>
+<summary>Aplicación de escritorio · Windows</summary>
+
+⬇️ **Descargar:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
+
+Abre **Edge0 Chat** en Windows y selecciona una carpeta de modelo, como `Edge0-145B-q3k`, para ejecutarlo localmente. Para compilar la aplicación desde el código fuente, sigue la guía de [Edge0 Chat](edge0-infer/examples/desktop/README.md).
+
+</details>
+
+<a name="documentation"></a>
 
 ## Documentación
 
-**Modelos**
+**Última versión · 145B / 120B**
 
+- [Modelos, mediciones y arquitectura](docs/models/edge0-145b.md)
+- [edge0-strata · requisitos de compilación e inicio](edge0-strata/EDGE0.md)
+- Guías de modelos de edge0-infer: [145B](edge0-infer/docs/edge0-145b.md) / [120B](edge0-infer/docs/edge0-120b.md)
+
+**Framework**
+
+- [edge0-infer](edge0-infer/README.md) · línea de comandos, servidor local y aplicaciones de chat
+- [Servidor local](edge0-infer/docs/local-server.md) / [Pruebas](edge0-infer/docs/testing.md)
+- [Herramientas de recursos de modelos y cómo añadir un modelo](edge0-infer/tools/assets/README.md)
+
+<details>
+<summary>Versión anterior · modelos y documentación del motor nativo</summary>
+
+- [Guía de la versión 35B / 8B](docs/legacy-models_es.md)
 - [Enrutamiento MoE y expertos](docs/moe.md) / [prerouter](docs/prerouter.md)
-- [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md) / [edge0-145b y edge0-120b](docs/models/edge0-145b.md)
+- Referencias de modelos: [edge0-35b](docs/models/edge0-35b.md) / [edge0-8b](docs/models/edge0-8b.md)
+- [Primeros pasos](edge0-infer/docs/getting-started.md): compilación nativa, recursos de modelos, run, chat y serve en las plataformas compatibles
+- [Configuración](edge0-infer/docs/configuration.md) / [API nativa](edge0-infer/docs/native-api.md)
+- [Arquitectura](edge0-infer/docs/architecture.md) / [Diseño del motor nativo](edge0-infer/docs/architecture.md#native-engine) / [Limitaciones conocidas](edge0-infer/docs/limitations.md)
+- [Mediciones de rendimiento](edge0-infer/docs/benchmarking.md)
 - Informe técnico: [The Other Half of the Memory Wall](https://arxiv.org/abs/2609.18063) ([PDF](paper/main.pdf))
 
-**edge0-infer**
+</details>
 
-- [Getting started](edge0-infer/docs/getting-started.md): compilación, recursos del modelo, ejecución, chat y servidor en cada plataforma
-- [Configuration](edge0-infer/docs/configuration.md) / [Native API](edge0-infer/docs/native-api.md) / [Servidor local](edge0-infer/docs/local-server.md)
-- [Architecture](edge0-infer/docs/architecture.md) / [Known limitations](edge0-infer/docs/limitations.md)
-- [Benchmarking](edge0-infer/docs/benchmarking.md) / [Testing](edge0-infer/docs/testing.md)
-- [Herramientas de recursos del modelo y cómo añadir un modelo](edge0-infer/tools/assets/README.md)
-
-**Motores**
-
-- Motor nativo: [Architecture](edge0-infer/docs/architecture.md#native-engine) / [Native API](edge0-infer/docs/native-api.md)
-- edge0-strata: [compilación y contrato de arranque](edge0-strata/EDGE0.md) / [edge0-145b](edge0-infer/docs/edge0-145b.md) y [edge0-120b](edge0-infer/docs/edge0-120b.md) en edge0-infer
+<a name="roadmap"></a>
 
 ## Hoja de ruta
 
-### Q4 2026
-
-**Plataformas y sistemas**
-
-- ✅ **Motor de inferencia unificado de edge0 liberado** (2026-11-04) —
-  [`edge0-infer`](edge0-infer/README_es.md): un solo motor y una sola API
-  nativa para macOS, iOS, Android y Windows.
-- **Compatibilidad con `edge0-8b` en edge0-infer**.
+<details>
+<summary>Cuarto trimestre de 2026 · arquitectura e inferencia</summary>
 
 **Modelos y algoritmos**
 
-Q4 trabaja en dos frentes: incorporar una arquitectura de próxima generación
-al framework y convertir el razonamiento latente en un ahorro real de latencia
-y no solo aritmético.
+El cuarto trimestre aborda dos frentes: incorporar una arquitectura de nueva generación al framework y convertir el razonamiento latente en una reducción real de latencia, no solo del número de operaciones.
 
-- **Soporte de arquitectura de próxima generación (clase Qwen3.8-Flash)** —
-  ejecutar atención lineal híbrida (GDN + QSA), residual multirrama con
-  puertas y topologías de embedding N-gram en edge0. Estos diseños encajan de
-  forma natural con el streaming offload a SSD: la atención de estado O(1)
-  evita que el thinking prolongado se convierta en un problema de KV cache, y
-  las tablas N-gram de solo consulta se transmiten bajo demanda. Objetivo: que
-  el nivel se ejecute en un solo dispositivo y que los benchmarks queden a una
-  distancia aceptable de la base fp16.
-- **Thinking latente + predicción anticipada de expertos por lotes** —
-  convertir el razonamiento latente en un ahorro de *latencia*, no solo
-  aritmético. El problema central de ingeniería: mover el enrutamiento de
-  expertos de por posición a **una vez por bloque**, de modo que una sola
-  predicción cubra cada posición y ronda de un bloque y **el volumen de carga
-  de expertos se desacople del número de bucles de razonamiento** — además de
-  prefetch entre bloques que carga los expertos del siguiente bloque dentro de
-  la ventana de cómputo del bloque actual. El progreso se mide como **tiempo
-  de la fase de thinking de extremo a extremo con la misma precisión** (nunca
-  tokens/s).
-- Más niveles de modelos y versiones de adaptadores sobre el pipeline
-  existente.
+- **Compatibilidad con arquitecturas de nueva generación (clase Qwen3.8-Flash)** — ejecutar atención lineal híbrida (GDN + QSA), conexiones residuales multirrama con compuertas y topologías de embeddings N-gram en edge0. Estos diseños encajan de forma natural con la descarga en streaming a SSD: la atención con estado O(1) evita que el razonamiento prolongado se convierta en un problema de KV-cache, y las tablas N-gram de solo consulta se cargan bajo demanda. Objetivo: ejecutar el modelo en un solo dispositivo y obtener resultados con una diferencia aceptable respecto al modelo base fp16.
+- **Razonamiento latente + predicción anticipada de expertos por lotes** — reducir la *latencia* del razonamiento latente, no solo sus operaciones aritméticas. El reto central consiste en pasar del enrutamiento por posición a **una vez por bloque**, para que una predicción cubra todas las posiciones y rondas del bloque y **el volumen de expertos cargados sea independiente del número de iteraciones de razonamiento**. Se añade la precarga entre bloques, que carga los expertos del siguiente bloque durante el cálculo del actual. El progreso se mide por el **tiempo total de la fase de razonamiento a igual precisión**, nunca por tokens/s.
+
+[Hitos de la versión anterior y compatibilidad prevista con el motor nativo](docs/legacy-models_es.md#roadmap).
+
+</details>
+
+<a name="contributing"></a>
 
 ## Contribuir
 
-Las contribuciones son bienvenidas — issues, PRs, informes de benchmarks y
-ports de modelos, todo cuenta.
+<details>
+<summary>Flujo de desarrollo y comprobaciones</summary>
 
-La compilación y las pruebas se describen en [Testing](edge0-infer/docs/testing.md);
-las comprobaciones que no necesitan recursos del modelo:
+Todas las contribuciones son bienvenidas: issues, PR, informes de rendimiento y adaptaciones de modelos.
+
+La compilación y las pruebas se describen en [Pruebas](edge0-infer/docs/testing.md). Estas comprobaciones no requieren recursos de modelos:
 
 ```bash
 cd edge0-infer
@@ -314,15 +388,17 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-Para cambios en `edge0-infer/`, abre issues y PRs en este repositorio como
-de costumbre; el directorio se desarrolla en un repositorio aparte: los
-mantenedores aplican primero allí los cambios aceptados, que llegan aquí con
-la siguiente sincronización. Consulta [CONTRIBUTING](CONTRIBUTING.md).
+Para cambios en `edge0-infer/`, abre issues y PR en este repositorio como de costumbre. Ese directorio se desarrolla en otro repositorio; los mantenedores aplican primero allí los cambios aceptados y llegan aquí con la siguiente sincronización. Consulta [CONTRIBUTING](CONTRIBUTING.md).
 
-Flujo de trabajo: fork → rama de feature → PR contra `main`. Mantén las
-pruebas en verde y añade pruebas para los nuevos comportamientos.
+Flujo: fork → rama de funcionalidad → PR dirigido a `main`. Mantén las pruebas aprobadas y añade pruebas para los comportamientos nuevos.
+
+</details>
+
+<a name="citation"></a>
 
 ## Cita
+
+El informe técnico trata la inferencia de 35B en streaming desde SSD y la predicción de enrutamiento entrenada.
 
 Si edge0 te resulta útil, cita nuestro informe técnico:
 
@@ -338,15 +414,57 @@ Si edge0 te resulta útil, cita nuestro informe técnico:
 }
 ```
 
+<a name="contact-us"></a>
+
 ## Contacto
 
-- **Discord**: [edge0.ai/discord](https://edge0.ai/discord) — chat y soporte de la comunidad
-- **Email**: samuel@edge0.ai
+- **Discord**: [edge0.ai/discord](https://edge0.ai/discord) — conversación y soporte de la comunidad
+- **Correo electrónico**: samuel@edge0.ai
 
-Para bugs y solicitudes de funcionalidades, usa
-[GitHub Issues](https://github.com/Edge0-AI/Edge0/issues).
+Para errores y solicitudes de funciones, utiliza [GitHub Issues](https://github.com/Edge0-AI/Edge0/issues).
 
-## Licencia
+<a name="license"></a>
 
-Apache-2.0; los componentes de terceros incluidos conservan sus propias licencias
-(consulta [NOTICE](NOTICE)).
+<details>
+<summary><h2>Licencia</h2></summary>
+
+<a name="framework-code"></a>
+
+### Código del framework
+
+El código del framework sigue bajo [Apache-2.0](LICENSE). Los componentes incluidos conservan sus propias licencias y [avisos](NOTICE), incluida la [licencia MIT](edge0-strata/LICENSE) de Strata.
+
+<a name="model-license"></a>
+
+### Licencia de los modelos
+
+Las contribuciones específicas de Edge0 a los modelos se ofrecen bajo la [Edge0 Community Model License 1.0](licenses/edge0-model/LICENSE), aplicable únicamente a las contribuciones que Edge0 posee o está autorizado a licenciar. Las licencias válidas anteriores no cambian.
+
+Sujeta a las condiciones aplicables de los proveedores originales, la licencia permite el uso personal, la investigación, la educación, la modificación, la distribución no comercial, el uso interno y el uso comercial de los resultados generados. No exige revelar modificaciones privadas ni mostrar una insignia de Edge0 en la interfaz.
+
+Se requiere un permiso escrito independiente de Edge0 para:
+
+- **Venta de modelos y distribución de pago**, incluidos los adaptadores y deltas cubiertos, así como los paquetes comerciales cuyo valor principal sea el acceso al modelo.
+- **Servicios comerciales de modelos** que ofrezcan inferencia o ajuste fino y se financien mediante pagos, suscripciones, publicidad o patrocinios relacionados.
+- **Asistentes comerciales independientes de programación u ofimática**, tanto si la inferencia se ejecuta en un servidor como en el dispositivo del usuario.
+
+Consulta la licencia completa para conocer las definiciones, excepciones y requisitos de redistribución. Licencias comerciales: [info@edge0.ai](mailto:info@edge0.ai).
+
+<a name="upstream-terms-and-scope"></a>
+
+### Condiciones de origen y alcance
+
+Los materiales de Qwen siguen sujetos a su licencia de origen aplicable. La [Qwen Community License 1.0](licenses/edge0-model/third-party/Qwen-LICENSE.txt) conservada se reproduce sin modificaciones; el permiso de Edge0 no exime de los requisitos de atribución de Qwen ni de sus autorizaciones comerciales independientes.
+
+Consulta el [NOTICE del modelo](licenses/edge0-model/NOTICE) para conocer las atribuciones y el alcance de las licencias. Las licencias del framework y del código de terceros no se ven afectadas.
+
+<details>
+<summary><b>Agradecimientos · linaje de los modelos y créditos del motor</b></summary>
+
+Agradecemos a los equipos de [Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next) y [Strata](https://github.com/Niko1221/Strata). Edge0 añade compatibilidad con MoE latente al motor Strata. `edge0-strata` es un fork de Strata, de Niko1221 y los colaboradores de Strata, y conserva su [licencia MIT](edge0-strata/LICENSE).
+
+El código del framework Edge0 se publica bajo [Apache-2.0](LICENSE); los componentes de terceros incluidos mantienen sus propias licencias (véase [NOTICE](NOTICE)). Las [versiones anteriores](docs/legacy-models_es.md#models) conservan su linaje de modelos Qwen3.6 y Ling.
+
+</details>
+
+</details>

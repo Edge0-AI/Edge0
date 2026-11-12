@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="73" viewBox="0 0 620 73" role="img" aria-labelledby="title desc" lang="zh">
+<title id="title">145B 与 120B 模型</title><desc id="desc">2026年11月13日 · 145B 与 120B 模型 · 单张 NVIDIA GPU 运行的潜空间 MoE 模型，提供 Q3_K 与 NVFP4。</desc>
+<rect width="620" height="73" fill="#FFFFFF"/>
+<g font-family="Helvetica Neue,Helvetica,Arial,PingFang SC,Hiragino Sans,Noto Sans CJK SC,Noto Sans CJK JP,sans-serif" font-weight="400">
+<rect x="16" y="19" width="16" height="2" rx="1" fill="#E63946"/>
+<text x="16" y="37" font-size="9" fill="#E63946">2026年11月13日</text>
+<text x="132" y="28" font-size="15" font-weight="500" letter-spacing="-.15" fill="#E63946">145B 与 120B 模型</text>
+<text x="132" y="47" font-size="11.5" fill="#45789D">单张 NVIDIA GPU 运行的潜空间 MoE 模型，提供 Q3_K 与 NVFP4。</text></g><path d="M16 72 H604" stroke="#A8DADC" stroke-opacity=".5"/></svg>

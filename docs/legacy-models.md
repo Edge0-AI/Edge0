@@ -2,6 +2,8 @@
 
 # Previous release · 35B / 8B
 
+<p align="center">English · <a href="legacy-models_zh.md">中文</a> · <a href="legacy-models_ja.md">日本語</a> · <a href="legacy-models_es.md">Español</a> · <a href="legacy-models_fr.md">Français</a></p>
+
 [← Edge0 homepage · Latest release: 145B / 120B](../README.md)
 
 The previous Edge0 release: 35B / 8B checkpoints, streaming inference design, benchmarks and setup. The 35B tier runs on the native engine; native-engine support for the released 8B checkpoint remains planned.
@@ -190,7 +192,7 @@ your own CMake project, see [Getting started](../edge0-infer/docs/getting-starte
 - [Configuration](../edge0-infer/docs/configuration.md) · [Native API](../edge0-infer/docs/native-api.md) · [Local server](../edge0-infer/docs/local-server.md)
 - [Architecture](../edge0-infer/docs/architecture.md) · [Known limitations](../edge0-infer/docs/limitations.md) · [Testing](../edge0-infer/docs/testing.md)
 - [Model asset tools and adding a model](../edge0-infer/tools/assets/README.md)
-- Earlier project overviews: [中文](../README_zh.md) · [日本語](../README_ja.md) · [Español](../README_es.md) · [Français](../README_fr.md)
+- Project homepages by language: [中文](../README_zh.md) · [日本語](../README_ja.md) · [Español](../README_es.md) · [Français](../README_fr.md)
 
 ## Roadmap
 

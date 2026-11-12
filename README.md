@@ -41,7 +41,7 @@
 
 <p><a href="https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer"><img src="assets/edge0-release/news/news-2026-09-30.svg" alt="30 September 2026 · Engines for four platforms · iOS, macOS, Android and Windows engines; archived at pre-edge0-infer." width="527"></a></p>
 
-<details>
+<details open>
 <summary>More updates</summary>
 
 <p><a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/news/news-2026-09-16.svg" alt="16 September 2026 · 35B technical report · Serving 35B MoEs from SSD with trained routing prediction." width="527"></a></p>

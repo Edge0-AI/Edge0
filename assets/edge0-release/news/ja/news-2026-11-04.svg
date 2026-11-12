@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="73" viewBox="0 0 620 73" role="img" aria-labelledby="title desc" lang="ja">
+<title id="title">統合推論エンジン</title><desc id="desc">2026年11月4日 · 統合推論エンジン · GGML ベースの共通 C++ API、ローカルサーバー、チャットのサンプル。</desc>
+<rect width="620" height="73" fill="#FFFFFF"/>
+<g font-family="Helvetica Neue,Helvetica,Arial,PingFang SC,Hiragino Sans,Noto Sans CJK SC,Noto Sans CJK JP,sans-serif" font-weight="400">
+<rect x="16" y="19" width="16" height="2" rx="1" fill="#C96B73"/>
+<text x="16" y="37" font-size="9" fill="#C96B73">2026年11月4日</text>
+<text x="132" y="28" font-size="15" font-weight="500" letter-spacing="-.15" fill="#C96B73">統合推論エンジン</text>
+<text x="132" y="47" font-size="11.5" fill="#45789D">GGML ベースの共通 C++ API、ローカルサーバー、チャットのサンプル。</text></g><path d="M16 72 H604" stroke="#A8DADC" stroke-opacity=".5"/></svg>
