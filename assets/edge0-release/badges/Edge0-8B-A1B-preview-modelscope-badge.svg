@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="107" height="18" viewBox="0 0 107 18" role="img" aria-labelledby="title description">
+  <title id="title">ModelScope / Edge0/Edge0-8B-A1B-preview</title>
+  <desc id="description">ModelScope / Edge0/Edge0-8B-A1B-preview. Visible badge label: Edge0 / 8B-A1B. Original repository badge target: https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview.</desc>
+  <filter id="blur"><feGaussianBlur stdDeviation="16"/></filter>
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r"><rect width="107" height="18" rx="2.7"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="58" height="18" fill="#f2f3f5"/>
+    <rect x="58" width="49" height="18" fill="#45789D"/>
+    <rect width="107" height="18" fill="url(#s)"/>
+  </g>
+<image x="6.7275" y="3" width="12" height="12" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9ImN1cnJlbnRDb2xvciIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHlsZT0iZmxleDowIDAgYXV0bztsaW5lLWhlaWdodDoxIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+Cjx0aXRsZT5Nb2RlbFNjb3BlPC90aXRsZT4KPHBhdGggZD0iTTIuNjY3IDUuM0g4djIuNjY3SDUuMzMzdjIuNjY2SDIuNjY3VjguNDY3SC41djIuMTY2aDIuMTY3VjEzLjNIMFY3Ljk2N2gyLjY2N1Y1LjN6TTIuNjY3IDEzLjNoMi42NjZ2Mi42NjdIOHYyLjY2NkgyLjY2N1YxMy4zek04IDEwLjYzM2gyLjY2N1YxMy4zSDh2LTIuNjY3ek0xMy4zMzMgMTMuM3YyLjY2N2gtMi42NjZWMTMuM2gyLjY2NnpNMTMuMzMzIDEzLjN2LTIuNjY3SDE2VjEzLjNoLTIuNjY3eiIvPgo8cGF0aCBkPSJNMjEuMzMzIDEzLjN2LTIuNjY3aC0yLjY2NlY3Ljk2N0gxNlY1LjNoNS4zMzN2Mi42NjdIMjRWMTMuM2gtMi42Njd6bTAtMi42NjdIMjMuNVY4LjQ2N2gtMi4xNjd2Mi4xNjZ6IiBjbGlwLXJ1bGU9ImV2ZW5vZGQiLz4KPHBhdGggZD0iTTIxLjMzMyAxMy4zdjUuMzMzSDE2di0yLjY2NmgyLjY2N1YxMy4zaDIuNjY2eiIvPgo8L3N2Zz4K" aria-hidden="true"/>
+<g font-family="Verdana, Geneva, DejaVu Sans, sans-serif" font-size="9.5" text-anchor="middle" text-rendering="geometricPrecision"><text x="36.5" y="12.25" fill="#333">Edge0</text><text x="82.5" y="12.25" fill="#FFFFFF">8B-A1B</text></g>
+</svg>
