@@ -23,7 +23,9 @@
 
 <br>
 
-## News
+<a name="news"></a>
+
+## <img src="assets/edge0-release/typography/section-news.svg" alt="News" width="65" height="52">
 
 <p>
 <a href="docs/models/edge0-145b.md"><img src="assets/edge0-release/news/news-2026-11-13.svg" alt="13 November 2026 · 145B and 120B models · Latent MoE models for one NVIDIA GPU, in Q3_K and NVFP4." width="620"></a><br>
@@ -53,21 +55,29 @@
 </details>
 
 <details open>
-<summary><h2>Previous release</h2></summary>
+<summary><h2><a name="previous-release"></a><img src="assets/edge0-release/typography/fold-previous-release.svg" alt="Previous release" width="186" height="26"></h2></summary>
 
 → [35B / 8B release guide](docs/legacy-models.md) — model downloads, architecture, benchmarks, supported platforms and setup instructions.
 
 </details>
 
-## About
+<a name="about"></a>
 
-**Edge0 is an open-source streaming MoE inference framework** for running large sparse models on consumer hardware. Use it through the command line, a local API server, or the Edge0 Chat app.
+## <img src="assets/edge0-release/typography/section-about.svg" alt="About" width="70" height="52">
 
-The latest release brings **145B and 120B latent-MoE models** to a single NVIDIA GPU. Trained natively at 4 bits, both models are available in **Q3_K** and **NVFP4** for local agent workloads.
+<p><img src="assets/edge0-release/typography/about-intro.svg" alt="Edge0 is an open-source streaming MoE inference framework for running large sparse models on consumer hardware." width="362" height="110"></p>
 
-[`edge0-infer`](edge0-infer/README.md) provides shared `serve` and `chat` commands and selects the engine from the model folder. The latest models run on [**edge0-strata**](edge0-strata/EDGE0.md), a fork of Strata; the previous 35B release runs on the [**GGML-based native engine**](docs/legacy-models.md#native-engine-design).
+Use it through the command line, a local API server, or the Edge0 Chat app.
 
-### Platforms
+The latest release brings 145B and 120B latent-MoE models to a single NVIDIA GPU.
+
+Trained natively at 4 bits, both models are available in Q3_K and NVFP4 for local agent workloads.
+
+[`edge0-infer`](edge0-infer/README.md) provides shared `serve` and `chat` commands and selects the engine from the model folder. The latest models run on [edge0-strata](edge0-strata/EDGE0.md), a fork of Strata; the previous 35B release runs on the [GGML-based native engine](docs/legacy-models.md#native-engine-design).
+
+<a name="platforms"></a>
+
+### <img src="assets/edge0-release/typography/sub-platforms.svg" alt="Platforms" width="76" height="32">
 
 Support depends on the model and its engine.
 
@@ -81,9 +91,13 @@ Support depends on the model and its engine.
 
 Use the [145B / 120B setup](#getting-started) for the latest release. The [previous-release guide](docs/legacy-models.md#platforms) covers native backends, platform-specific builds and chat examples. The 8B checkpoint is available; native-engine support is planned.
 
-## Models
+<a name="models"></a>
 
-**145B / 120B are the current latent-MoE series**, derived from Qwen3.8-Flash-Next and trained natively at 4 bits. They run on edge0-strata through `edge0-infer serve` and `edge0-infer chat`, on Linux or Windows with an NVIDIA GPU and CUDA 13.
+## <img src="assets/edge0-release/typography/section-models.svg" alt="Models" width="85" height="52">
+
+<p><img src="assets/edge0-release/typography/models-intro.svg" alt="145B / 120B are the current latent-MoE series, derived from Qwen3.8-Flash-Next and trained natively at 4 bits." width="377" height="110"></p>
+
+They run on edge0-strata through `edge0-infer serve` and `edge0-infer chat`, on Linux or Windows with an NVIDIA GPU and CUDA 13.
 
 **145B Q3_K · RTX 5090 D 24 GB:** 121.2 tok/s agent decode · 3554.9 tok/s 16K prefill.
 
@@ -93,7 +107,7 @@ Use the [145B / 120B setup](#getting-started) for the latest release. The [previ
 | [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K or NVFP4 latent experts (1280), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU) |
 
 <details open>
-<summary><h3>Model overview · 145B Q3_K</h3></summary>
+<summary><h3><img src="assets/edge0-release/typography/sub-model-overview.svg" alt="Model overview · 145B Q3_K" width="223" height="32"></h3></summary>
 
 Q3_K · RTX 5090 D 24 GB. Prefill uses a 16K-token input. Quality scores are model-level results.
 
@@ -101,9 +115,13 @@ Q3_K · RTX 5090 D 24 GB. Prefill uses a 16K-token input. Quality scores are mod
 
 </details>
 
-## Quality
+<a name="quality"></a>
 
-### 145B / 120B
+## <img src="assets/edge0-release/typography/section-quality.svg" alt="Quality" width="80" height="52">
+
+<a name="145b-120b"></a>
+
+### <img src="assets/edge0-release/typography/sub-145b-120b.svg" alt="145B / 120B" width="97" height="32">
 
 Six benchmarks, six models. Higher is better. Scores are reported by model, not as separate Q3_K and NVFP4 evaluations.
 
@@ -112,7 +130,7 @@ Six benchmarks, six models. Higher is better. Scores are reported by model, not 
 [Copyable scores and all model names](docs/models/edge0-145b.md#quality)
 
 <details>
-<summary><b>Copyable scores · all six models</b></summary>
+<summary>Copyable scores · all six models</summary>
 
 Bold values indicate the best score in each column.
 
@@ -129,14 +147,18 @@ Bold values indicate the best score in each column.
 
 <a name="speed"></a>
 
-## Benchmark
+<a name="benchmark"></a>
 
-### 145B / 120B
+## <img src="assets/edge0-release/typography/section-benchmark.svg" alt="Benchmark" width="130" height="52">
 
-All throughput figures are in **tok/s**. The headline uses **145B Q3_K** on RTX 5090 D 24 GB.
+<a name="145b-120b-1"></a>
+
+### <img src="assets/edge0-release/typography/sub-145b-120b.svg" alt="145B / 120B" width="97" height="32">
+
+All throughput figures are in tok/s. The headline uses **145B Q3_K** on RTX 5090 D 24 GB.
 
 <details open>
-<summary><b>145B speed table</b> · all machines and builds</summary>
+<summary>145B speed table · all machines and builds</summary>
 
 Highlighted rows show Q3_K. Click the table to view it at full size.
 
@@ -160,7 +182,7 @@ Highlighted rows show Q3_K. Click the table to view it at full size.
 </details>
 
 <details>
-<summary><b>145B measurement conditions · constrained budget and memory residency</b></summary>
+<summary>145B measurement conditions · constrained budget and memory residency</summary>
 
 `16 GiB VRAM + 20 GiB RAM` rows are the RTX 5090 D 24 GB again, constrained by cgroup to a 16 GiB VRAM and
 20 GiB system-RAM budget — not a different card. With residency on, the same card holds **Q3_K** (40.81 GiB of weights)
@@ -172,7 +194,7 @@ The 16 GiB VRAM + 20 GiB RAM budget is a test limit, not a minimum system requir
 </details>
 
 <details open>
-<summary><b>120B speed table</b> · all machines and builds</summary>
+<summary>120B speed table · all machines and builds</summary>
 
 <a href="assets/edge0-release/speed-120B.svg"><img src="assets/edge0-release/speed-120B.svg" alt="Complete eight-row Edge0-120B speed table" width="1400"></a>
 
@@ -200,7 +222,7 @@ nothing counted twice.
 </details>
 
 <details open>
-<summary><h2>In action</h2></summary>
+<summary><h2><a name="in-action"></a><img src="assets/edge0-release/typography/fold-in-action.svg" alt="In action" width="98" height="26"></h2></summary>
 
 <p align="center"><a href="assets/edge0-release/showcase.mp4"><img src="assets/edge0-release/showcase-poster.svg" alt="Play the 2 minute 1 second Edge0-145B showcase" width="480"></a></p>
 
@@ -223,12 +245,14 @@ nothing counted twice.
 
 </details>
 
-## Architecture
+<a name="architecture"></a>
+
+## <img src="assets/edge0-release/typography/section-architecture.svg" alt="Architecture" width="138" height="52">
 
 Latent MoE compresses expert inputs while keeping attention at full width. The 145B model uses latent width 1792; the 120B model uses 1280. Both route each token to 10 of 512 experts, alongside one shared expert.
 
 <details open>
-<summary><b>Architecture details · diagram and configuration</b></summary>
+<summary>Architecture details · diagram and configuration</summary>
 
 <a href="assets/edge0-release/arch-145B.svg"><img src="assets/edge0-release/arch-145B.svg" alt="Edge0-145B architecture and expert routing" width="1760"></a>
 
@@ -238,9 +262,13 @@ Latent MoE compresses expert inputs while keeping attention at full width. The 1
 
 <a name="quick-start"></a>
 
-## Getting Started
+<a name="getting-started"></a>
 
-### 145B / 120B · edge0-strata
+## <img src="assets/edge0-release/typography/section-getting-started.svg" alt="Getting Started" width="172" height="52">
+
+<a name="145b-120b-edge0-strata"></a>
+
+### <img src="assets/edge0-release/typography/sub-145b-120b-edge0-strata.svg" alt="145B / 120B · edge0-strata" width="208" height="32">
 
 Each model folder (Q3_K or NVFP4, Edge0-145B or Edge0-120B) runs through `edge0-infer`, from the command line or from the Edge0 Chat desktop app. Keep the folder as it is:
 `edge0-infer` identifies the model by `model_name` in its `model.json`.
@@ -248,14 +276,14 @@ Each model folder (Q3_K or NVFP4, Edge0-145B or Edge0-120B) runs through `edge0-
 For 145B and 120B, use `serve` or `chat`; `run` belongs to the native engine.
 
 <details>
-<summary><b>Platform & documentation notes</b></summary>
+<summary>Platform & documentation notes</summary>
 
 The build instructions target NVIDIA GPUs with CUDA 13 on Linux or Windows (x64 or ARM64). The Apple M2 Ultra measurements use Metal; they do not establish macOS release availability.
 
 </details>
 
 <details>
-<summary><b>Build & command-line instructions</b></summary>
+<summary>Build & command-line instructions</summary>
 
 **1. Build.** Clone the repository, then build two parts. Run the launch commands below from `edge0-infer/`:
 
@@ -286,7 +314,7 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
-<summary><b>Desktop app</b> · Windows</summary>
+<summary>Desktop app · Windows</summary>
 
 ⬇️ **Download:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
@@ -294,7 +322,9 @@ Open **Edge0 Chat** on Windows and choose a model folder, such as `Edge0-145B-q3
 
 </details>
 
-## Documentation
+<a name="documentation"></a>
+
+## <img src="assets/edge0-release/typography/section-documentation.svg" alt="Documentation" width="173" height="52">
 
 **Latest release · 145B / 120B**
 
@@ -309,7 +339,7 @@ Open **Edge0 Chat** on Windows and choose a model folder, such as `Edge0-145B-q3
 - [Model asset tools and adding a model](edge0-infer/tools/assets/README.md)
 
 <details>
-<summary><b>Previous release · models and native-engine documentation</b></summary>
+<summary>Previous release · models and native-engine documentation</summary>
 
 - [35B / 8B release guide](docs/legacy-models.md)
 - [MoE routing and experts](docs/moe.md) / [prerouter](docs/prerouter.md)
@@ -322,10 +352,12 @@ Open **Edge0 Chat** on Windows and choose a model folder, such as `Edge0-145B-q3
 
 </details>
 
-## Roadmap
+<a name="roadmap"></a>
+
+## <img src="assets/edge0-release/typography/section-roadmap.svg" alt="Roadmap" width="112" height="52">
 
 <details>
-<summary><b>Q4 2026</b> · architecture and inference</summary>
+<summary>Q4 2026 · architecture and inference</summary>
 
 **Models & algorithms**
 
@@ -353,10 +385,12 @@ than just an arithmetic one.
 
 </details>
 
-## Contributing
+<a name="contributing"></a>
+
+## <img src="assets/edge0-release/typography/section-contributing.svg" alt="Contributing" width="141" height="52">
 
 <details>
-<summary><b>Development workflow and checks</b></summary>
+<summary>Development workflow and checks</summary>
 
 Contributions are welcome — issues, PRs, benchmark reports and model
 ports all count.
@@ -380,7 +414,9 @@ tests passing and add tests for new behavior.
 
 </details>
 
-## Citation
+<a name="citation"></a>
+
+## <img src="assets/edge0-release/typography/section-citation.svg" alt="Citation" width="89" height="52">
 
 The technical report covers 35B SSD streaming and trained routing prediction.
 
@@ -398,7 +434,9 @@ If you find edge0 useful, please cite our technical report:
 }
 ```
 
-## Contact Us
+<a name="contact-us"></a>
+
+## <img src="assets/edge0-release/typography/section-contact-us.svg" alt="Contact Us" width="128" height="52">
 
 - **Discord**: [edge0.ai/discord](https://edge0.ai/discord) — community chat and support
 - **Email**: samuel@edge0.ai
@@ -407,7 +445,7 @@ For bugs and feature requests, please use
 [GitHub Issues](https://github.com/Edge0-AI/Edge0/issues).
 
 <details>
-<summary><h2>License</h2></summary>
+<summary><h2><a name="license"></a><img src="assets/edge0-release/typography/fold-license.svg" alt="License" width="89" height="26"></h2></summary>
 
 ### Framework code
 
