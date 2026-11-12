@@ -35,28 +35,18 @@
 
 ## News
 
-<p><sub>13 November 2026</sub><br>
-<a href="docs/models/edge0-145b.md">145B and 120B models</a><br>
-Latent MoE models for one NVIDIA GPU, in Q3_K and NVFP4.</p>
+<p><a href="docs/models/edge0-145b.md"><img src="assets/edge0-release/news/news-2026-11-13.svg" alt="13 November 2026 · 145B and 120B models · Latent MoE models for one NVIDIA GPU, in Q3_K and NVFP4." width="527"></a></p>
 
-<p><sub>4 November 2026</sub><br>
-<a href="edge0-infer/README.md">Unified inference engine</a><br>
-A GGML-based engine with a shared C++ API, local server and chat examples.</p>
+<p><a href="edge0-infer/README.md"><img src="assets/edge0-release/news/news-2026-11-04.svg" alt="4 November 2026 · Unified inference engine · A GGML-based engine with a shared C++ API, local server and chat examples." width="527"></a></p>
 
-<p><sub>30 September 2026</sub><br>
-<a href="https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer">Engines for four platforms</a><br>
-iOS, macOS, Android and Windows engines; archived at pre-edge0-infer.</p>
+<p><a href="https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer"><img src="assets/edge0-release/news/news-2026-09-30.svg" alt="30 September 2026 · Engines for four platforms · iOS, macOS, Android and Windows engines; archived at pre-edge0-infer." width="527"></a></p>
 
 <details>
 <summary>More updates</summary>
 
-<p><sub>16 September 2026</sub><br>
-<a href="https://arxiv.org/abs/2609.18063">35B technical report</a><br>
-Serving 35B MoEs from SSD with trained routing prediction.</p>
+<p><a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/news/news-2026-09-16.svg" alt="16 September 2026 · 35B technical report · Serving 35B MoEs from SSD with trained routing prediction." width="527"></a></p>
 
-<p><sub>8 September 2026</sub><br>
-<a href="https://huggingface.co/Edge0/Edge0-35B-A3B-preview">First open-source release</a><br>
-The edge0 framework and 35B / 8B preview models on Hugging Face and ModelScope.</p>
+<p><a href="https://huggingface.co/Edge0/Edge0-35B-A3B-preview"><img src="assets/edge0-release/news/news-2026-09-08.svg" alt="8 September 2026 · First open-source release · The edge0 framework and 35B / 8B preview models on Hugging Face and ModelScope." width="527"></a></p>
 
 <details>
 <summary>Full release notes</summary>
