@@ -95,6 +95,8 @@ export function App() {
       const response = await fetch(started.url + '/v1/models', { signal: abort.signal }); if (!response.ok) throw new Error(`Model capabilities failed (${response.status})`);
       const selected: Model | undefined = (await response.json()).data?.[0]; if (!selected?.capabilities) throw new Error('The service does not provide model capabilities. Rebuild edge0-infer.');
       runtimeSettings.current = nextSettings; setActivePath(path); setModel(selected); setService(started); setStatus(undefined);
+      // The sidebar shows the device from /status, which is otherwise polled only on the Status and Service pages.
+      const loadedEpoch = serviceEpoch.current; void fetch(started.url + '/status').then(r => r.ok ? r.json() as Promise<EngineStatus> : undefined).then(next => { if (next && loadedEpoch === serviceEpoch.current) setStatus(next); }).catch(() => undefined);
       changeConversation(restore ?? newConversation(nextSettings.system_prompt, selected.capabilities.thinking && selected.capabilities.thinking_default, path)); setDraft(''); setPage('chat');
     } catch (failure) { if (!abort.signal.aborted) report(failure); await invoke('stop_service').catch(report); }
     finally { controller.current = null; setLoading(false); }
