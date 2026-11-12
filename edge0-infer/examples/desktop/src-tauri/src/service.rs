@@ -105,6 +105,60 @@ pub struct Inspection {
 pub struct Service {
     url: String,
     pid: u32,
+    /// Set when the model left so little commit memory that the first generations may fail to allocate.
+    memory_warning: Option<String>,
+}
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CommitMemory {
+    pub limit: u64,
+    pub available: u64,
+}
+const GIB: u64 = 1 << 30;
+const MEMORY_POLL: Duration = Duration::from_millis(250);
+/// Samples that must agree before the load counts as finished: 3 s at MEMORY_POLL.
+const STEADY_SAMPLES: usize = 13;
+const STEADY_TOLERANCE: u64 = 256 << 20;
+const STEADY_LIMIT: Duration = Duration::from_secs(30);
+/// Edge0 145B's first request on a GPU that shares system memory was measured committing ~6.5 GB more than the loaded
+/// model held, so less than this left after the load can end that request with an allocation failure.
+const LOW_COMMIT: u64 = 8 * GIB;
+/// An engine's automatic expert cache fills the free VRAM, which a GPU sharing system memory charges to the commit
+/// limit.  A load leaving less than this free is reloaded with that much more VRAM left out of the cache.
+const RELOAD_BELOW: u64 = 10 * GIB;
+/// edge0-strata's own --vram-reserve-mib when none is given.
+const ENGINE_RESERVE_MIB: u32 = 700;
+/// A larger reserve leaves the expert cache too small to be worth it; that load keeps its warning instead.
+const MAX_RESERVE_MIB: u32 = 24 * 1024;
+const MAX_RELOADS: usize = 2;
+const RESERVES_FILE: &str = "memory-reserve.json";
+/// The reserve that brings a load with `memory` free up to RELOAD_BELOW, a quarter more since leaving 1 GiB of VRAM
+/// free was measured to free ~0.75 GiB of commit memory; None when it is enough already or would pass MAX_RESERVE_MIB.
+fn next_reserve(memory: CommitMemory, current: Option<u32>) -> Option<u32> {
+    let short_mib = RELOAD_BELOW.checked_sub(memory.available).filter(|short| *short > 0)? >> 20;
+    let base = current.filter(|mib| *mib > 0).unwrap_or(ENGINE_RESERVE_MIB);
+    let added = (short_mib * 5 / 4).div_ceil(256) * 256;
+    (base < MAX_RESERVE_MIB).then(|| (u64::from(base) + added).min(u64::from(MAX_RESERVE_MIB)) as u32)
+}
+fn reserve_arguments(mib: u32) -> [String; 4] {
+    ["--strata-arg".into(), "--vram-reserve-mib".into(), "--strata-arg".into(), mib.to_string()]
+}
+/// The committed bytes of the last STEADY_SAMPLES samples stay within STEADY_TOLERANCE of each other.
+fn steady(committed: &VecDeque<u64>) -> bool {
+    committed.len() >= STEADY_SAMPLES
+        && committed.iter().max().zip(committed.iter().min()).is_some_and(|(max, min)| max - min <= STEADY_TOLERANCE)
+}
+pub fn commit_warning(memory: CommitMemory) -> Option<String> {
+    (memory.available < LOW_COMMIT).then(|| {
+        let gb = |bytes: u64| bytes as f64 / 1e9;
+        format!(
+            "Low memory: with the model loaded, only {:.1} GB of the {:.1} GB Windows commit limit is free, so \
+             generating may crash with an out-of-memory error. Increase the page file (System Properties > Advanced > \
+             Performance Settings > Advanced > Virtual memory; for example a fixed size of 96 GB), restart Windows, \
+             and load the model again.",
+            gb(memory.available),
+            gb(memory.limit)
+        )
+    })
 }
 #[derive(Serialize)]
 pub struct Status {
@@ -480,6 +534,44 @@ impl Manager {
         if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
             return Err("Model loading cancelled".into());
         }
+        let key = canonical(model).to_string_lossy().into_owned();
+        let mut reserve = if delegated { self.reserves().get(&key).copied() } else { None };
+        let mut reloads = 0;
+        // the commit memory free and the reserve of the load before a reload
+        let mut previous: Option<(u64, u32)> = None;
+        loop {
+            let mut args = network_arguments(settings, model, &self.directory.join("api-token"), delegated);
+            if let Some(mib) = reserve.filter(|mib| *mib > 0) {
+                args.extend(reserve_arguments(mib));
+            }
+            let (url, pid) = self.launch(epoch, settings, &executable, args)?;
+            let memory = self.settle_memory(epoch)?;
+            if let (Some(memory), Some((before, before_mib))) = (memory, previous) {
+                let added = u64::from(reserve.unwrap_or(0).saturating_sub(before_mib)) << 20;
+                if memory.available.saturating_sub(before) < added / 2 {
+                    // Free VRAM is not commit memory here (a GPU with its own memory): reloading cannot help this model.
+                    trace("the reserve freed no commit memory; this model is not reloaded for it again");
+                    self.remember_reserve(&key, 0);
+                    reserve = Some(0);
+                }
+            }
+            let next = memory
+                .filter(|_| delegated && reserve != Some(0) && reloads < MAX_RELOADS)
+                .and_then(|memory| next_reserve(memory, reserve));
+            let (Some(memory), Some(next)) = (memory, next) else {
+                let memory_warning = memory.and_then(commit_warning);
+                trace(&format!("ready: {url} memory_warning={memory_warning:?}"));
+                return Ok(Service { url, pid, memory_warning });
+            };
+            trace(&format!("reloading with --vram-reserve-mib {next}: {} bytes of commit memory free", memory.available));
+            self.remember_reserve(&key, next);
+            previous = Some((memory.available, reserve.filter(|mib| *mib > 0).unwrap_or(ENGINE_RESERVE_MIB)));
+            reserve = Some(next);
+            reloads += 1;
+        }
+    }
+    /// Starts edge0-infer with `args` in place of any running one and waits for its ready line: the URL and pid.
+    fn launch(&self, epoch: u64, settings: &Settings, executable: &Path, args: Vec<String>) -> Result<(String, u32), String> {
         self.stop_process(None).map_err(|e| {
             trace(&format!("stop_process failed: {e}"));
             e
@@ -488,13 +580,7 @@ impl Manager {
         if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
             return Err("Model loading cancelled".into());
         }
-        let mut command = Command::new(&executable);
-        let args = network_arguments(
-            settings,
-            model,
-            &self.directory.join("api-token"),
-            delegated,
-        );
+        let mut command = Command::new(executable);
         if settings.lan_access {
             if crate::storage::read_token(&self.directory)?.is_none() {
                 return Err("Enable network access with an API token first".into());
@@ -528,7 +614,7 @@ impl Manager {
             }
         };
         let pid = child.id();
-        let record = PidRecord { pid, executable };
+        let record = PidRecord { pid, executable: executable.to_path_buf() };
         if let Err(e) = write_json(&self.record_path(), &record) {
             trace(&format!(
                 "write_json({}) failed: {e}",
@@ -593,7 +679,7 @@ impl Manager {
                 .iter()
                 .find_map(|line| ready_url(line));
             if let Some(url) = url {
-                return Ok(Service { url, pid });
+                return Ok((url, pid));
             }
             if Instant::now() >= deadline {
                 let detail = status.detail;
@@ -602,6 +688,59 @@ impl Manager {
             }
             thread::sleep(Duration::from_millis(50));
         }
+    }
+    /// The --vram-reserve-mib each model was last reloaded with on this machine, by its canonical path; 0 marks a model
+    /// that reloading did not help.
+    fn reserves(&self) -> BTreeMap<String, u32> {
+        fs::read(self.directory.join(RESERVES_FILE))
+            .ok()
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+            .unwrap_or_default()
+    }
+    fn remember_reserve(&self, model: &str, mib: u32) {
+        let mut reserves = self.reserves();
+        reserves.insert(model.into(), mib);
+        if let Err(e) = write_json(&self.directory.join(RESERVES_FILE), &reserves) {
+            trace(&format!("cannot remember the reserve: {e}"));
+        }
+    }
+    /// After the ready line an engine can still be filling its caches; the load is finished once the system's committed
+    /// memory has stopped moving (or STEADY_LIMIT passed).  The last reading, or None where the platform has no limit.
+    fn settle_memory(&self, epoch: u64) -> Result<Option<CommitMemory>, String> {
+        let Some(mut last) = platform::commit_memory() else {
+            return Ok(None);
+        };
+        let deadline = Instant::now() + STEADY_LIMIT;
+        let mut committed = VecDeque::from([last.limit.saturating_sub(last.available)]);
+        while !steady(&committed) && Instant::now() < deadline {
+            thread::sleep(MEMORY_POLL);
+            if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
+                self.stop_process(Some(epoch))?;
+                return Err("Model loading cancelled".into());
+            }
+            let status = self.status();
+            if !status.running {
+                self.stop_process(Some(epoch))?;
+                return Err(format!(
+                    "Service exited before becoming ready:\n{}",
+                    status.detail
+                ));
+            }
+            if let Some(next) = platform::commit_memory() {
+                last = next;
+                committed.push_back(next.limit.saturating_sub(next.available));
+                if committed.len() > STEADY_SAMPLES {
+                    committed.pop_front();
+                }
+            }
+        }
+        trace(&format!(
+            "memory: steady={} available={} limit={}",
+            steady(&committed),
+            last.available,
+            last.limit
+        ));
+        Ok(Some(last))
     }
     pub fn status(&self) -> Status {
         let Ok(mut process) = self.process.lock() else {
@@ -723,6 +862,52 @@ mod tests {
             Some(exe.to_string_lossy().into_owned())
         );
         fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn memory_is_steady_only_after_a_full_window_within_tolerance() {
+        let gb = |v: f64| (v * GIB as f64) as u64;
+        let mut committed: VecDeque<u64> = (0..STEADY_SAMPLES - 1).map(|_| gb(90.0)).collect();
+        assert!(!steady(&committed), "a window not yet full");
+        committed.push_back(gb(90.2));
+        assert!(steady(&committed));
+        // the expert cache filling: 40 GB in a few samples
+        let filling: VecDeque<u64> = (0..STEADY_SAMPLES).map(|i| gb(61.0 + 3.5 * i as f64)).collect();
+        assert!(!steady(&filling));
+    }
+    #[test]
+    fn warns_only_when_little_commit_memory_is_left() {
+        // measured on a 128 GB RTX Spark N1X with Edge0 145B loaded: 0.6 GB left of 104.5 GB
+        let low = commit_warning(CommitMemory { limit: 104_500_000_000, available: 600_000_000 }).unwrap();
+        assert!(low.starts_with("Low memory:"), "{low}");
+        assert!(low.contains("0.6 GB of the 104.5 GB"), "{low}");
+        assert!(low.contains("page file"), "{low}");
+        // the same PC with the development model: 24 GB left
+        assert_eq!(commit_warning(CommitMemory { limit: 102_500_000_000, available: 24_000_000_000 }), None);
+        assert!(commit_warning(CommitMemory { limit: 100 * GIB, available: LOW_COMMIT - 1 }).is_some());
+        assert!(commit_warning(CommitMemory { limit: 100 * GIB, available: LOW_COMMIT }).is_none());
+    }
+    #[test]
+    fn reloads_with_a_reserve_covering_the_commit_memory_short_of_the_target() {
+        let free = |available| CommitMemory { limit: 100 * GIB, available };
+        assert_eq!(next_reserve(free(RELOAD_BELOW), None), None);
+        // 0.5 GiB free is 9728 MiB short: 12160 MiB at the measured ratio, 12288 in whole 256 MiB, on top of the engine's 700
+        assert_eq!(next_reserve(free(GIB / 2), None), Some(700 + 12288));
+        assert_eq!(next_reserve(free(9 * GIB), Some(4000)), Some(4000 + 1280));
+        assert_eq!(next_reserve(free(0), Some(20000)), Some(MAX_RESERVE_MIB));
+        assert_eq!(next_reserve(free(0), Some(MAX_RESERVE_MIB)), None);
+        assert_eq!(
+            reserve_arguments(5000),
+            ["--strata-arg", "--vram-reserve-mib", "--strata-arg", "5000"].map(String::from)
+        );
+    }
+    #[test]
+    fn remembers_the_reserve_of_each_model() {
+        let manager = Manager::new(directory()).unwrap();
+        assert!(manager.reserves().is_empty());
+        manager.remember_reserve("/models/a", 9000);
+        manager.remember_reserve("/models/b", 0);
+        manager.remember_reserve("/models/a", 12000);
+        assert_eq!(manager.reserves(), BTreeMap::from([("/models/a".into(), 12000), ("/models/b".into(), 0)]));
     }
     #[test]
     fn parses_only_local_ready_lines() {
