@@ -236,11 +236,24 @@ impl Manager {
     }
     pub fn settings(&self) -> Result<Settings, String> {
         let path = self.directory.join("settings.json");
-        if !path.exists() {
-            return Ok(Settings::default());
+        let mut settings: Settings = if path.exists() {
+            serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
+                .map_err(|e| format!("Cannot read settings: {e}"))?
+        } else {
+            Settings::default()
+        };
+        // No executable chosen yet: use the edge0-infer that the release package puts beside this app.
+        if settings.executable.trim().is_empty() {
+            if let Some(found) = std::env::current_exe()
+                .ok()
+                .as_deref()
+                .and_then(Path::parent)
+                .and_then(bundled_executable)
+            {
+                settings.executable = found;
+            }
         }
-        serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
-            .map_err(|e| format!("Cannot read settings: {e}"))
+        Ok(settings)
     }
     pub fn save_settings(&self, settings: &Settings) -> Result<(), String> {
         settings.validate_options()?;
@@ -677,6 +690,13 @@ impl Drop for Manager {
         let _ = self.shutdown();
     }
 }
+/// The edge0-infer in `app_dir` (the directory of this app's own executable), as the release package lays
+/// them out side by side; None when it is not there (a development build, an app bundle).
+pub(crate) fn bundled_executable(app_dir: &Path) -> Option<String> {
+    let path = app_dir.join(format!("edge0-infer{}", std::env::consts::EXE_SUFFIX));
+    path.is_file().then(|| path.to_string_lossy().into_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -687,6 +707,22 @@ mod tests {
             std::process::id(),
             NEXT_DIRECTORY.fetch_add(1, Ordering::Relaxed)
         ))
+    }
+    #[test]
+    fn finds_the_bundled_executable_beside_the_app() {
+        let dir = directory();
+        fs::create_dir_all(&dir).unwrap();
+        assert_eq!(bundled_executable(&dir), None);
+        let exe = dir.join(format!("edge0-infer{}", std::env::consts::EXE_SUFFIX));
+        fs::create_dir(&exe).unwrap(); // a directory of that name is not an executable
+        assert_eq!(bundled_executable(&dir), None);
+        fs::remove_dir(&exe).unwrap();
+        fs::write(&exe, b"").unwrap();
+        assert_eq!(
+            bundled_executable(&dir),
+            Some(exe.to_string_lossy().into_owned())
+        );
+        fs::remove_dir_all(dir).unwrap();
     }
     #[test]
     fn parses_only_local_ready_lines() {
