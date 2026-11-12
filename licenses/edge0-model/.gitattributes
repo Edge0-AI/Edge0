@@ -1,0 +1,2 @@
+# Preserve the upstream license verbatim, including original line endings.
+third-party/Qwen-LICENSE.txt -text

@@ -1,0 +1,638 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:ns2="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" width="1400" height="900" viewBox="0 0 1008 648" version="1.1" role="img" aria-labelledby="chart-title chart-description" data-benchmarks="deepswe_1_1 terminal_bench_2_1 hle gpqa_diamond ifbench aa_lcr" data-scale-min="0" data-scale-max="100">
+ <title id="chart-title">Quality — six benchmarks, six models</title><desc id="chart-description">All six vertical-bar panels share a fixed 0–100 score scale; higher is better. The two priority panels appear above four smaller panels. Full model names are shown in the shared legend; stable short names appear below the bars. DeepSWE 1.1: Edge0-145B: 64.6; Edge0-120B: 51.3; Qwen3.8-Flash-Next: 58.7; Qwen3.8-27B: 42.2; DeepSeek-V4-Flash-0731: 54.4; Claude-Opus-4.6 (Max): not reported. Terminal-Bench 2.1: Edge0-145B: 86.5; Edge0-120B: 75.3; Qwen3.8-Flash-Next: 83.3; Qwen3.8-27B: 73.0; DeepSeek-V4-Flash-0731: 82.7; Claude-Opus-4.6 (Max): 78.2. HLE: Edge0-145B: 35.4; Edge0-120B: 31.0; Qwen3.8-Flash-Next: 35.9; Qwen3.8-27B: 30.8; DeepSeek-V4-Flash-0731: 33.8; Claude-Opus-4.6 (Max): 40.0. GPQA-Diamond: Edge0-145B: 90.4; Edge0-120B: 87.4; Qwen3.8-Flash-Next: 91.7; Qwen3.8-27B: 89.2; DeepSeek-V4-Flash-0731: 90.8; Claude-Opus-4.6 (Max): 91.3. IFBench: Edge0-145B: 80.6; Edge0-120B: 79.3; Qwen3.8-Flash-Next: 81.3; Qwen3.8-27B: 79.5; DeepSeek-V4-Flash-0731: 79.2; Claude-Opus-4.6 (Max): 62.5. AA-LCR: Edge0-145B: 79.3; Edge0-120B: 81.0; Qwen3.8-Flash-Next: 79.1; Qwen3.8-27B: 82.0; DeepSeek-V4-Flash-0731: 79.7; Claude-Opus-4.6 (Max): 78.0. Missing scores are not drawn as zero. Results are listed by model.</desc><metadata id="quality-chart-data">{"layout":"one figure; two wide priority panels above four smaller panels","orientation":"vertical","baseline_date":"2026-11-12","baseline_sha256":"e5a4aafbd4e96388ad01c847a6779efa8c43ba78de4bedcb380689fb75986267","scale":[0,100],"unit":"score","palette":{"signal":"#E63946","ivory":"#F1FAEE","ice":"#A8DADC","steel":"#45789D","navy":"#1D3557"},"charts":[{"benchmark":"deepswe_1_1","label":"DeepSWE 1.1","priority":true,"rows":[{"model":"Edge0-145B","value":64.6,"color":"#E63946"},{"model":"Edge0-120B","value":51.3,"color":"#D98289"},{"model":"Qwen3.8-Flash-Next","value":58.7,"color":"#F1FAEE"},{"model":"Qwen3.8-27B","value":42.2,"color":"#F1FAEE"},{"model":"DeepSeek-V4-Flash-0731","value":54.4,"color":"#F1FAEE"},{"model":"Claude-Opus-4.6 (Max)","value":null,"color":"#A8DADC"}]},{"benchmark":"terminal_bench_2_1","label":"Terminal-Bench 2.1","priority":true,"rows":[{"model":"Edge0-145B","value":86.5,"color":"#E63946"},{"model":"Edge0-120B","value":75.3,"color":"#D98289"},{"model":"Qwen3.8-Flash-Next","value":83.3,"color":"#F1FAEE"},{"model":"Qwen3.8-27B","value":73.0,"color":"#F1FAEE"},{"model":"DeepSeek-V4-Flash-0731","value":82.7,"color":"#F1FAEE"},{"model":"Claude-Opus-4.6 (Max)","value":78.2,"color":"#A8DADC"}]},{"benchmark":"hle","label":"HLE","priority":false,"rows":[{"model":"Edge0-145B","value":35.4,"color":"#E63946"},{"model":"Edge0-120B","value":31.0,"color":"#D98289"},{"model":"Qwen3.8-Flash-Next","value":35.9,"color":"#F1FAEE"},{"model":"Qwen3.8-27B","value":30.8,"color":"#F1FAEE"},{"model":"DeepSeek-V4-Flash-0731","value":33.8,"color":"#F1FAEE"},{"model":"Claude-Opus-4.6 (Max)","value":40.0,"color":"#A8DADC"}]},{"benchmark":"gpqa_diamond","label":"GPQA-Diamond","priority":false,"rows":[{"model":"Edge0-145B","value":90.4,"color":"#E63946"},{"model":"Edge0-120B","value":87.4,"color":"#D98289"},{"model":"Qwen3.8-Flash-Next","value":91.7,"color":"#F1FAEE"},{"model":"Qwen3.8-27B","value":89.2,"color":"#F1FAEE"},{"model":"DeepSeek-V4-Flash-0731","value":90.8,"color":"#F1FAEE"},{"model":"Claude-Opus-4.6 (Max)","value":91.3,"color":"#A8DADC"}]},{"benchmark":"ifbench","label":"IFBench","priority":false,"rows":[{"model":"Edge0-145B","value":80.6,"color":"#E63946"},{"model":"Edge0-120B","value":79.3,"color":"#D98289"},{"model":"Qwen3.8-Flash-Next","value":81.3,"color":"#F1FAEE"},{"model":"Qwen3.8-27B","value":79.5,"color":"#F1FAEE"},{"model":"DeepSeek-V4-Flash-0731","value":79.2,"color":"#F1FAEE"},{"model":"Claude-Opus-4.6 (Max)","value":62.5,"color":"#A8DADC"}]},{"benchmark":"aa_lcr","label":"AA-LCR","priority":false,"rows":[{"model":"Edge0-145B","value":79.3,"color":"#E63946"},{"model":"Edge0-120B","value":81.0,"color":"#D98289"},{"model":"Qwen3.8-Flash-Next","value":79.1,"color":"#F1FAEE"},{"model":"Qwen3.8-27B","value":82.0,"color":"#F1FAEE"},{"model":"DeepSeek-V4-Flash-0731","value":79.7,"color":"#F1FAEE"},{"model":"Claude-Opus-4.6 (Max)","value":78.0,"color":"#A8DADC"}]}]}</metadata><metadata>
+  <rdf:RDF>
+   <ns2:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <ns2:Agent>
+      <dc:title>Edge0 Quality chart generator</dc:title>
+     </ns2:Agent>
+    </dc:creator>
+   </ns2:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 648  L 1008 648  L 1008 0  L 0 0  z " style="fill: #ffffff" />
+  </g>
+  <g id="benchmark-deepswe_1_1">
+   <g id="patch_2">
+    <path d="M 31.68 331.92  L 486.72 331.92  L 486.72 166.32  L 31.68 166.32  z " style="fill: #ffffff" />
+   </g>
+   <g id="score-bar-deepswe_1_1-0" data-benchmark="deepswe_1_1" data-model="Edge0-145B" data-value="64.6">
+    <path d="M 42.2976 331.92  L 96.9024 331.92  L 96.9024 224.9424  L 42.2976 224.9424  z " clip-path="url(#pbd959799bf)" style="fill: #e63946" />
+   </g>
+   <g id="score-bar-deepswe_1_1-1" data-benchmark="deepswe_1_1" data-model="Edge0-120B" data-value="51.3">
+    <path d="M 118.1376 331.92  L 172.7424 331.92  L 172.7424 246.9672  L 118.1376 246.9672  z " clip-path="url(#pbd959799bf)" style="fill: #d98289" />
+   </g>
+   <g id="score-bar-deepswe_1_1-2" data-benchmark="deepswe_1_1" data-model="Qwen3.8-Flash-Next" data-value="58.7">
+    <path d="M 193.9776 331.92  L 248.5824 331.92  L 248.5824 234.7128  L 193.9776 234.7128  z " clip-path="url(#pbd959799bf)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-deepswe_1_1-3" data-benchmark="deepswe_1_1" data-model="Qwen3.8-27B" data-value="42.2">
+    <path d="M 269.8176 331.92  L 324.4224 331.92  L 324.4224 262.0368  L 269.8176 262.0368  z " clip-path="url(#pbd959799bf)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-deepswe_1_1-4" data-benchmark="deepswe_1_1" data-model="DeepSeek-V4-Flash-0731" data-value="54.4">
+    <path d="M 345.6576 331.92  L 400.2624 331.92  L 400.2624 241.8336  L 345.6576 241.8336  z " clip-path="url(#pbd959799bf)" style="fill: #f1faee" />
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1" />
+     <g id="text_1">
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(51.295234 349.68875)">Edge0</text>
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(55.018141 364.045386)">145B</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2" />
+     <g id="text_2">
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(127.135234 349.68875)">Edge0</text>
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(130.858141 364.045386)">120B</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3" />
+     <g id="text_3">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(196.866656 349.652531)">Qwen3.8</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(191.791266 363.866198)">Flash-Next</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4" />
+     <g id="text_4">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(272.706656 349.652531)">Qwen3.8</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(286.266766 363.866198)">27B</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_5" />
+     <g id="text_5">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(344.474906 349.801219)">DeepSeek</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(348.552375 364.014886)">V4-Flash</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_6" />
+     <g id="text_6">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(429.470625 349.652531)">Claude</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(424.047344 364.07722)">Opus 4.6</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2" />
+   <g id="patch_3">
+    <path d="M 31.68 331.92  L 486.72 331.92  " style="fill: none; stroke: #a8dadc; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square" />
+   </g>
+   <g id="text_7">
+    <text style="fill: #1d3557; font: 700 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="69.6" y="215.587556" transform="rotate(-0 69.6 215.587556)">64.6</text>
+   </g>
+   <g id="text_8">
+    <text style="fill: #1d3557; font: 700 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="145.44" y="237.612356" transform="rotate(-0 145.44 237.612356)">51.3</text>
+   </g>
+   <g id="text_9">
+    <text style="fill: #1d3557; font: 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="221.28" y="225.33405" transform="rotate(-0 221.28 225.33405)">58.7</text>
+   </g>
+   <g id="text_10">
+    <text style="fill: #1d3557; font: 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="297.12" y="252.65805" transform="rotate(-0 297.12 252.65805)">42.2</text>
+   </g>
+   <g id="text_11">
+    <text style="fill: #1d3557; font: 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="372.96" y="232.45485" transform="rotate(-0 372.96 232.45485)">54.4</text>
+   </g>
+   <g id="text_12">
+    <text style="fill: #1d3557; opacity: 0.6; font: 16px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="448.8" y="320.46" transform="rotate(-0 448.8 320.46)">—</text>
+   </g>
+  </g>
+  <g id="benchmark-terminal_bench_2_1">
+   <g id="patch_4">
+    <path d="M 521.28 331.92  L 976.32 331.92  L 976.32 166.32  L 521.28 166.32  z " style="fill: #ffffff" />
+   </g>
+   <g id="score-bar-terminal_bench_2_1-0" data-benchmark="terminal_bench_2_1" data-model="Edge0-145B" data-value="86.5">
+    <path d="M 531.8976 331.92  L 586.5024 331.92  L 586.5024 188.676  L 531.8976 188.676  z " clip-path="url(#p2ef5bdf40e)" style="fill: #e63946" />
+   </g>
+   <g id="score-bar-terminal_bench_2_1-1" data-benchmark="terminal_bench_2_1" data-model="Edge0-120B" data-value="75.3">
+    <path d="M 607.7376 331.92  L 662.3424 331.92  L 662.3424 207.2232  L 607.7376 207.2232  z " clip-path="url(#p2ef5bdf40e)" style="fill: #d98289" />
+   </g>
+   <g id="score-bar-terminal_bench_2_1-2" data-benchmark="terminal_bench_2_1" data-model="Qwen3.8-Flash-Next" data-value="83.3">
+    <path d="M 683.5776 331.92  L 738.1824 331.92  L 738.1824 193.9752  L 683.5776 193.9752  z " clip-path="url(#p2ef5bdf40e)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-terminal_bench_2_1-3" data-benchmark="terminal_bench_2_1" data-model="Qwen3.8-27B" data-value="73.0">
+    <path d="M 759.4176 331.92  L 814.0224 331.92  L 814.0224 211.032  L 759.4176 211.032  z " clip-path="url(#p2ef5bdf40e)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-terminal_bench_2_1-4" data-benchmark="terminal_bench_2_1" data-model="DeepSeek-V4-Flash-0731" data-value="82.7">
+    <path d="M 835.2576 331.92  L 889.8624 331.92  L 889.8624 194.9688  L 835.2576 194.9688  z " clip-path="url(#p2ef5bdf40e)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-terminal_bench_2_1-5" data-benchmark="terminal_bench_2_1" data-model="Claude-Opus-4.6 (Max)" data-value="78.2">
+    <path d="M 911.0976 331.92  L 965.7024 331.92  L 965.7024 202.4208  L 911.0976 202.4208  z " clip-path="url(#p2ef5bdf40e)" style="fill: #a8dadc; stroke-dasharray: 2.55,1.7; stroke-dashoffset: 0; stroke: #45789d; stroke-width: 0.85; stroke-linejoin: miter" />
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_7">
+     <g id="line2d_7" />
+     <g id="text_13">
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(540.895234 349.68875)">Edge0</text>
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(544.618141 364.045386)">145B</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_8" />
+     <g id="text_14">
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(616.735234 349.68875)">Edge0</text>
+      <text style="fill: #1d3557; font: 700 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(620.458141 364.045386)">120B</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_9" />
+     <g id="text_15">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(686.466656 349.652531)">Qwen3.8</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(681.391266 363.866198)">Flash-Next</text>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_10" />
+     <g id="text_16">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(762.306656 349.652531)">Qwen3.8</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(775.866766 363.866198)">27B</text>
+     </g>
+    </g>
+    <g id="xtick_11">
+     <g id="line2d_11" />
+     <g id="text_17">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(834.074906 349.801219)">DeepSeek</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(838.152375 364.014886)">V4-Flash</text>
+     </g>
+    </g>
+    <g id="xtick_12">
+     <g id="line2d_12" />
+     <g id="text_18">
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(919.070625 349.652531)">Claude</text>
+      <text style="fill: #1d3557; font: 12.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(913.647344 364.07722)">Opus 4.6</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4" />
+   <g id="patch_5">
+    <path d="M 521.28 331.92  L 976.32 331.92  " style="fill: none; stroke: #a8dadc; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square" />
+   </g>
+   <g id="text_19">
+    <text style="fill: #1d3557; font: 700 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="559.2" y="179.321156" transform="rotate(-0 559.2 179.321156)">86.5</text>
+   </g>
+   <g id="text_20">
+    <text style="fill: #1d3557; font: 700 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="635.04" y="197.868356" transform="rotate(-0 635.04 197.868356)">75.3</text>
+   </g>
+   <g id="text_21">
+    <text style="fill: #1d3557; font: 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="710.88" y="184.59645" transform="rotate(-0 710.88 184.59645)">83.3</text>
+   </g>
+   <g id="text_22">
+    <text style="fill: #1d3557; font: 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="786.72" y="201.65325" transform="rotate(-0 786.72 201.65325)">73.0</text>
+   </g>
+   <g id="text_23">
+    <text style="fill: #1d3557; font: 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="862.56" y="185.59005" transform="rotate(-0 862.56 185.59005)">82.7</text>
+   </g>
+   <g id="text_24">
+    <text style="fill: #1d3557; font: 17px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="938.4" y="193.04205" transform="rotate(-0 938.4 193.04205)">78.2</text>
+   </g>
+  </g>
+  <g id="benchmark-hle">
+   <g id="patch_6">
+    <path d="M 31.68 578.88  L 248.4 578.88  L 248.4 455.76  L 31.68 455.76  z " style="fill: #ffffff" />
+   </g>
+   <g id="score-bar-hle-0" data-benchmark="hle" data-model="Edge0-145B" data-value="35.4">
+    <path d="M 36.7368 578.88  L 62.7432 578.88  L 62.7432 535.29552  L 36.7368 535.29552  z " clip-path="url(#pddc69eb9ee)" style="fill: #e63946" />
+   </g>
+   <g id="score-bar-hle-1" data-benchmark="hle" data-model="Edge0-120B" data-value="31.0">
+    <path d="M 72.8568 578.88  L 98.8632 578.88  L 98.8632 540.7128  L 72.8568 540.7128  z " clip-path="url(#pddc69eb9ee)" style="fill: #d98289" />
+   </g>
+   <g id="score-bar-hle-2" data-benchmark="hle" data-model="Qwen3.8-Flash-Next" data-value="35.9">
+    <path d="M 108.9768 578.88  L 134.9832 578.88  L 134.9832 534.67992  L 108.9768 534.67992  z " clip-path="url(#pddc69eb9ee)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-hle-3" data-benchmark="hle" data-model="Qwen3.8-27B" data-value="30.8">
+    <path d="M 145.0968 578.88  L 171.1032 578.88  L 171.1032 540.95904  L 145.0968 540.95904  z " clip-path="url(#pddc69eb9ee)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-hle-4" data-benchmark="hle" data-model="DeepSeek-V4-Flash-0731" data-value="33.8">
+    <path d="M 181.2168 578.88  L 207.2232 578.88  L 207.2232 537.26544  L 181.2168 537.26544  z " clip-path="url(#pddc69eb9ee)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-hle-5" data-benchmark="hle" data-model="Claude-Opus-4.6 (Max)" data-value="40.0">
+    <path d="M 217.3368 578.88  L 243.3432 578.88  L 243.3432 529.632  L 217.3368 529.632  z " clip-path="url(#pddc69eb9ee)" style="fill: #a8dadc; stroke-dasharray: 2.55,1.7; stroke-dashoffset: 0; stroke: #45789d; stroke-width: 0.85; stroke-linejoin: miter" />
+   </g>
+   <g id="matplotlib.axis_5">
+    <g id="xtick_13">
+     <g id="line2d_13" />
+     <g id="text_25">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="49.74" y="595.89675" transform="rotate(-0 49.74 595.89675)">145B</text>
+     </g>
+    </g>
+    <g id="xtick_14">
+     <g id="line2d_14" />
+     <g id="text_26">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="85.86" y="595.89675" transform="rotate(-0 85.86 595.89675)">120B</text>
+     </g>
+    </g>
+    <g id="xtick_15">
+     <g id="line2d_15" />
+     <g id="text_27">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(107.35175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(108.287125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_16">
+     <g id="line2d_16" />
+     <g id="text_28">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(143.47175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(148.136375 608.945362)">27B</text>
+     </g>
+    </g>
+    <g id="xtick_17">
+     <g id="line2d_17" />
+     <g id="text_29">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(177.72625 595.89675)">DS-V4</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(180.527125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_18">
+     <g id="line2d_18" />
+     <g id="text_30">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(212.595 595.89675)">Claude</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(222.556 608.945362)">4.6</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_6" />
+   <g id="patch_7">
+    <path d="M 31.68 578.88  L 248.4 578.88  " style="fill: none; stroke: #a8dadc; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square" />
+   </g>
+   <g id="text_31">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="49.74" y="527.730051" transform="rotate(-0 49.74 527.730051)">35.4</text>
+   </g>
+   <g id="text_32">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="85.86" y="533.147331" transform="rotate(-0 85.86 533.147331)">31.0</text>
+   </g>
+   <g id="text_33">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="121.98" y="527.09617" transform="rotate(-0 121.98 527.09617)">35.9</text>
+   </g>
+   <g id="text_34">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="158.1" y="533.37529" transform="rotate(-0 158.1 533.37529)">30.8</text>
+   </g>
+   <g id="text_35">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="194.22" y="529.68169" transform="rotate(-0 194.22 529.68169)">33.8</text>
+   </g>
+   <g id="text_36">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="230.34" y="522.04825" transform="rotate(-0 230.34 522.04825)">40.0</text>
+   </g>
+  </g>
+  <g id="benchmark-gpqa_diamond">
+   <g id="patch_8">
+    <path d="M 274.32 578.88  L 491.04 578.88  L 491.04 455.76  L 274.32 455.76  z " style="fill: #ffffff" />
+   </g>
+   <g id="score-bar-gpqa_diamond-0" data-benchmark="gpqa_diamond" data-model="Edge0-145B" data-value="90.4">
+    <path d="M 279.3768 578.88  L 305.3832 578.88  L 305.3832 467.57952  L 279.3768 467.57952  z " clip-path="url(#p0f475453ae)" style="fill: #e63946" />
+   </g>
+   <g id="score-bar-gpqa_diamond-1" data-benchmark="gpqa_diamond" data-model="Edge0-120B" data-value="87.4">
+    <path d="M 315.4968 578.88  L 341.5032 578.88  L 341.5032 471.27312  L 315.4968 471.27312  z " clip-path="url(#p0f475453ae)" style="fill: #d98289" />
+   </g>
+   <g id="score-bar-gpqa_diamond-2" data-benchmark="gpqa_diamond" data-model="Qwen3.8-Flash-Next" data-value="91.7">
+    <path d="M 351.6168 578.88  L 377.6232 578.88  L 377.6232 465.97896  L 351.6168 465.97896  z " clip-path="url(#p0f475453ae)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-gpqa_diamond-3" data-benchmark="gpqa_diamond" data-model="Qwen3.8-27B" data-value="89.2">
+    <path d="M 387.7368 578.88  L 413.7432 578.88  L 413.7432 469.05696  L 387.7368 469.05696  z " clip-path="url(#p0f475453ae)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-gpqa_diamond-4" data-benchmark="gpqa_diamond" data-model="DeepSeek-V4-Flash-0731" data-value="90.8">
+    <path d="M 423.8568 578.88  L 449.8632 578.88  L 449.8632 467.08704  L 423.8568 467.08704  z " clip-path="url(#p0f475453ae)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-gpqa_diamond-5" data-benchmark="gpqa_diamond" data-model="Claude-Opus-4.6 (Max)" data-value="91.3">
+    <path d="M 459.9768 578.88  L 485.9832 578.88  L 485.9832 466.47144  L 459.9768 466.47144  z " clip-path="url(#p0f475453ae)" style="fill: #a8dadc; stroke-dasharray: 2.55,1.7; stroke-dashoffset: 0; stroke: #45789d; stroke-width: 0.85; stroke-linejoin: miter" />
+   </g>
+   <g id="matplotlib.axis_7">
+    <g id="xtick_19">
+     <g id="line2d_19" />
+     <g id="text_37">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="292.38" y="595.89675" transform="rotate(-0 292.38 595.89675)">145B</text>
+     </g>
+    </g>
+    <g id="xtick_20">
+     <g id="line2d_20" />
+     <g id="text_38">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="328.5" y="595.89675" transform="rotate(-0 328.5 595.89675)">120B</text>
+     </g>
+    </g>
+    <g id="xtick_21">
+     <g id="line2d_21" />
+     <g id="text_39">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(349.99175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(350.927125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_22">
+     <g id="line2d_22" />
+     <g id="text_40">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(386.11175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(390.776375 608.945362)">27B</text>
+     </g>
+    </g>
+    <g id="xtick_23">
+     <g id="line2d_23" />
+     <g id="text_41">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(420.36625 595.89675)">DS-V4</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(423.167125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_24">
+     <g id="line2d_24" />
+     <g id="text_42">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(455.235 595.89675)">Claude</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(465.196 608.945362)">4.6</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_8" />
+   <g id="patch_9">
+    <path d="M 274.32 578.88  L 491.04 578.88  " style="fill: none; stroke: #a8dadc; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square" />
+   </g>
+   <g id="text_43">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="292.38" y="460.014051" transform="rotate(-0 292.38 460.014051)">90.4</text>
+   </g>
+   <g id="text_44">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="328.5" y="463.707651" transform="rotate(-0 328.5 463.707651)">87.4</text>
+   </g>
+   <g id="text_45">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="364.62" y="458.39521" transform="rotate(-0 364.62 458.39521)">91.7</text>
+   </g>
+   <g id="text_46">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="400.74" y="461.47321" transform="rotate(-0 400.74 461.47321)">89.2</text>
+   </g>
+   <g id="text_47">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="436.86" y="459.50329" transform="rotate(-0 436.86 459.50329)">90.8</text>
+   </g>
+   <g id="text_48">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="472.98" y="458.88769" transform="rotate(-0 472.98 458.88769)">91.3</text>
+   </g>
+  </g>
+  <g id="benchmark-ifbench">
+   <g id="patch_10">
+    <path d="M 516.96 578.88  L 733.68 578.88  L 733.68 455.76  L 516.96 455.76  z " style="fill: #ffffff" />
+   </g>
+   <g id="score-bar-ifbench-0" data-benchmark="ifbench" data-model="Edge0-145B" data-value="80.6">
+    <path d="M 522.0168 578.88  L 548.0232 578.88  L 548.0232 479.64528  L 522.0168 479.64528  z " clip-path="url(#p4e756b71d6)" style="fill: #e63946" />
+   </g>
+   <g id="score-bar-ifbench-1" data-benchmark="ifbench" data-model="Edge0-120B" data-value="79.3">
+    <path d="M 558.1368 578.88  L 584.1432 578.88  L 584.1432 481.24584  L 558.1368 481.24584  z " clip-path="url(#p4e756b71d6)" style="fill: #d98289" />
+   </g>
+   <g id="score-bar-ifbench-2" data-benchmark="ifbench" data-model="Qwen3.8-Flash-Next" data-value="81.3">
+    <path d="M 594.2568 578.88  L 620.2632 578.88  L 620.2632 478.78344  L 594.2568 478.78344  z " clip-path="url(#p4e756b71d6)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-ifbench-3" data-benchmark="ifbench" data-model="Qwen3.8-27B" data-value="79.5">
+    <path d="M 630.3768 578.88  L 656.3832 578.88  L 656.3832 480.9996  L 630.3768 480.9996  z " clip-path="url(#p4e756b71d6)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-ifbench-4" data-benchmark="ifbench" data-model="DeepSeek-V4-Flash-0731" data-value="79.2">
+    <path d="M 666.4968 578.88  L 692.5032 578.88  L 692.5032 481.36896  L 666.4968 481.36896  z " clip-path="url(#p4e756b71d6)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-ifbench-5" data-benchmark="ifbench" data-model="Claude-Opus-4.6 (Max)" data-value="62.5">
+    <path d="M 702.6168 578.88  L 728.6232 578.88  L 728.6232 501.93  L 702.6168 501.93  z " clip-path="url(#p4e756b71d6)" style="fill: #a8dadc; stroke-dasharray: 2.55,1.7; stroke-dashoffset: 0; stroke: #45789d; stroke-width: 0.85; stroke-linejoin: miter" />
+   </g>
+   <g id="matplotlib.axis_9">
+    <g id="xtick_25">
+     <g id="line2d_25" />
+     <g id="text_49">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="535.02" y="595.89675" transform="rotate(-0 535.02 595.89675)">145B</text>
+     </g>
+    </g>
+    <g id="xtick_26">
+     <g id="line2d_26" />
+     <g id="text_50">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="571.14" y="595.89675" transform="rotate(-0 571.14 595.89675)">120B</text>
+     </g>
+    </g>
+    <g id="xtick_27">
+     <g id="line2d_27" />
+     <g id="text_51">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(592.63175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(593.567125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_28">
+     <g id="line2d_28" />
+     <g id="text_52">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(628.75175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(633.416375 608.945362)">27B</text>
+     </g>
+    </g>
+    <g id="xtick_29">
+     <g id="line2d_29" />
+     <g id="text_53">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(663.00625 595.89675)">DS-V4</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(665.807125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_30">
+     <g id="line2d_30" />
+     <g id="text_54">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(697.875 595.89675)">Claude</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(707.836 608.945362)">4.6</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_10" />
+   <g id="patch_11">
+    <path d="M 516.96 578.88  L 733.68 578.88  " style="fill: none; stroke: #a8dadc; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square" />
+   </g>
+   <g id="text_55">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="535.02" y="472.079811" transform="rotate(-0 535.02 472.079811)">80.6</text>
+   </g>
+   <g id="text_56">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="571.14" y="473.680371" transform="rotate(-0 571.14 473.680371)">79.3</text>
+   </g>
+   <g id="text_57">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="607.26" y="471.19969" transform="rotate(-0 607.26 471.19969)">81.3</text>
+   </g>
+   <g id="text_58">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="643.38" y="473.41585" transform="rotate(-0 643.38 473.41585)">79.5</text>
+   </g>
+   <g id="text_59">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="679.5" y="473.78521" transform="rotate(-0 679.5 473.78521)">79.2</text>
+   </g>
+   <g id="text_60">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="715.62" y="494.34625" transform="rotate(-0 715.62 494.34625)">62.5</text>
+   </g>
+  </g>
+  <g id="benchmark-aa_lcr">
+   <g id="patch_12">
+    <path d="M 759.6 578.88  L 976.32 578.88  L 976.32 455.76  L 759.6 455.76  z " style="fill: #ffffff" />
+   </g>
+   <g id="score-bar-aa_lcr-0" data-benchmark="aa_lcr" data-model="Edge0-145B" data-value="79.3">
+    <path d="M 764.6568 578.88  L 790.6632 578.88  L 790.6632 481.24584  L 764.6568 481.24584  z " clip-path="url(#pb74a200b1a)" style="fill: #e63946" />
+   </g>
+   <g id="score-bar-aa_lcr-1" data-benchmark="aa_lcr" data-model="Edge0-120B" data-value="81.0">
+    <path d="M 800.7768 578.88  L 826.7832 578.88  L 826.7832 479.1528  L 800.7768 479.1528  z " clip-path="url(#pb74a200b1a)" style="fill: #d98289" />
+   </g>
+   <g id="score-bar-aa_lcr-2" data-benchmark="aa_lcr" data-model="Qwen3.8-Flash-Next" data-value="79.1">
+    <path d="M 836.8968 578.88  L 862.9032 578.88  L 862.9032 481.49208  L 836.8968 481.49208  z " clip-path="url(#pb74a200b1a)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-aa_lcr-3" data-benchmark="aa_lcr" data-model="Qwen3.8-27B" data-value="82.0">
+    <path d="M 873.0168 578.88  L 899.0232 578.88  L 899.0232 477.9216  L 873.0168 477.9216  z " clip-path="url(#pb74a200b1a)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-aa_lcr-4" data-benchmark="aa_lcr" data-model="DeepSeek-V4-Flash-0731" data-value="79.7">
+    <path d="M 909.1368 578.88  L 935.1432 578.88  L 935.1432 480.75336  L 909.1368 480.75336  z " clip-path="url(#pb74a200b1a)" style="fill: #f1faee" />
+   </g>
+   <g id="score-bar-aa_lcr-5" data-benchmark="aa_lcr" data-model="Claude-Opus-4.6 (Max)" data-value="78.0">
+    <path d="M 945.2568 578.88  L 971.2632 578.88  L 971.2632 482.8464  L 945.2568 482.8464  z " clip-path="url(#pb74a200b1a)" style="fill: #a8dadc; stroke-dasharray: 2.55,1.7; stroke-dashoffset: 0; stroke: #45789d; stroke-width: 0.85; stroke-linejoin: miter" />
+   </g>
+   <g id="matplotlib.axis_11">
+    <g id="xtick_31">
+     <g id="line2d_31" />
+     <g id="text_61">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="777.66" y="595.89675" transform="rotate(-0 777.66 595.89675)">145B</text>
+     </g>
+    </g>
+    <g id="xtick_32">
+     <g id="line2d_32" />
+     <g id="text_62">
+      <text style="fill: #1d3557; font: 700 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="813.78" y="595.89675" transform="rotate(-0 813.78 595.89675)">120B</text>
+     </g>
+    </g>
+    <g id="xtick_33">
+     <g id="line2d_33" />
+     <g id="text_63">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(835.27175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(836.207125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_34">
+     <g id="line2d_34" />
+     <g id="text_64">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(871.39175 595.89675)">Qwen</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(876.056375 608.945362)">27B</text>
+     </g>
+    </g>
+    <g id="xtick_35">
+     <g id="line2d_35" />
+     <g id="text_65">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(905.64625 595.89675)">DS-V4</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(908.447125 608.945362)">Flash</text>
+     </g>
+    </g>
+    <g id="xtick_36">
+     <g id="line2d_36" />
+     <g id="text_66">
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(940.515 595.89675)">Claude</text>
+      <text style="fill: #1d3557; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(950.476 608.945362)">4.6</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_12" />
+   <g id="patch_13">
+    <path d="M 759.6 578.88  L 976.32 578.88  " style="fill: none; stroke: #a8dadc; stroke-width: 0.7; stroke-linejoin: miter; stroke-linecap: square" />
+   </g>
+   <g id="text_67">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="777.66" y="473.680371" transform="rotate(-0 777.66 473.680371)">79.3</text>
+   </g>
+   <g id="text_68">
+    <text style="fill: #1d3557; font: 700 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="813.78" y="471.587331" transform="rotate(-0 813.78 471.587331)">81.0</text>
+   </g>
+   <g id="text_69">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="849.9" y="473.90833" transform="rotate(-0 849.9 473.90833)">79.1</text>
+   </g>
+   <g id="text_70">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="886.02" y="470.33785" transform="rotate(-0 886.02 470.33785)">82.0</text>
+   </g>
+   <g id="text_71">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="922.14" y="473.16961" transform="rotate(-0 922.14 473.16961)">79.7</text>
+   </g>
+   <g id="text_72">
+    <text style="fill: #1d3557; font: 13px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: middle" x="958.26" y="475.26265" transform="rotate(-0 958.26 475.26265)">78.0</text>
+   </g>
+  </g>
+  <g id="text_73">
+   <text style="fill: #1d3557; font: 700 27px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="31.68" y="34.34625" transform="rotate(-0 31.68 34.34625)">Edge0 benchmark performance</text>
+  </g>
+  <g id="text_74">
+   <text style="fill: #1d3557; opacity: 0.75; font: 12.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="31.68" y="60.111445" transform="rotate(-0 31.68 60.111445)">Six models. Six benchmarks.</text>
+  </g>
+  <g id="text_75">
+   <text style="fill: #1d3557; font: 700 11.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="31.68" y="119.621016" transform="rotate(-0 31.68 119.621016)">AGENT &amp; CODING</text>
+  </g>
+  <g id="text_76">
+   <text style="fill: #1d3557; font: 700 11.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="31.68" y="407.621016" transform="rotate(-0 31.68 407.621016)">GENERAL REASONING &amp; KNOWLEDGE</text>
+  </g>
+  <g id="text_77">
+   <text style="fill: #1d3557; font: 700 21px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="31.68" y="147.411563" transform="rotate(-0 31.68 147.411563)">DeepSWE 1.1</text>
+  </g>
+  <g id="text_78">
+   <text style="fill: #1d3557; font: 700 21px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="521.28" y="147.283594" transform="rotate(-0 521.28 147.283594)">Terminal-Bench 2.1</text>
+  </g>
+  <g id="text_79">
+   <text style="fill: #1d3557; font: 700 18.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="31.68" y="434.635547" transform="rotate(-0 31.68 434.635547)">HLE</text>
+  </g>
+  <g id="text_80">
+   <text style="fill: #1d3557; font: 700 18.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="274.32" y="434.635547" transform="rotate(-0 274.32 434.635547)">GPQA-Diamond</text>
+  </g>
+  <g id="text_81">
+   <text style="fill: #1d3557; font: 700 18.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="516.96" y="434.635547" transform="rotate(-0 516.96 434.635547)">IFBench</text>
+  </g>
+  <g id="text_82">
+   <text style="fill: #1d3557; font: 700 18.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="759.6" y="434.635547" transform="rotate(-0 759.6 434.635547)">AA-LCR</text>
+  </g>
+  <g id="text_83">
+   <text style="fill: #1d3557; opacity: 0.75; font: 11.2px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="31.68" y="637.938" transform="rotate(-0 31.68 637.938)">Scores use a shared 0–100 scale · Higher is better · — Not reported</text>
+  </g>
+  <g id="legend_1">
+   <g id="patch_14">
+    <path d="M 36.68 93.855  L 47.305 93.855  L 47.305 83.48  L 36.68 83.48  z " style="fill: #e63946" />
+   </g>
+   <g id="text_84">
+    <text style="fill: #1d3557; font: 12.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="53.555" y="92.98" transform="rotate(-0 53.555 92.98)">Edge0-145B</text>
+   </g>
+   <g id="patch_15">
+    <path d="M 140.551094 93.855  L 151.176094 93.855  L 151.176094 83.48  L 140.551094 83.48  z " style="fill: #d98289" />
+   </g>
+   <g id="text_85">
+    <text style="fill: #1d3557; font: 12.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="157.426094" y="92.98" transform="rotate(-0 157.426094 92.98)">Edge0-120B</text>
+   </g>
+   <g id="patch_16">
+    <path d="M 244.422188 93.855  L 255.047188 93.855  L 255.047188 83.48  L 244.422188 83.48  z " style="fill: #f1faee" />
+   </g>
+   <g id="text_86">
+    <text style="fill: #1d3557; font: 12.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="261.297188" y="92.98" transform="rotate(-0 261.297188 92.98)">Qwen3.8-Flash-Next</text>
+   </g>
+   <g id="patch_17">
+    <path d="M 393.414375 93.855  L 404.039375 93.855  L 404.039375 83.48  L 393.414375 83.48  z " style="fill: #f1faee" />
+   </g>
+   <g id="text_87">
+    <text style="fill: #1d3557; font: 12.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="410.289375" y="92.98" transform="rotate(-0 410.289375 92.98)">Qwen3.8-27B</text>
+   </g>
+   <g id="patch_18">
+    <path d="M 504.219063 93.855  L 514.844063 93.855  L 514.844063 83.48  L 504.219063 83.48  z " style="fill: #f1faee" />
+   </g>
+   <g id="text_88">
+    <text style="fill: #1d3557; font: 12.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="521.094063" y="92.98" transform="rotate(-0 521.094063 92.98)">DeepSeek-V4-Flash-0731</text>
+   </g>
+   <g id="patch_19">
+    <path d="M 683.109688 93.855  L 693.734688 93.855  L 693.734688 83.48  L 683.109688 83.48  z " style="fill: #a8dadc; stroke-dasharray: 2.55,1.7; stroke-dashoffset: 0; stroke: #45789d; stroke-width: 0.85; stroke-linejoin: miter" />
+   </g>
+   <g id="text_89">
+    <text style="fill: #1d3557; font: 12.5px 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="699.984688" y="92.98" transform="rotate(-0 699.984688 92.98)">Claude-Opus-4.6 (Max)</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pbd959799bf">
+   <rect x="31.68" y="166.32" width="455.04" height="165.6" />
+  </clipPath>
+  <clipPath id="p2ef5bdf40e">
+   <rect x="521.28" y="166.32" width="455.04" height="165.6" />
+  </clipPath>
+  <clipPath id="pddc69eb9ee">
+   <rect x="31.68" y="455.76" width="216.72" height="123.12" />
+  </clipPath>
+  <clipPath id="p0f475453ae">
+   <rect x="274.32" y="455.76" width="216.72" height="123.12" />
+  </clipPath>
+  <clipPath id="p4e756b71d6">
+   <rect x="516.96" y="455.76" width="216.72" height="123.12" />
+  </clipPath>
+  <clipPath id="pb74a200b1a">
+   <rect x="759.6" y="455.76" width="216.72" height="123.12" />
+  </clipPath>
+ </defs>
+</svg>
