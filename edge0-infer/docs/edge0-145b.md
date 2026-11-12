@@ -13,7 +13,7 @@ This page is the reference for running Edge0 145B with `edge0-infer`; [Getting s
 
 ## Model directory
 
-Use each released model folder as provided: one model and one expert format per folder, with files laid out flat. `edge0-infer` reads only the `model_name` field of the folder's `model.json` and ignores its other fields (`architecture`, `args`, `env` and the rest); a `model.json` that contains `format_version` is an asset manifest of the native engine instead. The folder also holds a `start.sh` and a `model-bench.json`, which `edge0-infer` does not use.
+Use each released model folder as provided: one model and one expert format per folder, with files laid out flat. `edge0-infer` reads only the `model_name` field of the folder's `model.json` and ignores its other fields (`architecture`, `args`, `env` and the rest); a `model.json` that contains `format_version` is an asset manifest of the native engine instead.
 
 | model_name | Registration (default alias) | Expert format |
 | --- | --- | --- |
