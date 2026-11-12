@@ -12,6 +12,8 @@
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
 [![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--35B--A3B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview)
 [![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--8B--A1B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--145B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-145B-q3k)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--120B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-120B-q3k)
 [![arXiv](https://img.shields.io/badge/arXiv-2609.18063-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2609.18063)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2FEdge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/Edge0)
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://edge0.ai/discord)
@@ -23,7 +25,7 @@
 
 ## ニュース
 
-- **[2026-11-13]** **`edge0-145b`** と **`edge0-120b`** をリリースしました。Qwen3.8-Flash-Next から派生した latent MoE モデルで、Linux または Windows 上の NVIDIA GPU 1 枚で動作します。[edge0-strata](edge0-strata/EDGE0.md) で動作し、`edge0-infer serve` と `edge0-infer chat` がこれらのモデル用に起動します。[モデルページ](docs/models/edge0-145b.md)を参照してください。
+- **[2026-11-13]** **`edge0-145b`** と **`edge0-120b`** をリリースしました。Qwen3.8-Flash-Next から派生した latent MoE モデルで、Linux または Windows 上の NVIDIA GPU 1 枚で動作します。[edge0-strata](edge0-strata/EDGE0.md) で動作し、`edge0-infer serve` と `edge0-infer chat` がこれらのモデル用に起動します。[モデルページ](docs/models/edge0-145b.md)を参照してください。Hugging Face の重み：[`Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [`Edge0-145B-NVFP4`](https://huggingface.co/Edge0/Edge0-145B-NVFP4) · [`Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [`Edge0-120B-NVFP4`](https://huggingface.co/Edge0/Edge0-120B-NVFP4)。
 - **[2026-11-04]** **統合推論エンジン [`edge0-infer`](edge0-infer/README_ja.md)** をリリースしました。[GGML](https://github.com/ggml-org/ggml) をベースに、1 つのエンジンと 1 つのネイティブ C++ API で、同じモデルを macOS、iOS、Android、Windows で実行します。CLI、OpenAI 互換のローカルサーバー、デスクトップ・Android・iOS 向けのチャットアプリのサンプルも付属します。最初のリリースは `edge0-35b` をサポートし、`edge0-8b` は今後のリリースでサポートします。これまでの Python フレームワークと各プラットフォームのエンジンを置き換えるもので、以前のコードは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) に残しています。
 - **[2026-09-30]** **4 つのプラットフォーム — iOS、macOS、Android、Windows — 向けの edge0 推論エンジン**をリリースしました(ソースは tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer) を参照)。
 - **[2026-09-16]** 技術レポートが arXiv に掲載: [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063)。
@@ -61,8 +63,8 @@
 |---|---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit、40 層、256 エキスパート、prerouter K=4 | ネイティブエンジン ✅ |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit、24 層、128 エキスパート、prerouter K=8 | ネイティブエンジン(予定) |
-| [`edge0-145b`](docs/models/edge0-145b.md) | coming soon | Q3_K または NVFP4 latent エキスパート（1792）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | coming soon | Q3_K または NVFP4 latent エキスパート（1280）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K または NVFP4 latent エキスパート（1792）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K または NVFP4 latent エキスパート（1280）、48 層、512 エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
 
 公開済みの 2 つのチェックポイントはいずれもオープンのスパース MoE ベースモデル(それぞれ Qwen3.6-35B-A3B と Ling 3.0 bailing hybrid)上に構築されており、本フレームワークのために実施された LoRA と prerouter の訓練成果物を同梱しています。edge0-infer は付属のアセットツールで公開チェックポイントをダウンロードし、エンジン用のモデルアセットに変換します([はじめに](#はじめに)を参照)。
 `edge0-145b` と `edge0-120b` は単一の NVIDIA GPU 向けの latent-MoE です。edge0-strata 上で動作し、`edge0-infer serve` と `edge0-infer chat` がそれを起動します([edge0-145b と edge0-120b](docs/models/edge0-145b.md) を参照)。
@@ -95,7 +97,7 @@
 | Model | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | **Edge0-145B** | **64.6** | **86.5** | 79.3 | 80.6 | 90.4 | 35.4 |
-| **Edge0-120B** | 50.0 | 75.0 | 81.0 | 79.3 | 87.4 | 31.0 |
+| **Edge0-120B** | 51.3 | 75.3 | 81.0 | 79.3 | 87.4 | 31.0 |
 | DeepSeek-V4-Flash-0731 | 54.4 | 82.7 | 79.7 | 79.2 | 90.8 | 33.8 |
 | Qwen3.8-Flash-Next | 58.7 | 83.3 | 79.1 | **81.3** | **91.7** | 35.9 |
 | Qwen3.8-27B | 42.2 | 73.0 | **82.0** | 79.5 | 89.2 | 30.8 |
