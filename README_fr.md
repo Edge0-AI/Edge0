@@ -12,6 +12,8 @@
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
 [![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--35B--A3B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview)
 [![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--8B--A1B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--145B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-145B-q3k)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--120B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-120B-q3k)
 [![arXiv](https://img.shields.io/badge/arXiv-2609.18063-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2609.18063)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2FEdge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/Edge0)
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://edge0.ai/discord)
@@ -23,7 +25,7 @@
 
 ## Actualités
 
-- **[2026-11-13]** Nous avons publié **`edge0-145b`** et **`edge0-120b`**, des modèles latent mixture-of-experts dérivés de Qwen3.8-Flash-Next pour un seul GPU NVIDIA sous Linux ou Windows. Ils s'exécutent sur [edge0-strata](edge0-strata/EDGE0.md), que `edge0-infer serve` et `edge0-infer chat` démarrent pour eux ; voir la [page du modèle](docs/models/edge0-145b.md).
+- **[2026-11-13]** Nous avons publié **`edge0-145b`** et **`edge0-120b`**, des modèles latent mixture-of-experts dérivés de Qwen3.8-Flash-Next pour un seul GPU NVIDIA sous Linux ou Windows. Ils s'exécutent sur [edge0-strata](edge0-strata/EDGE0.md), que `edge0-infer serve` et `edge0-infer chat` démarrent pour eux ; voir la [page du modèle](docs/models/edge0-145b.md). Poids sur Hugging Face : [`Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [`Edge0-145B-NVFP4`](https://huggingface.co/Edge0/Edge0-145B-NVFP4) · [`Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [`Edge0-120B-NVFP4`](https://huggingface.co/Edge0/Edge0-120B-NVFP4).
 - **[2026-11-04]** Nous avons publié le **moteur d'inférence unifié [`edge0-infer`](edge0-infer/README_fr.md)** : construit sur [GGML](https://github.com/ggml-org/ggml), un seul moteur et une seule API C++ native exécutent le même modèle sur macOS, iOS, Android et Windows, avec une CLI, un serveur local compatible OpenAI et des exemples d'applications de discussion pour le bureau, Android et iOS. La première version prend en charge `edge0-35b` ; `edge0-8b` suivra dans une version ultérieure. Il remplace le framework Python et les moteurs propres à chaque plateforme ; l'ancien code est conservé au tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer).
 - **[2026-09-30]** Nous avons publié les **moteurs d'inférence edge0 pour quatre plateformes — iOS, macOS, Android et Windows** (code source au tag [`pre-edge0-infer`](https://github.com/Edge0-AI/Edge0/tree/pre-edge0-infer)).
 - **[2026-09-16]** Notre rapport technique est sur arXiv : [The Other Half of the Memory Wall: Serving 35B MoEs from SSD with Trained Routing Prediction](https://arxiv.org/abs/2609.18063).
@@ -79,8 +81,8 @@ une seule unité.
 |---|---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4-bit, 40 couches, 256 experts, prerouter K=4 | Moteur natif ✅ |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4-bit, 24 couches, 128 experts, prerouter K=8 | Moteur natif (prévu) |
-| [`edge0-145b`](docs/models/edge0-145b.md) | coming soon | experts latents Q3_K ou NVFP4 (1792), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | coming soon | experts latents Q3_K ou NVFP4 (1280), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | experts latents Q3_K ou NVFP4 (1792), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | experts latents Q3_K ou NVFP4 (1280), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA) |
 
 Les deux checkpoints publiés reposent sur des modèles de base sparse-MoE ouverts
 (respectivement Qwen3.6-35B-A3B et l'hybride bailing Ling 3.0) et intègrent
@@ -137,7 +139,7 @@ au-dessus de la base). Maximum 100 :
 | Model | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | **Edge0-145B** | **64.6** | **86.5** | 79.3 | 80.6 | 90.4 | 35.4 |
-| **Edge0-120B** | 50.0 | 75.0 | 81.0 | 79.3 | 87.4 | 31.0 |
+| **Edge0-120B** | 51.3 | 75.3 | 81.0 | 79.3 | 87.4 | 31.0 |
 | DeepSeek-V4-Flash-0731 | 54.4 | 82.7 | 79.7 | 79.2 | 90.8 | 33.8 |
 | Qwen3.8-Flash-Next | 58.7 | 83.3 | 79.1 | **81.3** | **91.7** | 35.9 |
 | Qwen3.8-27B | 42.2 | 73.0 | **82.0** | 79.5 | 89.2 | 30.8 |

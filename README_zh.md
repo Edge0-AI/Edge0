@@ -12,6 +12,8 @@
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--8B--A1B--preview-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-8B-A1B-preview)
 [![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--35B--A3B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview)
 [![ModelScope](https://img.shields.io/badge/ModelScope-Edge0--8B--A1B--preview-624AFF?style=for-the-badge)](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--145B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-145B-q3k)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Edge0--120B-yellow?style=for-the-badge)](https://huggingface.co/Edge0/Edge0-120B-q3k)
 [![arXiv](https://img.shields.io/badge/arXiv-2609.18063-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2609.18063)
 [![GitHub](https://img.shields.io/badge/GitHub-Edge0--AI%2FEdge0-black?style=for-the-badge&logo=github)](https://github.com/Edge0-AI/Edge0)
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://edge0.ai/discord)
@@ -23,7 +25,7 @@
 
 ## 新闻
 
-- **【2026-11-13】** 发布 **`edge0-145b`** 与 **`edge0-120b`**：由 Qwen3.8-Flash-Next 派生的 latent MoE 模型，在 Linux 或 Windows 上用单张 NVIDIA GPU 运行。它们运行在 [edge0-strata](edge0-strata/EDGE0.md) 上，由 `edge0-infer serve` 与 `edge0-infer chat` 为它们启动；见[模型页](docs/models/edge0-145b.md)。
+- **【2026-11-13】** 发布 **`edge0-145b`** 与 **`edge0-120b`**：由 Qwen3.8-Flash-Next 派生的 latent MoE 模型，在 Linux 或 Windows 上用单张 NVIDIA GPU 运行。它们运行在 [edge0-strata](edge0-strata/EDGE0.md) 上，由 `edge0-infer serve` 与 `edge0-infer chat` 为它们启动；见[模型页](docs/models/edge0-145b.md)。Hugging Face 权重：[`Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [`Edge0-145B-NVFP4`](https://huggingface.co/Edge0/Edge0-145B-NVFP4) · [`Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [`Edge0-120B-NVFP4`](https://huggingface.co/Edge0/Edge0-120B-NVFP4)。
 - **【2026-11-04】** 发布**统一推理引擎 [`edge0-infer`](edge0-infer/README_zh.md)**：
   基于 [GGML](https://github.com/ggml-org/ggml)，一个引擎、一套原生 C++ API，
   在 macOS、iOS、Android、Windows 上运行同一个模型，并附带 CLI、OpenAI 兼容
@@ -84,8 +86,8 @@ MoE 模型跑在消费级硬件上——峰值内存由**激活**专家集而非
 |---|---|---|---|
 | `edge0-35b` | [`Edge0/Edge0-35B-A3B-preview`](https://huggingface.co/Edge0/Edge0-35B-A3B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview) | 4bit，40 层，256 专家，prerouter K=4 | 原生引擎 ✅ |
 | `edge0-8b` | [`Edge0/Edge0-8B-A1B-preview`](https://huggingface.co/Edge0/Edge0-8B-A1B-preview) · [ModelScope](https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview) | 4bit，24 层，128 专家，prerouter K=8 | 原生引擎（计划中） |
-| [`edge0-145b`](docs/models/edge0-145b.md) | coming soon | Q3_K 或 NVFP4 latent 专家（1792），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | coming soon | Q3_K 或 NVFP4 latent 专家（1280），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K 或 NVFP4 latent 专家（1792），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K 或 NVFP4 latent 专家（1280），48 层，512 专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
 
 两个已发布的 checkpoint 均基于开源稀疏 MoE 基座（分别为 Qwen3.6-35B-A3B
 与 Ling 3.0 混合架构），并携带为本框架训练的 LoRA 与 prerouter 权重。
@@ -130,7 +132,7 @@ edge0-infer 用自带的资产工具下载发布的 checkpoint，并转换成引
 | Model | deepswe 1.1 | terminal-bench 2.1 | AA-LCR | IFBench | GPQA-Diamond | HLE |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | **Edge0-145B** | **64.6** | **86.5** | 79.3 | 80.6 | 90.4 | 35.4 |
-| **Edge0-120B** | 50.0 | 75.0 | 81.0 | 79.3 | 87.4 | 31.0 |
+| **Edge0-120B** | 51.3 | 75.3 | 81.0 | 79.3 | 87.4 | 31.0 |
 | DeepSeek-V4-Flash-0731 | 54.4 | 82.7 | 79.7 | 79.2 | 90.8 | 33.8 |
 | Qwen3.8-Flash-Next | 58.7 | 83.3 | 79.1 | **81.3** | **91.7** | 35.9 |
 | Qwen3.8-27B | 42.2 | 73.0 | **82.0** | 79.5 | 89.2 | 30.8 |

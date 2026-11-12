@@ -15,6 +15,7 @@ use windows_sys::Win32::{
             SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
             JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
         },
+        SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX},
         Threading::{
             OpenProcess, QueryFullProcessImageNameW, TerminateProcess, CREATE_NEW_PROCESS_GROUP,
             PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
@@ -112,4 +113,14 @@ pub fn force(pid: u32) {
             CloseHandle(handle);
         }
     }
+}
+/// The system commit limit (RAM visible to Windows plus the page file) and how much of it is still free.  An
+/// allocation past the limit fails even when RAM looks free, and a GPU that shares system memory charges its VRAM to it.
+pub fn commit_memory() -> Option<crate::service::CommitMemory> {
+    let mut status: MEMORYSTATUSEX = unsafe { std::mem::zeroed() };
+    status.dwLength = std::mem::size_of::<MEMORYSTATUSEX>() as u32;
+    (unsafe { GlobalMemoryStatusEx(&mut status) } != 0).then_some(crate::service::CommitMemory {
+        limit: status.ullTotalPageFile,
+        available: status.ullAvailPageFile,
+    })
 }
