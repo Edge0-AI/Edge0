@@ -209,3 +209,16 @@ Do not measure concurrently with another device session or immediately after a s
 The engine reports `phys_footprint` with process lifetime scope; it is not a resettable
 per-request peak. A system-terminated process is a failure and must be investigated,
 not silently retried or treated as an unsupported configuration.
+
+## Stop matcher microbenchmark
+
+The standalone CPU benchmark feeds a 4,096-byte repeated stop prefix one byte at
+a time, then a mismatching byte. It checks the exact returned text before
+reporting the elapsed milliseconds for three repetitions. No model assets are
+needed. This isolates prefix matching overhead; it does not measure inference
+throughput.
+
+```sh
+c++ -O2 -std=c++17 -Isrc tests/perf/stop_match_bench.cpp src/app/text/stop.cpp -o build/stop_match_bench
+build/stop_match_bench
+```
