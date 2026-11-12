@@ -55,7 +55,7 @@
 </details>
 
 <details open>
-<summary><h2><a name="previous-release"></a><img src="assets/edge0-release/typography/fold-previous-release.svg" alt="Previous release" width="186" height="26"></h2></summary>
+<summary><h2><a name="previous-release"><img src="assets/edge0-release/typography/fold-previous-release.svg" alt="Previous release" width="186" height="26"></a></h2></summary>
 
 → [35B / 8B release guide](docs/legacy-models.md) — model downloads, architecture, benchmarks, supported platforms and setup instructions.
 
@@ -107,7 +107,7 @@ They run on edge0-strata through `edge0-infer serve` and `edge0-infer chat`, on 
 | [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K or NVFP4 latent experts (1280), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU) |
 
 <details open>
-<summary><h3><img src="assets/edge0-release/typography/sub-model-overview.svg" alt="Model overview · 145B Q3_K" width="223" height="32"></h3></summary>
+<summary><h3><a name="model-overview--145b-q3_k"><img src="assets/edge0-release/typography/sub-model-overview.svg" alt="Model overview · 145B Q3_K" width="223" height="32"></a></h3></summary>
 
 Q3_K · RTX 5090 D 24 GB. Prefill uses a 16K-token input. Quality scores are model-level results.
 
@@ -222,7 +222,7 @@ nothing counted twice.
 </details>
 
 <details open>
-<summary><h2><a name="in-action"></a><img src="assets/edge0-release/typography/fold-in-action.svg" alt="In action" width="98" height="26"></h2></summary>
+<summary><h2><a name="in-action"><img src="assets/edge0-release/typography/fold-in-action.svg" alt="In action" width="98" height="26"></a></h2></summary>
 
 <p align="center"><a href="assets/edge0-release/showcase.mp4"><img src="assets/edge0-release/showcase-poster.svg" alt="Play the 2 minute 1 second Edge0-145B showcase" width="480"></a></p>
 
@@ -445,7 +445,7 @@ For bugs and feature requests, please use
 [GitHub Issues](https://github.com/Edge0-AI/Edge0/issues).
 
 <details>
-<summary><h2><a name="license"></a><img src="assets/edge0-release/typography/fold-license.svg" alt="License" width="89" height="26"></h2></summary>
+<summary><h2><a name="license"><img src="assets/edge0-release/typography/fold-license.svg" alt="License" width="89" height="26"></a></h2></summary>
 
 ### Framework code
 
