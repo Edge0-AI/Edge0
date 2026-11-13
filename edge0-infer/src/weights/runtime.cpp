@@ -309,9 +309,11 @@ exec::Status Weights::promote(const std::shared_ptr<Write>& write) {
 bool Weights::ready(const std::shared_ptr<Write>& write) const {
     if(!write) return true;
     std::lock_guard<std::mutex> operation(write->operation_);
-    return std::all_of(write->futures_.begin(),write->futures_.end(),[](const auto& f) {
-        return !f.valid() || f.wait_for(std::chrono::seconds(0))==std::future_status::ready;
-    });
+    const auto ready=[](const auto& future) {
+        return !future.valid() || future.wait_for(std::chrono::seconds(0))==std::future_status::ready;
+    };
+    return std::all_of(write->futures_.begin(),write->futures_.end(),ready) &&
+        std::all_of(write->writers_.begin(),write->writers_.end(),ready);
 }
 Result<std::vector<Binding>> Weights::complete(const std::shared_ptr<Write>& write) {
     if(auto error=promote(write)) return *error;
