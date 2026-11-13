@@ -177,12 +177,11 @@ Highlighted rows show Q3_K. Click the table to view it at full size.
 <details>
 <summary>145B measurement conditions · constrained budget and memory residency</summary>
 
-`16 GiB VRAM + 20 GiB RAM` rows are the RTX 5090 D 24 GB again, constrained by cgroup to a 16 GiB VRAM and
-20 GiB system-RAM budget — not a different card. With residency on, the same card holds **Q3_K** (40.81 GiB of weights)
+The `16 GiB VRAM + 20 GiB RAM` rows are the same RTX 5090 D 24 GB, not a different card. VRAM is capped with `--vram-reserve-mib 8192`; system RAM by a cgroup (`MemoryMax=20G`, no swap). With residency on, the same card holds **Q3_K** (40.81 GiB of weights)
 as 23.14 GiB VRAM + 31.28 GiB RAM, and **NVFP4** (47.79 GiB) as 23.25 GiB VRAM + 38.27 GiB RAM — disjoint expert sets,
 nothing counted twice.
 
-These residency readings use expert residency enabled, `--no-prefill-borrow`, conv cache = 0 and kv-resident = 0. Host RAM is measured as `RssAnon + RssShmem`. These are single-run readings, not minimum system requirements. See [Usage & troubleshooting](#usage-help) for memory-saving options.
+See [Usage & troubleshooting](#usage-help) for memory-saving options.
 
 The 16 GiB VRAM + 20 GiB RAM budget is a test limit, not a minimum system requirement. The Apple M2 Ultra row is a Metal measurement, not an announcement of macOS release availability.
 
@@ -354,6 +353,20 @@ Up to **20 GiB** of host RAM for the expert cache; uncached experts are read fro
 - **Automatically enabled:** `--mmap-experts`, `--resident-cpu-experts`, `--resident-pin`.
 
 </details>
+
+### Capacity controls · VRAM and host RAM
+
+These live in the pack's `model.json` (`args` for flags, `env` for environment variables), so a change there
+applies to every launch of the model.
+
+| Flag | Meaning | Default |
+|---|---|---|
+| `--vram-reserve-mib N` | VRAM left free for the desktop, the driver and other processes; the engine sizes its caches from what remains. | `700` |
+| `--expert-cache N\|auto` | Expert slots kept in VRAM. `auto` derives the count from the free VRAM after the fixed footprint (projections, MTP draft, verify buffers, D/U device buffers). | `0` |
+| `--kv-resident N` | KV cells kept in VRAM per QSA layer; the rest streams from pinned host RAM, which frees VRAM for experts. | `0` |
+| `--spec N` | The MTP drafter's verify window: tokens proposed per check. A bigger window needs bigger verify buffers (about 180 MiB at 4) and pays off when every window has a fixed per-layer cost. Without an MTP layer there is no speculation. | `4` |
+| `--resident-budget-gib N` | Cap on the host-RAM expert cache. It holds only the experts the VRAM cache does **not** hold, so the two sets are disjoint, and the value is clamped to the RAM available minus headroom. Needs a static `--expert-profile`. | `0` |
+| `--mmap-experts` | Read experts through the pack file on demand instead of pinning them, so nothing is resident in RAM. | off |
 
 ## Documentation
 

@@ -195,7 +195,7 @@ Les lignes mises en évidence correspondent à Q3_K. Cliquez sur le tableau pour
 <details>
 <summary>Conditions de mesure de 145B · budget limité et résidence en mémoire</summary>
 
-Les lignes `16 GiB VRAM + 20 GiB RAM` utilisent elles aussi la RTX 5090 D 24 GB, limitée par cgroup à un budget de 16 GiB de VRAM et de 20 GiB de RAM système ; il ne s’agit pas d’une autre carte. Avec la résidence activée, **Q3_K** (40.81 GiB de poids) occupe 23.14 GiB VRAM + 31.28 GiB RAM, et **NVFP4** (47.79 GiB) occupe 23.25 GiB VRAM + 38.27 GiB RAM sur cette même carte. Les ensembles d’experts sont disjoints, sans double comptage.
+Les lignes `16 GiB VRAM + 20 GiB RAM` utilisent la même RTX 5090 D 24 GB, pas une autre carte. La VRAM est limitée par `--vram-reserve-mib 8192` ; la RAM système par un cgroup (`MemoryMax=20G`, sans swap). Avec la résidence activée, **Q3_K** (40.81 GiB de poids) occupe 23.14 GiB VRAM + 31.28 GiB RAM, et **NVFP4** (47.79 GiB) occupe 23.25 GiB VRAM + 38.27 GiB RAM sur cette même carte. Les ensembles d’experts sont disjoints, sans double comptage.
 
 Le budget de 16 GiB VRAM + 20 GiB RAM est une limite de test, pas une configuration minimale requise. La ligne Apple M2 Ultra est une mesure sous Metal, et non une annonce de disponibilité pour macOS.
 

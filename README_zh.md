@@ -195,7 +195,7 @@ Q3_K · RTX 5090 D 24 GB。预填充使用 16K token 输入。能力分数为模
 <details>
 <summary>145B 测量条件 · 限定预算与内存驻留</summary>
 
-`16 GiB VRAM + 20 GiB RAM` 行仍使用 RTX 5090 D 24 GB，通过 cgroup 将预算限制为 16 GiB 显存和 20 GiB 系统内存，并非另一张显卡。启用驻留后，同一张显卡上 **Q3_K**（权重 40.81 GiB）占用 23.14 GiB VRAM + 31.28 GiB RAM，**NVFP4**（47.79 GiB）占用 23.25 GiB VRAM + 38.27 GiB RAM；两处存放的专家集合互不重叠，没有重复计数。
+`16 GiB VRAM + 20 GiB RAM` 行仍使用同一张 RTX 5090 D 24 GB，并非另一张显卡。显存通过 `--vram-reserve-mib 8192` 限制，系统内存通过 cgroup（`MemoryMax=20G`，无 swap）限制。启用驻留后，同一张显卡上 **Q3_K**（权重 40.81 GiB）占用 23.14 GiB VRAM + 31.28 GiB RAM，**NVFP4**（47.79 GiB）占用 23.25 GiB VRAM + 38.27 GiB RAM；两处存放的专家集合互不重叠，没有重复计数。
 
 16 GiB VRAM + 20 GiB RAM 是测试时的预算限制，不是最低系统要求。Apple M2 Ultra 行是 Metal 后端的测量结果，不代表已发布 macOS 支持。
 

@@ -195,7 +195,7 @@ Q3_K · RTX 5090 D 24 GB。プリフィルは 16K token の入力で測定して
 <details>
 <summary>145B 測定条件 · メモリ予算の制限と常駐</summary>
 
-`16 GiB VRAM + 20 GiB RAM` の行も RTX 5090 D 24 GB を使用し、cgroup で VRAM を 16 GiB、システム RAM を 20 GiB に制限したものです。別のカードではありません。常駐を有効にすると、同じカードで **Q3_K**（重み 40.81 GiB）は 23.14 GiB VRAM + 31.28 GiB RAM、**NVFP4**（47.79 GiB）は 23.25 GiB VRAM + 38.27 GiB RAM を使用します。両メモリに置かれるエキスパート集合は重複せず、二重計上していません。
+`16 GiB VRAM + 20 GiB RAM` の行も同じ RTX 5090 D 24 GB です（別のカードではありません）。VRAM は `--vram-reserve-mib 8192`、システム RAM は cgroup（`MemoryMax=20G`、スワップなし）で制限しています。常駐を有効にすると、同じカードで **Q3_K**（重み 40.81 GiB）は 23.14 GiB VRAM + 31.28 GiB RAM、**NVFP4**（47.79 GiB）は 23.25 GiB VRAM + 38.27 GiB RAM を使用します。両メモリに置かれるエキスパート集合は重複せず、二重計上していません。
 
 16 GiB VRAM + 20 GiB RAM は測定時の制限であり、最小システム要件ではありません。Apple M2 Ultra の行は Metal での測定結果で、macOS 対応のリリースを告知するものではありません。
 
