@@ -2,6 +2,36 @@
 #include "model/json.h"
 #include "tests/support/check.h"
 #include <tuple>
+#include <algorithm>
+#include <cstdlib>
+#include <new>
+namespace allocation_probe {
+bool active=false;
+std::size_t maximum=0,large=0;
+constexpr std::size_t threshold=32768;
+// Keep the deallocator out of line so GCC does not diagnose an inlined free
+// against the matching replacement operator new used by this test.
+#if defined(__GNUC__)
+__attribute__((noinline))
+#elif defined(_MSC_VER)
+__declspec(noinline)
+#endif
+void release(void* p) noexcept {std::free(p);}
+}
+void* operator new(std::size_t bytes) {
+    if (allocation_probe::active) {
+        allocation_probe::maximum=std::max(allocation_probe::maximum,bytes);
+        if (bytes>=allocation_probe::threshold) ++allocation_probe::large;
+    }
+    if (auto* p=std::malloc(bytes?bytes:1)) return p;
+    throw std::bad_alloc();
+}
+void operator delete(void* p) noexcept {allocation_probe::release(p);}
+void operator delete(void* p,std::size_t) noexcept {allocation_probe::release(p);}
+void* operator new[](std::size_t bytes) {return ::operator new(bytes);}
+void operator delete[](void* p) noexcept {allocation_probe::release(p);}
+void operator delete[](void* p,std::size_t) noexcept {allocation_probe::release(p);}
+
 using namespace edge0;
 using model::ParsedKind;
 using Event = std::tuple<ParsedKind,std::string,std::size_t,std::string,std::string,std::string>;
@@ -42,6 +72,22 @@ std::string joined(const std::vector<Event>& events,ParsedKind kind) {
 }
 std::string block(const std::string& body) {return "<tool_call>\n<function=f>\n"+body+"</function>\n</tool_call>";}
 int main() {
+    {
+        auto parser=models::edge0_35b::output_parser({false,{}, {tool}});
+        const std::string name(65536,'f');
+        const auto input="<tool_call><function="+name+"></function></tool_call>";
+        std::size_t begins=0,ends=0;
+        const auto receive=[&](const model::ParsedOutput& event) {
+            if (event.kind==ParsedKind::tool_call_begin) {++begins;CHECK(event.call.name==name);}
+            if (event.kind==ParsedKind::tool_call_end) {++ends;CHECK(event.call.arguments_json=="{}");}
+            return true;
+        };
+        allocation_probe::large=0;allocation_probe::active=true;
+        CHECK(parser->feed(input,receive));CHECK(parser->finish(receive));
+        allocation_probe::active=false;
+        std::cout << "large_parser_allocations=" << allocation_probe::large << "\n";
+        CHECK(begins==1 && ends==1 && allocation_probe::large<=32);
+    }
     const auto complete=block("<parameter=s>\nhello\n</parameter>\n<parameter=n>\n3\n</parameter>\n");
     const std::vector<std::string> cases={
         " \nreason \t</think>\n\nanswer  ", "reason"+complete, "<tool_call>literal",
