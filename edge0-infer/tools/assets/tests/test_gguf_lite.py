@@ -58,3 +58,41 @@ def test_invalid_payloads(tmp_path):
         pack_q4_1(np.full(32, np.nan))
     with pytest.raises(ValueError):
         pack_q4_1(np.zeros(31))
+
+
+def test_numeric_metadata_arrays_use_bounded_block_reads(tmp_path, monkeypatch):
+    import format_gguf
+
+    path = tmp_path / 'scores.gguf'
+    values = list(range(25000))
+    write(path, {'scores': Value(9, values, 4)}, [])
+    original = format_gguf._read
+    requests = []
+
+    def counted(stream, size):
+        requests.append(size)
+        return original(stream, size)
+
+    monkeypatch.setattr(format_gguf, '_read', counted)
+    reader = Reader(path)
+    assert reader.metadata['scores'].data == values
+    print(f'read_calls={len(requests)}, max_read={max(requests)}')
+    assert len(requests) < 32
+    assert max(requests) <= 65536
+
+
+@pytest.mark.parametrize('type,value', [(0, 255), (1, -128), (2, 65535), (3, -32768),
+                                      (4, 2**32-1), (5, -2**31), (6, 0.5), (7, True),
+                                      (10, 2**64-1), (11, -2**63), (12, 0.125)])
+def test_numeric_array_block_boundaries(tmp_path, type, value):
+    path = tmp_path / 'array.gguf'
+    values = [value] * 8193
+    write(path, {'values': Value(9, values, type), 'empty': Value(9, [], type)}, [])
+    reader = Reader(path)
+    assert reader.metadata['values'].data == values
+    assert reader.metadata['empty'].data == []
+    # Cut inside the array, not in the writer's final padding.
+    size = struct.calcsize('<' + __import__('format_gguf').SCALARS[type])
+    path.write_bytes(path.read_bytes()[:24 + 8 + len('values') + 4 + 4 + 8 + len(values)*size - 1])
+    with pytest.raises(ValueError, match='truncated'):
+        Reader(path)
