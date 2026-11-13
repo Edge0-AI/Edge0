@@ -29,6 +29,21 @@ void bpe_test() {
     }
     require(rejected,"unknown pre-tokenizer reports actual and supported names");
   }
+  {
+    auto many=d;
+    for (int i=0;i<512;++i) {
+      many.tokens.push_back("<control_"+std::to_string(i)+">");many.types.push_back(3);
+    }
+    Bpe controls(many);
+    const std::string body="<control_7> custom <control_511>";
+    require(controls.encode_input({{body,false},{"",true}})==Bpe(d).encode_input({{body,false}}),
+            "untrusted control spellings remain ordinary across an empty protocol fragment");
+    const auto standalone=controls.encode(body,false);
+    require(std::find(standalone.begin(),standalone.end(),262)!=standalone.end(),
+            "standalone user-defined tokens remain recognized without protocol input");
+    require(controls.encode("<control_7>",true)==std::vector<int32_t>({270}),
+            "explicit protocol parsing remains enabled");
+  }
   Bpe b(d);
   require(b.encode("abc", false) == std::vector<int32_t>({97, 257}),
           "rank priority");

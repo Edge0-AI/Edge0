@@ -157,10 +157,12 @@ std::vector<int32_t>
 Bpe::encode_fragments(const std::vector<Fragment> &fragments,
                       bool standalone) const {
   std::string text;
+  const bool has_protocol = std::any_of(fragments.begin(), fragments.end(),
+      [](const Fragment& f) { return f.protocol && !f.text.empty(); });
   std::vector<bool> allowed;
   for (const auto &f : fragments) {
     text += f.text;
-    allowed.insert(allowed.end(), f.text.size(), f.protocol);
+    if (has_protocol) allowed.insert(allowed.end(), f.text.size(), f.protocol);
   }
   if (!valid_utf8(text))
     throw TextError(Error::invalid_argument, "input is not valid UTF-8");
@@ -170,6 +172,9 @@ Bpe::encode_fragments(const std::vector<Fragment> &fragments,
   };
   std::vector<Span> spans = {{0, text.size(), -1}};
   for (auto id : specials_) {
+    // Plain user input cannot contain control tokens. User-defined tokens
+    // still match in standalone encoding, as required by that API.
+    if (!has_protocol && !(standalone && data_.types[id] == 4)) continue;
     const auto &s = data_.tokens[id];
     std::vector<Span> next;
     for (auto span : spans) {
