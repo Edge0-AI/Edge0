@@ -182,6 +182,8 @@ Highlighted rows show Q3_K. Click the table to view it at full size.
 as 23.14 GiB VRAM + 31.28 GiB RAM, and **NVFP4** (47.79 GiB) as 23.25 GiB VRAM + 38.27 GiB RAM — disjoint expert sets,
 nothing counted twice.
 
+These residency readings use expert residency enabled, `--no-prefill-borrow`, conv cache = 0 and kv-resident = 0. Host RAM is measured as `RssAnon + RssShmem`. These are single-run readings, not minimum system requirements. See [Usage & troubleshooting](#usage-help) for memory-saving options.
+
 The 16 GiB VRAM + 20 GiB RAM budget is a test limit, not a minimum system requirement. The Apple M2 Ultra row is a Metal measurement, not an announcement of macOS release availability.
 
 </details>
@@ -211,6 +213,8 @@ The 16 GiB VRAM + 20 GiB RAM budget is a test limit, not a minimum system requir
 20 GiB system-RAM budget — not a different card. With residency on, the same card holds **Q3_K** (27.98 GiB of weights)
 as 22.93 GiB VRAM + 18.40 GiB RAM, and **NVFP4** (32.96 GiB) as 23.02 GiB VRAM + 23.40 GiB RAM — disjoint expert sets,
 nothing counted twice.
+
+These residency readings use expert residency enabled, `--no-prefill-borrow`, conv cache = 0 and kv-resident = 0. Host RAM is measured as `RssAnon + RssShmem`. These are single-run readings, not minimum system requirements. See [Usage & troubleshooting](#usage-help) for memory-saving options.
 
 </details>
 
@@ -306,6 +310,48 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 ⬇️ **Download:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
 Open **Edge0 Chat** on Windows and choose a model folder, such as `Edge0-145B-q3k`, to run the model locally. To build the app from source, follow the [Edge0 Chat](edge0-infer/examples/desktop/README.md) guide.
+
+</details>
+
+<a name="memory-update"></a>
+<a name="deployment-qa"></a>
+<a name="memory-deployment"></a>
+<a name="usage-help"></a>
+
+## Usage & troubleshooting
+
+145B / 120B · Memory options
+
+<details>
+<summary><a name="low-memory"></a>Low RAM · SSD offload</summary>
+
+- **SSD mode:** `--mmap-experts` — read uncached experts from SSD on demand.
+- **Low-memory arguments:**
+
+```bash
+--resident-budget-gib 20 --expert-profile expert-profile.bin
+```
+
+Up to **20 GiB** of host RAM for the expert cache; uncached experts are read from SSD on demand. Includes `--mmap-experts` and disjoint GPU/RAM caches automatically.
+
+**Required:** a static expert profile. Replace `expert-profile.bin` with your profile path.
+
+</details>
+<details>
+<summary><a name="ram-budget"></a>RAM budget · what 20 GiB covers</summary>
+
+- **Expert cache:** `--resident-budget-gib 20` caps host-RAM expert caching at **20 GiB**, lowered further to fit available memory.
+- **Total RAM:** expert cache + other runtime allocations. This flag does **not** set a total-process RAM limit.
+- **Benchmark limit:** the 20 GiB total RAM test budget is a separate measurement condition.
+
+</details>
+<details>
+<summary><a name="expert-residency"></a>GPU / RAM · avoid duplicate experts</summary>
+
+- **Enable:** `--resident-experts` or `--resident-budget-gib N`, with a static `--expert-profile`.
+- **Effect:** experts cached in VRAM need no duplicate RAM copy. Compatible with SSD loading.
+- **Default:** off, prioritizing speed.
+- **Automatically enabled:** `--mmap-experts`, `--resident-cpu-experts`, `--resident-pin`.
 
 </details>
 
