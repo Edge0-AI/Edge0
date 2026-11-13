@@ -5,6 +5,7 @@
 #include "app/text/unicode.h"
 #include <algorithm>
 #include <limits>
+#include <queue>
 namespace edge0::text {
 namespace {
 const std::map<std::string, std::vector<std::string>> patterns = {{"qwen35", {
@@ -117,22 +118,41 @@ void Bpe::ordinary(const std::string &text, std::vector<int32_t> &out) const {
       symbols.push_back(word.substr(p, n));
       p += n;
     }
-    while (symbols.size() > 1) {
-      int32_t best = std::numeric_limits<int32_t>::max();
-      size_t at = symbols.size();
-      for (size_t i = 0; i + 1 < symbols.size(); ++i) {
-        auto it = ranks_.find({symbols[i], symbols[i + 1]});
-        if (it != ranks_.end() && it->second < best) {
-          best = it->second;
-          at = i;
-        }
-      }
-      if (at == symbols.size())
-        break;
-      symbols[at] += symbols[at + 1];
-      symbols.erase(symbols.begin() + static_cast<std::ptrdiff_t>(at + 1));
+    const auto end = symbols.size();
+    std::vector<size_t> previous(end), next(end);
+    struct Merge { int32_t rank; size_t left, right, bytes; };
+    const auto later = [](const Merge& a, const Merge& b) {
+      return a.rank > b.rank || (a.rank == b.rank && a.left > b.left);
+    };
+    std::priority_queue<Merge, std::vector<Merge>, decltype(later)> merges(later);
+    for (size_t i = 0; i < end; ++i) {
+      previous[i] = i ? i - 1 : end;
+      next[i] = i + 1;
+    }
+    const auto consider = [&](size_t left) {
+      if (left == end || next[left] == end) return;
+      const auto right = next[left];
+      const auto rank = ranks_.find({symbols[left], symbols[right]});
+      if (rank != ranks_.end())
+        merges.push({rank->second, left, right, symbols[left].size() + symbols[right].size()});
+    };
+    for (size_t i = 0; i < end; ++i) consider(i);
+    while (!merges.empty()) {
+      const auto merge = merges.top(); merges.pop();
+      const auto left = merge.left, right = merge.right;
+      // A queued pair is stale if either symbol was consumed, separated, or
+      // grew in a later merge. Original positions retain the leftmost tie rule.
+      if (symbols[left].empty() || symbols[right].empty() || next[left] != right ||
+          symbols[left].size() + symbols[right].size() != merge.bytes) continue;
+      symbols[left] += symbols[right];
+      std::string{}.swap(symbols[right]);
+      next[left] = next[right];
+      if (next[left] != end) previous[next[left]] = left;
+      consider(previous[left]);
+      consider(left);
     }
     for (const auto &s : symbols) {
+      if (s.empty()) continue;
       auto it = ids_.find(s);
       if (it != ids_.end())
         out.push_back(it->second);

@@ -6,7 +6,54 @@
 #include <algorithm>
 #include <random>
 using edge0::text::Bpe;
+void merge_priority_oracle() {
+  edge0::text::TokenData data;
+  for (int i = 0; i < 256; ++i) {
+    data.tokens.push_back(edge0::text::unicode_byte_to_utf8(static_cast<uint8_t>(i)));
+    data.types.push_back(1);
+  }
+  data.merges = {"a b", "b a", "a a", "b b", "ab a", "a ba", "ba b", "b ab",
+                 "aa a", "a aa", "bb b", "b bb", "aa aa", "ab ab", "ba ba", "bb bb"};
+  for (const auto& merge : data.merges) {
+    const auto at = merge.find(' ');
+    const auto token = merge.substr(0, at) + merge.substr(at + 1);
+    if (std::find(data.tokens.begin(), data.tokens.end(), token) == data.tokens.end()) {
+      data.tokens.push_back(token); data.types.push_back(1);
+    }
+  }
+  std::mt19937 random(350011);
+  for (int ordering = 0; ordering < 8; ++ordering) {
+    std::shuffle(data.merges.begin(), data.merges.end(), random);
+    const Bpe tokenizer(data);
+    for (int trial = 0; trial < 64; ++trial) {
+      std::string text;
+      for (unsigned size = 1 + random() % 128; size; --size) text += char('a' + random() % 2);
+      std::vector<std::string> symbols;
+      for (const char c : text) symbols.emplace_back(1, c);
+      // Deliberately simple reference: scan pairs in order for the best rank.
+      while (symbols.size() > 1) {
+        auto best = data.merges.size(), selected = symbols.size();
+        for (std::size_t i = 0; i + 1 < symbols.size(); ++i) {
+          const auto pair = symbols[i] + " " + symbols[i + 1];
+          const auto rank = std::find(data.merges.begin(), data.merges.end(), pair) - data.merges.begin();
+          if (std::size_t(rank) < best) { best = std::size_t(rank); selected = i; }
+        }
+        if (selected == symbols.size()) break;
+        symbols[selected] += symbols[selected + 1];
+        symbols.erase(symbols.begin() + static_cast<std::ptrdiff_t>(selected + 1));
+      }
+      std::vector<int32_t> expected;
+      for (const auto& token : symbols) {
+        const auto found = std::find(data.tokens.begin(), data.tokens.end(), token);
+        require(found != data.tokens.end(), "oracle token exists");
+        expected.push_back(static_cast<int32_t>(found - data.tokens.begin()));
+      }
+      require(tokenizer.encode(text, false) == expected, "queued BPE agrees with rank and leftmost oracle");
+    }
+  }
+}
 void bpe_test() {
+  merge_priority_oracle();
   edge0::text::TokenData d;
   for (int i = 0; i < 256; ++i) {
     d.tokens.push_back(
