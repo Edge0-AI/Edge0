@@ -167,3 +167,26 @@ def test_repository_converter_is_recorded_relative(tmp_path):
     partial = tmp_path / 'out.partial'
     assert maker.recorded_path(maker.CONVERTER, partial) == 'tools/assets/edge0_35b/edge0_convert/convert_mlx_to_gguf.py'
     assert maker.recorded_path(partial / 'staging/edge0-35b', partial) == '<partial>/staging/edge0-35b'
+
+
+def test_source_snapshot_is_reused_for_lock_verification(setup, monkeypatch):
+    import asset_common
+    from collections import Counter
+
+    source, out, lock, converter, _ = setup
+    original = asset_common.sha256
+    reads = Counter()
+
+    def counted(path):
+        path = Path(path)
+        if path.parent == source:
+            reads[path.name] += 1
+        return original(path)
+
+    monkeypatch.setattr(asset_common, 'sha256', counted)
+    with pytest.raises(maker.MakeError):
+        maker.make_assets(source, out, lock, converter)
+    # One digest supplies both the initial snapshot and lock verification;
+    # the finally block independently verifies that the converter changed nothing.
+    assert dict(reads) == {name: 2 for name in lock['files']}
+    assert not out.exists()
