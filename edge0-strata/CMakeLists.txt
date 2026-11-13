@@ -2501,6 +2501,16 @@ if(STRATA_NATIVE_EXPERTS)
       src/prefill/moe_f16_kq.cu
       src/prefill/ggml_cuda_host.cu
       "${_strata_quantize_cu}")
+    # amd-hip port: the latent A stage sources of the CUDA branch.  On HIP the lat_q3k_* entry points are stubs that
+    # exit ("CUDA-only"), so run with STRATA_LATENT_FUSED=0 STRATA_LATENT_FUSED_DU=0 STRATA_LAT_FUSED_Q3K=0; they are
+    # compiled here so prefill.cpp links.
+    set(_strata_lat_hip_sources
+      src/prefill/lat_q3k_down.cu
+      src/prefill/lat_q3k_gu.cu
+      src/prefill/lat_q3k_swiglu.cu
+      src/prefill/lat_q3k_fused.cu
+      src/prefill/moe_fused_q3k.cu)
+    list(APPEND _strata_mmq_sources ${_strata_lat_hip_sources})
     if(STRATA_MMQ_KQUANTS)
       # the same K-quant instances as the CUDA branch: on HIP they serve the dense GGUF projections
       # of Gemm::native (STRATA_DENSE_MMQ=1), the mixed-quant packs' attention/PLE tensors
@@ -2518,6 +2528,8 @@ if(STRATA_NATIVE_EXPERTS)
     # moe_fused.cu is Strata's own CUDA-shaped source: it takes the HIP compat headers, ggml's MMQ sources do not
     set_source_files_properties(src/prefill/moe_fused.cu src/prefill/moe_fused_iq.cu src/prefill/moe_f16_kq.cu
                                 PROPERTIES INCLUDE_DIRECTORIES "${STRATA_HIP_COMPAT_INCLUDE_DIR}")
+    set_source_files_properties(${_strata_lat_hip_sources}
+                                PROPERTIES INCLUDE_DIRECTORIES "${STRATA_HIP_COMPAT_INCLUDE_DIR}")   # amd-hip port
     add_library(strata_mmq STATIC ${_strata_mmq_sources})
     target_include_directories(strata_mmq
       PRIVATE "${_strata_gg}/include" "${_strata_gg}/src" "${_strata_mmq}"
@@ -2617,6 +2629,9 @@ if(STRATA_NATIVE_EXPERTS)
     add_executable(latent_cpu_verify src/kernels/latent_cpu_verify.cpp src/core/latent_dense.cpp)
     target_include_directories(latent_cpu_verify PRIVATE ${CMAKE_SOURCE_DIR}/include)
     target_link_libraries(latent_cpu_verify PRIVATE strata_engine strata_kernels_cpu CUDA::cudart)
+  endif()
+  if(STRATA_ENABLE_HIP)   # amd-hip port: the CUDA block above adds these to the engine; HIP needs them too
+    target_sources(strata_engine PRIVATE src/core/latent_dense.cpp src/latent/latent_moe.cpp)
   endif()
   if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
     add_executable(native_expert_parity src/kernels/native_expert_parity.cpp)
