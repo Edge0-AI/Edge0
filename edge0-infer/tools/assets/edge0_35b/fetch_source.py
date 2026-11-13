@@ -15,6 +15,7 @@ from http.client import HTTPException
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -137,11 +138,35 @@ def _fetch(url: str, timeout: float, part: Path) -> bool:
         part.unlink()
         offset, response = 0, _get(url, timeout)
     with response:
-        resumed = bool(offset) and response.status == 206 and \
-            (response.headers.get('Content-Range') or '').startswith(f'bytes {offset}-')
+        resumed = False
+        expected, total = None, None
+        if response.status == 206:
+            content_range = re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)',
+                                        response.headers.get('Content-Range') or '')
+            if not content_range:
+                raise FetchError('invalid Content-Range in download response')
+            start, end, total = map(int, content_range.groups())
+            if start != offset or end < start or end >= total:
+                raise FetchError('invalid Content-Range in download response')
+            expected, resumed = end - start + 1, bool(offset)
+        elif response.status != 200:
+            raise FetchError(f'unexpected download status: {response.status}')
+        length = response.headers.get('Content-Length')
+        if length is not None:
+            if not length.isdecimal() or (expected is not None and int(length) != expected):
+                raise FetchError('invalid Content-Length in download response')
+            expected = int(length)
+        received = 0
         with part.open('ab' if resumed else 'wb') as f:
             for chunk in iter(lambda: response.read(CHUNK), b''):
                 f.write(chunk)
+                received += len(chunk)
+        # read(size) may return clean EOF for a truncated Content-Length body.
+        # Keep that verified prefix available to the next range request instead
+        # of letting the digest mismatch path delete gigabytes of progress.
+        if (expected is not None and received != expected) or \
+                (total is not None and offset + received != total):
+            raise FetchError('incomplete response; download can be resumed')
     return resumed
 
 
