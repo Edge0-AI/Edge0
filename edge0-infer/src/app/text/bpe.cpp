@@ -137,10 +137,15 @@ void Bpe::ordinary(const std::string &text, std::vector<int32_t> &out) const {
       if (it != ids_.end())
         out.push_back(it->second);
       else
-        for (char c : s) {
-          auto b = ids_.find(std::string(1, c));
-          if (b != ids_.end())
-            out.push_back(b->second);
+        for (size_t p = 0; p < s.size();) {
+          // GPT-2's byte alphabet encodes each byte as a Unicode scalar.
+          // Splitting its UTF-8 spelling into chars loses non-ASCII bytes.
+          const auto n = unicode_len_utf8(s[p]);
+          auto b = ids_.find(s.substr(p, n));
+          if (b == ids_.end())
+            throw TextError(Error::incompatible, "vocabulary is missing a byte token");
+          out.push_back(b->second);
+          p += n;
         }
     }
   }
