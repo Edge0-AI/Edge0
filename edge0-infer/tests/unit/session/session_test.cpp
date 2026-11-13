@@ -60,5 +60,24 @@ int main(int argc, char** argv) {
         CHECK(session->query().released && released == 3 && budget.current() == 0);
         CHECK(session->begin_use());
     }
+    for (bool use : {false, true}) for (int completion = 0; completion < 3; ++completion) {
+        auto session = make(); CHECK(!session->initialize(initialize, release));
+        const auto before = released;
+        if (use) CHECK(!session->begin_use());
+        auto update = test::take(session->begin_update({1}));
+        session->request_release();
+        if (use) session->end_use();
+        // The pending transaction still owns KV storage after the outer use ends.
+        CHECK(!session->query().released && released == before && budget.current() > 0);
+        if (completion == 0) {
+            auto buffer = test::take(session->kv().storage("k"))->allocation;
+            CHECK(!session->commit_update(update, {true, false, {buffer}}, {"state"}));
+        } else {
+            CHECK(!session->report_interruption(update, completion == 2));
+        }
+        CHECK(session->query().released && released == before + 1 && budget.current() == 0);
+        session->request_release();
+        CHECK(released == before + 1);
+    }
     std::cout << "session transactions, failure validity, reset and deferred release passed\n";
 }
