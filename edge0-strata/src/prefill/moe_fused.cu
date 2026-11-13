@@ -1156,7 +1156,8 @@ latent_dense_kernel(const uint8_t* __restrict__ w, const uint8_t* __restrict__ x
                 if (n == 1 && !on1) break;
                 for (int qc = 0; qc < 2; ++qc) {
                     const int r_t = nb0 + 8 * n + 2 * tig + qc;      // the token's tile row
-                    if (r_t >= nrows) continue;
+                    // every lane runs the full-warp shuffles below; a row past the tile's end only feeds itself
+                    const bool valid = r_t < nrows;
                     const int t_tok = srow[r_t];
                     uint8_t* xrow = (uint8_t*) outq + (size_t) (t_tok * G + g_out) * xrowb;
                     for (int b = 0; b < 2; ++b) {                    // the two 32-value blocks of the warp
@@ -1175,6 +1176,7 @@ latent_dense_kernel(const uint8_t* __restrict__ w, const uint8_t* __restrict__ x
                         sm += __shfl_xor_sync(0xffffffffu, sm, 4);
                         const float d = strata::kernels::q8_1_finite(__fdiv_rn(am, 127.0f));
                         uint8_t* ob = xrow + (size_t) (8 * rr + 2 * wf + b) * 36;
+                        if (!valid) continue;
 #pragma unroll
                         for (int h = 0; h < 2; ++h) {
                             ob[4 + 16 * h + mg] = (uint8_t) lat_q8(acc[2 * b + h][n][qc], d, am);
