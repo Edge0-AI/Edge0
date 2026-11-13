@@ -11,6 +11,7 @@ touching any other payload.
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import struct
@@ -30,29 +31,39 @@ HEADER_LIMIT = 16 << 20
 
 def read_safetensors(path: Path) -> tuple[dict, dict]:
     """Return (string metadata, {name: (shape, bytes)}) for an all-F16 file."""
-    data = path.read_bytes()
-    if len(data) < 8:
-        raise ValueError(f'{path.name}: truncated safetensors')
-    n = struct.unpack('<Q', data[:8])[0]
-    if n > HEADER_LIMIT or 8 + n > len(data):
-        raise ValueError(f'{path.name}: invalid header length')
-    header = json.loads(data[8:8 + n])
-    metadata = header.pop('__metadata__', {})
-    body = data[8 + n:]
-    tensors, end = {}, 0
-    for name, spec in sorted(header.items(), key=lambda kv: kv[1]['data_offsets'][0]):
-        start, stop = spec['data_offsets']
-        if spec['dtype'] != 'F16':
-            raise ValueError(f'{name}: expected F16, got {spec["dtype"]}')
-        count = 1
-        for d in spec['shape']:
-            count *= d
-        if start != end or stop - start != 2 * count:
-            raise ValueError(f'{name}: inconsistent data offsets')
-        tensors[name] = (tuple(spec['shape']), body[start:stop])
-        end = stop
-    if end != len(body):
-        raise ValueError(f'{path.name}: trailing or missing payload')
+    # Read each payload into its final buffer instead of retaining a whole-file
+    # copy and another copy of its data section alongside the returned tensors.
+    with path.open('rb') as file:
+        prefix = file.read(8)
+        if len(prefix) != 8:
+            raise ValueError(f'{path.name}: truncated safetensors')
+        n = struct.unpack('<Q', prefix)[0]
+        size = os.fstat(file.fileno()).st_size
+        if n > HEADER_LIMIT or 8 + n > size:
+            raise ValueError(f'{path.name}: invalid header length')
+        encoded = file.read(n)
+        if len(encoded) != n:
+            raise ValueError(f'{path.name}: truncated header')
+        header = json.loads(encoded)
+        metadata = header.pop('__metadata__', {})
+        body_size = size - 8 - n
+        tensors, end = {}, 0
+        for name, spec in sorted(header.items(), key=lambda kv: kv[1]['data_offsets'][0]):
+            start, stop = spec['data_offsets']
+            if spec['dtype'] != 'F16':
+                raise ValueError(f'{name}: expected F16, got {spec["dtype"]}')
+            count = 1
+            for d in spec['shape']:
+                count *= d
+            if start != end or stop < start or stop > body_size or stop - start != 2 * count:
+                raise ValueError(f'{name}: inconsistent data offsets')
+            payload = file.read(stop - start)
+            if len(payload) != stop - start:
+                raise ValueError(f'{path.name}: truncated payload')
+            tensors[name] = (tuple(spec['shape']), payload)
+            end = stop
+        if end != body_size or file.read(1):
+            raise ValueError(f'{path.name}: trailing or missing payload')
     return metadata, tensors
 
 
