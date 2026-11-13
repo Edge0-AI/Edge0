@@ -54,6 +54,11 @@ int main() {
     using edge0::platform::default_cpu_threads;
     const auto generic = default_cpu_threads(12, false);
     CHECK(generic.decode == 4 && generic.prefill == 4);
+    const std::pair<unsigned, int> generic_cases[] = {{0, 1}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {128, 4}};
+    for (const auto& [logical, expected] : generic_cases) {
+        const auto limited = default_cpu_threads(logical, false);
+        CHECK(limited.decode == expected && limited.prefill == expected);
+    }
     const auto android = default_cpu_threads(8, true);
     CHECK(android.decode == 6 && android.prefill == 8);
     // Windows rule: physical = logical / 2; decode = max(1, physical - 2),
