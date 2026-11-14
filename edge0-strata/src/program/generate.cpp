@@ -1197,6 +1197,7 @@ void usage() {
                  "  --peer-device N      a second GPU as an adaptive expert-cache tier (rows over P2P; it also\n"
                  "                       computes its experts' prompt rows).  Not with --layer-split or\n"
                  "                       --expert-cache-device1..3.  Default output unchanged without it.\n"
+                 "  --vram-reserve-mib N  VRAM left free for the desktop, the driver and other processes (default 700)\n"
                  "  --peer-reserve-mib N  VRAM the peer tier leaves free on its card (default 600)\n"
                  "  --peer-slots N       expert slots on the peer (default: what fits)\n"
                  "  --peer-adapt-swaps N  peer cache swaps per adaptation step (default: --adapt-swaps)\n"

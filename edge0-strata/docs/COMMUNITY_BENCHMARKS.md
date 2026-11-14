@@ -76,6 +76,8 @@ and their limits. Report what you actually measured and label estimates separate
 
 ## Run the standard benchmark
 
+Run it with the Terminal launcher (`bin/strata` from a source checkout, or `strata` from the Terminal archive). The engine binary (`strata.exe`) has no `bench` subcommand.
+
 ```sh
 strata bench run --profile NAME --track default --track-notes "release 0.2.1, setup defaults"
 strata bench run --url http://127.0.0.1:8080          # a server that is already running

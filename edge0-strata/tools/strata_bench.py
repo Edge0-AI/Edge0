@@ -1125,7 +1125,7 @@ def main(argv=None) -> int:
         say(f"\nReport: {shown / 'README.md'}\nShare it: open a pull request that adds the folder {shown} (see docs/COMMUNITY_BENCHMARKS.md), "
             f"or paste README.md into a GitHub issue. Home folders, user and host names and IP addresses are already replaced; "
             f"read it once before you share it.")
-        say("For results other people can compare with, run the standard benchmark: strata bench run (docs/BENCHMARK_PROTOCOL.md).")
+        say("For results other people can compare with, run the standard benchmark with the Terminal launcher: strata bench run (docs/BENCHMARK_PROTOCOL.md). The engine binary has no bench subcommand.")
         return 1 if out["failures"] and not any(out[k] for k in ("chat", "prompts", "agent")) else 0
     finally:
         if started:
