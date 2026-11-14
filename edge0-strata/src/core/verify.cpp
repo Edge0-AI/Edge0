@@ -2883,6 +2883,7 @@ bool Verifier::capture(int T, std::string& err) {
         err = std::string("verify: end capture: ") + cudaGetErrorString(ce);
         return false;
     }
+#if !defined(STRATA_GPU_METAL)
     if (graph) {   // K0: dump node order (unconditional — env was not reaching the engine) (D2H / wait_flag / H2D / kernel)
         size_t nn = 0;
         if (cudaGraphGetNodes(graph, nullptr, &nn) == cudaSuccess && nn > 0) {
@@ -2909,6 +2910,7 @@ bool Verifier::capture(int T, std::string& err) {
             }
         }
     }
+#endif
 #if defined(STRATA_USE_HIP)   // 143-amdk: the same listing on HIP (kernel names by hipKernelNameRefByPtr); STRATA_VERIFY_NODES=2 also lists the first nodes in graph order
     if (std::getenv("STRATA_VERIFY_NODES") != nullptr) {
         size_t nn = 0;
