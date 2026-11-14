@@ -3,6 +3,16 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
+#ifndef _WIN32
+#include <spawn.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+extern "C" int posix_spawn_file_actions_addchdir_np(posix_spawn_file_actions_t*, const char*);
+extern char** environ;
 #endif
 #include <httplib.h>
 #include <csignal>
@@ -13,6 +23,7 @@
 #include <cwchar>
 #include <fstream>
 #include <iostream>
+#include <system_error>
 #include <random>
 #include <sstream>
 
@@ -109,6 +120,21 @@ fs::path executable_path(const std::string& argv0) {
     const auto length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
     if (!length || length >= buffer.size()) throw ConfigError("Cannot locate edge0-infer executable");
     return fs::path(std::wstring(buffer.data(), length));
+#elif defined(__APPLE__)
+    // /proc/self/exe does not exist here. argv[0] is only the program name when started through PATH,
+    // so the sibling edge0-strata/ would not be found. Ask the kernel, then resolve symlinks.
+    std::string buffer(4096, '\0');
+    auto size = static_cast<std::uint32_t>(buffer.size());
+    if (_NSGetExecutablePath(buffer.data(), &size) != 0) {
+        if (size < buffer.size()) return fs::absolute(argv0);
+        buffer.assign(size, '\0');
+        if (_NSGetExecutablePath(buffer.data(), &size) != 0) return fs::absolute(argv0);
+    }
+    char* resolved = realpath(buffer.c_str(), nullptr);
+    if (!resolved) return fs::absolute(argv0);
+    fs::path path(resolved);
+    std::free(resolved);
+    return path;
 #else
     std::error_code error;
     fs::path executable = fs::read_symlink("/proc/self/exe", error);
@@ -409,6 +435,201 @@ void Engine::stop(double grace_seconds) {
 #endif
 }
 
+namespace {
+constexpr std::size_t prepare_tail_limit = 4096;
+
+void append_prepare_tail(std::string& tail, char c) {
+    tail.push_back(c);
+    if (tail.size() > prepare_tail_limit * 2) tail.erase(0, tail.size() - prepare_tail_limit);
+}
+
+// Runs one prepare script with the engine Python and the engine directory as its working directory.
+// POSIX uses posix_spawn: the interpreter, the script and the arguments are an argv array, not a shell
+// command. The child inherits this process's environment without STRATA_API_KEY. Returns the script's
+// exit code and the tail of its combined output (at most 4 KB).
+int run_prepare_script(const fs::path& python, const fs::path& cwd, const fs::path& script, const std::vector<std::string>& args,
+                       const std::vector<fs::path>& lib_dirs, const std::atomic<bool>* interrupted, const fs::path& output,
+                       std::string& tail) {
+#ifdef _WIN32
+    SECURITY_ATTRIBUTES security{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
+    Handle input(CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &security, OPEN_EXISTING, 0, nullptr));
+    if (input.value == INVALID_HANDLE_VALUE) win_error("Open NUL");
+    HANDLE raw_read = nullptr, raw_write = nullptr;
+    if (!CreatePipe(&raw_read, &raw_write, &security, 0)) win_error("CreatePipe");
+    Handle read_pipe(raw_read), write_pipe(raw_write);
+    if (!SetHandleInformation(read_pipe.value, HANDLE_FLAG_INHERIT, 0)) win_error("SetHandleInformation");
+    STARTUPINFOW startup{};
+    startup.cb = sizeof startup;
+    startup.dwFlags = STARTF_USESTDHANDLES;
+    startup.hStdInput = input.value;
+    startup.hStdOutput = write_pipe.value;
+    startup.hStdError = write_pipe.value;
+    std::wstring command = quote_windows(python.wstring()) + L" " + quote_windows(script.wstring());
+    for (const auto& arg : args) command += L" " + quote_windows(fs::path(arg).wstring());
+    auto environment = child_environment(lib_dirs);
+    PROCESS_INFORMATION process{};
+    if (!CreateProcessW(python.c_str(), command.data(), nullptr, nullptr, TRUE, CREATE_UNICODE_ENVIRONMENT, environment.data(),
+                        cwd.c_str(), &startup, &process))
+        win_error("CreateProcessW");
+    Handle process_handle(process.hProcess), thread_handle(process.hThread);
+    CloseHandle(write_pipe.value);
+    write_pipe.value = nullptr;
+    auto stop = [&] {
+        TerminateProcess(process_handle.value, 1);
+        WaitForSingleObject(process_handle.value, 5000);
+        throw std::runtime_error("interrupted while preparing " + output.string());
+    };
+    char buffer[1024];
+    for (;;) {
+        if (interrupted && interrupted->load()) stop();
+        DWORD available = 0;
+        if (PeekNamedPipe(read_pipe.value, nullptr, 0, nullptr, &available, nullptr) && available) {
+            DWORD got = 0;
+            const DWORD chunk = available > sizeof buffer ? static_cast<DWORD>(sizeof buffer) : available;
+            if (ReadFile(read_pipe.value, buffer, chunk, &got, nullptr))
+                for (DWORD i = 0; i < got; ++i) append_prepare_tail(tail, buffer[i]);
+        }
+        if (WaitForSingleObject(process_handle.value, 100) == WAIT_OBJECT_0) {
+            for (;;) {
+                DWORD left = 0;
+                if (!PeekNamedPipe(read_pipe.value, nullptr, 0, nullptr, &left, nullptr) || !left) break;
+                DWORD got = 0;
+                const DWORD chunk = left > sizeof buffer ? static_cast<DWORD>(sizeof buffer) : left;
+                if (!ReadFile(read_pipe.value, buffer, chunk, &got, nullptr) || !got) break;
+                for (DWORD i = 0; i < got; ++i) append_prepare_tail(tail, buffer[i]);
+            }
+            break;
+        }
+    }
+    if (tail.size() > prepare_tail_limit) tail.erase(0, tail.size() - prepare_tail_limit);
+    DWORD code = 1;
+    GetExitCodeProcess(process_handle.value, &code);
+    return static_cast<int>(code);
+#else
+    (void)lib_dirs;
+    int pipes[2] = {-1, -1};
+    if (pipe(pipes) != 0) throw std::runtime_error("Cannot run preparation script " + script.string());
+    const int devnull = open("/dev/null", O_RDONLY);
+    if (devnull < 0) {
+        close(pipes[0]);
+        close(pipes[1]);
+        throw std::runtime_error("Cannot run preparation script " + script.string());
+    }
+    posix_spawn_file_actions_t actions;
+    posix_spawn_file_actions_init(&actions);
+    posix_spawn_file_actions_adddup2(&actions, devnull, STDIN_FILENO);
+    posix_spawn_file_actions_adddup2(&actions, pipes[1], STDOUT_FILENO);
+    posix_spawn_file_actions_adddup2(&actions, pipes[1], STDERR_FILENO);
+    posix_spawn_file_actions_addclose(&actions, pipes[0]);
+    posix_spawn_file_actions_addclose(&actions, pipes[1]);
+    posix_spawn_file_actions_addclose(&actions, devnull);
+    const auto directory = fs::absolute(cwd).string();
+#if defined(__APPLE__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    const int chdir_error = posix_spawn_file_actions_addchdir_np(&actions, directory.c_str());
+#if defined(__APPLE__)
+#pragma clang diagnostic pop
+#endif
+    if (chdir_error != 0) {
+        posix_spawn_file_actions_destroy(&actions);
+        close(devnull);
+        close(pipes[0]);
+        close(pipes[1]);
+        throw std::runtime_error("Cannot run preparation script " + script.string());
+    }
+    auto absolute_arg = [](const std::string& arg) {
+        if (arg.empty() || arg[0] == '-') return arg;
+        const fs::path path(arg);
+        if (!path.is_relative() || arg.find_first_of("/\\") == std::string::npos) return arg;
+        return fs::absolute(path).string();
+    };
+    std::vector<std::string> owned{python.string(), fs::absolute(script).string()};
+    for (const auto& arg : args) owned.push_back(absolute_arg(arg));
+    std::vector<char*> argv;
+    for (auto& word : owned) argv.push_back(word.data());
+    argv.push_back(nullptr);
+    std::vector<std::string> env_storage;
+    for (char** item = environ; item && *item; ++item) {
+        std::string entry(*item);
+        if (entry.rfind("STRATA_API_KEY=", 0) == 0) continue;
+        env_storage.push_back(std::move(entry));
+    }
+    std::vector<char*> envp;
+    for (auto& entry : env_storage) envp.push_back(entry.data());
+    envp.push_back(nullptr);
+    pid_t pid = 0;
+    const int spawned = posix_spawn(&pid, python.c_str(), &actions, nullptr, argv.data(), envp.data());
+    posix_spawn_file_actions_destroy(&actions);
+    close(devnull);
+    close(pipes[1]);
+    if (spawned != 0) {
+        close(pipes[0]);
+        throw std::runtime_error("Cannot run preparation script " + script.string() + ": " + std::generic_category().message(spawned));
+    }
+    struct Reader {
+        int fd = -1;
+        std::thread thread;
+        std::atomic<bool> done{false};
+        std::string captured;
+        ~Reader() {
+            if (thread.joinable()) thread.join();
+            if (fd >= 0) close(fd);
+        }
+    } reader;
+    reader.fd = pipes[0];
+    reader.thread = std::thread([&reader] {
+        char buffer[1024];
+        for (;;) {
+            const ssize_t got = read(reader.fd, buffer, sizeof buffer);
+            if (got <= 0) break;
+            for (ssize_t i = 0; i < got; ++i) append_prepare_tail(reader.captured, buffer[i]);
+        }
+        if (reader.captured.size() > prepare_tail_limit) reader.captured.erase(0, reader.captured.size() - prepare_tail_limit);
+        reader.done = true;
+    });
+    auto stop = [&] {
+        ::kill(pid, SIGTERM);
+        const auto stop_by = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+        while (!reader.done.load() && std::chrono::steady_clock::now() < stop_by)
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        if (!reader.done.load()) ::kill(pid, SIGKILL);
+        throw std::runtime_error("interrupted while preparing " + output.string());
+    };
+    while (!reader.done.load()) {
+        if (interrupted && interrupted->load()) stop();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    if (interrupted && interrupted->load()) stop();
+    reader.thread.join();
+    int status = 0;
+    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {}
+    tail = std::move(reader.captured);
+    return decode_status(status);
+#endif
+}
+
+void run_prepare(const std::vector<PrepareStep>& steps, const LaunchOptions& options, const std::atomic<bool>* interrupted) {
+    for (const auto& step : steps) {
+        std::error_code error;
+        if (fs::exists(step.output, error)) continue;
+        std::cerr << "edge0-strata: preparing " << step.output.string() << " (one time)\n" << std::flush;
+        std::string tail;
+        const int code = run_prepare_script(options.python, options.strata_dir, step.script, step.args, options.lib_dirs, interrupted,
+                                            step.output, tail);
+        const bool created = fs::exists(step.output, error);
+        if (code != 0 || !created) {
+            std::string message = "edge0-strata preparation failed: " + step.output.string() + " (script " + step.script.string() +
+                                  ", exit code " + std::to_string(code) + ")";
+            if (!created) message += "; output was not created";
+            if (!tail.empty()) message += "\n" + tail;
+            throw std::runtime_error(message);
+        }
+    }
+}
+}
+
 std::unique_ptr<Launch> launch(const Registration& registration, const LaunchOptions& options, const fs::path& log_file,
                                const std::atomic<bool>* interrupted) {
     auto result = std::make_unique<Launch>();
@@ -420,7 +641,10 @@ std::unique_ptr<Launch> launch(const Registration& registration, const LaunchOpt
     if (!fs::is_regular_file(options.python, error))
         throw ConfigError("Python for edge0-strata not found: " + options.python.string() +
                           " (create edge0-strata/.venv as edge0-strata/EDGE0.md describes, or pass --strata-python)");
-    result->config = expand_template(load_template(options.strata_dir, registration), registration, options, options.platform);
+    std::vector<PrepareStep> steps;
+    result->config = expand_template(load_template(options.strata_dir, registration, options.device), registration, options,
+                                     options.platform, &steps);
+    run_prepare(steps, options, interrupted);
     const auto config = result->temp.path / "config.json";
     write_file(config, result->config.dump(2) + "\n");
     Engine::Settings settings;

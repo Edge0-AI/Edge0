@@ -41,6 +41,54 @@ import time
 
 ANSWER = 'Hello from fake Strata, answering in several pieces.'
 
+# Stand-in for edge0-strata's tools/mtp_gguf.py. The delegate launcher runs it with the engine Python
+# when a Metal template's prepare output is missing. FAKE_MTP_MODE selects a failure:
+#   fail   exit 1 with an error on stderr and no output file
+#   exit0  exit 0 with no output file
+#   sleep  record the call, then sleep (Ctrl-C must kill this process)
+MTP_SCRIPT = '''"""Fake MTP conversion used by delegate-mode tests."""
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+
+def main():
+    args = sys.argv[1:]
+    out = None
+    if "--out" in args:
+        out = Path(args[args.index("--out") + 1])
+    if out is not None:
+        log = out.parent / "prepare-calls.jsonl"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({
+                "argv": args,
+                "cwd": os.getcwd(),
+                "api_key": os.environ.get("STRATA_API_KEY"),
+                "pid": os.getpid(),
+            }) + "\\n")
+    mode = os.environ.get("FAKE_MTP_MODE", "")
+    if mode == "fail":
+        sys.stderr.write("mtp conversion failed\\n")
+        return 1
+    if mode == "exit0":
+        return 0
+    if mode == "sleep":
+        time.sleep(30)
+        return 0
+    if out is None:
+        sys.stderr.write("missing --out\\n")
+        return 2
+    out.write_bytes(b"mtp-q2_0")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+
 
 class Fake:
     def __init__(self, config, record):
@@ -520,6 +568,31 @@ def self_test():
                 if process.poll() is None:
                     process.kill()
                     process.wait(10)
+    with tempfile.TemporaryDirectory() as folder:
+        root = Path(folder)
+        script = root / 'mtp_gguf.py'
+        script.write_text(MTP_SCRIPT)
+        out = root / 'model' / 'mtp-q2_0.gguf'
+
+        def run(mode):
+            env = dict(os.environ)
+            env.pop('STRATA_API_KEY', None)
+            if mode:
+                env['FAKE_MTP_MODE'] = mode
+            else:
+                env.pop('FAKE_MTP_MODE', None)
+            return subprocess.run([sys.executable, str(script), '--rt', str(root / 'mtp'), '--out', str(out)],
+                                  cwd=root, env=env, capture_output=True, text=True)
+
+        ok = run('')
+        assert ok.returncode == 0 and out.read_bytes() == b'mtp-q2_0', (ok.returncode, ok.stderr)
+        recorded = json.loads((out.parent / 'prepare-calls.jsonl').read_text().splitlines()[0])
+        assert Path(recorded['cwd']).resolve() == root.resolve() and recorded['pid'] > 0 and recorded['api_key'] is None
+        out.unlink()
+        failed = run('fail')
+        assert failed.returncode == 1 and 'mtp conversion failed' in failed.stderr and not out.exists()
+        silent = run('exit0')
+        assert silent.returncode == 0 and not out.exists() and silent.stderr == ''
     print('PASS fake strata: command line, ready file, status, streaming with timings, echo, records, failure, child cleanup')
 
 

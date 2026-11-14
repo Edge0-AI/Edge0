@@ -18,6 +18,8 @@ start it, wait until it is ready and talk to it on a loopback port. See
 - Imported from the Strata fork in which latent-MoE support for these models was developed, at
   commit `f1933b1e4993fecc10d2e9360d85569619a2c42d`, together with source files that were not yet
   committed there; their paths and SHA256 checksums are recorded in [`edge0/IMPORTED_UNCOMMITTED.txt`](edge0/IMPORTED_UNCOMMITTED.txt).
+- `metal/` is that same commit's `metal/` directory, restored byte for byte (`git archive f1933b1 metal`).
+  It is not part of the uncommitted-file list above.
 - The fork's merge base with upstream Strata (https://github.com/Niko1221/Strata) is
   `c62d5e3a15b40ea51c96aae9e8d36928965f53ab` (2026-10-31), a public upstream commit.
 
@@ -56,7 +58,7 @@ In this directory:
 - Removed because neither the Linux CUDA build nor the server uses them (each was checked against
   the CMake files and the Python imports before removal):
   - experiment files in the root directory (`q4du_utest*`, `run-latent-du.sh`);
-  - the other engines and their setup: `sycl/` (Intel Arc), `metal/` (Apple Silicon);
+  - the other engines and their setup: `sycl/` (Intel Arc);
   - the desktop app (`apps/`) and the release packaging scripts (`packaging/`; this directory is
     built with CMake as described below);
   - the container image (`docker/`) and the NVIDIA DGX Spark engine build (`spark/`);
@@ -193,10 +195,69 @@ interpreter. To run `build\strata.exe` by hand, put the CUDA DLLs on `PATH` firs
 (`set "PATH=%CUDA_PATH%\bin;%PATH%"`). The engine writes temporary files under `%TMP%`, which must be
 writable for the user who runs `edge0-infer`.
 
+## Build (macOS, Apple Silicon)
+
+Requirements: an Apple Silicon Mac, the Xcode Command Line Tools, CMake 3.24 or newer, Ninja, Python
+3.10 or newer, and [uv](https://docs.astral.sh/uv/). Run the commands below in this directory
+(`edge0-strata/`). `build-metal/`, `.venv/` and the downloaded headers are ignored by Git.
+
+1. Unpack the same pinned ggml source as on Linux into `third_party/llama.cpp`:
+
+   ```
+   mkdir -p third_party/llama.cpp
+   curl -L https://github.com/ggml-org/llama.cpp/archive/3cf03257f219afbe7334045ff7c6a06ac68c627d.tar.gz \
+     | tar -xz --strip-components=1 -C third_party/llama.cpp
+   ```
+
+2. Download Apple's metal-cpp 26 headers and check the SHA-256 recorded in `metal/setup_mac.py`
+   (`4df3c078b9aadcb516212e9cb03004cbc5ce9a3e9c068fa3144d021db585a3a4`). The archive contains a
+   `metal-cpp/` directory; unpack it to `third_party/metal-cpp`:
+
+   ```
+   mkdir -p third_party
+   curl -L -o third_party/metal-cpp_26.zip https://developer.apple.com/metal/cpp/files/metal-cpp_26.zip
+   echo "4df3c078b9aadcb516212e9cb03004cbc5ce9a3e9c068fa3144d021db585a3a4  third_party/metal-cpp_26.zip" | shasum -a 256 -c
+   rm -rf third_party/metal-cpp
+   unzip -q third_party/metal-cpp_26.zip -d third_party
+   ```
+
+   `third_party/metal-cpp/Metal/Metal.hpp` is present after a successful unpack.
+
+3. Create `.venv` and install the server packages and the build tools (CMake and Ninja are in
+   `requirements-build.txt`):
+
+   ```
+   uv venv .venv
+   uv pip install --python .venv/bin/python -r requirements.txt -r requirements-build.txt
+   ```
+
+4. Build the engine. Put the virtual environment's `bin` on `PATH` so CMake finds that Ninja:
+
+   ```
+   export PATH="$PWD/.venv/bin:$PATH"
+   cmake -S metal -B build-metal -G Ninja -DCMAKE_BUILD_TYPE=Release \
+     -DMETAL_CPP_DIR="$PWD/third_party/metal-cpp" \
+     -DSTRATA_GGML_DIR="$PWD/third_party/llama.cpp"
+   cmake --build build-metal --target strata
+   cmake --build build-metal --target moe_mm_parity
+   ```
+
+   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; both of
+   these print `PASS`:
+
+   ```
+   ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
+   ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ```
+
+`edge0-infer` on macOS starts `build-metal/strata` through `.venv/bin/python` and `serve/server.py`.
+The device is `metal`, which is also the default, and the only accepted value.
+
 ## Launch contract with edge0-infer
 
-- `edge0/CONTRACT` holds one integer, the contract version (currently 4). `edge0-infer` refuses to start an
-  engine whose version it does not support.
+- `edge0/CONTRACT` holds one integer, the contract version (currently 5). `edge0-infer` refuses to start an
+  engine whose version it does not support. Version 5 is version 4 plus the Metal template files and the
+  optional `prepare` field described below.
 - `edge0/models/<model>.json` is a Strata server configuration template for each delegated model.
   `edge0-infer` replaces the placeholders and passes the result to
   `serve/server.py --engine strata --config <file> --host 127.0.0.1 --port 0 --ready-file <file>`:
@@ -215,8 +276,26 @@ writable for the user who runs `edge0-infer`.
   (Edge0 120B, 1280 latent dimensions). `edge0-infer` chooses the D/U default (Q8 for Edge0 145B,
   Q4 for Edge0 120B) and the expert format, which it reads from `model_name` in the folder's `model.json`.
 
-  `edge0-infer` also sets `gpu` from `--device cuda:<n>`, `model_name` from `--alias`, and the
-  `--max-context` argument from `--context`.
+  On macOS the device is `metal`. `edge0-infer` then loads `edge0-145b-metal.json` or
+  `edge0-120b-metal.json` instead of the CUDA template. Those files use the same placeholders. Their
+  `lib_dirs` list is empty, so `${CUDA_LIB_DIR}` is not used. They set `--max-context` to `32768` and
+  `--spec` to `4`, and they keep `STRATA_DECODE_TIMING=1`. They do not set `STRATA_METAL_MTP_GGUF`:
+  the engine reads `<model>/mtp-q2_0.gguf`. `STRATA_METAL_DRAFT_VOCAB` points at
+  `${MODEL_DIR}/mtp/draft_vocab.bin`.
+
+  A Metal template may contain `prepare`, an array of files to create before the server starts. Each
+  entry has `output`, `script` (a path relative to this directory) and `args`, and those strings use
+  the placeholders above. `edge0-infer` runs a missing `output` with this directory's Python, or with
+  the interpreter given by `--strata-python` when that option is set, and with this directory as the
+  working directory. It then removes `prepare` from the configuration it passes to
+  `server.py`. The shipped entries run `tools/mtp_gguf.py` to write `mtp-q2_0.gguf` into the model
+  directory, so that directory must be writable. An `output` that already exists is left as it is.
+
+  Metal accepts only Q3_K expert folders (`model_name` ending in `-q3k`), `du=q4` and
+  `ple-io=direct`. An NVFP4 folder, `du=q8` or `ple-io=ram` is rejected before any process starts.
+
+  `edge0-infer` also sets `gpu` from `--device` (`cuda:<n>` on Linux and Windows, `metal` on macOS),
+  `model_name` from `--alias`, and the `--max-context` argument from `--context`.
 
 A change to the placeholders, the command line or the readiness protocol increments the contract
 version.

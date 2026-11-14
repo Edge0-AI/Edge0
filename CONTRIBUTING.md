@@ -21,7 +21,7 @@ platform/backend work.
 | Path | What |
 |---|---|
 | [`edge0-infer/`](edge0-infer/) | The program you run: the native inference engine (C++, GGML), its CLI and local OpenAI- and Anthropic-compatible server, the model asset tools, and the chat app examples for desktop, Android and iOS |
-| [`edge0-strata/`](edge0-strata/EDGE0.md) | The engine for `edge0-145b` and `edge0-120b` (NVIDIA GPU, Linux or Windows), a fork of Strata that `edge0-infer` starts for these models |
+| [`edge0-strata/`](edge0-strata/EDGE0.md) | The engine for `edge0-145b` and `edge0-120b` (NVIDIA GPU on Linux or Windows, Metal on macOS), a fork of Strata that `edge0-infer` starts for these models |
 | [`docs/`](docs/) | Model design docs: MoE routing, the prerouter, and the model tiers |
 | [`paper/`](paper/) | The technical report |
 

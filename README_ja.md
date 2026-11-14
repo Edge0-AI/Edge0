@@ -14,7 +14,7 @@
 
 <p align="center"><sub>プロジェクト</sub><br>
 <img src="assets/edge0-release/badge-group-divider.svg" alt="" width="540" height="16"><br>
-<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/windows-releases-badge.svg" alt="Windows / Download" height="18"></a>
+<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/releases-badge.svg" alt="Windows · macOS / Download" height="18"></a>
 </p>
 
 <p align="center"><sub>最新リリース</sub><br>
@@ -80,7 +80,7 @@
 
 コマンドライン、ローカル API サーバー、Edge0 Chat アプリから利用できます。
 
-最新リリースでは、145B と 120B の潜在空間 MoE モデルを NVIDIA GPU 1枚で実行できます。
+最新リリースでは、145B と 120B の潜在空間 MoE モデルを NVIDIA GPU 1枚、または Apple Silicon の Mac で実行できます。
 
 両モデルともネイティブ4ビット学習を採用し、ローカルのエージェント処理向けに Q3_K と NVFP4 を提供します。
 
@@ -96,7 +96,7 @@
 | --- | --- | --- |
 | **Linux** | NVIDIA GPU (CUDA 13) | CPU |
 | **Windows** | NVIDIA GPU (CUDA 13) | CPU, Vulkan |
-| **macOS** (Apple Silicon) | — | Metal, CPU |
+| **macOS** (Apple Silicon) | Metal | Metal, CPU |
 | **iOS** | — | Metal |
 | **Android** | — | CPU |
 
@@ -108,14 +108,14 @@
 
 <p>145B / 120B は現在の潜在空間 MoE シリーズです。Qwen3.8-Flash-Next をベースに、ネイティブ4ビット学習を採用しています。</p>
 
-NVIDIA GPU と CUDA 13 を備えた Linux または Windows で、`edge0-infer serve` と `edge0-infer chat` を通じて edge0-strata 上で実行します。
+NVIDIA GPU と CUDA 13 を備えた Linux または Windows、あるいは Apple Silicon の Metal を使う macOS で、`edge0-infer serve` と `edge0-infer chat` を通じて edge0-strata 上で実行します。
 
 **145B Q3_K · RTX 5090 D 24 GB：** エージェントデコード 121.2 tok/s · 16K プリフィル 3554.9 tok/s。
 
 | モデル規模 | 公開チェックポイント | 推論構成 | エンジン |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1792）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1280）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1792）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal、Q3_K） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1280）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal、Q3_K） |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -197,7 +197,7 @@ Q3_K · RTX 5090 D 24 GB。プリフィルは 16K token の入力で測定して
 
 `16 GiB VRAM + 20 GiB RAM` の行も同じ RTX 5090 D 24 GB です（別のカードではありません）。VRAM は `--vram-reserve-mib 8192`、システム RAM は cgroup（`MemoryMax=20G`、スワップなし）で制限しています。常駐を有効にすると、同じカードで **Q3_K**（重み 40.81 GiB）は 23.14 GiB VRAM + 31.28 GiB RAM、**NVFP4**（47.79 GiB）は 23.25 GiB VRAM + 38.27 GiB RAM を使用します。両メモリに置かれるエキスパート集合は重複せず、二重計上していません。
 
-16 GiB VRAM + 20 GiB RAM は測定時の制限であり、最小システム要件ではありません。Apple M2 Ultra の行は Metal での測定結果で、macOS 対応のリリースを告知するものではありません。
+16 GiB VRAM + 20 GiB RAM は測定時の制限であり、最小システム要件ではありません。Apple M2 Ultra の行は Metal での測定結果です。
 
 </details>
 
@@ -282,7 +282,7 @@ Q3_K · RTX 5090 D 24 GB。プリフィルは 16K token の入力で測定して
 <details>
 <summary>プラットフォームと文書について</summary>
 
-ビルド手順は Linux または Windows（x64 または ARM64）上の NVIDIA GPU と CUDA 13 を対象としています。Apple M2 Ultra の測定には Metal を使用しており、macOS 対応のリリースを示すものではありません。
+ビルド手順は、Linux または Windows（x64 または ARM64）上の CUDA 13 対応 NVIDIA GPU と、Apple Silicon macOS 上の Metal を対象にします。
 
 </details>
 
@@ -295,7 +295,7 @@ Q3_K · RTX 5090 D 24 GB。プリフィルは 16K token の入力で測定して
 git clone https://github.com/Edge0-AI/Edge0.git edge0
 ```
 
-- エンジン **edge0-strata**：[edge0-strata/EDGE0.md](edge0-strata/EDGE0.md) の「Build (Linux, NVIDIA)」または「Build (Windows, NVIDIA)」を参照してください。
+- エンジン **edge0-strata**：[edge0-strata/EDGE0.md](edge0-strata/EDGE0.md) の「Build (Linux, NVIDIA)」、「Build (Windows, NVIDIA)」または「Build (macOS, Apple Silicon)」を参照してください。
 - **edge0-infer**：[edge0-infer/docs/getting-started.md](edge0-infer/docs/getting-started.md) の「Build」（Linux）または「Windows」を参照してください。
 
 **2. コマンドラインから実行。** `Edge0-145B-q3k` など、単一のモデルフォルダーを指定します。複数モデルを格納した親フォルダーではありません。Windows のプログラムは `build\windows\bin\edge0-infer.exe` です。
@@ -315,11 +315,11 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
-<summary>デスクトップアプリ · Windows</summary>
+<summary>デスクトップアプリ · Windows · macOS</summary>
 
 ⬇️ **ダウンロード：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Windows で **Edge0 Chat** を開き、`Edge0-145B-q3k` などのモデルフォルダーを選ぶと、ローカルで実行できます。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
+Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、`Edge0-145B-q3k` などのモデルフォルダーを選ぶと、ローカルで実行できます。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
 
 </details>
 

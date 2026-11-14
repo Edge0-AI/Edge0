@@ -14,7 +14,7 @@
 
 <p align="center"><sub>Proyecto</sub><br>
 <img src="assets/edge0-release/badge-group-divider.svg" alt="" width="540" height="16"><br>
-<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/windows-releases-badge.svg" alt="Windows / Download" height="18"></a>
+<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/releases-badge.svg" alt="Windows · macOS / Download" height="18"></a>
 </p>
 
 <p align="center"><sub>Última versión</sub><br>
@@ -80,7 +80,7 @@
 
 Úsalo desde la línea de comandos, un servidor API local o la aplicación Edge0 Chat.
 
-La última versión permite ejecutar modelos MoE latentes de 145B y 120B en una sola GPU NVIDIA.
+La última versión permite ejecutar modelos MoE latentes de 145B y 120B en una sola GPU NVIDIA o en un Mac con Apple Silicon.
 
 Ambos se entrenan de forma nativa a 4 bits y se ofrecen en Q3_K y NVFP4 para tareas de agentes locales.
 
@@ -96,7 +96,7 @@ La compatibilidad depende del modelo y de su motor.
 | --- | --- | --- |
 | **Linux** | NVIDIA GPU (CUDA 13) | CPU |
 | **Windows** | NVIDIA GPU (CUDA 13) | CPU, Vulkan |
-| **macOS** (Apple Silicon) | — | Metal, CPU |
+| **macOS** (Apple Silicon) | Metal | Metal, CPU |
 | **iOS** | — | Metal |
 | **Android** | — | CPU |
 
@@ -108,14 +108,14 @@ Para la última versión, sigue la [instalación de 145B / 120B](#getting-starte
 
 <p>145B / 120B es la serie MoE latente actual, derivada de Qwen3.8-Flash-Next y entrenada de forma nativa a 4 bits.</p>
 
-Se ejecuta en edge0-strata mediante `edge0-infer serve` y `edge0-infer chat`, en Linux o Windows con una GPU NVIDIA y CUDA 13.
+Se ejecuta en edge0-strata mediante `edge0-infer serve` y `edge0-infer chat`, en Linux o Windows con una GPU NVIDIA y CUDA 13, o en macOS con Metal en Apple Silicon.
 
 **145B Q3_K · RTX 5090 D 24 GB:** 121.2 tok/s de decodificación de agente · 3554.9 tok/s de prefill de 16K.
 
 | Tamaño | Checkpoint publicado | Perfil de inferencia | Motor |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA; macOS Apple Silicon, Metal, Q3_K) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA; macOS Apple Silicon, Metal, Q3_K) |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -197,7 +197,7 @@ Las filas resaltadas corresponden a Q3_K. Haz clic en la tabla para verla a tama
 
 Las filas `16 GiB VRAM + 20 GiB RAM` usan la misma RTX 5090 D 24 GB, no otra tarjeta. La VRAM se limita con `--vram-reserve-mib 8192`; la RAM del sistema, con un cgroup (`MemoryMax=20G`, sin swap). Con la residencia activada, **Q3_K** (40.81 GiB de pesos) ocupa 23.14 GiB VRAM + 31.28 GiB RAM, y **NVFP4** (47.79 GiB) ocupa 23.25 GiB VRAM + 38.27 GiB RAM en la misma tarjeta. Los conjuntos de expertos son disjuntos: nada se contabiliza dos veces.
 
-El presupuesto de 16 GiB VRAM + 20 GiB RAM es un límite de prueba, no un requisito mínimo del sistema. La fila Apple M2 Ultra es una medición con Metal, no un anuncio de disponibilidad para macOS.
+El presupuesto de 16 GiB VRAM + 20 GiB RAM es un límite de prueba, no un requisito mínimo del sistema. La fila Apple M2 Ultra es una medición con Metal.
 
 </details>
 
@@ -282,7 +282,7 @@ Para 145B y 120B, usa `serve` o `chat`; `run` corresponde al motor nativo.
 <details>
 <summary>Notas sobre plataformas y documentación</summary>
 
-Las instrucciones de compilación están destinadas a GPU NVIDIA con CUDA 13 en Linux o Windows (x64 o ARM64). Las mediciones de Apple M2 Ultra usan Metal; no establecen la disponibilidad de una versión para macOS.
+Las instrucciones de compilación cubren las GPU NVIDIA con CUDA 13 en Linux o Windows (x64 o ARM64) y Metal en macOS con Apple Silicon.
 
 </details>
 
@@ -295,7 +295,7 @@ Las instrucciones de compilación están destinadas a GPU NVIDIA con CUDA 13 en 
 git clone https://github.com/Edge0-AI/Edge0.git edge0
 ```
 
-- **edge0-strata**, el motor: sigue «Build (Linux, NVIDIA)» o «Build (Windows, NVIDIA)» en [edge0-strata/EDGE0.md](edge0-strata/EDGE0.md).
+- **edge0-strata**, el motor: sigue «Build (Linux, NVIDIA)», «Build (Windows, NVIDIA)» o «Build (macOS, Apple Silicon)» en [edge0-strata/EDGE0.md](edge0-strata/EDGE0.md).
 - **edge0-infer**: sigue «Build» (Linux) o «Windows» en [edge0-infer/docs/getting-started.md](edge0-infer/docs/getting-started.md).
 
 **2. Ejecutar desde la línea de comandos.** Indica una sola carpeta de modelo, como `Edge0-145B-q3k`, no la carpeta que contiene varios modelos. En Windows el programa es `build\windows\bin\edge0-infer.exe`.
@@ -315,11 +315,11 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
-<summary>Aplicación de escritorio · Windows</summary>
+<summary>Aplicación de escritorio · Windows · macOS</summary>
 
 ⬇️ **Descargar:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Abre **Edge0 Chat** en Windows y selecciona una carpeta de modelo, como `Edge0-145B-q3k`, para ejecutarlo localmente. Para compilar la aplicación desde el código fuente, sigue la guía de [Edge0 Chat](edge0-infer/examples/desktop/README.md).
+Abre **Edge0 Chat** en Windows o macOS (Apple Silicon) y selecciona una carpeta de modelo, como `Edge0-145B-q3k`, para ejecutarlo localmente. Para compilar la aplicación desde el código fuente, sigue la guía de [Edge0 Chat](edge0-infer/examples/desktop/README.md).
 
 </details>
 

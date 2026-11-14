@@ -114,7 +114,8 @@ int main() {
     }
 
     // Devices and model options.
-    CHECK(parse_device("cuda") == 0 && parse_device("cuda:0") == 0 && parse_device("cuda:1") == 1 && parse_device("cuda:12") == 12);
+    CHECK(parse_device("cuda").gpu == 0 && parse_device("cuda").name == "cuda:0" && parse_device("cuda:0").gpu == 0 &&
+          parse_device("cuda:1").gpu == 1 && parse_device("cuda:1").name == "cuda:1" && parse_device("cuda:12").gpu == 12);
     for (const auto* bad : {"cpu", "metal", "vulkan", "cuda:", "cuda:x", "cuda:-1", "CUDA", "cuda:1 "})
         CHECK(throws_config([&] { parse_device(bad); }, "CUDA GPU"));
     const auto defaults = resolve_options(registration, {});
@@ -206,6 +207,45 @@ int main() {
         CHECK(given.strata_args.size() == 2);
     }
 
+    // prepare: placeholders expand like every other field, a relative script is under the engine directory,
+    // and the field is not part of the config handed to server.py.
+    {
+        const auto with_prepare = Json::parse(R"({"exe":"${STRATA_DIR}/build/strata","args":["--mtp","${MODEL_DIR}/mtp"],
+            "prepare":[{"output":"${MODEL_DIR}/mtp-q2_0.gguf","script":"tools/mtp_gguf.py",
+                        "args":["--rt","${MODEL_DIR}/mtp","--out","${MODEL_DIR}/mtp-q2_0.gguf"]}]})");
+        std::vector<PrepareStep> steps;
+        const auto expanded = expand_template(with_prepare, registration, options, Platform::macos, &steps);
+        CHECK(!expanded.contains("prepare"));
+        // The template keeps the slash after ${MODEL_DIR}; the expanded text is not re-normalized.
+        const auto mtp = options.model.string() + "/mtp";
+        const auto mtp_file = options.model.string() + "/mtp-q2_0.gguf";
+        CHECK(expanded["args"][1] == mtp);
+        CHECK(steps.size() == 1);
+        CHECK(steps[0].output == fs::path(mtp_file));
+        CHECK(steps[0].script == options.strata_dir / "tools" / "mtp_gguf.py");
+        CHECK((steps[0].args == std::vector<std::string>{"--rt", mtp, "--out", mtp_file}));
+        auto absolute = with_prepare;
+        absolute["prepare"][0]["script"] = "${STRATA_DIR}/tools/mtp_gguf.py";
+        expand_template(absolute, registration, options, Platform::macos, &steps);
+        CHECK(steps.size() == 1 && steps[0].script == options.strata_dir / "tools" / "mtp_gguf.py");
+        expand_template(Json::parse(R"({"exe":"x","args":[]})"), registration, options, Platform::posix, &steps);
+        CHECK(steps.empty());
+        const auto stripped = expand_template(with_prepare, registration, options, Platform::posix);
+        CHECK(!stripped.contains("prepare"));
+        CHECK(throws_config([&] {
+            expand_template(Json::parse(R"({"exe":"x","args":[],"prepare":[{"output":"${NOPE}","script":"t.py","args":[]}]})"),
+                            registration, options, Platform::posix, &steps);
+        }, "${NOPE}"));
+        CHECK(throws_config([&] {
+            expand_template(Json::parse(R"({"exe":"x","args":[],"prepare":{"output":"a"}})"),
+                            registration, options, Platform::posix, &steps);
+        }, "prepare must be an array"));
+        CHECK(throws_config([&] {
+            expand_template(Json::parse(R"({"exe":"x","args":[],"prepare":[{"output":"","script":"t.py","args":[]}]})"),
+                            registration, options, Platform::posix, &steps);
+        }, "needs output, script and args"));
+    }
+
     // The release templates: every model/format resolves all model files and D/U choices.
     CHECK(registry()[1].id == "edge0_120b");
     CHECK(registry()[1].config_template == "edge0/models/edge0-120b.json");
@@ -288,11 +328,13 @@ int main() {
     CHECK(throws_config([&] { locate_engine(engine.string(), ""); }, "not a directory"));
     fs::create_directories(engine / "edge0");
     CHECK(throws_config([&] { locate_engine(engine.string(), ""); }, "edge0/CONTRACT"));
-    write(engine / "edge0" / "CONTRACT", "4\n");
+    write(engine / "edge0" / "CONTRACT", "5\n");
     CHECK(locate_engine(engine.string(), "") == fs::absolute(engine));
     check_contract(engine);
     write(engine / "edge0" / "CONTRACT", "3\n");
-    CHECK(throws_config([&] { check_contract(engine); }, "version 3 is not supported; this edge0-infer supports version 4"));
+    CHECK(throws_config([&] { check_contract(engine); }, "version 3 is not supported; this edge0-infer supports version 5"));
+    write(engine / "edge0" / "CONTRACT", "4\n");
+    CHECK(throws_config([&] { check_contract(engine); }, "version 4 is not supported; this edge0-infer supports version 5"));
     write(engine / "edge0" / "CONTRACT", "one\n");
     CHECK(throws_config([&] { check_contract(engine); }, "unreadable"));
 
@@ -321,7 +363,7 @@ int main() {
     platform_args.strata_dir = engine.string();
     const auto cuda = t.path / "CUDA toolkit";
     const auto platform_template = Json::parse(R"({"exe":"${STRATA_DIR}/build/strata${EXE_SUFFIX}","args":[],"lib_dirs":["${CUDA_LIB_DIR}"]})");
-    for (const auto platform : {Platform::posix, Platform::windows}) {
+    for (const auto platform : {Platform::posix, Platform::windows, Platform::macos}) {
         fs::remove_all(cuda);
         for (int layout = 0; layout < 4; ++layout) {
             if (layout == 2) fs::create_directories(cuda / "bin");
@@ -329,6 +371,10 @@ int main() {
             const auto launch = resolve(platform_args, *detect(model), installed_exe, platform,
                                         layout == 0 ? "" : cuda.string());
             const bool windows = platform == Platform::windows;
+            CHECK(launch.device == default_device(platform));
+            CHECK(launch.gpu == 0);
+            CHECK(launch.model_options.at("du") == (platform == Platform::macos ? "q4" : "q8"));
+            CHECK(launch.model_options.at("ple-io") == "direct");
             CHECK(launch.python == engine / ".venv" / (windows ? fs::path("Scripts") / "python.exe" : fs::path("bin") / "python"));
             const auto expanded = expand_template(platform_template, registration, launch, platform);
             CHECK(fs::path(expanded["exe"].get<std::string>()) == engine / "build" / (windows ? "strata.exe" : "strata"));
@@ -354,18 +400,108 @@ int main() {
                 CHECK(throws_config([&] { expand_template(Json::parse(bad), registration, launch, platform); }, "${CUDA_LIB_DIR}"));
         }
         platform_args.python = (t.path / "custom python").string();
-        CHECK(resolve(platform_args, *detect(model), installed_exe, platform, "").python == *platform_args.python);
+        CHECK(resolve(platform_args, *detect(model), installed_exe, platform, "").python == fs::absolute(*platform_args.python));
+        platform_args.python = "rel-python";
+        CHECK(resolve(platform_args, *detect(model), installed_exe, platform, "").python == fs::absolute("rel-python"));
         platform_args.python.reset();
         CHECK(resolve(platform_args, *detect(model), installed_exe, platform, "").strata_args.empty());
         platform_args.strata_args = {"--pool-workers", "24"};
         CHECK((resolve(platform_args, *detect(model), installed_exe, platform, "").strata_args == platform_args.strata_args));
         platform_args.strata_args.clear();
-        for (const auto* version : {"0", "1", "2", "3"}) {
+        for (const auto* version : {"0", "1", "2", "3", "4"}) {
             write(engine / "edge0" / "CONTRACT", version);
-            CHECK(throws_config([&] { check_contract(engine); }, "supports version 4"));
+            CHECK(throws_config([&] { check_contract(engine); }, "supports version 5"));
         }
-        write(engine / "edge0" / "CONTRACT", "4\n");
+        write(engine / "edge0" / "CONTRACT", "5\n");
         check_contract(engine);
+    }
+
+    // Device rules for every platform parameter: defaults, rejection, the Metal template, and inspect.
+    {
+        auto run_inspect = [&](Platform platform, const std::map<std::string, std::string>& given) {
+            return inspect_report(*detect(model), model, given, default_device(platform));
+        };
+        const auto metal_template = fs::path("edge0") / "models" / "edge0-145b-metal.json";
+        write(engine / registration.config_template, R"({"exe":"cuda-template","args":[]})");
+        write(engine / metal_template, R"({"exe":"metal-template","args":["--max-context","32768"]})");
+        for (const auto platform : {Platform::posix, Platform::windows, Platform::macos}) {
+            CHECK(default_device(platform) == (platform == Platform::macos ? "metal" : "cuda:0"));
+            if (platform == Platform::macos) {
+                CHECK(parse_device("metal", platform).name == "metal" && parse_device("metal", platform).gpu == 0);
+                for (const auto* bad : {"cuda", "cuda:0", "cuda:1"})
+                    CHECK(throws_config([&] { parse_device(bad, platform); }, "must be metal"));
+            } else {
+                CHECK(throws_config([&] { parse_device("metal", platform); }, "CUDA GPU"));
+            }
+            complete(model);
+            write(engine / "edge0" / "CONTRACT", "5\n");
+            CommonArgs bare;
+            bare.model = model.string();
+            bare.strata_dir = engine.string();
+            const auto launch = resolve(bare, *detect(model), installed_exe, platform, "");
+            CHECK(launch.device == default_device(platform));
+            CHECK(load_template(engine, registration, launch.device)["exe"] == (platform == Platform::macos ? "metal-template" : "cuda-template"));
+            if (platform == Platform::macos) {
+                CHECK(launch.model_options.at("du") == "q4" && launch.model_options.at("ple-io") == "direct");
+                write(model / "model.json", R"({"model_name":"edge0-120b-q3k"})");
+                CHECK(resolve(bare, *detect(model), installed_exe, platform, "").model_options.at("du") == "q4");
+                write(model / "model.json", R"({"model_name":"edge0-145b-q3k"})");
+                fs::remove(model / "experts.bin");
+                fs::remove(model / "latent_dense_q4.bin");
+                write(model / "model.json", R"({"model_name":"edge0-145b-fp4"})");
+                fs::remove_all(model / "scales");
+                CHECK(throws_config([&] { resolve(bare, *detect(model), installed_exe, platform, ""); },
+                                    "unsupported on Metal: edge0-145b-fp4 uses fp4 experts; Metal supports q3k"));
+                CommonArgs illegal = bare;
+                illegal.model_options = {{"du", "q5"}};
+                CHECK(throws_config([&] { resolve(illegal, *detect(model), installed_exe, platform, ""); }, "must be"));
+                CHECK(throws_config([&] { run_inspect(platform, {{"du", "q5"}}); }, "must be"));
+                auto result = run_inspect(platform, {});
+                CHECK(result.code == 1 && result.message.find("uses fp4 experts") != std::string::npos &&
+                      result.message.find("Metal supports q3k") != std::string::npos);
+                CHECK(result.report["ok"] == false && result.report["files"].is_array() && !result.report["files"].empty());
+                complete(model);
+                CommonArgs rejected = bare;
+                rejected.model_options = {{"du", "q8"}};
+                fs::remove(model / "latent_dense_q4.bin");
+                CHECK(throws_config([&] { resolve(rejected, *detect(model), installed_exe, platform, ""); },
+                                    "unsupported on Metal: du=q8; Metal only supports du=q4"));
+                result = run_inspect(platform, {{"du", "q8"}});
+                CHECK(result.code == 1 && result.report["ok"] == false && result.message.find("only supports du=q4") != std::string::npos);
+                rejected.model_options = {{"ple-io", "ram"}};
+                CHECK(throws_config([&] { resolve(rejected, *detect(model), installed_exe, platform, ""); },
+                                    "Metal only supports ple-io=direct"));
+                result = run_inspect(platform, {{"ple-io", "ram"}});
+                CHECK(result.code == 1 && result.report["ok"] == false && result.message.find("ple-io=direct") != std::string::npos);
+                CHECK(throws_config([&] { run_inspect(platform, {{"experts", "q3k"}}); }, "unknown model option experts"));
+                write(model / "latent_dense_q4.bin", "latent_dense_q4.bin");
+                result = run_inspect(platform, {});
+                CHECK(result.code == 0 && result.report["ok"] == true && result.message.empty());
+                fs::remove(engine / metal_template);
+                CHECK(throws_config([&] { load_template(engine, registration, "metal"); }, "edge0-145b-metal.json"));
+                write(engine / metal_template, R"({"exe":"metal-template","args":[]})");
+            } else {
+                CommonArgs prefill = bare;
+                prefill.prefill_device = "cpu";
+                CHECK(throws_config([&] { resolve(prefill, *detect(model), installed_exe, platform, ""); }, "must equal"));
+                prefill.device = "cuda";
+                prefill.prefill_device = "cuda:0";
+                CHECK(throws_config([&] { resolve(prefill, *detect(model), installed_exe, platform, ""); }, "must equal"));
+                prefill.prefill_device = "cuda:01";
+                CHECK(throws_config([&] { resolve(prefill, *detect(model), installed_exe, platform, ""); }, "must equal"));
+                CommonArgs cuda = bare;
+                cuda.device = "cuda:1";
+                CHECK(resolve(cuda, *detect(model), installed_exe, platform, "").device == "cuda:1");
+                cuda.model_options = {{"du", "q8"}};
+                CHECK(resolve(cuda, *detect(model), installed_exe, platform, "").model_options.at("du") == "q8");
+                write(model / "model.json", R"({"model_name":"edge0-120b-fp4"})");
+                fs::remove_all(model / "scales");
+                CHECK(resolve(bare, *detect(model), installed_exe, platform, "").experts == "fp4");
+                const auto result = run_inspect(platform, {});
+                CHECK(result.code == 0 && result.report["ok"] == true);
+            }
+        }
+        complete(model);
     }
 
     // Response accounting: plain JSON, SSE split at arbitrary points, other dialects.
@@ -622,7 +758,14 @@ int main() {
     input.active = ActiveRequest{"/v1/messages", "127.0.0.1", input.now - std::chrono::seconds(2), Accounting{}};
     auto status = status_json(input);
     CHECK(status["engine"]["version"] == "0.1.55" && status["engine"]["ggml_version"].is_null() && status["engine"]["backends"].is_null());
-    CHECK(status["engine"]["devices"][0]["name"] == "cuda:1" && status["engine"]["devices"][0]["memory_total_bytes"] == 4096LL * 1048576);
+    CHECK(status["engine"]["devices"][0]["name"] == "cuda:1" && status["engine"]["devices"][0]["backend"] == "cuda" &&
+          status["engine"]["devices"][0]["memory_total_bytes"] == 4096LL * 1048576);
+    input.device = "metal";
+    status = status_json(input);
+    CHECK(status["engine"]["devices"][0]["name"] == "metal" && status["engine"]["devices"][0]["backend"] == "metal" &&
+          status["model"]["device"] == "metal");
+    input.device = "cuda:1";
+    status = status_json(input);
     CHECK(status["engine"]["devices"][0]["memory_free_bytes"] == 3072LL * 1048576 && status["engine"]["devices"][0]["description"] == "RTX");
     CHECK(status["model"]["context_length"] == 131072 && status["model"]["device"] == "cuda:1" && status["model"]["prefill_device"] == "cuda:1");
     CHECK(status["memory"]["ledger"].is_null() && status["memory"]["resident"].is_null() && status["memory"]["physical"].is_null());

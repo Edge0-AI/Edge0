@@ -194,7 +194,7 @@ def failures(cli, root):
     assert 'Python for edge0-strata not found' in text and not record.exists()
     other = make_engine(root / 'f-engine-2', contract='3')
     record, text = run('contract', engine_dir=other)
-    assert 'version 3 is not supported' in text and 'supports version 4' in text and not record.exists()
+    assert 'version 3 is not supported' in text and 'supports version 5' in text and not record.exists()
     record, text = run('start-failure', fail_start=5)
     assert 'exited before it was ready (exit code 5)' in text, text
     assert_no_leftovers(record)
@@ -247,7 +247,11 @@ def proxy(cli, root, snapshots):
         assert initial['current'] is None and initial['last'] is None and initial['totals']['requests'] == 0
         assert initial['instance']['pid'] == server.process.pid and initial['listen'] == {'host': '127.0.0.1', 'port': port, 'auth': False}
         assert initial['engine']['version'] == 'fake-strata 0.0' and initial['model']['context_length'] == 131072
-        assert initial['engine']['devices'][0]['name'] == 'cuda:0' and initial['engine']['devices'][0]['description'] == 'Fake GPU'
+        device = initial['engine']['devices'][0]
+        expected_device = 'metal' if sys.platform == 'darwin' else 'cuda:0'
+        expected_backend = 'metal' if sys.platform == 'darwin' else 'cuda'
+        assert device['name'] == expected_device and device['description'] == 'Fake GPU'
+        assert device['backend'] == expected_backend and initial['model']['device'] == expected_device
         assert initial['memory'] == {'ledger': None, 'resident': None, 'physical': None}
 
         # Non-streaming chat: the request and the response bodies arrive byte for byte.
@@ -680,20 +684,35 @@ def parameters(cli, root):
             return json.loads((record / 'config.json').read_text())
         finally:
             assert server.stop() == 0
+    mac = sys.platform == 'darwin'
     config = config_of([])
-    assert config['gpu'] == 0 and config['model_name'] == ALIAS
-    assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q8.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '8'
+    assert config['gpu'] == 0 and config['model_name'] == ALIAS and 'prepare' not in config
+    default_du = 'q4' if mac else 'q8'
+    assert config['env']['STRATA_LATENT_DENSE'] == str(model / f'latent_dense_{default_du}.bin')
+    assert config['env']['STRATA_LATENT_DENSE_FMT'] == default_du[1:]
     assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '131072']
     assert Path(config['exe']) == engine / 'build' / ('strata.exe' if os.name == 'nt' else 'strata') and config['cwd'] == str(engine)
-    config = config_of(['--device', 'cuda:1', '--model-option', 'du=q4', '--model-option', 'ple-io=ram', '--context', '8192',
-                        '--alias', 'big', '--prefill-device', 'cuda:1'])
-    assert config['gpu'] == 1 and config['model_name'] == 'big'
-    assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q4.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '4'
-    assert config['args'] == ['--pack', str(model), '--ple-io', 'ram', '--max-context', '8192']
-    assert config_of(['--device', 'cuda'])['gpu'] == 0
-    for extra, message in ((['--device', 'cpu'], 'CUDA GPU'), (['--device', 'metal'], 'CUDA GPU'), (['--device', 'vulkan'], 'CUDA GPU'),
-                           (['--device', 'cuda:x'], 'CUDA GPU'), (['--prefill-device', 'cpu'], 'must equal --device'),
-                           (['--model-option', 'du=q5'], 'q8|q4'), (['--model-option', 'ple-io=mmap'], 'direct|ram'),
+    if mac:
+        config = config_of(['--device', 'metal', '--context', '8192', '--alias', 'big'])
+        assert config['gpu'] == 0 and config['model_name'] == 'big' and 'prepare' not in config
+        assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '8192']
+        rejected = ((['--device', 'cpu'], 'must be metal'), (['--device', 'cuda'], 'must be metal'),
+                    (['--device', 'cuda:0'], 'must be metal'), (['--device', 'cuda:1'], 'must be metal'),
+                    (['--device', 'vulkan'], 'must be metal'), (['--prefill-device', 'cuda:0'], 'must be metal'),
+                    (['--model-option', 'du=q8'], 'only supports du=q4'), (['--model-option', 'du=q5'], 'must be q4'),
+                    (['--model-option', 'ple-io=ram'], 'only supports ple-io=direct'),
+                    (['--model-option', 'ple-io=mmap'], 'must be direct'))
+    else:
+        config = config_of(['--device', 'cuda:1', '--model-option', 'du=q4', '--model-option', 'ple-io=ram', '--context', '8192',
+                            '--alias', 'big', '--prefill-device', 'cuda:1'])
+        assert config['gpu'] == 1 and config['model_name'] == 'big'
+        assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q4.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '4'
+        assert config['args'] == ['--pack', str(model), '--ple-io', 'ram', '--max-context', '8192']
+        assert config_of(['--device', 'cuda'])['gpu'] == 0
+        rejected = ((['--device', 'cpu'], 'CUDA GPU'), (['--device', 'metal'], 'CUDA GPU'), (['--device', 'vulkan'], 'CUDA GPU'),
+                    (['--device', 'cuda:x'], 'CUDA GPU'), (['--prefill-device', 'cpu'], 'must equal --device'),
+                    (['--model-option', 'du=q5'], 'q8|q4'), (['--model-option', 'ple-io=mmap'], 'direct|ram'))
+    for extra, message in (*rejected,
                            (['--model-option', 'experts=resident'], 'unknown model option experts'),
                            (['--prefill-chunk', '64'], '--prefill-chunk'), (['--temperature', '0'], '--temperature'),
                            (['--max-tokens', '4'], '--max-tokens'), (['--no-warmup'], '--no-warmup'),
@@ -752,19 +771,28 @@ def passthrough(cli, root):
 
 
 def model_formats(cli, root):
-    from strata_support import TEMPLATE
+    from strata_support import TEMPLATE, write_templates
     engine = make_engine(root / 'formats-engine')
     release = dict(TEMPLATE)
     release['args'] = [*TEMPLATE['args'], '--native', '${MODEL_DIR}/model-skeleton.gguf',
                        '--native-dense-gguf', '${MODEL_DIR}/model-skeleton.gguf',
                        '--expert-profile', '${MODEL_DIR}/profile.bin']
-    for template in ('edge0-145b.json', 'edge0-120b.json'):
-        (engine / 'edge0' / 'models' / template).write_text(json.dumps(release))
-    for identifier, du in (('edge0_145b', 'q8'), ('edge0_120b', 'q4')):
+    write_templates(engine, release)
+    mac = sys.platform == 'darwin'
+    for identifier, du in (('edge0_145b', 'q4' if mac else 'q8'), ('edge0_120b', 'q4')):
         for experts in ('q3k', 'fp4'):
             name = identifier.replace('_', '-') + '-' + experts
             model = make_model(root / name, model_name=name)
             record = root / (name + '-record')
+            if mac and experts == 'fp4':
+                result = subprocess.run([str(cli), 'serve', '--model', str(model), '--port', '0', *strata_args(engine)],
+                                        env=environment(record), capture_output=True, text=True, timeout=60)
+                assert result.returncode == 2 and 'uses fp4 experts' in result.stderr and 'Metal supports q3k' in result.stderr, result.stderr
+                assert not record.exists() and not (model / 'mtp-q2_0.gguf').exists()
+                inspected = subprocess.run([str(cli), 'inspect', '--model', str(model), '--json'], capture_output=True, text=True)
+                report = json.loads(inspected.stdout)
+                assert inspected.returncode == 1 and report['ok'] is False and 'uses fp4 experts' in inspected.stderr
+                continue
             server = Running(cli, model, engine, record)
             try:
                 config = json.loads((record / 'config.json').read_text())
@@ -779,7 +807,7 @@ def model_formats(cli, root):
                 assert config['env']['STRATA_LAT_FUSED_Q3K'] == ('1' if experts == 'q3k' else '0')
                 assert Path(config['env']['STRATA_LATENT_DENSE']) == model / f'latent_dense_{du}.bin'
                 assert config['env']['STRATA_LATENT_DENSE_FMT'] == du[1:]
-                assert 'log' not in config and config['exe'] != 'ignored'
+                assert 'log' not in config and 'prepare' not in config and config['exe'] != 'ignored'
             finally:
                 assert server.stop() == 0
             assert_no_leftovers(record)
@@ -809,9 +837,12 @@ def model_formats(cli, root):
 
 def inspect_defaults(cli, root):
     import shutil
+    mac = sys.platform == 'darwin'
     keys = {'adapter', 'delegated', 'engine', 'directory', 'ok', 'files'}
     file_keys = {'filename', 'required', 'exists', 'bytes'}
     for identifier, default_du, other_du in (('edge0_145b', 'q8', 'q4'), ('edge0_120b', 'q4', 'q8')):
+        if mac:
+            default_du, other_du = 'q4', 'q8'
         model = make_model(root / ('inspect-' + identifier), model_name=identifier.replace('_', '-') + '-q3k')
         base = [str(cli), 'inspect', '--model', str(model), '--json']
 
@@ -827,12 +858,20 @@ def inspect_defaults(cli, root):
         inspect([], True)
         (model / ('latent_dense_' + default_du + '.bin')).unlink()
         result, _ = inspect([], False)
-        assert result.stderr.rstrip().endswith('use --model-option du=' + other_du + ' instead.'), result.stderr
-        inspect(['--model-option', 'du=' + other_du], True)
-        result, _ = inspect(['--model-option', 'du=' + default_du], False)
-        suggested = result.stderr.rsplit(' use ', 1)[1].removesuffix(' instead.\n').split()
-        assert suggested == ['--model-option', 'du=' + other_du]
-        inspect(suggested, True)
+        if mac:
+            assert 'latent_dense_q4.bin' in result.stderr and '--model-option' not in result.stderr, result.stderr
+            rejected = subprocess.run([*base, '--model-option', 'du=' + other_du], capture_output=True, text=True)
+            report = json.loads(rejected.stdout)
+            assert rejected.returncode == 1 and report['ok'] is False and 'only supports du=q4' in rejected.stderr, rejected.stderr
+            (model / 'latent_dense_q4.bin').write_bytes(b'q4')
+            inspect([], True)
+        else:
+            assert result.stderr.rstrip().endswith('use --model-option du=' + other_du + ' instead.'), result.stderr
+            inspect(['--model-option', 'du=' + other_du], True)
+            result, _ = inspect(['--model-option', 'du=' + default_du], False)
+            suggested = result.stderr.rsplit(' use ', 1)[1].removesuffix(' instead.\n').split()
+            assert suggested == ['--model-option', 'du=' + other_du]
+            inspect(suggested, True)
         shutil.rmtree(model / 'scales')
         result, _ = inspect([], False)
         assert 'scales/' in result.stderr and '--model-option' not in result.stderr
@@ -1005,12 +1044,126 @@ def launch_handshake(cli, root):
     print('PASS launch handshake: environment cleared, banner skipped, missing PID reported, no leftovers')
 
 
+def mac_prepare(cli, root):
+    """Metal prepare and the Mac refusals. Other hosts skip these cases inside this process.
+
+    Exiting 77 would skip the CUDA cases that share this ctest, and a separate test is outside this change's scope.
+    """
+    if sys.platform != 'darwin':
+        print('SKIP macOS prepare: this host is not macOS')
+        return
+    engine = make_engine(root / 'mac-engine')
+    model = make_model(root / 'mac-model')
+    record = root / 'mac-first'
+    env = environment(record)
+    env['STRATA_API_KEY'] = 'secret-key'
+    server = Running(cli, model, engine, record, env=env)
+    try:
+        assert 'preparing' in server.text() and 'mtp-q2_0.gguf' in server.text() and '(one time)' in server.text()
+        assert (model / 'mtp-q2_0.gguf').read_bytes() == b'mtp-q2_0'
+        calls = [json.loads(line) for line in (model / 'prepare-calls.jsonl').read_text().splitlines()]
+        assert len(calls) == 1 and calls[0]['api_key'] is None, calls
+        assert Path(calls[0]['cwd']).resolve() == engine.resolve()
+        assert calls[0]['argv'][:2] == ['--rt', str(model / 'mtp')]
+        config = json.loads((record / 'config.json').read_text())
+        assert 'prepare' not in config
+        status = json.loads(request(server.port, 'GET', '/status')[2])
+        assert status['engine']['devices'][0]['name'] == 'metal'
+        assert status['engine']['devices'][0]['backend'] == 'metal'
+        assert status['model']['device'] == 'metal'
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    rel_model = make_model(root / 'mac-rel-model')
+    rel_record = root / 'mac-rel'
+    rel_server = Running(cli, rel_model, engine, rel_record, extra=['--strata-python', os.path.relpath(sys.executable)])
+    try:
+        assert (rel_model / 'mtp-q2_0.gguf').read_bytes() == b'mtp-q2_0'
+        rel_calls = [json.loads(line) for line in (rel_model / 'prepare-calls.jsonl').read_text().splitlines()]
+        assert Path(rel_calls[0]['cwd']).resolve() == engine.resolve()
+    finally:
+        assert rel_server.stop() == 0
+    assert_no_leftovers(rel_record)
+    record = root / 'mac-second'
+    server = Running(cli, model, engine, record)
+    try:
+        assert 'preparing' not in server.text(), server.text()
+        assert len((model / 'prepare-calls.jsonl').read_text().splitlines()) == 1
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+
+    def rejected(name, extra, message, mode=None):
+        target = make_model(root / name, model_name='edge0-145b-q3k')
+        log = root / (name + '-record')
+        run_env = environment(log)
+        if mode:
+            run_env['FAKE_MTP_MODE'] = mode
+        result = subprocess.run([str(cli), 'serve', '--model', str(target), '--port', '0', *strata_args(engine), *extra],
+                                capture_output=True, text=True, env=run_env, timeout=60)
+        assert result.returncode != 0 and 'Listening:' not in result.stderr, (name, result.returncode, result.stderr)
+        assert message in result.stderr, (name, result.stderr)
+        assert not log.exists(), ('a service process started', name)
+        return result
+
+    failed = rejected('mac-fail', [], 'mtp conversion failed', mode='fail')
+    assert failed.returncode == 1 and 'mtp-q2_0.gguf' in failed.stderr and 'mtp_gguf.py' in failed.stderr, failed.stderr
+    assert 'output was not created' in failed.stderr
+    assert not (root / 'mac-fail' / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
+    silent = rejected('mac-exit0', [], 'output was not created', mode='exit0')
+    assert silent.returncode == 1 and 'exit code 0' in silent.stderr and 'mtp_gguf.py' in silent.stderr, silent.stderr
+    assert not (root / 'mac-exit0' / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
+    for name, extra, message in (
+            ('mac-fp4', [], 'uses fp4 experts'),
+            ('mac-q8', ['--model-option', 'du=q8'], 'only supports du=q4'),
+            ('mac-ram', ['--model-option', 'ple-io=ram'], 'only supports ple-io=direct'),
+            ('mac-cuda', ['--device', 'cuda'], 'must be metal')):
+        if name == 'mac-fp4':
+            directory = make_model(root / name, model_name='edge0-120b-fp4')
+            log = root / (name + '-record')
+            result = subprocess.run([str(cli), 'serve', '--model', str(directory), '--port', '0', *strata_args(engine)],
+                                    capture_output=True, text=True, env=environment(log), timeout=60)
+            assert result.returncode == 2 and message in result.stderr and not log.exists(), result.stderr
+            assert not (directory / 'mtp-q2_0.gguf').exists()
+        else:
+            result = rejected(name, extra, message)
+            assert result.returncode == 2, (name, result.returncode, result.stderr)
+            assert not (root / name / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
+    # Ctrl-C while the script is still running kills it and does not start the service.
+    sleeping = make_model(root / 'mac-sleep')
+    log = root / 'mac-sleep-record'
+    run_env = environment(log)
+    run_env['FAKE_MTP_MODE'] = 'sleep'
+    process = subprocess.Popen([str(cli), 'serve', '--model', str(sleeping), '--port', '0', *strata_args(engine)],
+                               stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=run_env)
+    calls = sleeping / 'prepare-calls.jsonl'
+    deadline = time.time() + 15
+    while time.time() < deadline and not calls.exists():
+        if process.poll() is not None:
+            raise AssertionError(process.stderr.read())
+        time.sleep(0.05)
+    assert calls.exists(), 'prepare script did not start'
+    pid = json.loads(calls.read_text().splitlines()[0])['pid']
+    process.send_signal(signal.SIGINT)
+    try:
+        _, stderr = process.communicate(timeout=15)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.communicate(timeout=10)
+        raise AssertionError('Ctrl-C during prepare did not stop edge0-infer')
+    assert process.returncode == 1 and 'interrupted while preparing' in stderr, (process.returncode, stderr)
+    assert not log.exists() and not (sleeping / 'mtp-q2_0.gguf').exists()
+    assert gone(pid), 'prepare script outlived Ctrl-C'
+    print('PASS macOS prepare: once, then skipped; failure and exit 0 leave no file or service; fp4, du=q8, ple-io=ram and cuda rejected; Ctrl-C kills the script')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cli', required=True)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as folder:
         root = Path(folder)
+        mac_prepare(args.cli, root)
         launch_handshake(args.cli, root)
         interrupted_responses(args.cli, root)
         inspect_defaults(args.cli, root)

@@ -14,7 +14,7 @@
 
 <p align="center"><sub>项目</sub><br>
 <img src="assets/edge0-release/badge-group-divider.svg" alt="" width="540" height="16"><br>
-<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/windows-releases-badge.svg" alt="Windows / Download" height="18"></a>
+<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/releases-badge.svg" alt="Windows · macOS / Download" height="18"></a>
 </p>
 
 <p align="center"><sub>最新版本</sub><br>
@@ -80,7 +80,7 @@
 
 可通过命令行、本地 API 服务或 Edge0 Chat 应用使用。
 
-最新版本让 145B 和 120B 潜空间 MoE 模型能够在单张 NVIDIA GPU 上运行。
+最新版本让 145B 和 120B 潜空间 MoE 模型能够在单张 NVIDIA GPU 或 Apple Silicon Mac 上运行。
 
 两款模型均采用原生 4 位训练，提供 Q3_K 和 NVFP4 格式，面向本地 agent 任务。
 
@@ -96,7 +96,7 @@
 | --- | --- | --- |
 | **Linux** | NVIDIA GPU (CUDA 13) | CPU |
 | **Windows** | NVIDIA GPU (CUDA 13) | CPU, Vulkan |
-| **macOS** (Apple Silicon) | — | Metal, CPU |
+| **macOS** (Apple Silicon) | Metal | Metal, CPU |
 | **iOS** | — | Metal |
 | **Android** | — | CPU |
 
@@ -108,14 +108,14 @@
 
 <p>145B / 120B 是当前的潜空间 MoE 系列，基于 Qwen3.8-Flash-Next，采用原生 4 位训练。</p>
 
-通过 `edge0-infer serve` 和 `edge0-infer chat` 调用 edge0-strata，在配备 NVIDIA GPU 和 CUDA 13 的 Linux 或 Windows 系统上运行。
+通过 `edge0-infer serve` 和 `edge0-infer chat` 调用 edge0-strata，在配备 NVIDIA GPU 和 CUDA 13 的 Linux 或 Windows 上运行，或在 macOS 的 Apple Silicon 上用 Metal 运行。
 
 **145B Q3_K · RTX 5090 D 24 GB：** agent 解码 121.2 tok/s · 16K 预填充 3554.9 tok/s。
 
 | 型号 | 已发布检查点 | 推理配置 | 引擎 |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1792），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1280），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1792），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal，Q3_K） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1280），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal，Q3_K） |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -197,7 +197,7 @@ Q3_K · RTX 5090 D 24 GB。预填充使用 16K token 输入。能力分数为模
 
 `16 GiB VRAM + 20 GiB RAM` 行仍使用同一张 RTX 5090 D 24 GB，并非另一张显卡。显存通过 `--vram-reserve-mib 8192` 限制，系统内存通过 cgroup（`MemoryMax=20G`，无 swap）限制。启用驻留后，同一张显卡上 **Q3_K**（权重 40.81 GiB）占用 23.14 GiB VRAM + 31.28 GiB RAM，**NVFP4**（47.79 GiB）占用 23.25 GiB VRAM + 38.27 GiB RAM；两处存放的专家集合互不重叠，没有重复计数。
 
-16 GiB VRAM + 20 GiB RAM 是测试时的预算限制，不是最低系统要求。Apple M2 Ultra 行是 Metal 后端的测量结果，不代表已发布 macOS 支持。
+16 GiB VRAM + 20 GiB RAM 是测试时的预算限制，不是最低系统要求。Apple M2 Ultra 行是 Metal 后端的测量结果。
 
 </details>
 
@@ -282,7 +282,7 @@ Q3_K · RTX 5090 D 24 GB。预填充使用 16K token 输入。能力分数为模
 <details>
 <summary>平台与文档说明</summary>
 
-构建说明适用于 Linux 或 Windows（x64 或 ARM64）上的 NVIDIA GPU 与 CUDA 13。Apple M2 Ultra 的测量使用 Metal，不代表已发布 macOS 支持。
+构建说明涵盖 Linux 或 Windows（x64 或 ARM64）上带 CUDA 13 的 NVIDIA GPU，以及 Apple Silicon macOS 上的 Metal。
 
 </details>
 
@@ -295,7 +295,7 @@ Q3_K · RTX 5090 D 24 GB。预填充使用 16K token 输入。能力分数为模
 git clone https://github.com/Edge0-AI/Edge0.git edge0
 ```
 
-- **edge0-strata** 引擎：参照 [edge0-strata/EDGE0.md](edge0-strata/EDGE0.md) 中的“Build (Linux, NVIDIA)”或“Build (Windows, NVIDIA)”。
+- **edge0-strata** 引擎：参照 [edge0-strata/EDGE0.md](edge0-strata/EDGE0.md) 中的“Build (Linux, NVIDIA)”、“Build (Windows, NVIDIA)”或“Build (macOS, Apple Silicon)”。
 - **edge0-infer**：参照 [edge0-infer/docs/getting-started.md](edge0-infer/docs/getting-started.md) 中的“Build”（Linux）或“Windows”。
 
 **2. 从命令行运行。** 传入单个模型文件夹，例如 `Edge0-145B-q3k`，而非包含多个模型的上级目录。Windows 程序路径为 `build\windows\bin\edge0-infer.exe`。
@@ -315,11 +315,11 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
-<summary>桌面应用 · Windows</summary>
+<summary>桌面应用 · Windows · macOS</summary>
 
 ⬇️ **下载：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-在 Windows 上打开 **Edge0 Chat**，选择模型文件夹（如 `Edge0-145B-q3k`）即可本地运行。如需从源码构建应用，请参阅 [Edge0 Chat](edge0-infer/examples/desktop/README.md) 指南。
+在 Windows 或 macOS（Apple Silicon）上打开 **Edge0 Chat**，选择模型文件夹（如 `Edge0-145B-q3k`）即可本地运行。如需从源码构建应用，请参阅 [Edge0 Chat](edge0-infer/examples/desktop/README.md) 指南。
 
 </details>
 
