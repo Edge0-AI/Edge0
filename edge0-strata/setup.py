@@ -3541,7 +3541,7 @@ def _installed(name: str) -> bool:
 def control_missing_packages() -> list:
     """The Python packages the preparation tools need that this interpreter does not have (the app bundle has them all)."""
     import importlib.util
-    return [m for m in ("numpy", "jinja2", "regex", "yaml", "tqdm", "requests", "PIL", "psutil")
+    return [m for m in ("numpy", "jinja2", "jinja2.sandbox", "regex", "yaml", "tqdm", "requests", "PIL", "psutil")
             if importlib.util.find_spec(m) is None]
 
 
@@ -3556,7 +3556,7 @@ def pip_stamp_is_ours(stamp: Path) -> bool:
     except OSError:
         return False
     import importlib.util
-    return all(importlib.util.find_spec(m) is not None for m in ("numpy", "jinja2", "regex", "yaml"))
+    return all(importlib.util.find_spec(m) is not None for m in ("numpy", "jinja2", "jinja2.sandbox", "regex", "yaml"))
 
 
 def pip_install(packages, what, extra=()):
