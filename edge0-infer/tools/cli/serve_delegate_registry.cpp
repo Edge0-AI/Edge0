@@ -29,7 +29,8 @@ const std::vector<Registration>& registry() {
          {{"du", {"q8", "q4"}}, {"ple-io", {"direct", "ram"}}},
          true,
          true,
-         {{"edge0-145b-q3k", "q3k"}, {"edge0-145b-fp4", "fp4"}}},
+         {{"edge0-145b-q3k", "q3k"}, {"edge0-145b-fp4", "fp4"}},
+         {{"metal", {{"du", {"q4"}}, {"ple-io", {"direct"}}}}}},
         {"edge0_120b", "edge0-strata", "edge0/models/edge0-120b.json",
          {{"model.json", false, ""},  // release identifier
           {"experts.bin", false, ""},  // latent experts, 48 layers x 512
@@ -48,7 +49,8 @@ const std::vector<Registration>& registry() {
          {{"du", {"q4", "q8"}}, {"ple-io", {"direct", "ram"}}},
          true,
          true,
-         {{"edge0-120b-q3k", "q3k"}, {"edge0-120b-fp4", "fp4"}}},
+         {{"edge0-120b-q3k", "q3k"}, {"edge0-120b-fp4", "fp4"}},
+         {{"metal", {{"du", {"q4"}}, {"ple-io", {"direct"}}}}}},
     };
     return entries;
 }
@@ -68,6 +70,10 @@ std::uintmax_t size_of(const fs::path& path, bool directory) {
         if (it->is_regular_file(inner)) total += it->file_size(inner);
     }
     return total;
+}
+const std::vector<std::pair<std::string, std::vector<std::string>>>& options_for(const Registration& registration, const std::string& device) {
+    const auto found = registration.device_options.find(device);
+    return found == registration.device_options.end() ? registration.options : found->second;
 }
 bool condition_holds(const std::string& condition, const std::map<std::string, std::string>& options) {
     if (condition.empty()) return true;
@@ -92,11 +98,12 @@ std::vector<std::string> Match::missing(const std::map<std::string, std::string>
     return result;
 }
 
-bool Match::complete(const std::map<std::string, std::string>& selected) const {
-    return missing(resolve_options(*registration, selected)).empty();
+bool Match::complete(const std::map<std::string, std::string>& selected, const std::string& device) const {
+    if (!metal_rejection(*this, device, selected).empty()) return false;
+    return missing(resolve_options(*registration, selected, device)).empty();
 }
 
-std::vector<std::string> Match::alternatives(const std::map<std::string, std::string>& options) const {
+std::vector<std::string> Match::alternatives(const std::map<std::string, std::string>& options, const std::string& device) const {
     auto conditions = options;
     conditions["experts"] = experts;
     std::vector<std::string> involved;
@@ -107,7 +114,7 @@ std::vector<std::string> Match::alternatives(const std::map<std::string, std::st
         if (std::find(involved.begin(), involved.end(), name) == involved.end()) involved.push_back(name);
     }
     std::vector<std::string> result;
-    for (const auto& option : registration->options) {
+    for (const auto& option : options_for(*registration, device)) {
         if (std::find(involved.begin(), involved.end(), option.first) == involved.end()) continue;
         const auto value = std::find_if(option.second.begin(), option.second.end(), [&](const std::string& value) {
             const auto condition = option.first + "=" + value;
@@ -142,6 +149,7 @@ std::optional<Match> detect(const fs::path& directory) {
         if (named == registration.names.end()) continue;
         Match match;
         match.registration = &registration;
+        match.model_name = *name;
         match.experts = named->second;
         for (const auto& file : registration.files) {
             if (file.condition.rfind("experts=", 0) == 0 && file.condition != "experts=" + match.experts) continue;
@@ -164,7 +172,8 @@ std::optional<std::string> model_argument(int argc, char** argv) {
     return std::nullopt;
 }
 
-Json inspect_json(const Match& match, const fs::path& directory, const std::map<std::string, std::string>& selected) {
+Json inspect_json(const Match& match, const fs::path& directory, const std::map<std::string, std::string>& selected,
+                  const std::string& device) {
     Json files = Json::array();
     for (const auto& state : match.files)
         files.push_back({{"filename", state.file->path + (state.file->directory ? "/" : "")},
@@ -175,28 +184,80 @@ Json inspect_json(const Match& match, const fs::path& directory, const std::map<
             {"delegated", true},
             {"engine", match.registration->engine},
             {"directory", directory.string()},
-            {"ok", match.complete(selected)},
+            {"ok", match.complete(selected, device)},
             {"files", files}};
 }
 
-int parse_device(const std::string& value) {
+void reject_options_illegal_everywhere(const Registration& registration, const std::map<std::string, std::string>& given,
+                                       const std::string& device);
+
+InspectResult inspect_report(const Match& match, const fs::path& directory, const std::map<std::string, std::string>& given,
+                             const std::string& device) {
+    reject_options_illegal_everywhere(*match.registration, given, device);
+    const auto reason = metal_rejection(match, device, given);
+    const auto selected = reason.empty() ? resolve_options(*match.registration, given, device) : given;
+    auto report = inspect_json(match, directory, selected, device);
+    if (report["ok"].get<bool>()) return {std::move(report), {}, 0};
+    if (!reason.empty()) return {std::move(report), reason, 1};
+    std::string message = "asset_invalid: " + match.registration->id + " directory is incomplete; missing: ";
+    const auto missing = match.missing(selected);
+    for (std::size_t i = 0; i < missing.size(); ++i) message += (i ? ", " : "") + missing[i];
+    message += '.';
+    const auto alternatives = match.alternatives(selected, device);
+    if (!alternatives.empty()) {
+        // "instead": the user may already have given these options explicitly, and repeating one is an error.
+        message += " To use another installed format, use";
+        for (const auto& choice : alternatives) message += " --model-option " + choice;
+        message += " instead.";
+    }
+    return {std::move(report), message, 1};
+}
+
+std::string metal_rejection(const Match& match, const std::string& device, const std::map<std::string, std::string>& given) {
+    if (device != "metal") return {};
+    if (match.experts != "q3k")
+        return "unsupported on Metal: " + match.model_name + " uses fp4 experts; Metal supports q3k";
+    const auto rejected = [](const std::map<std::string, std::string>& given, const char* name, const char* only) -> std::string {
+        const auto found = given.find(name);
+        if (found == given.end() || found->second == only) return {};
+        // A value that is not allowed on any device keeps the generic "must be" error from resolve_options.
+        return "unsupported on Metal: " + std::string(name) + "=" + found->second + "; Metal only supports " + name + "=" + only;
+    };
+    if (const auto du = rejected(given, "du", "q4"); !du.empty() && given.at("du") == "q8") return du;
+    if (const auto ple = rejected(given, "ple-io", "direct"); !ple.empty() && given.at("ple-io") == "ram") return ple;
+    return {};
+}
+
+ParsedDevice parse_device(const std::string& value, Platform platform) {
+    if (platform == Platform::macos) {
+        if (value == "metal") return {"metal", 0};
+        throw ConfigError("invalid_argument: on macOS this model runs on Metal through edge0-strata; "
+                          "--device must be metal (got " + value + ")");
+    }
     const std::string message = "invalid_argument: this model runs on a CUDA GPU through edge0-strata; "
                                 "--device must be cuda or cuda:<n> (got " + value + ")";
-    if (value == "cuda") return 0;
+    if (value == "cuda") return {"cuda:0", 0};
     if (value.size() <= 5 || value.compare(0, 5, "cuda:") != 0) throw ConfigError(message);
     const auto digits = value.substr(5);
     if (digits.size() > 3 || digits.find_first_not_of("0123456789") != std::string::npos) throw ConfigError(message);
-    return std::stoi(digits);
+    const int gpu = std::stoi(digits);
+    return {"cuda:" + std::to_string(gpu), gpu};
 }
 
-std::map<std::string, std::string> resolve_options(const Registration& registration, const std::map<std::string, std::string>& given) {
+std::string default_device(Platform platform) {
+    return platform == Platform::macos ? "metal" : "cuda:0";
+}
+
+std::map<std::string, std::string> resolve_options(const Registration& registration, const std::map<std::string, std::string>& given,
+                                                   const std::string& device) {
+    const auto& options = options_for(registration, device);
     std::map<std::string, std::string> result;
     for (const auto& item : given) {
-        const auto option = std::find_if(registration.options.begin(), registration.options.end(),
+        const auto option = std::find_if(options.begin(), options.end(),
                                          [&](const auto& candidate) { return candidate.first == item.first; });
-        if (option == registration.options.end()) {
+        if (option == options.end()) {
             std::string names;
-            for (const auto& candidate : registration.options) names += (names.empty() ? "" : ", ") + candidate.first;
+            for (const auto& candidate : options) names += (names.empty() ? "" : ", ") + candidate.first;
             throw ConfigError("invalid_argument: unknown model option " + item.first + " for " + registration.id + " (supported: " + names + ")");
         }
         if (std::find(option->second.begin(), option->second.end(), item.second) == option->second.end()) {
@@ -206,8 +267,26 @@ std::map<std::string, std::string> resolve_options(const Registration& registrat
         }
         result[item.first] = item.second;
     }
-    for (const auto& option : registration.options) result.emplace(option.first, option.second.front());
+    for (const auto& option : options) result.emplace(option.first, option.second.front());
     return result;
+}
+
+void reject_options_illegal_everywhere(const Registration& registration, const std::map<std::string, std::string>& given,
+                                       const std::string& device) {
+    // A name or value no device accepts is a configuration error, ahead of the Metal fp4 report.
+    auto accepted = [](const std::vector<std::pair<std::string, std::vector<std::string>>>& options, const std::string& name,
+                       const std::string& value) {
+        for (const auto& option : options)
+            if (option.first == name && std::find(option.second.begin(), option.second.end(), value) != option.second.end())
+                return true;
+        return false;
+    };
+    for (const auto& item : given) {
+        bool any = accepted(registration.options, item.first, item.second);
+        for (const auto& entry : registration.device_options)
+            any = any || accepted(entry.second, item.first, item.second);
+        if (!any) resolve_options(registration, {{item.first, item.second}}, device);
+    }
 }
 
 fs::path locate_engine(const std::optional<std::string>& given, const fs::path& executable) {
@@ -251,8 +330,11 @@ void check_contract(const fs::path& engine) {
                           std::to_string(supported_contract));
 }
 
-Json load_template(const fs::path& engine, const Registration& registration) {
-    const auto path = engine / registration.config_template;
+Json load_template(const fs::path& engine, const Registration& registration, const std::string& device) {
+    fs::path relative = registration.config_template;
+    if (device == "metal")
+        relative = relative.parent_path() / (relative.stem().string() + "-metal" + relative.extension().string());
+    const auto path = engine / relative;
     std::ifstream input(path, std::ios::binary);
     if (!input) throw ConfigError("edge0-strata has no configuration template for " + registration.id + ": " + path.string());
     const auto value = Json::parse(input, nullptr, false);
@@ -261,7 +343,8 @@ Json load_template(const fs::path& engine, const Registration& registration) {
     return value;
 }
 
-Json expand_template(const Json& config_template, const Registration& registration, const LaunchOptions& options, Platform platform) {
+Json expand_template(const Json& config_template, const Registration& registration, const LaunchOptions& options, Platform platform,
+                     std::vector<PrepareStep>* prepare) {
     const auto du = options.model_options.at("du");
     const std::map<std::string, std::string> values = {
         {"STRATA_DIR", options.strata_dir.string()},
@@ -335,6 +418,30 @@ Json expand_template(const Json& config_template, const Registration& registrati
             throw ConfigError("invalid_argument: --strata-arg " + word + ": set by the launch template");
         args.push_back(word);
     }
+    // `prepare` is carried out by edge0-infer before the server starts. It is not part of the server's config.
+    std::vector<PrepareStep> steps;
+    if (config.contains("prepare")) {
+        if (!config["prepare"].is_array())
+            throw ConfigError("edge0-strata configuration template prepare must be an array");
+        for (const auto& item : config["prepare"]) {
+            if (!item.is_object() || !item.contains("output") || !item["output"].is_string() || item["output"].get<std::string>().empty() ||
+                !item.contains("script") || !item["script"].is_string() || item["script"].get<std::string>().empty() ||
+                !item.contains("args") || !item["args"].is_array())
+                throw ConfigError("edge0-strata configuration template prepare entry needs output, script and args");
+            PrepareStep step;
+            step.output = item["output"].get<std::string>();
+            fs::path script = item["script"].get<std::string>();
+            if (script.is_relative()) script = options.strata_dir / script;
+            step.script = std::move(script);
+            for (const auto& arg : item["args"]) {
+                if (!arg.is_string()) throw ConfigError("edge0-strata configuration template prepare args must be strings");
+                step.args.push_back(arg.get<std::string>());
+            }
+            steps.push_back(std::move(step));
+        }
+        config.erase("prepare");
+    }
+    if (prepare) *prepare = std::move(steps);
     return config;
 }
 
@@ -377,10 +484,22 @@ void unsupported_option(const std::string& key) {
 LaunchOptions resolve(const CommonArgs& args, const Match& match, const fs::path& executable, Platform platform,
                       const std::string& cuda_path) {
     LaunchOptions options;
-    options.gpu = parse_device(args.device);
-    if (args.prefill_device && *args.prefill_device != args.device)
-        throw ConfigError("invalid_argument: --prefill-device must equal --device for a delegated model (edge0-strata uses one GPU)");
-    options.model_options = resolve_options(*match.registration, args.model_options);
+    const auto parsed = parse_device(args.device.value_or(default_device(platform)), platform);
+    options.device = parsed.name;
+    options.gpu = parsed.gpu;
+    if (args.prefill_device) {
+        if (parsed.name == "metal") {
+            if (parse_device(*args.prefill_device, platform).name != parsed.name)
+                throw ConfigError("invalid_argument: --prefill-device must equal --device for a delegated model (edge0-strata uses one GPU)");
+        } else if (*args.prefill_device != args.device.value_or(default_device(platform))) {
+            // Same string comparison as before Metal: "cuda" and "cuda:0" are not the same text, and
+            // "cuda:01" is not "cuda:0".
+            throw ConfigError("invalid_argument: --prefill-device must equal --device for a delegated model (edge0-strata uses one GPU)");
+        }
+    }
+    reject_options_illegal_everywhere(*match.registration, args.model_options, parsed.name);
+    if (const auto reason = metal_rejection(match, parsed.name, args.model_options); !reason.empty()) throw ConfigError(reason);
+    options.model_options = resolve_options(*match.registration, args.model_options, parsed.name);
     const auto missing = match.missing(options.model_options);
     if (!missing.empty()) {
         std::string list;
@@ -395,8 +514,8 @@ LaunchOptions resolve(const CommonArgs& args, const Match& match, const fs::path
     options.ready_timeout = args.ready_timeout;
     options.strata_dir = locate_engine(args.strata_dir, executable);
     options.platform = platform;
-    options.python = args.python ? fs::path(*args.python) : options.strata_dir / ".venv" /
-        (platform == Platform::windows ? fs::path("Scripts") / "python.exe" : fs::path("bin") / "python");
+    options.python = fs::absolute(args.python ? fs::path(*args.python) : options.strata_dir / ".venv" /
+        (platform == Platform::windows ? fs::path("Scripts") / "python.exe" : fs::path("bin") / "python"));
     if (platform == Platform::windows) {
         bool found = false;
         std::string checked = "CUDA_PATH is not set (no directories checked)";

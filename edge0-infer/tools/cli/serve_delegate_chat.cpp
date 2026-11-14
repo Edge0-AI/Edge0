@@ -82,7 +82,7 @@ int chat(int argc, char** argv, const Match& match) {
         TempDir logs;
         const auto log_file = logs.path / "edge0-strata.log";
         const auto started = Clock::now();
-        std::cerr << "edge0-strata: starting " << match.registration->id << " on cuda:" << options.gpu
+        std::cerr << "edge0-strata: starting " << match.registration->id << " on " << options.device
                   << " (log: " << log_file.string() << ")\n" << std::flush;
         // When edge0-strata fails (to start, or later), the last lines of its log are printed and the log is kept.
         auto report_log = [&] {
@@ -100,7 +100,9 @@ int chat(int argc, char** argv, const Match& match) {
         } catch (const ConfigError&) {
             throw;  // raised before edge0-strata starts: its log is empty, and the directory goes with `logs`
         } catch (...) {
-            report_log();
+            // Preparation fails before the engine log exists. Do not name that file or keep the directory.
+            std::error_code missing;
+            if (std::filesystem::is_regular_file(log_file, missing)) report_log();
             throw;
         }
         auto& engine = *launched->engine;

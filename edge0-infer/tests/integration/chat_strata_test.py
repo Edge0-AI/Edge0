@@ -180,8 +180,12 @@ def failures(cli, root, engine, model):
     kept_log(record, result.stderr)
     assert_no_leftovers(record)
     record = root / 'rejected'
-    result, _ = chat(cli, model, engine, record, 'hi\n', ['--device', 'metal'])
-    assert result.returncode == 2 and 'CUDA GPU' in result.stderr and not record.exists()
+    if sys.platform == 'darwin':
+        result, _ = chat(cli, model, engine, record, 'hi\n', ['--device', 'cuda'])
+        assert result.returncode == 2 and 'must be metal' in result.stderr and not record.exists()
+    else:
+        result, _ = chat(cli, model, engine, record, 'hi\n', ['--device', 'metal'])
+        assert result.returncode == 2 and 'CUDA GPU' in result.stderr and not record.exists()
     result, _ = chat(cli, model, engine, record, 'hi\n', ['--temperature', '0'])
     assert result.returncode == 2 and '--temperature' in result.stderr and not record.exists()
     print('PASS failures: start failure and engine exit exit 1 with the log tail and a kept log, rejected options start nothing')
@@ -220,14 +224,35 @@ def main():
         cancel(args.cli, root, engine, model)
         failures(args.cli, root, engine, model)
         passthrough(args.cli, root, engine, model)
+        if sys.platform == 'darwin':
+            assert (model / 'mtp-q2_0.gguf').read_bytes() == b'mtp-q2_0'
+            failed_model = make_model(root / 'prepare-fail-model')
+            failed_record = root / 'prepare-fail'
+            failed_env = environment(failed_record)
+            failed_env['FAKE_MTP_MODE'] = 'fail'
+            failed = subprocess.run([str(args.cli), 'chat', '--model', str(failed_model), *strata_args(engine)],
+                                    input='hi\n', capture_output=True, encoding='utf-8', env=failed_env, timeout=120)
+            assert failed.returncode == 1 and 'preparation failed' in failed.stderr, failed.stderr
+            assert 'log kept at' not in failed.stderr
+            assert not (failed_model / 'mtp-q2_0.gguf').exists()
+            assert not list(temp_dir(failed_record).iterdir()), list(temp_dir(failed_record).iterdir())
+            assert len((model / 'prepare-calls.jsonl').read_text().splitlines()) == 1
+            again, _ = chat(args.cli, model, engine, root / 'chat-again', 'hi\n')
+            assert again.returncode == 0 and 'preparing' not in again.stderr, again.stderr
+            assert len((model / 'prepare-calls.jsonl').read_text().splitlines()) == 1
+            assert_no_leftovers(root / 'chat-again')
         fp4 = make_model(root / 'fp4', model_name='edge0-120b-fp4')
         record = root / 'fp4-chat'
         result, bodies = chat(args.cli, fp4, engine, record, 'hi\n')
-        assert result.returncode == 0 and bodies[0]['model'] == 'edge0_120b', result.stderr
-        config = json.loads((record / 'config.json').read_text())
-        assert config['env']['STRATA_LAT_FUSED_Q3K'] == '0' and not (fp4 / 'scales').exists()
-        assert config['args'][1] == str(fp4)
-        assert_no_leftovers(record)
+        if sys.platform == 'darwin':
+            assert result.returncode == 2 and 'uses fp4 experts' in result.stderr and not record.exists(), result.stderr
+            assert bodies == [] and not (fp4 / 'mtp-q2_0.gguf').exists()
+        else:
+            assert result.returncode == 0 and bodies[0]['model'] == 'edge0_120b', result.stderr
+            config = json.loads((record / 'config.json').read_text())
+            assert config['env']['STRATA_LAT_FUSED_Q3K'] == '0' and not (fp4 / 'scales').exists()
+            assert config['args'][1] == str(fp4)
+            assert_no_leftovers(record)
     print('PASS chat strata')
 
 

@@ -146,7 +146,7 @@ int serve(int argc, char** argv, const Match& match) {
             ~Restore() { std::signal(SIGINT, a); std::signal(SIGTERM, b); }
         } restore{old_int, old_term};
 
-        log("edge0-strata: starting " + match.registration->id + " from " + options.strata_dir.string() + " on cuda:" + std::to_string(options.gpu));
+        log("edge0-strata: starting " + match.registration->id + " from " + options.strata_dir.string() + " on " + options.device);
         auto launched = launch(*match.registration, options, {}, &interrupted);
         auto& engine = *launched->engine;
         const int upstream_port = engine.port();
@@ -174,7 +174,7 @@ int serve(int argc, char** argv, const Match& match) {
         const auto pid = getpid();
 #endif
         const auto started_at = timestamp();
-        const std::string device = "cuda:" + std::to_string(options.gpu);
+        const std::string device = options.device;
         std::atomic<bool> stopping{false};
         std::mutex state_mutex;
         ProxyHistory history;

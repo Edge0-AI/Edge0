@@ -5,7 +5,7 @@
 `edge0-infer` ejecuta modelos de lenguaje de mezcla de expertos (MoE) en tu propio hardware: una CLI, un servidor local compatible con OpenAI y Anthropic y aplicaciones de chat, con los mismos comandos para todos los modelos. Cada modelo se ejecuta en el motor preparado para él, y `edge0-infer` elige el motor a partir de la carpeta del modelo; no hay nada que elegir:
 
 - **Edge0 35B** (Qwen3.6-35B-A3B con un LoRA y un pre-router entrenado) se ejecuta en el **motor nativo** de este directorio, construido sobre [GGML](https://github.com/ggml-org/ggml) y con una API nativa en C++, en macOS, iOS, Android, Linux y Windows. Los pesos de los expertos se cargan desde el almacenamiento bajo demanda en un conjunto fijo de ranuras, de modo que un modelo más grande que el presupuesto de memoria del dispositivo se ejecuta sin cargar todos sus pesos. En un Mac con Apple M5 decodifica a unos 25 tokens por segundo, con un pico de huella física de unos 3,4 GiB; las cifras de cada plataforma están en [Benchmarking](docs/benchmarking.md#reference-figures).
-- **Edge0 145B** y **Edge0 120B** se ejecutan en **edge0-strata**, un fork de [Strata](https://github.com/Niko1221/Strata) en `edge0-strata/` del repositorio Edge0, en una GPU NVIDIA con Linux o Windows; consulta [Edge0 145B](docs/edge0-145b.md) y [Edge0 120B](docs/edge0-120b.md).
+- **Edge0 145B** y **Edge0 120B** se ejecutan en **edge0-strata**, un fork de [Strata](https://github.com/Niko1221/Strata) en `edge0-strata/` del repositorio Edge0, en una GPU NVIDIA con Linux o Windows, y en Apple Silicon con Metal en macOS; consulta [Edge0 145B](docs/edge0-145b.md) y [Edge0 120B](docs/edge0-120b.md).
 
 > Esta página es una traducción del [README](README.md) en inglés; los documentos enlazados están en inglés.
 
@@ -13,7 +13,7 @@
 
 | Plataforma | Edge0 35B (motor nativo) | Edge0 145B, Edge0 120B (edge0-strata) |
 | --- | --- | --- |
-| macOS (Apple silicon) | Metal, CPU | — |
+| macOS (Apple silicon) | Metal, CPU | Metal |
 | iOS | Metal | — |
 | Android | CPU | — |
 | Linux | CPU | GPU NVIDIA (CUDA 13) |

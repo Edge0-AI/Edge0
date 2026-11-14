@@ -5,7 +5,7 @@
 `edge0-infer` は、混合エキスパート（MoE）言語モデルを手元のハードウェアで実行します。CLI、ローカルの OpenAI／Anthropic 互換サーバー、チャットアプリを備え、どのモデルも同じコマンドで使えます。各モデルはそれぞれ専用のエンジンで動作し、`edge0-infer` がモデルフォルダからエンジンを自動で選ぶため、選択する必要はありません。
 
 - **Edge0 35B**（LoRA と学習済み pre-router を備えた Qwen3.6-35B-A3B）は、このディレクトリの**ネイティブエンジン**で動作します。ネイティブエンジンは [GGML](https://github.com/ggml-org/ggml) をベースにネイティブ C++ API を備え、macOS、iOS、Android、Linux、Windows で動作します。エキスパートの重みはストレージから必要に応じて固定数のスロットに読み込まれるため、デバイスのメモリ予算より大きなモデルでも、すべての重みを読み込まずに実行できます。Apple M5 Mac ではデコードが毎秒約 25 トークン、物理メモリフットプリントのピークが約 3.4 GiB です。各プラットフォームの数値は [Benchmarking](docs/benchmarking.md#reference-figures) を参照してください。
-- **Edge0 145B** と **Edge0 120B** は **edge0-strata** で動作します。[Strata](https://github.com/Niko1221/Strata) のフォークで、Edge0 リポジトリの `edge0-strata/` にあり、Linux または Windows の NVIDIA GPU で動作します。[Edge0 145B](docs/edge0-145b.md) と [Edge0 120B](docs/edge0-120b.md) を参照してください。
+- **Edge0 145B** と **Edge0 120B** は **edge0-strata** で動作します。[Strata](https://github.com/Niko1221/Strata) のフォークで、Edge0 リポジトリの `edge0-strata/` にあり、Linux または Windows の NVIDIA GPU、および macOS の Apple Silicon（Metal）で動作します。[Edge0 145B](docs/edge0-145b.md) と [Edge0 120B](docs/edge0-120b.md) を参照してください。
 
 > このページは英語版 [README](README.md) の翻訳です。リンク先のドキュメントはすべて英語です。
 
@@ -13,7 +13,7 @@
 
 | プラットフォーム | Edge0 35B（ネイティブエンジン） | Edge0 145B、Edge0 120B（edge0-strata） |
 | --- | --- | --- |
-| macOS（Apple シリコン） | Metal、CPU | — |
+| macOS（Apple シリコン） | Metal、CPU | Metal |
 | iOS | Metal | — |
 | Android | CPU | — |
 | Linux | CPU | NVIDIA GPU（CUDA 13） |

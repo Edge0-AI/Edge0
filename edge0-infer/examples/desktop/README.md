@@ -146,6 +146,9 @@ Build `edge0-infer` using the [build guide](../../docs/getting-started.md).
 On Choose a model, expand Other location… to enter the full executable path
 and one asset directory per line. This section starts collapsed, including on
 first launch before an executable has been configured.
+With no executable configured, the app uses the `edge0-infer` that a release
+package ships with it: beside its own executable, or in `Contents/Resources` of
+the macOS app bundle.
 If no executable is configured, or the configured file has been moved or deleted,
 loading or saving reports which one it is and points to Settings > Engine > Executable
 and Other location… to set it again.
@@ -165,7 +168,7 @@ The default device is `metal` on macOS and `cpu` on Windows. Settings also allow
 chosen backend. Model loading can take several minutes. Cancel stops a pending
 load. Changing model or saving settings ends the old service and clears history.
 A model that `inspect --json` reports as `delegated` is started without the device
-settings: it runs on the GPU its external engine uses. Its `edge0-infer` finds edge0-strata through
+settings. On macOS it runs on Metal through edge0-strata; on Linux and Windows it runs on the NVIDIA GPU that engine uses. Its `edge0-infer` finds edge0-strata through
 `EDGE0_STRATA_DIR` in the app's environment or an `edge0-strata/` directory beside an ancestor of the
 selected executable.
 

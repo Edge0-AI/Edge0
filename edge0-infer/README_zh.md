@@ -5,7 +5,7 @@
 `edge0-infer` 在你自己的硬件上运行混合专家（MoE）语言模型：命令行、本地 OpenAI／Anthropic 兼容服务与聊天应用，所有模型使用相同的命令。每个模型运行在为它准备的引擎上，`edge0-infer` 根据模型目录自动选择引擎，无需用户选择：
 
 - **Edge0 35B**（Qwen3.6-35B-A3B，带 LoRA 与训练好的 pre-router）运行在本目录的**原生引擎**上。原生引擎基于 [GGML](https://github.com/ggml-org/ggml)，提供原生 C++ API，支持 macOS、iOS、Android、Linux 和 Windows。专家权重从存储按需读入固定数量的专家槽，因此比设备内存预算更大的模型无需载入全部权重即可运行。在 Apple M5 Mac 上解码约每秒 25 个 token，物理内存占用峰值约 3.4 GiB；各平台的数据见 [Benchmarking](docs/benchmarking.md#reference-figures)。
-- **Edge0 145B** 和 **Edge0 120B** 运行在 **edge0-strata** 上。它是 [Strata](https://github.com/Niko1221/Strata) 的分支，位于 Edge0 仓库的 `edge0-strata/`，在 Linux 或 Windows 的 NVIDIA GPU 上运行；见 [Edge0 145B](docs/edge0-145b.md) 与 [Edge0 120B](docs/edge0-120b.md)。
+- **Edge0 145B** 和 **Edge0 120B** 运行在 **edge0-strata** 上。它是 [Strata](https://github.com/Niko1221/Strata) 的分支，位于 Edge0 仓库的 `edge0-strata/`，在 Linux 或 Windows 的 NVIDIA GPU 上运行，也在 macOS 的 Apple Silicon 上用 Metal 运行；见 [Edge0 145B](docs/edge0-145b.md) 与 [Edge0 120B](docs/edge0-120b.md)。
 
 > 本页为英文版 [README](README.md) 的翻译；下面链接的文档均为英文。
 
@@ -13,7 +13,7 @@
 
 | 平台 | Edge0 35B（原生引擎） | Edge0 145B、Edge0 120B（edge0-strata） |
 | --- | --- | --- |
-| macOS（Apple Silicon） | Metal、CPU | — |
+| macOS（Apple Silicon） | Metal、CPU | Metal |
 | iOS | Metal | — |
 | Android | CPU | — |
 | Linux | CPU | NVIDIA GPU（CUDA 13） |

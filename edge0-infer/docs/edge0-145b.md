@@ -1,15 +1,15 @@
 # Edge0 145B
 
-Edge0 145B is a mixture-of-experts model for a single NVIDIA GPU. It runs on **edge0-strata**, the engine built for it (see [Two layers](architecture.md#two-layers)): the `edge0-strata/` directory of the Edge0 repository, a fork of [Strata](https://github.com/Niko1221/Strata). `edge0-infer serve` and `edge0-infer chat` start edge0-strata for this model, wait until it is ready and talk to it on a loopback port, so clients use the same commands and endpoints as for every other model. [Edge0 120B](edge0-120b.md) runs the same way.
+Edge0 145B is a mixture-of-experts model for one NVIDIA GPU on Linux or Windows, or for Apple Silicon on macOS. It runs on **edge0-strata**, the engine built for it (see [Two layers](architecture.md#two-layers)): the `edge0-strata/` directory of the Edge0 repository, a fork of [Strata](https://github.com/Niko1221/Strata). `edge0-infer serve` and `edge0-infer chat` start edge0-strata for this model, wait until it is ready and talk to it on a loopback port, so clients use the same commands and endpoints as for every other model. [Edge0 120B](edge0-120b.md) runs the same way.
 
 This page is the reference for running Edge0 145B with `edge0-infer`; [Getting started](getting-started.md#edge0-145b-and-edge0-120b-edge0-strata) walks through the steps. The model itself (architecture and measured speed) is described on the model page of Edge0 145B and Edge0 120B, `docs/models/edge0-145b.md` in the Edge0 repository.
 
 ## Requirements
 
-- Linux or Windows with an NVIDIA GPU and CUDA 13.
-- At least 16 GiB of GPU memory and 20 GiB of system memory.
-- `edge0-infer` built as in [Build](getting-started.md#build) (the `cpu` preset on Linux) or [Windows](getting-started.md#windows); it needs no GPU backend of its own for these models.
-- edge0-strata built as described in `edge0-strata/EDGE0.md` in the Edge0 repository. `edge0-infer` uses the engine `edge0-strata/build/strata` (`strata.exe` on Windows) and the Python environment `edge0-strata/.venv` it produces.
+- Linux or Windows with an NVIDIA GPU and CUDA 13, or macOS on Apple Silicon with Metal. The macOS measurements were taken on an Apple M2 Ultra.
+- On Linux and Windows, at least 16 GiB of GPU memory and 20 GiB of system memory.
+- `edge0-infer` built as in [Build](getting-started.md#build) (the `cpu` preset on Linux, or the `cpu` or `mac-metal` preset on macOS) or [Windows](getting-started.md#windows); it needs no GPU backend of its own for these models.
+- edge0-strata built as described in `edge0-strata/EDGE0.md` in the Edge0 repository. `edge0-infer` uses `edge0-strata/build/strata` on Linux, `edge0-strata/build/strata.exe` on Windows, or `edge0-strata/build-metal/strata` on macOS, and the Python environment `edge0-strata/.venv` that the build produces.
 
 ## Model directory
 
@@ -53,7 +53,7 @@ build/cpu/bin/edge0-infer inspect --model "$EDGE0_145B" --json
 
 The report lists files with `exists` and `bytes`; `ok` is `true` (exit code 0) when the selected configuration is complete.
 The expert format comes from `model_name` and is not a model option; `--model-option experts=` is rejected.
-D/U defaults to `q8`; add `--model-option du=q4` to check the other choice.
+On Linux and Windows, D/U defaults to `q8`; add `--model-option du=q4` to check the other choice. On macOS the only accepted value is `q4`.
 Only Q3_K folders list or require `scales/` (in the report its `required` value is `experts=q3k`).
 
 When files are missing, standard output remains valid JSON and standard error lists the missing files.
@@ -91,13 +91,13 @@ The commands are those of the native chat (`/file`, `"""`, `/think on|off`, `/ne
 
 | Option | Values | Default |
 | --- | --- | --- |
-| `--device` | `cuda` or `cuda:<n>` | `cuda:0` |
-| `--model-option du=` | `q8` or `q4` | `q8` |
+| `--device` | `metal` on macOS; `cuda` or `cuda:<n>` on Linux and Windows | `metal` on macOS, `cuda:0` otherwise |
+| `--model-option du=` | `q8` or `q4` | `q8` (`q4` on macOS) |
 | `--model-option ple-io=` | `direct` (read the embedding table from disk as needed) or `ram` (load it into memory; to keep it locked there, raise the locked-memory limit, e.g. `ulimit -l unlimited`) | `direct` |
-| `--context` | tokens | 131072 |
+| `--context` | tokens | 131072 (`32768` on macOS) |
 | `--strata-arg` | one word of edge0-strata's engine command line; repeat it for each word, e.g. `--strata-arg --pool-workers --strata-arg 24` | none |
 
-The model settings (automatic expert cache and prefill, speculative decoding, and int8 KV cache) are in `edge0-strata/edge0/models/edge0-145b.json`. CPU worker count, PCIe mode and fraction, VRAM reserve, and KV residency use the engine's defaults unless given with `--strata-arg`. This is meant for tuning to one machine, for example:
+On Linux and Windows the model settings (automatic expert cache and prefill, speculative decoding, and int8 KV cache) are in `edge0-strata/edge0/models/edge0-145b.json`. On macOS the same settings, with the limits below, are in `edge0-145b-metal.json`. CPU worker count, PCIe mode and fraction, VRAM reserve, and KV residency use the engine's defaults unless given with `--strata-arg`. This is meant for tuning to one machine, for example:
 
 ```sh
 build/cpu/bin/edge0-infer serve --model "$EDGE0_145B" \
@@ -106,7 +106,9 @@ build/cpu/bin/edge0-infer serve --model "$EDGE0_145B" \
   --strata-arg --kv-resident --strata-arg 32768
 ```
 
-The words are appended in the order given, after the template's arguments; write each option and its value as two words (not `--option=value`). An option the template already sets (such as `--kv` or `--pack`), `--max-context` (use `--context`) and an empty value are rejected before anything starts. Other words are not checked by `edge0-infer`: edge0-strata decides, and since the engine process's own output is not shown, a word it does not accept appears as a failed start (run edge0-strata directly to see why). The template requires launch contract version 4; an older engine template is rejected with both versions in the error.
+The words are appended in the order given, after the template's arguments; write each option and its value as two words (not `--option=value`). An option the template already sets (such as `--kv` or `--pack`), `--max-context` (use `--context`) and an empty value are rejected before anything starts. Other words are not checked by `edge0-infer`: edge0-strata decides, and since the engine process's own output is not shown, a word it does not accept appears as a failed start (run edge0-strata directly to see why). On macOS, `--device` accepts only `metal`. An `fp4` folder is rejected. `du` accepts only `q4`, and `ple-io` accepts only `direct`. The Metal template `edge0-145b-metal.json` sets the context length to 32768. If `mtp-q2_0.gguf` is absent, the first start runs `tools/mtp_gguf.py` with edge0-strata's Python and writes that file into the model folder, which must be writable; a later start leaves the file in place. The file is not part of the released folder listing above.
+
+The template requires launch contract version 5; an older engine template is rejected with both versions in the error.
 
 ## CUDA libraries on Windows
 
