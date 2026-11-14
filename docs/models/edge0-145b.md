@@ -1,6 +1,6 @@
 # Edge0 145B and Edge0 120B
 
-Two latent mixture-of-experts models for a single NVIDIA GPU, derived from Qwen3.8-Flash-Next: Edge0 145B and Edge0 120B. Their experts read compressed inputs, and both models run on [edge0-strata](../../edge0-strata/EDGE0.md), a fork of [Strata](https://github.com/Niko1221/Strata) whose scheduling of CPU, GPU and PCIe work they depend on. [edge0-infer](../../edge0-infer/README.md) starts edge0-strata for `serve` and `chat`, so the commands and endpoints are those of the other models.
+Two latent mixture-of-experts models for a single NVIDIA GPU on Linux or Windows, or for Apple Silicon on macOS, derived from Qwen3.8-Flash-Next: Edge0 145B and Edge0 120B. Their experts read compressed inputs, and both models run on [edge0-strata](../../edge0-strata/EDGE0.md), a fork of [Strata](https://github.com/Niko1221/Strata) whose scheduling of CPU, GPU and PCIe work they depend on. [edge0-infer](../../edge0-infer/README.md) starts edge0-strata for `serve` and `chat`, so the commands and endpoints are those of the other models.
 
 Weights on Hugging Face: [`Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [`Edge0-145B-NVFP4`](https://huggingface.co/Edge0/Edge0-145B-NVFP4) · [`Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [`Edge0-120B-NVFP4`](https://huggingface.co/Edge0/Edge0-120B-NVFP4).
 
@@ -137,15 +137,13 @@ Each model folder holds one model in one expert format: `Edge0-145B-q3k`, `Edge0
 
 ## Requirements
 
-Linux or Windows with an NVIDIA GPU and CUDA 13. The constrained-memory results in the speed tables are measured test budgets, not general minimum requirements. A 16 GiB VRAM + 20 GiB host RAM test is available for 145B Q3_K and both 120B builds; no such result is available for 145B NVFP4.
-
-Apple M2 Ultra (Metal) measurements are retained in the speed tables. They do not establish macOS release availability.
+Linux or Windows with an NVIDIA GPU and CUDA 13, or macOS on Apple Silicon with Metal. On macOS only the Q3_K folders are supported, with `du=q4` and `ple-io=direct`. The Metal template uses a context length of 32768, and the first start writes `mtp-q2_0.gguf` into the model folder, which must be writable. The constrained-memory results in the speed tables are measured test budgets, not general minimum requirements. A 16 GiB VRAM + 20 GiB host RAM test is available for 145B Q3_K and both 120B builds; no such result is available for 145B NVFP4.
 
 ## Running
 
 Use `serve` or `chat` for these models; `run` is for the native engine.
 
-Both models run on edge0-strata, the engine built for them, which edge0-infer starts for these models (see [Documentation](../../README.md#documentation)). Build edge0-strata as [Build (Linux, NVIDIA)](../../edge0-strata/EDGE0.md#build-linux-nvidia) or [Build (Windows, NVIDIA)](../../edge0-strata/EDGE0.md#build-windows-nvidia) in `edge0-strata/EDGE0.md` describes, build edge0-infer as in its [Getting started](../../edge0-infer/docs/getting-started.md#build), and start a model folder with `edge0-infer serve --model <model folder>` or `edge0-infer chat --model <model folder>`. The pages [Edge0 145B](../../edge0-infer/docs/edge0-145b.md) and [Edge0 120B](../../edge0-infer/docs/edge0-120b.md) in the edge0-infer documentation cover `serve`, `chat` and `inspect` for these models, how `edge0-infer` finds edge0-strata, the options (`--device`, `du`, `ple-io`, `--context`, `--strata-arg`) and the known limitations.
+Both models run on edge0-strata, the engine built for them, which edge0-infer starts for these models (see [Documentation](../../README.md#documentation)). Build edge0-strata as [Build (Linux, NVIDIA)](../../edge0-strata/EDGE0.md#build-linux-nvidia), [Build (Windows, NVIDIA)](../../edge0-strata/EDGE0.md#build-windows-nvidia) or [Build (macOS, Apple Silicon)](../../edge0-strata/EDGE0.md#build-macos-apple-silicon) in `edge0-strata/EDGE0.md` describes, build edge0-infer as in its [Getting started](../../edge0-infer/docs/getting-started.md#build), and start a model folder with `edge0-infer serve --model <model folder>` or `edge0-infer chat --model <model folder>`. The pages [Edge0 145B](../../edge0-infer/docs/edge0-145b.md) and [Edge0 120B](../../edge0-infer/docs/edge0-120b.md) in the edge0-infer documentation cover `serve`, `chat` and `inspect` for these models, how `edge0-infer` finds edge0-strata, the options (`--device`, `du`, `ple-io`, `--context`, `--strata-arg`) and the known limitations.
 
 ## Acknowledgements
 
