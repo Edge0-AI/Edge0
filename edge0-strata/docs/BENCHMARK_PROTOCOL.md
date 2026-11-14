@@ -3,6 +3,10 @@
 **Status: draft, implemented in `strata bench run`; pilot validation pending.** Protocol ID: `strata-qwen38-thinking-v1-draft.1`.
 Result format: `strata-standard-benchmark`, schema version `1`.
 
+> **Availability in this repository:** the `edge0-strata` build here has no `bench` subcommand, so
+> `strata bench run` cannot be used yet. Use the community scripts in
+> [COMMUNITY_BENCHMARKS.md](COMMUNITY_BENCHMARKS.md) until the runner is ported.
+
 This document specifies a repeatable community benchmark and the data a future website can consume. The
 required suite took **2 to 4 minutes after model loading** on the two machines it has been run on (RTX 3060 and
 2x RTX A4000, IQ3_XXS, Strata 0.2.1: 3 min 22 s and 2 min 22 s; the optional concurrency stage added 1.5 to 2 minutes).

@@ -9,6 +9,9 @@ sampling, twelve sanity checks, about 2 to 4 minutes after the model has loaded 
 the hardware, versions and every request. For a quick look at your own machine, [`BENCH.bat` / `./bench.sh`](#run-the-benchmark)
 takes 3 to 10 minutes and writes a report in the format below.
 
+> The `edge0-strata` build in this repository has no `bench` subcommand yet, so the standard benchmark
+> cannot be run here; the community scripts above are the way to measure for now.
+
 The protocol is still a draft until a pilot has run on two kinds of hardware. The reports listed below were made before
 it existed and are not standard results; they stay valid under this guide.
 
