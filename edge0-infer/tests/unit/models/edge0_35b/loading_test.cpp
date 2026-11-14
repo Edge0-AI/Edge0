@@ -3,6 +3,7 @@
 #include "models/edge0_35b/compute.h"
 #include "tests/support/runtime.h"
 #include "tests/support/model_fixture.h"
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
