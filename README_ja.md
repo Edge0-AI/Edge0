@@ -343,6 +343,20 @@ Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、`Edge0-
 
 </details>
 
+<details>
+<summary>画像 · 視覚</summary>
+
+モデルフォルダーの `mmproj-BF16.gguf` が視覚エンコーダーです。モデルの `model.json` の `args` と同じ階層に次を追加します。
+
+```json
+"vision": {"exe": "/path/to/strata-vision", "mmproj": "./mmproj-BF16.gguf",
+           "model": "./model-skeleton.gguf", "gpu": false}
+```
+
+さらに `"args"` に `--vision` を追加します。`strata-vision` はこのリポジトリーには含まれません。`setup.py --setup --vision yes` で取得するか、Strata のチェックアウトで `tools/vision` をビルドします。ログに `images on` と出たら、チャットで `/image`、または OpenAI API の `image_url` で画像を送れます。
+
+</details>
+
 <a name="documentation"></a>
 
 ## ドキュメント

@@ -341,6 +341,20 @@ Ouvrez **Edge0 Chat** sous Windows ou macOS (Apple Silicon) et choisissez un dos
 
 </details>
 
+<details>
+<summary>Images · vision</summary>
+
+`mmproj-BF16.gguf`, dans le dossier du modèle, est l’encodeur de vision. Ajoutez ceci au `model.json` du modèle, à côté de `args` :
+
+```json
+"vision": {"exe": "/path/to/strata-vision", "mmproj": "./mmproj-BF16.gguf",
+           "model": "./model-skeleton.gguf", "gpu": false}
+```
+
+et `--vision` à `"args"`. `strata-vision` n’est pas dans ce dépôt : `setup.py --setup --vision yes` le télécharge, ou compilez `tools/vision` dans un checkout Strata. Le journal affiche alors `images on` ; envoyez une image avec `/image` dans le chat ou une partie `image_url` via l’API OpenAI.
+
+</details>
+
 ## Documentation
 
 **Dernière version · 145B / 120B**

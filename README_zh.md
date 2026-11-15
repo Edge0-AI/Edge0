@@ -343,6 +343,20 @@ cd /path/to/Edge0-145B-q3k
 
 </details>
 
+<details>
+<summary>图片 · 视觉</summary>
+
+模型文件夹里的 `mmproj-BF16.gguf` 是视觉编码器。在模型的 `model.json` 里、`args` 同级加：
+
+```json
+"vision": {"exe": "/path/to/strata-vision", "mmproj": "./mmproj-BF16.gguf",
+           "model": "./model-skeleton.gguf", "gpu": false}
+```
+
+再在 `"args"` 里加 `--vision`。`strata-vision` 不在本仓库：用 `setup.py --setup --vision yes` 获取，或在 Strata 源码里编译 `tools/vision`。日志出现 `images on` 后即可发图：聊天里用 `/image`，或走 OpenAI 接口的 `image_url`。
+
+</details>
+
 <a name="documentation"></a>
 
 ## 文档
