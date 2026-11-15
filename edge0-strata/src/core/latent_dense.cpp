@@ -15,6 +15,19 @@
 
 namespace strata::core {
 
+#if !defined(_WIN32)
+// How the pack files are mapped.  On macOS the Metal engine wraps these mappings as GPU buffers.  With a private
+// mapping, the first GPU use of the pack takes about 20 s on a 64 GB M4 Max (145B Q3_K) on every start, and when the
+// engine exits the pack is no longer in the file cache (8 GB of file-backed memory left where a shared mapping leaves
+// 47 GB), so the next start reads it from the SSD again.  With a shared mapping the pages are used in place and stay
+// cached: the first prompt of a restart takes about 5 s.  The mapping is read-only either way.
+#if defined(__APPLE__)
+constexpr int kPackMapFlags = MAP_SHARED;
+#else
+constexpr int kPackMapFlags = MAP_PRIVATE;
+#endif
+#endif
+
 #if defined(_WIN32)
 // Windows: CreateFileA + CreateFileMappingA + MapViewOfFile.  Same contract as the POSIX path:
 // strict size check, read-only mapping, unmap on close.  The mapping handle keeps the section
@@ -91,7 +104,7 @@ bool LatentDense::open(const std::string& path, int64_t n_layers, int64_t n_grou
               "; the other fmt wants " + std::to_string((long long) alt) + ")";
         ::close(fd); return false;
     }
-    void* p = mmap(nullptr, (size_t) want, PROT_READ, MAP_PRIVATE, fd, 0);
+    void* p = mmap(nullptr, (size_t) want, PROT_READ, kPackMapFlags, fd, 0);
     ::close(fd);
     if (p == MAP_FAILED) { err = path + ": mmap: " + std::strerror(errno); return false; }
 #endif
@@ -147,7 +160,7 @@ bool LatentA::open(const std::string& path, int64_t n_layers, int64_t n_expert, 
         err = path + ": size " + std::to_string((long long) st.st_size) + " != " + std::to_string(want);
         ::close(fd); return false;
     }
-    void* p = mmap(nullptr, (size_t) want, PROT_READ, MAP_PRIVATE, fd, 0);
+    void* p = mmap(nullptr, (size_t) want, PROT_READ, kPackMapFlags, fd, 0);
     ::close(fd);
     if (p == MAP_FAILED) { err = path + ": mmap: " + std::strerror(errno); return false; }
 #endif
