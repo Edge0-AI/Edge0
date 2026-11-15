@@ -569,7 +569,7 @@ bool Window::prompt(const int64_t* tokens, int64_t n, int64_t pos0,
         std::fprintf(stderr, "strata metal: prompt %lld tokens in %.1f ms (GPU %.1f ms, host rows %.1f ms, drafter rows %.1f ms) "
                              "-> %.1f tok/s\n", (long long) n, now_ms() - t0, pb_.gpu_ms, pb_.host_ms, pb_.mtp_ms,
                      1000.0 * (double) n / (now_ms() - t0));
-    // A latent pack leaves a 64 GB Mac a few GB: its chunk buffers are lent to the OS until the next prompt (pc_idle).
+    // Beside a latent pack the idle chunk buffers are several GB: they are lent to the OS until the next prompt (pc_idle).
     // STRATA_METAL_PROMPT_KEEP=1 keeps them as they are.
     static const bool keep = [] { const char* e = std::getenv("STRATA_METAL_PROMPT_KEEP"); return e && std::atoi(e) == 1; }();
     if (latent_on_ && !keep) pc_idle(true);

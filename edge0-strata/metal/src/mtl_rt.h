@@ -110,6 +110,7 @@ public:
     void free(Buffer& b);
     // A scratch buffer's memory lent to the OS while idle (volatile: it may be discarded under memory pressure, never
     // swapped) and taken back before use.  Taking it back returns false when the contents were discarded (they read as zeros).
+    // Only for a whole buffer made by alloc(): a wrapped file or a view onto another allocation is left as it is.
     bool set_idle(Buffer& b, bool idle);
 
     // Encodes `ds` into ONE compute encoder (serial or concurrent dispatch type) and ONE command buffer, `reps`

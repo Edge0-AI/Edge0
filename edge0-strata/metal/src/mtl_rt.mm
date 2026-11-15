@@ -668,7 +668,7 @@ Buffer Context::wrap(void* p, size_t bytes) {
 }
 
 bool Context::set_idle(Buffer& b, bool idle) {
-    if (!b.handle || b.chunks) return true;
+    if (!b.handle || b.chunks || b.bias) return true;   // only a whole buffer from alloc(): never a wrap or a view
     id<MTLBuffer> x = (__bridge id<MTLBuffer>)b.handle;
     const MTLPurgeableState was = [x setPurgeableState:(idle ? MTLPurgeableStateVolatile : MTLPurgeableStateNonVolatile)];
     return was != MTLPurgeableStateEmpty;
