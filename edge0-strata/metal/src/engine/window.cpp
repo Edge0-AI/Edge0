@@ -858,6 +858,15 @@ bool Window::latent_init(std::string& err) {
     const char* verify_fast = std::getenv("STRATA_METAL_LATENT_VERIFY_FAST");
     latent_fast_verify_ = latent_grouped_u_ && verify_fast && std::strcmp(verify_fast, "1") == 0;
     latent_lib_ = cx_->compile({"quant.metal", "units.metal", "latent_routed.metal"});
+    // The window reads the model from the wrapped files; the device copies of the dense weights the shared host code
+    // uploaded for the CUDA-shaped kernels are never read here (as with SSD streaming: stream_arena), and beside a pack
+    // that fills a 64 GB Mac they only push memory into the compressor and the swap.
+    // STRATA_METAL_KEEP_HOST_WEIGHTS=1 keeps them.
+    if (!(std::getenv("STRATA_METAL_KEEP_HOST_WEIGHTS") && std::string(std::getenv("STRATA_METAL_KEEP_HOST_WEIGHTS")) == "1")) {
+        const uint64_t g = strata::gpu::purge_device_allocations(16u << 20);
+        std::fprintf(stderr, "strata metal: %.2f GB of the host code's device weight copies given back (unused by the Metal "
+                             "window)\n", g / 1e9);
+    }
     latent_on_ = true;
     std::fprintf(stderr, "strata metal: l%u Q3_K/IQ4_NL experts and Q4_0 D/U ready\n", width);
     if (latent_grouped_u_) std::fprintf(stderr, "strata metal: pool routed rows by group before U\n");
