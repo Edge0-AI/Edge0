@@ -6968,9 +6968,13 @@ int main(int argc, char** argv) {
                      (long long) o.prefill_chunk, (long long) mib, (long long) (160 + (o.prefill_chunk * 680) / 1024));
         return mib + 64;   // a margin for the allocator
     };
+    // latent MoE: the session D/U pair is loaded BEFORE anything sizes a cache, and not only for --expert-cache
+    // auto: a layer split needs a numeric --expert-cache, and the pair must still be up by then, because every
+    // later stage uploads its own copy from it (the stage loop below) and its verifier then stops allocating a
+    // copy of its own inside its arena.  Without this the split allocates one pair per stage out of that stage's
+    // arena, which is what refused to fit on a 10 GB card ("the device arena ... does not fit").
+    { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata generate: %s\n", le.c_str()); return 1; } }
     if (o.expert_cache < 0) {
-        // latent MoE: the session D/U pair is loaded before the free-VRAM read, so auto leaves room for it
-        { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata generate: %s\n", le.c_str()); return 1; } }
         size_t free_b = 0, total_b = 0;
         free_b = strata::core::device_free_bytes(); (void) total_b;
         if (free_b == 0 && o.prefill_head_alias) {
@@ -7520,8 +7524,21 @@ int main(int argc, char** argv) {
         const auto& lay = strata::kernels::cpu::expert_layout();
         // the drafter and the head are already allocated by now (they load above, before this), so what is left
         // to hold back is the windows - and `free_b` has already lost the drafter.
-        const int64_t room = stage_room(st.dev, true, false);
         const strata::core::OnDevice on(st.dev);
+        // latent MoE: this stage's own D/U on its own card, uploaded BEFORE the cache is sized, so that
+        // stage_room() and the cache open after it see the memory the pair takes.  Uploaded after the cache it
+        // does not fit (the card is full of slots by then).
+        if (lat_tab.latent) {
+            if (st.dev == 0) {   // --split-device 0: both stages on the first card, so they share the session pair
+                st.lat_d = lat_tab.d;
+                st.lat_u = lat_tab.u;
+            } else if (!upload_stage_latent_du(st.dev, g, st.lat_d, st.lat_u, err)) {
+                std::fprintf(stderr, "strata generate: layer split, CUDA%d latent D/U: %s\n", st.dev, err.c_str());
+                return 1;
+            }
+            if (st.lat_d != nullptr) st.sp.set_latent_dev(st.lat_d, st.lat_u);
+        }
+        const int64_t room = stage_room(st.dev, true, false);
         {
             size_t fb = 0, tb = 0;
             cudaMemGetInfo(&fb, &tb);
@@ -9928,15 +9945,6 @@ int main(int argc, char** argv) {
                     sbb = part_bytes(pf_parts[i + 1], pf_parts[i + 1].first);
                 }
                 if (share_pool) st.sp.set_cpu_pool(&pool);   // one stage at a time takes it for a chunk (prefill.cpp)
-                // Latent, on a later card: this stage's OWN D/U (the session pair lives on device 0).  Uploaded once,
-                // shared by this stage's prompt path and its verifier; the stage frees it at shutdown.
-                if (lat_tab.latent && st.dev != 0 && st.lat_d == nullptr) {
-                    if (!upload_stage_latent_du(st.dev, g, st.lat_d, st.lat_u, err)) {
-                        err = "layer split, CUDA" + std::to_string(st.dev) + " latent D/U: " + err;
-                        return 1;
-                    }
-                }
-                if (lat_tab.latent && st.dev != 0) st.sp.set_latent_dev(st.lat_d, st.lat_u);
                 if (!st.sp.init(st.wt, g, st.ss, srcp, &st.cache, host_res.data(), o.prefill_chunk, (void*) st.stream,
                                 err, sb, sbb)) {
                     err = "layer split, CUDA" + std::to_string(st.dev) + " prompt path: " + err;
