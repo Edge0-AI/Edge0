@@ -2418,8 +2418,12 @@ bool Prefill::set_peer(core::PeerExperts* peer, int64_t cap_rows, std::string& e
     const bool host_route_ok = [] { const char* v = std::getenv("STRATA_PF_PEER_HOST"); return v == nullptr || std::atoi(v) != 0; }();
     if (!peer->p2p() && !host_route_ok) { err = "prefill peer: the two GPUs cannot access each other (no P2P)"; return false; }
     if (!mmq_plan().any) { err = "prefill peer: needs the MMQ prompt path"; return false; }
-    {   // NVFP4: the peer's MMQ products have no per-expert scales (grp_tail, row_sd); its decode rows do
+    {   // Latent packs keep the prompt on the primary: the latent A walk has no peer-ring consumer yet, and the
+        // peer's MMQ products have no per-expert scales for NVFP4. NVFP4 was already declined by its tail; q3k's
+        // shared colscale (tail_off == 0) slipped past that guard, so make the latent check explicit.
         const auto& lay = strata::kernels::cpu::expert_layout();
+        const bool latent = lay.native && !lay.fmt.empty() && lay.fmt[0].n_embd != strata::kernels::cpu::H;
+        if (latent) { err = "prefill peer: a latent pack reads the prompt on the primary GPU"; return false; }
         for (const auto& f : lay.fmt)
             if (lay.native && f.tail_off) { err = "prefill peer: not for NVFP4 experts yet"; return false; }
     }
