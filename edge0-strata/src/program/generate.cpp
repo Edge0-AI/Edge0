@@ -285,6 +285,37 @@ struct LatentTab {
 #endif
     }
 } lat_tab;
+
+// Layer split: upload this stage's OWN latent D/U (all layers, layer-major) to `device` and hand back the pair.
+// The session pair (LatentTab::load) lives on device 0; a later stage dereferencing it without P2P is the IMA the
+// layer split hit ('layer N never rang').  The pair stays the caller's to free; d/u are null on failure (err set).
+bool upload_stage_latent_du(int device, const strata::core::ModelGeometry& g, uint8_t*& d, uint8_t*& u, std::string& err) {
+    d = u = nullptr;
+    if (!lat_tab.latent) return true;
+    const uint64_t db = (uint64_t) g.n_layers * lat_tab.dense.d_bytes();
+    const uint64_t ub = (uint64_t) g.n_layers * lat_tab.dense.u_bytes();
+    if (cudaMalloc((void**) &d, db) != cudaSuccess || cudaMalloc((void**) &u, ub) != cudaSuccess) {
+        const cudaError_t ce = cudaGetLastError();
+        if (d) { cudaFree(d); d = nullptr; }
+        if (u) { cudaFree(u); u = nullptr; }
+        err = "CUDA" + std::to_string(device) + " latent D/U (" + std::to_string((db + ub) >> 20) + " MiB): " +
+              cudaGetErrorString(ce);
+        return false;
+    }
+    for (int64_t l = 0; l < g.n_layers; ++l)
+        if (cudaMemcpy(d + (size_t) l * lat_tab.dense.d_bytes(), lat_tab.dense.d(l), lat_tab.dense.d_bytes(),
+                       cudaMemcpyHostToDevice) != cudaSuccess ||
+            cudaMemcpy(u + (size_t) l * lat_tab.dense.u_bytes(), lat_tab.dense.u(l), lat_tab.dense.u_bytes(),
+                       cudaMemcpyHostToDevice) != cudaSuccess) {
+            const cudaError_t ce = cudaGetLastError();
+            cudaFree(d); cudaFree(u); d = u = nullptr;
+            err = "CUDA" + std::to_string(device) + " latent D/U upload failed at layer " + std::to_string(l) + ": " +
+                  cudaGetErrorString(ce);
+            return false;
+        }
+    return true;
+}
+
 // Windows' WDDM driver model: native Windows, or WSL2 (its GPU goes through /dev/dxg to the Windows driver).  There,
 // pinning a large arena into two CUDA contexts leaves WDDM refusing every later allocation (the 5080 + 3090 rig);
 // a Linux driver has no such limit (#253: the 8 GiB cap cost a 4090 + 3060 split 3x of its prompt speed).
@@ -1428,6 +1459,7 @@ struct GpuStage {
     strata::core::Verifier ver;
     strata::core::Verifier ver_b;                        ///< --pipeline-windows: the odd windows' verifier
     strata::prefill::Prefill sp;
+    uint8_t *lat_d = nullptr, *lat_u = nullptr;          ///< latent: this stage's OWN D/U on its device (layer split)
     cudaStream_t adapt_stream = nullptr;
     cudaEvent_t adapt_ev = nullptr;
     bool adapt_live = false;                             ///< swaps of this request are in flight on it
@@ -7759,6 +7791,11 @@ int main(int argc, char** argv) {
                                  "results return through pinned host rows\n", remote_dev[r],
                          (long long) remote_experts[(size_t) r].resident(), remote_experts[(size_t) r].gib());
         }
+        if (lat_tab.latent) {   // latent MoE: each helper computes A-only and packs q8_1 hq rows, like the peer
+            for (int r = 0; r < 3; ++r) if (o.expert_cache_remote[(size_t) r] > 0)
+                remote_experts[(size_t) r].bind_latent(&lat_tab.dense, lat_tab.labels.data(), g.n_layers, g.n_expert,
+                                                       lat_tab.lat_ELL, lat_tab.lat_I, lat_tab.lat_H, lat_tab.lat_G);
+        }
     }
 
     // ---- Multi-GPU: the second GPU's expert tier, filled with the ranked pairs the primary does not hold
@@ -7778,6 +7815,16 @@ int main(int argc, char** argv) {
                              "%lld that is %lld of %lld on the GPUs\n", o.peer_device, (long long) peer.resident(), peer.gib(),
                      std::chrono::duration<double>(Clock::now() - tp0).count(), (long long) xcache.slots(),
                      (long long) (peer.resident() + xcache.slots()), (long long) (g.n_layers * g.n_expert));
+    }
+    if (peer.valid() && lat_tab.latent) {   // latent MoE: the peer computes A-only and packs q8_1 hq rows for the primary's U
+        peer.bind_latent(&lat_tab.dense, lat_tab.labels.data(), g.n_layers, g.n_expert, lat_tab.lat_ELL, lat_tab.lat_I,
+                         lat_tab.lat_H, lat_tab.lat_G);
+        // knife-0 (STRATA_LATENT_U_GPU) is what runs U from the peer's q8_1 hq rows (latent_u_matvec), so it must stay
+        // on when a peer serves latent experts.
+        if (const char* v = std::getenv("STRATA_LATENT_U_GPU"); v == nullptr || std::atoi(v) == 0) {
+            setenv("STRATA_LATENT_U_GPU", "1", 1);
+            std::fprintf(stderr, "strata serve: STRATA_LATENT_U_GPU is on with --peer-device (U runs from the peer's hq rows)\n");
+        }
     }
 
     if (remote_opt && !remote_opt->init(err)) { std::fprintf(stderr, "strata generate: %s\n", err.c_str()); return 1; }
@@ -9881,6 +9928,15 @@ int main(int argc, char** argv) {
                     sbb = part_bytes(pf_parts[i + 1], pf_parts[i + 1].first);
                 }
                 if (share_pool) st.sp.set_cpu_pool(&pool);   // one stage at a time takes it for a chunk (prefill.cpp)
+                // Latent, on a later card: this stage's OWN D/U (the session pair lives on device 0).  Uploaded once,
+                // shared by this stage's prompt path and its verifier; the stage frees it at shutdown.
+                if (lat_tab.latent && st.dev != 0 && st.lat_d == nullptr) {
+                    if (!upload_stage_latent_du(st.dev, g, st.lat_d, st.lat_u, err)) {
+                        err = "layer split, CUDA" + std::to_string(st.dev) + " latent D/U: " + err;
+                        return 1;
+                    }
+                }
+                if (lat_tab.latent && st.dev != 0) st.sp.set_latent_dev(st.lat_d, st.lat_u);
                 if (!st.sp.init(st.wt, g, st.ss, srcp, &st.cache, host_res.data(), o.prefill_chunk, (void*) st.stream,
                                 err, sb, sbb)) {
                     err = "layer split, CUDA" + std::to_string(st.dev) + " prompt path: " + err;
@@ -10182,6 +10238,8 @@ int main(int argc, char** argv) {
                     vs.slot_off = gs.cache.slot_offsets();
                     vs.n_slots = gs.cache.slots();
                     gs.ver.set_remote_expert_opt(remote_opt.get());
+                    // latent: this stage's OWN D/U (uploaded by init_prompt_paths), not device 0's session pair
+                    if (lat_tab.latent && gs.dev != 0) gs.ver.set_shared_latent(gs.lat_d, gs.lat_u);
                     // --batch-mtp: every stage runs the same 2-rows-per-slot windows as the first (up to kVerifyMaxT
                     // rows, the hand-off's size) and bounds its captured batch layouts like the first (below)
                     if (batch_mtp) gs.ver.set_batch_graph_limit(64);
@@ -10235,6 +10293,7 @@ int main(int argc, char** argv) {
                 vs.blob = thits.blob;
                 vs.slot_off = gs.cache.slot_offsets();
                 vs.n_slots = gs.cache.slots();
+                if (lat_tab.latent && gs.dev != 0) gs.ver_b.set_shared_latent(gs.lat_d, gs.lat_u);
                 if (!gs.ver_b.init(gs.wt, g, gs.ss, vs, gs.head.loaded() ? &gs.head : nullptr, o.spec, err)) {
                     std::fprintf(stderr, "strata serve: --pipeline-windows: the second verifier on CUDA%d (stage %d): %s "
                                          "(raise --vram-reserve-mib by ~200, or --pipeline-windows 0)\n",

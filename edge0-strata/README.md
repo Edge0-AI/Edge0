@@ -11,5 +11,7 @@ describe the upstream product, so parts of them refer to files that are not in t
 
 - Running the models: [Edge0 145B](../edge0-infer/docs/edge0-145b.md),
   [Edge0 120B](../edge0-infer/docs/edge0-120b.md).
+- Two graphics cards: [Two GPUs](EDGE0.md#two-gpus-linux-nvidia) — the second card's expert tier and
+  the second card's flags.
 - Reporting a security issue: [SECURITY.md](SECURITY.md).
 - Contributing: [the repository guide](../CONTRIBUTING.md).

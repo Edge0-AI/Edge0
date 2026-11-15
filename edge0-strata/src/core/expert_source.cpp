@@ -5404,7 +5404,11 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
     }
     if (d.peer != nullptr) {                 // multi-GPU: start the second GPU's share before the CPU's own work
         std::string perr;
-        if (!d.peer->launch(d.layers, x_f, ids, n_tok, k, kind, perr, out)) {
+        const bool ok = d.peer->latent()
+                            ? d.peer->launch_latent(d.layers, (const float*) d.lat_xlq, d.lat_xlseq, ids, n_tok, k, kind,
+                                                    perr, out)
+                            : d.peer->launch(d.layers, x_f, ids, n_tok, k, kind, perr, out);
+        if (!ok) {
             std::fprintf(stderr, "strata: %s (layer %lld)\n", perr.c_str(), (long long) d.layers);
             d.failed = true;
             d.fail = "the peer GPU's experts could not be launched";
@@ -5415,7 +5419,11 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
     if (d.remote_count > 0) {
         static thread_local std::string remote_error;
         for (int r = 0; r < d.remote_count; ++r) {
-            if (!d.remote[r]->begin(d.layers, x_f, ids, n_tok, k, kind, d.host_res, remote_error)) {
+            const bool ok = d.remote[r]->latent()
+                                ? d.remote[r]->begin_latent(d.layers, (const float*) d.lat_xlq, d.lat_xlseq, ids, n_tok,
+                                                            k, kind, d.host_res, remote_error)
+                                : d.remote[r]->begin(d.layers, x_f, ids, n_tok, k, kind, d.host_res, remote_error);
+            if (!ok) {
                 d.failed = true; d.fail = remote_error.c_str(); d.fail_layer = d.layers; return;
             }
             for (int64_t i = 0; i < n; ++i) if (d.remote[r]->owns(i)) kind[i] = 2;
@@ -5496,6 +5504,15 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
         for (int64_t i = 0; i < n; ++i) {
             const int64_t e = ids[i];
             if (e >= 0 && e < d.n_expert) d.job_of[(size_t) e] = -1;
+        }
+        if (d.peer != nullptr) {   // the peer's latent rows (kind==2) must land before the window reads them
+            std::string perr;
+            if (!d.peer->finish(out, perr)) {
+                d.failed = true;
+                d.fail = perr.c_str();
+                d.fail_layer = d.layers;
+                return;
+            }
         }
         ++d.layers;
         d.experts += n_tok * k;
