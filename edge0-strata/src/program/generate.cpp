@@ -7779,6 +7779,16 @@ int main(int argc, char** argv) {
                      std::chrono::duration<double>(Clock::now() - tp0).count(), (long long) xcache.slots(),
                      (long long) (peer.resident() + xcache.slots()), (long long) (g.n_layers * g.n_expert));
     }
+    if (peer.valid() && lat_tab.latent) {   // latent MoE: the peer computes A-only and packs q8_1 hq rows for the primary's U
+        peer.bind_latent(&lat_tab.dense, lat_tab.labels.data(), g.n_layers, g.n_expert, lat_tab.lat_ELL, lat_tab.lat_I,
+                         lat_tab.lat_H, lat_tab.lat_G);
+        // knife-0 (STRATA_LATENT_U_GPU) is what runs U from the peer's q8_1 hq rows (latent_u_matvec), so it must stay
+        // on when a peer serves latent experts.
+        if (const char* v = std::getenv("STRATA_LATENT_U_GPU"); v == nullptr || std::atoi(v) == 0) {
+            setenv("STRATA_LATENT_U_GPU", "1", 1);
+            std::fprintf(stderr, "strata serve: STRATA_LATENT_U_GPU is on with --peer-device (U runs from the peer's hq rows)\n");
+        }
+    }
 
     if (remote_opt && !remote_opt->init(err)) { std::fprintf(stderr, "strata generate: %s\n", err.c_str()); return 1; }
     Drive drive;

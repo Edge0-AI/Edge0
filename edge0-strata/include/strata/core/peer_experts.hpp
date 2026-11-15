@@ -17,6 +17,7 @@
 
 #include "strata/core/expert_cache.hpp"
 #include "strata/core/expert_source.hpp"
+#include "strata/core/latent_tables.hpp"
 
 #include <cuda_runtime.h>
 
@@ -67,6 +68,17 @@ public:
     /// Waits for the launched share and writes its rows into `out` (row i = entry i, n_embd floats).
     bool finish(float* out, std::string& err);
 
+    /// Latent MoE: bind the session D/U (mmap) + the group labels and the latent geometry. Call after open() and only
+    /// when the pack is latent; `launch_latent` then uses this. `dense`/`host_labels` must outlive the tier.
+    void bind_latent(strata::core::LatentDense* dense, const int32_t* host_labels, int64_t n_layers, int64_t E,
+                     int64_t ELL, int64_t I, int64_t H, int G);
+    bool latent() const { return latent_; }
+    /// The latent A+U share of one layer: reads the primary's D-stage f32 xl rows (`xl`, n_tok*G rows of ELL floats in
+    /// mapped host memory), waits on the xl doorbell (`xlseq`), uploads/quantizes them, then runs A (native_expert_grouped
+    /// over ELL) + U (latent_u_grouped) into the same H-wide output row contract as launch()/finish().
+    bool launch_latent(int64_t layer, const float* xl, const uint32_t* xlseq, const int32_t* ids, int64_t n_tok,
+                       int64_t k, int32_t* kind, std::string& err, float* out = nullptr);
+
     /// Adaptive tier: swap up to `max_swaps` experts routed at least twice that neither the primary (`res0`, slot
     /// or -1) nor the peer holds into the peer's least-used slots.  Copies run on the peer's refill stream; a
     /// swapped-in expert becomes resident at `apply_pending`.  Call only between verify windows.
@@ -103,6 +115,18 @@ private:
     std::vector<int32_t> row_of_;                     ///< compact row -> original entry
     int64_t launched_rows_ = 0;
     bool launched_direct_ = false;
+    bool launched_hq_ = false;                        ///< the last launch packed q8_1 hq rows (latent A only; the primary runs U)
+
+    // Latent MoE (bind_latent): U + labels per device (LatentTables) and the A+U scratch/weight buffers.
+    bool latent_ = false;
+    int64_t lat_ELL_ = 0, lat_I_ = 0, lat_H_ = 0, lat_E_ = 0;
+    int lat_G_ = 8;
+    const int32_t* host_labels_ = nullptr;
+    strata::core::LatentTables tables_;
+    float* d_xl_ = nullptr;      // kWindowMaxT * G rows x ELL floats (the D-stage xl, H2D'd)
+    uint8_t* d_xlq_ = nullptr;   // q8_1 of the xl rows
+    float* d_yl_ = nullptr;      // CAP x ELL f32 (A output)
+    uint8_t* d_uq_ = nullptr;    // q8_1 of yl (U input)
 };
 
 }  // namespace strata::core
