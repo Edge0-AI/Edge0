@@ -5446,7 +5446,10 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
     }
     const double t_kb_ms = (double) std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count() / 1e6;   // DIAGB: K wall ends
-    if (d.latent && any_cpu) {   // latent MoE: the CPU share runs the A-blob experts on the host (D -> A -> U)
+    // latent MoE: the CPU share runs the A-blob experts on the host (D -> A -> U), and a helper's A-only rows must be
+    // collected here whether or not any CPU expert is left: they are written on the helper and land in `out` only at
+    // its finish, so entering this block only for `any_cpu` left the primary's U stage reading another pass's rows.
+    if (d.latent && (any_cpu || d.remote_count > 0 || d.peer != nullptr)) {
         static thread_local std::vector<int64_t> lmiss;
         static thread_local std::vector<uint8_t> lmiss_mark;   // one pass, no std::find scan
         lmiss.clear();
@@ -5504,6 +5507,16 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
         for (int64_t i = 0; i < n; ++i) {
             const int64_t e = ids[i];
             if (e >= 0 && e < d.n_expert) d.job_of[(size_t) e] = -1;
+        }
+        if (d.remote_count > 0) {   // a helper's latent rows (kind==2) likewise, before the window reads them
+            static thread_local std::string remote_error;
+            for (int r = 0; r < d.remote_count; ++r)
+                if (!d.remote[r]->finish(out, remote_error)) {
+                    d.failed = true;
+                    d.fail = remote_error.c_str();
+                    d.fail_layer = d.layers;
+                    return;
+                }
         }
         if (d.peer != nullptr) {   // the peer's latent rows (kind==2) must land before the window reads them
             std::string perr;
