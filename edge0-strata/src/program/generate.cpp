@@ -4224,6 +4224,9 @@ int main(int argc, char** argv) {
             const char* latent = std::getenv("STRATA_METAL_LATENT");
             if (latent && !std::strcmp(latent, "1") && (f.n_embd == 1280 || f.n_embd == 1792) && f.n_ff == 640 &&
                 f.gu_type == 11 && f.d_type == 20 && f.gu_colscale) continue;
+            // NVFP4 experts (ggml type 40) with their scalar tail and no column scale: metal/kernels/latent_routed.metal
+            if (latent && !std::strcmp(latent, "1") && (f.n_embd == 1280 || f.n_embd == 1792) && f.n_ff == 640 &&
+                f.gu_type == 40 && f.d_type == 40 && f.tail_off && !f.gu_colscale) continue;
 #endif
             if (!strata::kernels::native_expert_supported(f.gu_type, f.d_type, f.n_embd, f.n_ff)) {
                 std::fprintf(stderr, "strata generate: layer %lld's experts are %s/%s (ggml types %d/%d), which this "
