@@ -176,6 +176,32 @@ bool window_slot_copy_main(bool into_slot, int slot, int64_t upto, bool kv_only,
 #include <set>
 #include <vector>
 
+// STRATA_MTP_CALL_SYNC=1: sync the current device and say whether it was already dirty.  A CUDA failure is sticky,
+// so one that happened earlier in the chunk reads as the drafter's; these probes tell the two apart.
+static bool mtp_probe_fails(const char* where, int dev2, std::string& err) {
+    static const bool on = [] { const char* v = std::getenv("STRATA_MTP_CALL_SYNC"); return v != nullptr && v[0] == '1'; }();
+    if (!on) return false;
+    auto one = [&](int dev) -> cudaError_t {
+        int cur = -1;
+        (void) cudaGetDevice(&cur);
+        if (cur != dev) (void) cudaSetDevice(dev);
+        const cudaError_t q = cudaDeviceSynchronize();
+        if (cur != dev) (void) cudaSetDevice(cur);
+        std::fprintf(stderr, "strata probe %s: device %d, %s\n", where, dev,
+                     q == cudaSuccess ? "clean" : cudaGetErrorString(q));
+        return q;
+    };
+    int cur = -1;
+    (void) cudaGetDevice(&cur);
+    const cudaError_t q0 = one(cur);
+    const cudaError_t q1 = (dev2 >= 0 && dev2 != cur) ? one(dev2) : cudaSuccess;
+    const cudaError_t q = q0 != cudaSuccess ? q0 : q1;
+    if (q == cudaSuccess) return false;
+    (void) cudaGetLastError();
+    err = std::string("the device was already dirty ") + where + " (" + cudaGetErrorString(q) + ")";
+    return true;
+}
+
 // logprobs=K / allowed=...: one `LP` line for the token just emitted, from `ver`'s head
 // logits for the window row it came from (before sampling, penalties and temperature).
 // Format matches the SYCL port's LP line so one server-side reader serves both.
@@ -4531,8 +4557,9 @@ int main(int argc, char** argv) {
             return 2;
         }
         const auto embed_t0 = std::chrono::steady_clock::now();
+        // a layer split's draft layer runs on a later card and gathers from this table too: mapped host memory then
         if (!native_embed.load(o.embd_gguf.empty() ? o.native_shards : std::vector<std::string>{o.embd_gguf}, g.n_embd,
-                               g.n_vocab, err)) {
+                               g.n_vocab, err, !o.layer_split.empty())) {
             std::fprintf(stderr, "strata generate: %s\n", err.c_str());
             return 1;
         }
@@ -15064,6 +15091,7 @@ int main(int argc, char** argv) {
                     drive.d.layers = 0;
                     drive.d.experts = 0;
                     drive.d.failed = false;
+                    if (use_mtp && mtp_probe_fails("before the chunk's verify", mtp.device(), e)) return false;
                     if (!ver.run(T, win.data(), q, win_pool_fn, win_pool_user, outw.data(), e) || drive.d.failed) {
                         if (drive.d.failed && drive.d.fail) e = drive.d.fail;
                         return false;
@@ -15086,7 +15114,11 @@ int main(int argc, char** argv) {
                     }();
                     if (logpos != nullptr && !ver.window_logprobs(nxt.data(), T, q, logpos_extra, logpos, e))
                         return false;
-                    if (!ver.commit(T, e) || (use_mtp && !mtp.prefill(ver.final_R_all(), nxt.data(), T, q, e))) return false;
+                    if (!ver.commit(T, e)) return false;
+                    if (use_mtp) {
+                        if (mtp_probe_fails("before the drafter's prompt pass", mtp.device(), e)) return false;
+                        if (!mtp.prefill(ver.final_R_all(), nxt.data(), T, q, e)) return false;
+                    }
                     q += T;
                     pp_reached = q;   // #471
                     pp_exact = true;
