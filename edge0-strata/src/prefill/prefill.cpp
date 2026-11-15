@@ -5641,6 +5641,13 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
                                     // the staged walk: the same lookahead keeps the copies coming; a batch waits
                                     // only for its last staged blob (one copy stream, in order)
                                     size_t nb = 0, nst = 0;
+                                    // Ring slots that hold a blob no launch has consumed yet: the open batch's staged
+                                    // blobs plus the ones staged ahead.  stage_one() reuses slot (n mod stage_n) and
+                                    // waits only for the launch that used it LAST, so staging a blob while stage_n
+                                    // slots are held overwrites one the open batch has not computed with yet (a
+                                    // batch of up to MMQ_GROUP experts can hold more than stage_n staged ones when
+                                    // few experts are resident: the 16 GB cards).
+                                    size_t held = 0;
                                     int fb_stage[MMQ_GROUP];
                                     fused::WideBatch fb;
                                     int32_t bfirst = 0, blast = 0;
@@ -5658,13 +5665,21 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
                                             cudaEventRecord(m.used[fb_stage[i]], m.cs);
                                             m.used_of[fb_stage[i]] = fb_stage[i];
                                         }
+                                        held -= nst;
                                         nb = nst = 0;
                                         return true;
                                     };
                                     for (size_t j = 0; j < n_order; ++j) {
                                         const int32_t e = order[j];
                                         while (staged < n_order && staged <= j + lookahead) {
+                                            if (held >= (size_t) stage_n) {
+                                                // every slot is held: wait with the lookahead, or - when this very
+                                                // expert still has to be staged - launch the open batch first
+                                                if (staged > j) break;
+                                                if (!lat_flush()) return false;
+                                            }
                                             if (!stage_one(staged)) return false;
+                                            if (stage_of[staged] >= 0) ++held;
                                             ++staged;
                                         }
                                         if (nb == 0) bfirst = e;
