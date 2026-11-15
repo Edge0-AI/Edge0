@@ -144,6 +144,7 @@ MtpDrafter::~MtpDrafter() {
     for (auto& e : prefill_exec_) if (e) cudaGraphExecDestroy(e);
     for (auto& e : prefill_dev_exec_) if (e) cudaGraphExecDestroy(e);
     if (pf_dev_) cudaFree(pf_dev_);
+    if (pf_host_) cudaFreeHost(pf_host_);
     if (dense4_) cudaFree(dense4_);
     for (auto& e : round_exec_) if (e) cudaGraphExecDestroy(e);
     for (auto& e : step_exec_) if (e) cudaGraphExecDestroy(e);
@@ -696,6 +697,19 @@ void draft_head_hint(int64_t n_tokens, int64_t row_bytes) {
 }
 }  // namespace
 
+// STRATA_MTP_DEV=1: which card each of the drafter's buffers lives on (a layer split's cross-device fault)
+static bool mtp_dev_debug() {
+    static const bool on = [] { const char* v = std::getenv("STRATA_MTP_DEV"); return v != nullptr && v[0] == '1'; }();
+    return on;
+}
+static int mtp_dev_of(const void* p) {
+    if (p == nullptr) return -2;
+    cudaPointerAttributes at{};
+    if (cudaPointerGetAttributes(&at, p) != cudaSuccess) { (void) cudaGetLastError(); return -1; }
+    if (at.type == cudaMemoryTypeHost) return -3;
+    if (at.type == cudaMemoryTypeManaged) return -4;
+    return at.device;
+}
 bool MtpDrafter::bind(const WeightTable& wt, const NativeHead* head, const float* window_R, std::string& err,
                       const MtpDrafter* shared) {
 #if defined(STRATA_GPU_METAL)
@@ -771,6 +785,12 @@ bool MtpDrafter::bind(const WeightTable& wt, const NativeHead* head, const float
                 strata::kernels::gather_rows((const uint8_t*) head->weights(), row_bytes, dvocab_, n_dvocab_, dhead_, nullptr);
             }
             cudaDeviceSynchronize();
+            if (mtp_dev_debug()) {
+                std::fprintf(stderr, "mtp dev: drafter device %d, head %d, head weights %d, dense %d, experts %d, arena %d, "
+                                     "dhead %d, window_R %d\n", device_, head->device(), mtp_dev_of(head->weights()),
+                             mtp_dev_of(dense_), mtp_dev_of(experts_), mtp_dev_of(arena_), mtp_dev_of(dhead_),
+                             mtp_dev_of(window_R_));
+            }
             vram_ += (uint64_t) (n_dvocab_ * row_bytes) + raw.size();
             std::fprintf(stderr, "strata mtp: draft head over %lld tokens (%.1f MiB)\n", (long long) n_dvocab_,
                          (double) (n_dvocab_ * row_bytes) / 1048576.0);
@@ -1462,6 +1482,38 @@ bool MtpDrafter::reserve_prefill(int64_t n, std::string& err) {
     return true;
 }
 
+// The prompt's rows are read on whichever card read the prompt (a layer split reads it on the first stage), while this
+// drafter may sit on the memory card, i.e. the last one: a device-to-device copy from another card's memory is an
+// illegal access unless P2P is on (and a layer split does not turn it on), so those rows go through pinned host memory.
+// One card, or P2P: the plain copy, as before.
+bool MtpDrafter::rows_to_rin(const float* rows, int64_t c, int T, bool cross, std::string& err) {
+    const int64_t HCN = g_->hc * g_->n_embd;
+    const size_t bytes = (size_t) T * (size_t) HCN * sizeof(float);
+    const float* src = rows + (size_t) c * (size_t) HCN;
+    if (!cross) {
+        if (cudaMemcpyAsync(Rin_, src, bytes, cudaMemcpyDeviceToDevice, cs_) != cudaSuccess) {
+            err = std::string("mtp prefill: the prompt rows: ") + cudaGetErrorString(cudaGetLastError());
+            return false;
+        }
+        return true;
+    }
+    if (pf_host_cap_ < bytes) {
+        if (pf_host_) { (void) cudaFreeHost(pf_host_); pf_host_ = nullptr; pf_host_cap_ = 0; }
+        if (cudaHostAlloc((void**) &pf_host_, bytes, cudaHostAllocDefault) != cudaSuccess) {
+            pf_host_ = nullptr;
+            return false;
+        }
+        pf_host_cap_ = bytes;
+    }
+    if (cudaMemcpyAsync(pf_host_, src, bytes, cudaMemcpyDeviceToHost, cs_) != cudaSuccess ||
+        cudaMemcpyAsync(Rin_, pf_host_, bytes, cudaMemcpyHostToDevice, cs_) != cudaSuccess) {
+        err = std::string("mtp prefill: the prompt rows (another card, through host memory): ") +
+              cudaGetErrorString(cudaGetLastError());
+        return false;
+    }
+    return true;
+}
+
 bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_t n, int64_t cell0, std::string& err,
                          bool sync) {
 #if defined(STRATA_GPU_METAL)
@@ -1469,8 +1521,18 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
     return strata::metal_engine::mtp_prefill(next_tokens, n, cell0, err);
 #endif
     const OnDevice on_device(device_);
+    // a sticky failure from earlier work on this device surfaces at the first check here, and used to read as this
+    // pass having failed: say which it is
+    if (mtp_dev_debug()) {
+        std::fprintf(stderr, "mtp dev: prefill n=%lld device %d, R_rows %d, Rin %d, tok %d, step %d, pos %d\n",
+                     (long long) n, device_, mtp_dev_of(R_rows), mtp_dev_of(Rin_), mtp_dev_of(tok_), mtp_dev_of(step_),
+                     mtp_dev_of(pos_));
+    }
+    if (const cudaError_t pre = cudaGetLastError(); pre != cudaSuccess) {
+        std::fprintf(stderr, "strata mtp: a failure was pending on device %d before this pass (%s): the prompt rows are "
+                             "not the only suspect\n", device_, cudaGetErrorString(pre));
+    }
     const Clock::time_point t0 = Clock::now();
-    const int64_t HCN = g_->hc * g_->n_embd;
     // cells the window can never reach again need no K/V
     const int64_t first_needed = this->first_needed();
     // E-4: every group's token / step / position records uploaded at once; each group is then device copies and a
@@ -1485,6 +1547,14 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
     // the old loop ran 30 of 30 rounds clean, prompt speed unchanged.
     const bool per_group_sync = prefill_per_group_sync();
     const int64_t NHp = g_->n_head, per_row = 1 + 4 + NHp;
+    // rows from another card (a layer split): those copies go through host memory (see rows_to_rin)
+    bool cross = false;
+    if (n > 0) {
+        cudaPointerAttributes at{};
+        if (cudaPointerGetAttributes(&at, R_rows) == cudaSuccess && at.type == cudaMemoryTypeDevice && at.device != device_)
+            cross = true;
+        (void) cudaGetLastError();   // a host pointer is not an error here: it needs no bounce
+    }
     if (!per_group_sync && n > 0) {
         if (pf_cap_ < n * per_row) {
             if (pf_dev_) cudaFree(pf_dev_);
@@ -1523,10 +1593,9 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
             if (cudaMemcpyAsync(tok_, d_tk + c, (size_t) T * 4, cudaMemcpyDeviceToDevice, cs_) != cudaSuccess ||
                 cudaMemcpyAsync(step_, d_stp + c * 4, (size_t) T * 16, cudaMemcpyDeviceToDevice, cs_) != cudaSuccess ||
                 cudaMemcpyAsync(pos_, d_ps + c * NHp, (size_t) (T * NHp) * 4, cudaMemcpyDeviceToDevice, cs_) != cudaSuccess ||
-                cudaMemcpyAsync(Rin_, R_rows + (size_t) c * HCN, (size_t) T * HCN * sizeof(float), cudaMemcpyDeviceToDevice,
-                                cs_) != cudaSuccess ||
+                !rows_to_rin(R_rows, c, T, cross, err) ||
                 cudaGraphLaunch(prefill_dev_exec_[T], cs_) != cudaSuccess) {
-                err = std::string("mtp prefill: ") + cudaGetErrorString(cudaGetLastError());
+                if (err.empty()) err = std::string("mtp prefill: ") + cudaGetErrorString(cudaGetLastError());
                 return false;
             }
         }
@@ -1555,11 +1624,10 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
             h_step_[t * 4 + 3] = (int32_t) (cell + 1);
             for (int64_t h = 0; h < g_->n_head; ++h) h_pos_[t * g_->n_head + h] = (int32_t) cell;
         }
-        if (cudaMemcpyAsync(Rin_, R_rows + (size_t) c * HCN, (size_t) T * HCN * sizeof(float), cudaMemcpyDeviceToDevice,
-                            cs_) != cudaSuccess ||
+        if (!rows_to_rin(R_rows, c, T, cross, err) ||
             cudaGraphLaunch(prefill_exec_[T], cs_) != cudaSuccess ||
             cudaStreamSynchronize(cs_) != cudaSuccess) {
-            err = std::string("mtp prefill: ") + cudaGetErrorString(cudaGetLastError());
+            if (err.empty()) err = std::string("mtp prefill: ") + cudaGetErrorString(cudaGetLastError());
             return false;
         }
     }
