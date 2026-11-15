@@ -720,6 +720,15 @@ bool MtpDrafter::bind(const WeightTable& wt, const NativeHead* head, const float
     wt_ = &wt;
     head_ = head;
     window_R_ = window_R;
+    // the native embedding table is one table in one card's VRAM: this drafter reads token_embd.weight when it is
+    // on another card (a layer split puts the drafter on the last stage), the same rows from its own weights
+    if (const strata::core::NativeEmbed* ne = strata::core::native_embed()) {
+        const int ne_dev = ne->in_vram() ? mtp_dev_of(ne->vram_ptr()) : -1;
+        use_native_embed_ = ne_dev < 0 || ne_dev == device_;
+        if (!use_native_embed_)
+            std::fprintf(stderr, "strata mtp: the native embedding table is in device %d's VRAM and the draft layer is "
+                                 "on device %d: it reads token_embd.weight instead\n", ne_dev, device_);
+    }
     const WeightRef* wo = wt.find("output.weight");
     if (!wo) { err = "mtp: output.weight is missing"; return false; }
     n_vocab_ = wo->ne1;
@@ -786,10 +795,22 @@ bool MtpDrafter::bind(const WeightTable& wt, const NativeHead* head, const float
             }
             cudaDeviceSynchronize();
             if (mtp_dev_debug()) {
-                std::fprintf(stderr, "mtp dev: drafter device %d, head %d, head weights %d, dense %d, experts %d, arena %d, "
-                                     "dhead %d, window_R %d\n", device_, head->device(), mtp_dev_of(head->weights()),
-                             mtp_dev_of(dense_), mtp_dev_of(experts_), mtp_dev_of(arena_), mtp_dev_of(dhead_),
-                             mtp_dev_of(window_R_));
+                auto td = [&](const char* name) {
+                    const WeightRef* r = wt_->find(name);
+                    return r != nullptr ? mtp_dev_of(r->data) : -5;
+                };
+                const strata::core::NativeEmbed* neb = strata::core::native_embed();
+                std::fprintf(stderr, "mtp dev: embed table: present %d in_vram %d dev %d, use_native %d; "
+                                     "drafter device %d, head %d, head weights %d, dense %d, experts %d, arena %d, "
+                                     "dhead %d, window_R %d, weights: tok_embd %d pre_fc_emb %d pre_fc_hid %d "
+                                     "fc_embedding %d fc_hidden %d k_proj %d\n",
+                             neb != nullptr ? 1 : 0, neb != nullptr && neb->in_vram() ? 1 : 0,
+                             neb != nullptr && neb->in_vram() ? mtp_dev_of(neb->vram_ptr()) : -1,
+                             use_native_embed_ ? 1 : 0, device_, head->device(),
+                             mtp_dev_of(head->weights()), mtp_dev_of(dense_), mtp_dev_of(experts_), mtp_dev_of(arena_),
+                             mtp_dev_of(dhead_), mtp_dev_of(window_R_), td("token_embd.weight"),
+                             td("pre_fc_norm_embedding.weight"), td("pre_fc_norm_hidden.weight"),
+                             td("fc_embedding.weight"), td("fc_hidden.weight"), td("self_attn.k_proj.weight"));
             }
             vram_ += (uint64_t) (n_dvocab_ * row_bytes) + raw.size();
             std::fprintf(stderr, "strata mtp: draft head over %lld tokens (%.1f MiB)\n", (long long) n_dvocab_,
@@ -953,10 +974,19 @@ bool MtpDrafter::record_front(int T, int row0, cudaStream_t cs, std::string& err
     const void* wp_v_proj = wq("self_attn.v_proj.weight", wt_v_proj);
     try {
         // ---- the two input branches
-        const WeightRef* we = wt_->find("token_embd.weight");
-        if (!we) { err = "mtp: token_embd.weight is missing"; return false; }
+        // (the native table replaces the weight table's token_embd, which is then not resident: check the weights only
+        // on the path that reads them)
+        const NativeEmbed* ne = use_native_embed_ ? native_embed() : nullptr;
+        const WeightRef* we = ne != nullptr ? nullptr : wt_->find("token_embd.weight");
+        if (ne == nullptr && (we == nullptr || we->data == nullptr)) {
+            // a later stage of a layer split carries no token_embd (it is the first layer's tensor), so the draft
+            // layer there must read the mapped native table: say so rather than gather from a null pointer
+            err = "mtp: no token embedding on this card (the native table is in another card's VRAM, or the weight "
+                  "table carries no token_embd)";
+            return false;
+        }
         g_mp.stamp(0, cs);
-        if (const NativeEmbed* ne = native_embed()) {   // plan v0.3 P6: the GGUF-form table
+        if (ne != nullptr) {   // plan v0.3 P6: the GGUF-form table
             ne->gather_dev(tok_, T, emb_, cs);
         } else {
             const auto* codes = (const uint8_t*) we->data;
@@ -1482,6 +1512,21 @@ bool MtpDrafter::reserve_prefill(int64_t n, std::string& err) {
     return true;
 }
 
+// STRATA_MTP_STEP_SYNC=1: sync after each step of the prompt pass, so a fault says which step it is in
+static bool mtp_step_probe_on() {
+    static const bool on = [] { const char* v = std::getenv("STRATA_MTP_STEP_SYNC"); return v != nullptr && v[0] == '1'; }();
+    return on;
+}
+static bool mtp_step_sync(const char* what, cudaStream_t cs, std::string& err) {
+    if (!mtp_step_probe_on()) return false;
+    const cudaError_t q = cudaStreamSynchronize(cs);
+    std::fprintf(stderr, "mtp step %s: %s\n", what, q == cudaSuccess ? "ok" : cudaGetErrorString(q));
+    if (q == cudaSuccess) return false;
+    (void) cudaGetLastError();
+    err = std::string("mtp prefill: the ") + what + " step: " + cudaGetErrorString(q);
+    return true;
+}
+
 // The prompt's rows are read on whichever card read the prompt (a layer split reads it on the first stage), while this
 // drafter may sit on the memory card, i.e. the last one: a device-to-device copy from another card's memory is an
 // illegal access unless P2P is on (and a layer split does not turn it on), so those rows go through pinned host memory.
@@ -1593,8 +1638,9 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
             if (cudaMemcpyAsync(tok_, d_tk + c, (size_t) T * 4, cudaMemcpyDeviceToDevice, cs_) != cudaSuccess ||
                 cudaMemcpyAsync(step_, d_stp + c * 4, (size_t) T * 16, cudaMemcpyDeviceToDevice, cs_) != cudaSuccess ||
                 cudaMemcpyAsync(pos_, d_ps + c * NHp, (size_t) (T * NHp) * 4, cudaMemcpyDeviceToDevice, cs_) != cudaSuccess ||
-                !rows_to_rin(R_rows, c, T, cross, err) ||
-                cudaGraphLaunch(prefill_dev_exec_[T], cs_) != cudaSuccess) {
+                mtp_step_sync("records", cs_, err) || !rows_to_rin(R_rows, c, T, cross, err) ||
+                mtp_step_sync("rows", cs_, err) || cudaGraphLaunch(prefill_dev_exec_[T], cs_) != cudaSuccess ||
+                mtp_step_sync("graph", cs_, err)) {
                 if (err.empty()) err = std::string("mtp prefill: ") + cudaGetErrorString(cudaGetLastError());
                 return false;
             }
@@ -1624,8 +1670,8 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
             h_step_[t * 4 + 3] = (int32_t) (cell + 1);
             for (int64_t h = 0; h < g_->n_head; ++h) h_pos_[t * g_->n_head + h] = (int32_t) cell;
         }
-        if (!rows_to_rin(R_rows, c, T, cross, err) ||
-            cudaGraphLaunch(prefill_exec_[T], cs_) != cudaSuccess ||
+        if (mtp_step_sync("records", cs_, err) || !rows_to_rin(R_rows, c, T, cross, err) ||
+            mtp_step_sync("rows", cs_, err) || cudaGraphLaunch(prefill_exec_[T], cs_) != cudaSuccess ||
             cudaStreamSynchronize(cs_) != cudaSuccess) {
             if (err.empty()) err = std::string("mtp prefill: ") + cudaGetErrorString(cudaGetLastError());
             return false;
