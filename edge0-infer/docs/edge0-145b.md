@@ -108,6 +108,8 @@ build/cpu/bin/edge0-infer serve --model "$EDGE0_145B" \
 
 The words are appended in the order given, after the template's arguments; write each option and its value as two words (not `--option=value`). An option the template already sets (such as `--kv` or `--pack`), `--max-context` (use `--context`) and an empty value are rejected before anything starts. Other words are not checked by `edge0-infer`: edge0-strata decides, and since the engine process's own output is not shown, a word it does not accept appears as a failed start (run edge0-strata directly to see why). On macOS, `--device` accepts only `metal`. An `fp4` folder is rejected. `du` accepts only `q4`, and `ple-io` accepts only `direct`. The Metal template `edge0-145b-metal.json` sets the context length to 32768. If `mtp-q2_0.gguf` is absent, the first start runs `tools/mtp_gguf.py` with edge0-strata's Python and writes that file into the model folder, which must be writable; a later start leaves the file in place. The file is not part of the released folder listing above.
 
+`--device` names one card, and that card becomes the config's `gpu`: the engine may use only it. A second graphics card (an expert tier for the experts the first one cannot hold) is therefore not reachable through `edge0-infer` yet — add `"gpu": [0, 1]` and the second card's flags to the engine's config and start `serve/server.py` directly, as `edge0-strata/EDGE0.md` describes under *Two GPUs*.
+
 The template requires launch contract version 5; an older engine template is rejected with both versions in the error.
 
 ## CUDA libraries on Windows

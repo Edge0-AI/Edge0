@@ -253,6 +253,57 @@ Requirements: an Apple Silicon Mac, the Xcode Command Line Tools, CMake 3.24 or 
 `edge0-infer` on macOS starts `build-metal/strata` through `.venv/bin/python` and `serve/server.py`.
 The device is `metal`, which is also the default, and the only accepted value.
 
+## Two GPUs (Linux, NVIDIA)
+
+A second card can hold an expert tier for the experts that do not fit on the first one. Both latent
+formats use it: the second card runs the `A` stage of the experts it holds and returns their `q8_1`
+latent rows, and the first card runs `U` for them, exactly as it does for the CPU's share. The two
+cards therefore need no P2P or NVLink: the rows travel through portable mapped host memory, so a PCIe
+pair behaves the same way (measured with `canAccessPeer` = 0).
+
+**Start the engine directly.** `edge0-infer` sets the config's `gpu` from `--device`, which is one
+card, and the cards the engine may use are that list; a second card has to be in it:
+
+1. Give the engine both cards: add `"gpu": [0, 1]` to the model's server config (`serve/server.py`
+   passes it on as `CUDA_VISIBLE_DEVICES=0,1`, so the engine's device 0 is the first card and its
+   device 1 the second).
+
+2. Add the peer tier to that config's `args` — these four pairs, appended to the arguments already
+   there. `--peer-device 1` names the engine's device 1; `--peer-reserve-mib` is VRAM left free on
+   that card; `--peer-slots 0` fills it with as many experts as fit:
+
+   ```json
+   "--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"
+   ```
+
+3. Start the server as usual (`serve/server.py --engine strata --config <file>`), or run the engine
+   with the same arguments. Build with `-DCMAKE_CUDA_ARCHITECTURES=native`, or list both cards'
+   capabilities when they differ (`86;120` for an RTX 30 beside an RTX 50).
+
+The startup log then names the tier and the reach of the two caches:
+
+```
+strata generate: peer GPU 1: 11900 experts, 21.45 GiB (filled in 3.9 s); with the primary's 5955
+                 that is 17855 of 24576 on the GPUs
+```
+
+Measured with Edge0 145B on two RTX 5090 D (24 GB each, PCIe, no P2P), 200-token answers:
+NVFP4 391 for `17*23` at 92-104 tok/s decode and 1223 tok/s prefill on a 2732-token prompt; Q3_K 391
+at 101-114 tok/s decode and 1456 tok/s prefill. The same packs run at about 60-80 and 80-130 tok/s
+on one card, so the gain is the share of the expert set that stops crossing the PCIe bus.
+
+Notes:
+
+- The prompt stays on the first card for a latent pack; only the decode windows use the second one.
+- `--peer-device` cannot be combined with `--layer-split` or `--expert-cache-device1..3`.
+- `STRATA_LATENT_U_GPU` (the first card's `U` stage) is switched on automatically when a peer serves
+  latent experts; do not turn it off.
+- With 24 GB cards and Edge0 145B the second card needs about 21.5 GiB for its tier; lower
+  `--peer-reserve-mib` or give fewer slots with `--peer-slots` when something else uses that card.
+- The two other second-card modes are adapted for latent packs as well but are not measured yet:
+  `--expert-cache-device1 N` (a helper cache; it runs the same `A`-only share) and `--layer-split K`
+  (each stage uploads its own `D`/`U` to its own card).
+
 ## Launch contract with edge0-infer
 
 - `edge0/CONTRACT` holds one integer, the contract version (currently 5). `edge0-infer` refuses to start an
