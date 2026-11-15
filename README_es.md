@@ -315,6 +315,26 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
+<summary>Dos GPU · la capa de expertos de la segunda tarjeta</summary>
+
+Una segunda tarjeta NVIDIA guarda los expertos que no caben en la VRAM de la primera, y la decodificación la usa con ambos formatos de expertos. Las tarjetas no necesitan NVLink ni P2P.
+
+`edge0-infer` ejecuta el motor en una tarjeta (su `--device` es una tarjeta), así que con dos tarjetas hay que iniciar el motor con la configuración que lee `serve/server.py --config` (contiene `exe`, `args`, `cwd`, `env`):
+
+- pon `"gpu": [0, 1]` — el dispositivo 0 del motor es la primera tarjeta y el 1 la segunda;
+- añade al final de `"args"`: `"--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"`.
+
+```bash
+cd /path/to/Edge0-145B-q3k
+/path/to/edge0-strata/.venv/bin/python /path/to/edge0-strata/serve/server.py \
+  --engine strata --config ./model-two-gpus.json
+```
+
+El registro de arranque muestra la capa de la segunda tarjeta (`peer GPU 1: … experts, … GiB`), y el servidor atiende los mismos endpoints que con una tarjeta. `--peer-device` no se puede combinar con `--layer-split` ni con `--expert-cache-device1..3`. Más: [Dos GPU](edge0-strata/EDGE0.md#two-gpus-linux-nvidia).
+
+</details>
+
+<details>
 <summary>Aplicación de escritorio · Windows · macOS</summary>
 
 ⬇️ **Descargar:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**

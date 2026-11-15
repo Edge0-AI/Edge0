@@ -315,6 +315,26 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
+<summary>双卡 · 第二张卡的专家层</summary>
+
+第二张 NVIDIA 卡存第一张卡显存放不下的专家，两种专家格式的解码都会用到它。两张卡不需要 NVLink 或 P2P。
+
+`edge0-infer` 只用一张卡跑引擎（`--device` 是单张卡），所以双卡要自己启动引擎，用 `serve/server.py --config` 读的那份配置（含 `exe`、`args`、`cwd`、`env`）：
+
+- 设为 `"gpu": [0, 1]` —— 引擎的 device 0 是第一张卡，device 1 是第二张；
+- 在 `"args"` 末尾追加：`"--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"`。
+
+```bash
+cd /path/to/Edge0-145B-q3k
+/path/to/edge0-strata/.venv/bin/python /path/to/edge0-strata/serve/server.py \
+  --engine strata --config ./model-two-gpus.json
+```
+
+启动日志会打印第二张卡的专家层（`peer GPU 1: … experts, … GiB`），之后接口与单卡相同。`--peer-device` 不能与 `--layer-split` 或 `--expert-cache-device1..3` 同用。更多见 [双卡](edge0-strata/EDGE0.md#two-gpus-linux-nvidia)。
+
+</details>
+
+<details>
 <summary>桌面应用 · Windows · macOS</summary>
 
 ⬇️ **下载：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**

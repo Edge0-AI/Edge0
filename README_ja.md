@@ -315,6 +315,26 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
+<summary>2枚の GPU · 2枚目のカードのエキスパート層</summary>
+
+2枚目の NVIDIA カードに、1枚目の VRAM に収まらないエキスパートを置き、デコードでは両方のエキスパート形式でそれを使います。2枚のカードに NVLink も P2P も不要です。
+
+`edge0-infer` はエンジンを1枚のカードで動かします（`--device` は1枚）。2枚で動かすには、`serve/server.py --config` が読む設定（`exe`、`args`、`cwd`、`env` を含む）でエンジンを直接起動します。
+
+- `"gpu": [0, 1]` を設定 — エンジンの device 0 が1枚目、device 1 が2枚目です。
+- `"args"` の末尾に追加: `"--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"`。
+
+```bash
+cd /path/to/Edge0-145B-q3k
+/path/to/edge0-strata/.venv/bin/python /path/to/edge0-strata/serve/server.py \
+  --engine strata --config ./model-two-gpus.json
+```
+
+起動ログに2枚目のカードの層（`peer GPU 1: … experts, … GiB`）が出て、以降のエンドポイントは1枚のときと同じです。`--peer-device` は `--layer-split` や `--expert-cache-device1..3` と併用できません。詳細: [2枚の GPU](edge0-strata/EDGE0.md#two-gpus-linux-nvidia)。
+
+</details>
+
+<details>
 <summary>デスクトップアプリ · Windows · macOS</summary>
 
 ⬇️ **ダウンロード：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
