@@ -7759,6 +7759,11 @@ int main(int argc, char** argv) {
                                  "results return through pinned host rows\n", remote_dev[r],
                          (long long) remote_experts[(size_t) r].resident(), remote_experts[(size_t) r].gib());
         }
+        if (lat_tab.latent) {   // latent MoE: each helper computes A-only and packs q8_1 hq rows, like the peer
+            for (int r = 0; r < 3; ++r) if (o.expert_cache_remote[(size_t) r] > 0)
+                remote_experts[(size_t) r].bind_latent(&lat_tab.dense, lat_tab.labels.data(), g.n_layers, g.n_expert,
+                                                       lat_tab.lat_ELL, lat_tab.lat_I, lat_tab.lat_H, lat_tab.lat_G);
+        }
     }
 
     // ---- Multi-GPU: the second GPU's expert tier, filled with the ranked pairs the primary does not hold

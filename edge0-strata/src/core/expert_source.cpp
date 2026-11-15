@@ -5419,7 +5419,11 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
     if (d.remote_count > 0) {
         static thread_local std::string remote_error;
         for (int r = 0; r < d.remote_count; ++r) {
-            if (!d.remote[r]->begin(d.layers, x_f, ids, n_tok, k, kind, d.host_res, remote_error)) {
+            const bool ok = d.remote[r]->latent()
+                                ? d.remote[r]->begin_latent(d.layers, (const float*) d.lat_xlq, d.lat_xlseq, ids, n_tok,
+                                                            k, kind, d.host_res, remote_error)
+                                : d.remote[r]->begin(d.layers, x_f, ids, n_tok, k, kind, d.host_res, remote_error);
+            if (!ok) {
                 d.failed = true; d.fail = remote_error.c_str(); d.fail_layer = d.layers; return;
             }
             for (int64_t i = 0; i < n; ++i) if (d.remote[r]->owns(i)) kind[i] = 2;
