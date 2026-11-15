@@ -2410,6 +2410,12 @@ bool Prefill::bind_stage_helper(int64_t T) {
     return true;
 }
 
+void Prefill::set_latent_dev(uint8_t* d, uint8_t* u) {
+    Impl& m = *impl_;
+    m.lat_d_dev = d;
+    m.lat_u_dev = u;
+}
+
 bool Prefill::set_peer(core::PeerExperts* peer, int64_t cap_rows, std::string& err) {
     Impl& m = *impl_;
     if (peer == nullptr || !peer->valid()) { m.pp.reset(); return true; }
