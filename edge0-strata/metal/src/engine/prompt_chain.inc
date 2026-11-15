@@ -64,6 +64,7 @@ bool Window::pc_setup(int C) {
         b.k4 = coop_k4();
     }
     b = PromptBufs{b.lib, b.lgdn, b.lqsa, b.k4};   // (re)allocated below for the larger chunk
+    pc_idle_ = false;
     b.v3e = !latent_on_ && b.k4 && T("blk.0.ffn_gate_exps.weight").type < 144;
     b.C = C;
     const size_t MT = (size_t) C;
@@ -548,6 +549,7 @@ bool Window::prompt(const int64_t* tokens, int64_t n, int64_t pos0,
     // increasing sizes, and the runtime owns these allocations until teardown.
     const int capacity = latent_on_ ? C : (int) std::min<int64_t>(C, std::max<int64_t>(n, 64));
     if (!pc_setup(capacity)) { err = "metal prompt: setup failed"; return false; }
+    pc_idle(false);
     const double t0 = now_ms();
     pb_.gpu_ms = pb_.host_ms = pb_.mtp_ms = 0;
     for (int64_t c = 0; c < n; c += C) {
@@ -567,5 +569,24 @@ bool Window::prompt(const int64_t* tokens, int64_t n, int64_t pos0,
         std::fprintf(stderr, "strata metal: prompt %lld tokens in %.1f ms (GPU %.1f ms, host rows %.1f ms, drafter rows %.1f ms) "
                              "-> %.1f tok/s\n", (long long) n, now_ms() - t0, pb_.gpu_ms, pb_.host_ms, pb_.mtp_ms,
                      1000.0 * (double) n / (now_ms() - t0));
+    // A latent pack leaves a 64 GB Mac a few GB: its chunk buffers are lent to the OS until the next prompt (pc_idle).
+    // STRATA_METAL_PROMPT_KEEP=1 keeps them as they are.
+    static const bool keep = [] { const char* e = std::getenv("STRATA_METAL_PROMPT_KEEP"); return e && std::atoi(e) == 1; }();
+    if (latent_on_ && !keep) pc_idle(true);
     return true;
+}
+
+// Between prompts the chunk buffers are kept but lent to the OS: volatile buffers can be discarded under memory pressure
+// without swapping, and kept ones spare the next prompt the GPU's first mapping of new buffers.  They are scratch: a
+// chunk writes what it reads, except the two grid constants in `meta`, which are written again here.
+void Window::pc_idle(bool idle) {
+    PromptBufs& b = pb_;
+    if (b.C == 0 || idle == pc_idle_) return;
+    b.each([&](mtl::Buffer& x) { cx_->set_idle(x, idle); });
+    pc_idle_ = idle;
+    if (!idle) {
+        const int expert_width = latent_on_ ? (int) latent_args_.latent : N;
+        b.meta.as<uint32_t>()[2] = b.v3e ? NFF / (b.gu3[1] * b.gu3[3]) : NFF / 64;
+        b.meta.as<uint32_t>()[5] = b.v3e ? N / (b.dn3[1] * b.dn3[3]) : expert_width / 64;
+    }
 }

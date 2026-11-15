@@ -154,6 +154,17 @@ struct PromptBufs {
         stok, sw, pos, XS, HS, YE, yr, gsh, ush, hh, ys, sgv, WD, WU, Wqkv, Wz, Wal, Wbe, Wout, Wq, Wk, Wv, Wiq, Wik, Wr,
         Wsg, Wshg, Wshu, Wshd, yf, Wcat, pemb, pembh, pkey, pval, keyn, qn, gated, normW, Wpk, Wpv, mixr;
     mtl::Buffer lat_w, lat_proj, lat_pooled, lat_gu16;
+    // every buffer of the chunk, for pc_idle
+    template <class F> void each(F f) {
+        for (mtl::Buffer* x : {&R, &bo, &inj[0], &inj[1], &xn, &xnh, &V, &loh, &mixed, &mixh, &qkv, &z, &al, &be,
+                               &yg, &ygh, &gqn, &gkn, &gvc, &ggb, &gkq, &go, &qfull, &kcur, &vcur, &iqr, &ikr, &qcur,
+                               &qcurh, &qidx, &scores, &qids, &part, &XQ, &xqh, &logits, &ids, &wts, &bcnt, &boff,
+                               &eoff, &tiles, &meta, &stok, &sw, &pos, &XS, &HS, &YE, &yr, &gsh, &ush, &hh, &ys,
+                               &sgv, &WD, &WU, &Wqkv, &Wz, &Wal, &Wbe, &Wout, &Wq, &Wk, &Wv, &Wiq, &Wik, &Wr, &Wsg,
+                               &Wshg, &Wshu, &Wshd, &yf, &Wcat, &pemb, &pembh, &pkey, &pval, &keyn, &qn, &gated,
+                               &normW, &Wpk, &Wpv, &mixr, &lat_w, &lat_proj, &lat_pooled, &lat_gu16})
+            if (x->handle) f(*x);
+    }
 };
 
 // The vision path (--vision, GENI requests), from the shared host code: the image rows of the prompt being read
@@ -486,6 +497,8 @@ private:
     }
     Act XEn_, XHn_;
     PromptBufs pb_;
+    void pc_idle(bool idle);
+    bool pc_idle_ = false;   // the chunk buffers are lent to the OS (set_idle) until the next prompt
     mtl::Buffer mpemb_;                    // the drafter's prompt embedding rows (mtp_prefill, one command buffer)
     size_t mpemb_rows_ = 0;
     const mtl::Buffer* membp_ = nullptr;   // mtp_encode's embedding rows (nullptr: memb_)

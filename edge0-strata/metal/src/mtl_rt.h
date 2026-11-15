@@ -108,6 +108,9 @@ public:
     // max_span bytes that starts in it (max_span = the largest tensor bound at one offset)
     Buffer wrap(void* page_aligned, size_t bytes, size_t max_span);
     void free(Buffer& b);
+    // A scratch buffer's memory lent to the OS while idle (volatile: it may be discarded under memory pressure, never
+    // swapped) and taken back before use.  Taking it back returns false when the contents were discarded (they read as zeros).
+    bool set_idle(Buffer& b, bool idle);
 
     // Encodes `ds` into ONE compute encoder (serial or concurrent dispatch type) and ONE command buffer, `reps`
     // times over; commits and waits.  Returns the GPU time (GPUEndTime - GPUStartTime) in seconds.
