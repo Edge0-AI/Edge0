@@ -914,6 +914,42 @@ def platform_launch(cli, root):
     assert_no_leftovers(record)
 
 
+def reported_errors(cli, root):
+    engine = make_engine(root / 'reported-errors-engine')
+    model = make_model(root / 'reported-errors-model')
+    record = root / 'reported-errors-record'
+    server = Running(cli, model, engine, record)
+    mismatches = []
+    try:
+        index = 0
+        for stream in (False, True):
+            for path in ('/v1/chat/completions', '/v1/messages', '/v1/responses'):
+                index += 1
+                code, _, wire = request(server.port, 'POST', path, {'stream': stream, 'fake_error': True})
+                assert code == (200 if stream else 429) and wire == sent(record, index), (code, wire)
+                deadline = time.time() + 10
+                while True:
+                    status = json.loads(request(server.port, 'GET', '/status')[2])
+                    if status['current'] is None and len(status['recent_requests']) == index: break
+                    assert time.time() < deadline, status
+                    time.sleep(0.02)
+                recent = status['recent_requests'][0]
+                expected_code = 'api_error' if path == '/v1/messages' else 'fixture_error'
+                expected = {'http_status': 200, 'stop_reason': 'failed', 'code': expected_code} if stream else {
+                    'http_status': 429, 'code': 'fixture_busy', 'message': 'fixture busy'}
+                if stream and path != '/v1/responses': expected['message'] = 'fixture failure'
+                actual = {key: recent.get(key) for key in expected}
+                print('reported error:', path, 'stream=', stream, actual)
+                if actual != expected: mismatches.append((path, stream, actual, expected))
+                if not stream: assert 'stop_reason' not in recent
+                else: assert {key: status['last'].get(key) for key in expected} == actual
+        assert not mismatches, mismatches
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    print('PASS reported upstream errors: three protocols, byte-exact forwarding and status details')
+
+
 def interrupted_responses(cli, root):
     engine = make_engine(root / 'interrupt-engine')
     model = make_model(root / 'interrupt-model')
@@ -1165,6 +1201,7 @@ def main():
         root = Path(folder)
         mac_prepare(args.cli, root)
         launch_handshake(args.cli, root)
+        reported_errors(args.cli, root)
         interrupted_responses(args.cli, root)
         inspect_defaults(args.cli, root)
         refusals(args.cli, root)

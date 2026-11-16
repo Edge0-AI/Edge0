@@ -29,7 +29,8 @@ struct Accounting {
     bool saw_content = false, streaming = false, complete = false;
     std::string endpoint, response_id;
     std::size_t next_sequence = 0;
-    std::string finish;  // the external engine's finish reason, as sent
+    std::string finish;  // the external engine's finish reason, or failed for a protocol error
+    std::string error_code, error_message, error_param;
 };
 // Folds one JSON body or SSE data object into the accounting (later values win).
 void account(Accounting&, const StatusJson& body);

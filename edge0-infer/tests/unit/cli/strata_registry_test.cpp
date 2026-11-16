@@ -545,6 +545,27 @@ int main() {
         const std::string wrong="data: [DONE]\n\n";
         account_sse(a,pending,wrong.data(),wrong.size());CHECK(!a.complete);
     }
+    // Errors are terminal failures even though a streaming response started with HTTP 200.
+    for (const auto& entry : std::vector<std::pair<std::string, std::string>>{
+        {"/v1/chat/completions", R"({"error":{"type":"server_error","message":"engine failed"}})"},
+        {"/v1/messages", R"({"type":"error","error":{"type":"api_error","message":"engine failed"}})"},
+        {"/v1/responses", R"({"type":"response.failed","response":{"status":"failed","error":{"code":"server_error"}}})"}}) {
+        const std::string wire = "data: " + entry.second + "\n\ndata: [DONE]\n\n";
+        for (std::size_t chunk : {std::size_t(1), std::size_t(7), wire.size()}) {
+            Accounting failed; failed.endpoint = entry.first; std::string pending;
+            for (std::size_t offset = 0; offset < wire.size(); offset += chunk)
+                account_sse(failed, pending, wire.data() + offset, std::min(chunk, wire.size() - offset));
+            CHECK(failed.complete && pending.empty());
+            CHECK(stop_reason(failed.finish) == "failed");
+        }
+    }
+    // A successful Responses object has error:null, which must not change its completion status.
+    for (const auto* value : {R"({"object":"response","status":"completed","error":null})",
+                              R"({"type":"response.completed","response":{"object":"response","status":"completed","error":null}})"}) {
+        Accounting success;
+        account(success, Json::parse(value));
+        CHECK(stop_reason(success.finish) == "end_of_generation");
+    }
     Accounting plain;
     account(plain, Json::parse(R"({"choices":[{"finish_reason":"length"}],"usage":{"prompt_tokens":13,"completion_tokens":14},
         "timings":{"cache_n":3,"prompt_n":10,"prompt_ms":163.3,"prompt_per_second":61.2,"predicted_n":14,"predicted_ms":222.5,"predicted_per_second":62.9}})"));

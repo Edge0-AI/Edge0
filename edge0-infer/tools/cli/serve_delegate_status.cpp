@@ -83,6 +83,14 @@ void account(Accounting& a, const Json& body) {
             account(a, body[key]);
             if (std::string(key) == "response") responses_status(a, body[key]);
         }
+    // A protocol error can arrive after HTTP 200 headers have already been sent.
+    if (body.contains("error") && body["error"].is_object()) {
+        const auto& error = body["error"];
+        a.finish = "failed";
+        a.error_code = error.contains("code") && error["code"].is_string() ? text(error, "code") : text(error, "type");
+        a.error_message = text(error, "message");
+        a.error_param = text(error, "param");
+    }
 }
 
 std::int64_t content_fragments(const Json& event) {

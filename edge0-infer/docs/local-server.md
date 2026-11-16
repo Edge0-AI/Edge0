@@ -318,7 +318,9 @@ recorded by the proxy from what it forwarded and are null when the response does
 carry them; `n/a` fields do not apply and are null when required (an object then has no
 children) and absent when optional. Recorded values come from the forwarded response:
 `stop_reason` from the finish reason (Chat `finish_reason`, the Responses object's
-`status`, Messages `stop_reason`), `input_tokens` and `generated_tokens` from `usage`
+`status`, Messages `stop_reason`), or `failed` for a protocol error. Errors keep their
+`code` (falling back to `type`), `message` and `param` when present, even after HTTP 200
+stream headers. `input_tokens` and `generated_tokens` come from `usage`
 (for `/v1/messages`, `input_tokens` is the request's whole input, `input_tokens` +
 `cache_creation_input_tokens` + `cache_read_input_tokens` with a missing one counted as
 0, taken from `message_start` when streaming), `reused_tokens` from `timings.cache_n`,

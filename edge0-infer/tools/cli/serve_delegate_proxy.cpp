@@ -199,6 +199,9 @@ int serve(int argc, char** argv, const Match& match) {
             record.total_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - f->started).count();
             record.http_status = http_status;
             record.accounting = f->accounting;
+            record.code = f->accounting.error_code;
+            record.message = f->accounting.error_message;
+            record.param = f->accounting.error_param;
             record.entered = http_status < 400 || http_status >= 500;
             if (http_status == 429) record.entered = false;
             if (f->client_gone) record.stop_reason = "cancelled";
