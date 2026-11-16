@@ -155,7 +155,7 @@ def dialect_body(path, request, answer):
     if path == '/v1/responses':
         body = {'id': 'resp_fake', 'object': 'response', 'status': 'completed', 'model': request.get('model'),
                 'output': [{'type': 'message', 'status': 'completed', 'content': [{'type': 'output_text', 'text': answer}]}],
-                'usage': {'input_tokens': prompt, 'output_tokens': generated}}
+                'usage': {'input_tokens': prompt, 'input_tokens_details': {'cached_tokens': 3}, 'output_tokens': generated}}
     else:
         # Anthropic semantics: input_tokens counts only the uncached part of the input.
         body = {'id': 'msg_fake', 'type': 'message', 'role': 'assistant', 'model': request.get('model'),
@@ -186,7 +186,8 @@ def dialect_events(path, request, answer):
         values = [('response.created', {'response': dict(response, status='in_progress'), 'echo': request, 'path': path}),
                   *[('response.output_text.delta', {'delta': piece}) for piece in pieces_of(answer)],
                   ('response.completed', {'response': dict(response, status='completed',
-                                                           usage={'input_tokens': prompt, 'output_tokens': generated})})]
+                                                           usage={'input_tokens': prompt, 'input_tokens_details': {'cached_tokens': 4},
+                                                                  'output_tokens': generated})})]
     else:
         message = {'id': 'msg_fake', 'type': 'message', 'role': 'assistant', 'model': request.get('model'), 'content': [],
                    'stop_reason': None, 'stop_sequence': None, 'usage': {'input_tokens': prompt, 'output_tokens': 0}}

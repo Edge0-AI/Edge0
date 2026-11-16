@@ -420,12 +420,14 @@ def live_progress(cli, root, snapshots):
             elif path == '/v1/responses':
                 usage = events_sent[-1]['response']['usage']
                 assert (last['input_tokens'], last['generated_tokens']) == (usage['input_tokens'], usage['output_tokens']), last
-                assert last['first_token_seconds'] is None and last['reused_tokens'] is None, last
+                assert last['first_token_seconds'] is None, last
+                assert last['reused_tokens'] == usage['input_tokens_details']['cached_tokens'], last
             else:
                 start, delta = events_sent[0], events_sent[-2]
                 assert (last['input_tokens'], last['generated_tokens']) == \
                     (start['message']['usage']['input_tokens'], delta['usage']['output_tokens']), last
                 assert last['first_token_seconds'] is None, last
+                assert last['reused_tokens'] == delta['usage']['cache_read_input_tokens'], last
         # Non-streaming: nothing is forwarded until the answer is complete, so phase and count are unknown.
         for path in ('/v1/chat/completions', '/v1/responses', '/v1/messages'):
             answer = {}
@@ -493,6 +495,10 @@ def dialects(cli, root):
         assert status['totals']['requests'] == 4
         assert status['totals']['input_tokens'] == sum(i for i, _ in expected)
         assert status['totals']['generated_tokens'] == sum(g for _, g in expected)
+        assert records[0]['reused_tokens'] == 3 and records[1]['reused_tokens'] == 4, records
+        assert records[2]['reused_tokens'] == 2 and records[3]['reused_tokens'] == 0, records
+        assert status['last']['reused_tokens'] == 0
+        assert status['totals']['reused_tokens'] == 9
     finally:
         assert server.stop() == 0
     assert_no_leftovers(record)

@@ -575,12 +575,57 @@ int main() {
     account(messages_plain, Json::parse(R"({"type":"message","stop_reason":"end_turn",
         "usage":{"input_tokens":1,"output_tokens":50,"cache_creation_input_tokens":67,"cache_read_input_tokens":2}})"));
     CHECK(messages_plain.input_tokens == 70 && messages_plain.generated_tokens == 50 && stop_reason(messages_plain.finish) == "end_of_generation");
+    CHECK(messages_plain.reused_tokens == 2);
     Accounting messages_stream;  // message_start holds the input; message_delta does not replace it
     account(messages_stream, Json::parse(R"({"type":"message_start","message":{"type":"message","stop_reason":null,
         "usage":{"input_tokens":62,"output_tokens":0}}})"));
     account(messages_stream, Json::parse(R"({"type":"message_delta","delta":{"stop_reason":"end_turn"},
         "usage":{"input_tokens":1,"cache_creation_input_tokens":5,"cache_read_input_tokens":0,"output_tokens":42}})"));
     CHECK(messages_stream.input_tokens == 62 && messages_stream.generated_tokens == 42 && stop_reason(messages_stream.finish) == "end_of_generation");
+    CHECK(messages_stream.reused_tokens == 0);
+    // Cache counts can arrive in message_start or the final message_delta, including a reported zero.
+    const std::string cache_sse = "data: {\"type\":\"message_start\",\"message\":{\"type\":\"message\","
+        "\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":3,\"cache_read_input_tokens\":0}}}\n\n"
+        "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},"
+        "\"usage\":{\"input_tokens\":1,\"cache_creation_input_tokens\":1,\"cache_read_input_tokens\":3,\"output_tokens\":2}}\n\n"
+        "data: {\"type\":\"message_stop\"}\n\n";
+    for (std::size_t split : {std::size_t(1), std::size_t(7), cache_sse.size()}) {
+        Accounting cached;cached.endpoint="/v1/messages";std::string pending;
+        for(std::size_t i=0;i<cache_sse.size();i+=split)
+            account_sse(cached,pending,cache_sse.data()+i,std::min(split,cache_sse.size()-i));
+        CHECK(cached.complete && pending.empty() && cached.input_tokens==5 && cached.reused_tokens==3);
+        CHECK(cached.generated_tokens==2 && cached.finish=="end_turn");
+        for(const auto& value:Json::array({nullptr,"3",Json::object()})) {
+            account(cached,Json{{"type","message_delta"},{"usage",{{"cache_read_input_tokens",value}}}});
+            CHECK(cached.reused_tokens==3);
+        }
+        account(cached,Json{{"type","message_delta"},{"usage",{{"cache_read_input_tokens",0}}}});
+        CHECK(cached.reused_tokens==0);
+    }
+    Accounting cache_timing;  // Explicit timing counts still override usage in the same response.
+    account(cache_timing,Json::parse(R"({"type":"message","usage":{"cache_read_input_tokens":2},"timings":{"cache_n":4}})"));
+    CHECK(cache_timing.reused_tokens==4);
+
+    // Responses report cached input tokens in their own usage detail object, without requiring timings.
+    const std::string response_cache_sse = "data: {\"type\":\"response.created\",\"response\":{\"object\":\"response\",\"status\":\"in_progress\",\"usage\":null}}\n\n"
+        "data: {\"type\":\"response.completed\",\"response\":{\"object\":\"response\",\"status\":\"completed\","
+        "\"usage\":{\"input_tokens\":10,\"input_tokens_details\":{\"cached_tokens\":7},\"output_tokens\":3}}}\n\n";
+    for(std::size_t split:{std::size_t(1),std::size_t(7),response_cache_sse.size()}) {
+        Accounting cached;cached.endpoint="/v1/responses";std::string pending;
+        for(std::size_t i=0;i<response_cache_sse.size();i+=split)
+            account_sse(cached,pending,response_cache_sse.data()+i,std::min(split,response_cache_sse.size()-i));
+        CHECK(cached.complete && pending.empty() && cached.input_tokens==10 && cached.reused_tokens==7);
+    }
+    for(const auto& value:Json::array({0,3,nullptr,"3",Json::object()})) {
+        Accounting cached;
+        account(cached,Json{{"object","response"},{"usage",{{"input_tokens_details",{{"cached_tokens",value}}}}}});
+        CHECK(value.is_number_integer() ? cached.reused_tokens==value.get<std::int64_t>() : !cached.reused_tokens);
+    }
+    Accounting response_timing;
+    account(response_timing,Json::parse(R"({"type":"response.completed","timings":{"cache_n":4},
+        "response":{"object":"response","usage":{"input_tokens_details":{"cached_tokens":2}}}})"));
+    CHECK(response_timing.reused_tokens==4);
+
     // Fields of the wrong type count as missing; nothing throws.
     for (const char* text : {R"({"object":null,"status":"completed"})", R"({"object":5,"status":"completed"})",
                              R"({"object":"response","status":null})", R"({"object":"response","status":5})",

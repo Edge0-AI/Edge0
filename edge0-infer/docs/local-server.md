@@ -321,7 +321,10 @@ children) and absent when optional. Recorded values come from the forwarded resp
 `status`, Messages `stop_reason`), `input_tokens` and `generated_tokens` from `usage`
 (for `/v1/messages`, `input_tokens` is the request's whole input, `input_tokens` +
 `cache_creation_input_tokens` + `cache_read_input_tokens` with a missing one counted as
-0, taken from `message_start` when streaming), `reused_tokens` from `timings.cache_n`,
+0, taken from `message_start` when streaming), `reused_tokens` from `timings.cache_n`
+(falling back to Chat `usage.prompt_tokens_details.cached_tokens`, Responses
+`usage.input_tokens_details.cached_tokens`, or Messages
+`usage.cache_read_input_tokens`, including the final `message_delta`),
 `first_token_seconds` and `decode_seconds` from `timings.prompt_ms` and
 `timings.predicted_ms`, and the per-request rates from `timings.prompt_per_second` and
 `timings.predicted_per_second`. `total_seconds` is the proxy's handling time. In totals,
