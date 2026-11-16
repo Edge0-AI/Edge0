@@ -28,6 +28,20 @@ int main() {
     const float input[4]{1, 2, 3, 4};
     { std::ofstream file(path, std::ios::binary); file.write(reinterpret_cast<const char*>(input), sizeof(input)); }
     const LoadItem item{0, "weight", {path.string(), 0, sizeof(input), {GGML_TYPE_F32, {4}}}};
+    // Completing a read must release its worker's buffer reference before the
+    // caller closes the storage and admits the next weight allocation.
+    std::size_t retained = 0;
+    for (int iteration = 0; iteration < 1000; ++iteration) {
+        auto storage = take(weights.create_storage(stages.prefill, arrays, exec::Purpose::resident_weights));
+        auto write = take(weights.begin_write(storage, {item}));
+        CHECK(!weights.fill_regions(write));
+        take(weights.complete(write));
+        CHECK(std::memcmp(storage->tensor(0)->data, input, sizeof(input)) == 0);
+        CHECK(!weights.close(storage));
+        if (budget.current(exec::Purpose::resident_weights) != 0) ++retained;
+    }
+    std::cout << "completed loads retaining a resident budget charge: " << retained << "/1000\n";
+    CHECK(retained == 0);
     for (auto protection : {Protection::region, Protection::group}) {
         auto storage = take(weights.create_storage(consumers, arrays, edge0::exec::Purpose::resident_weights, protection));
         CHECK(storage.size() == 1 && budget.current(exec::Purpose::resident_weights) == ggml_backend_buffer_get_size(storage.front()->allocation()->buffer));

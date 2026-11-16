@@ -263,8 +263,10 @@ exec::Status Weights::fill_regions(const std::shared_ptr<Write>& write, Priority
         for (const auto& part : slice) if (part.first) regions.push_back(write->items_[part.item].region);
         const auto hook=before_read;
         // Retain allocation and source until completion, without retaining the transaction.
-        auto task=std::make_shared<std::packaged_task<exec::Status()>>([this,file,identity,offset,slice,regions,hook,allocation,staged] {
-            (void)allocation;
+        auto task=std::make_shared<std::packaged_task<exec::Status()>>([this,file,identity,offset,slice,regions,hook,allocation,staged]() mutable {
+            // Drop the worker's reference before packaged_task publishes completion.
+            const auto keep_alive = std::move(allocation);
+            (void)keep_alive;
             for(auto region:regions) { if(hook) hook(region);++reads_; }
             if (!staged) {
                 std::vector<platform::ReadTarget> targets;
