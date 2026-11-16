@@ -49,6 +49,30 @@ int main() {
     CHECK(after.rss.values->current_bytes>=*before.rss.values->current_bytes+size/2);
     CHECK(after.rss.values->peak_bytes>=after.rss.values->current_bytes);
     CHECK(after.physical.values->peak_bytes>=after.physical.values->current_bytes);
+#elif defined(__linux__)
+    CHECK(before.rss.values && before.physical.values);
+    CHECK(before.rss.source == "proc_status" && before.physical.source == "pss");
+    CHECK(before.rss.reason.empty() && before.physical.reason.empty());
+    constexpr std::size_t size=64*1024*1024;
+    auto allocation=std::make_unique<unsigned char[]>(size);
+    volatile unsigned char* bytes=allocation.get();
+    for(std::size_t i=0;i<size;i+=4096) bytes[i]=static_cast<unsigned char>(i/4096);
+    const auto after=edge0::platform::process_memory();
+    CHECK(after.rss.values && after.physical.values);
+    for (const auto& sample : {before, after}) {
+        for (const auto& metric : {sample.rss, sample.physical}) {
+            CHECK(metric.values->current_bytes.has_value() == metric.values->current_reason.empty());
+            CHECK(metric.values->peak_bytes.has_value() == metric.values->peak_reason.empty());
+        }
+        // Linux reports PSS but does not expose a PSS high-water mark.
+        CHECK(!sample.physical.values->peak_bytes && !sample.physical.values->peak_reason.empty());
+        if (sample.rss.values->current_bytes && sample.rss.values->peak_bytes)
+            CHECK(*sample.rss.values->peak_bytes >= *sample.rss.values->current_bytes);
+    }
+    if (before.rss.values->current_bytes && after.rss.values->current_bytes)
+        CHECK(*after.rss.values->current_bytes >= *before.rss.values->current_bytes + size/2);
+    if (before.physical.values->current_bytes && after.physical.values->current_bytes)
+        CHECK(*after.physical.values->current_bytes >= *before.physical.values->current_bytes + size/2);
 #elif defined(_WIN32)
     CHECK(before.rss.values && before.physical.values);
     CHECK(before.rss.source == "working_set" && before.physical.source == "private_usage");
