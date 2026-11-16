@@ -704,11 +704,15 @@ static bool mtp_dev_debug() {
 }
 static int mtp_dev_of(const void* p) {
     if (p == nullptr) return -2;
+#if defined(STRATA_GPU_METAL)
+    return 0;   // one device and one memory: the Metal runtime has no pointer attributes to ask
+#else
     cudaPointerAttributes at{};
     if (cudaPointerGetAttributes(&at, p) != cudaSuccess) { (void) cudaGetLastError(); return -1; }
     if (at.type == cudaMemoryTypeHost) return -3;
     if (at.type == cudaMemoryTypeManaged) return -4;
     return at.device;
+#endif
 }
 bool MtpDrafter::bind(const WeightTable& wt, const NativeHead* head, const float* window_R, std::string& err,
                       const MtpDrafter* shared) {
@@ -1594,12 +1598,14 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
     const int64_t NHp = g_->n_head, per_row = 1 + 4 + NHp;
     // rows from another card (a layer split): those copies go through host memory (see rows_to_rin)
     bool cross = false;
+#if !defined(STRATA_GPU_METAL)   // (Metal has one device: rows never come from another card)
     if (n > 0) {
         cudaPointerAttributes at{};
         if (cudaPointerGetAttributes(&at, R_rows) == cudaSuccess && at.type == cudaMemoryTypeDevice && at.device != device_)
             cross = true;
         (void) cudaGetLastError();   // a host pointer is not an error here: it needs no bounce
     }
+#endif
     if (!per_group_sync && n > 0) {
         if (pf_cap_ < n * per_row) {
             if (pf_dev_) cudaFree(pf_dev_);

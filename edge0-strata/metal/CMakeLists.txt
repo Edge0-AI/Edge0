@@ -96,7 +96,7 @@ set(S ${STRATA_ROOT}/src)
 set(STRATA_METAL_HOST_SOURCES
   ${S}/core/device.cu ${S}/core/pinned.cu ${S}/platform/memory.cpp ${S}/core/graph.cpp ${S}/core/weights.cpp ${S}/core/layout.cpp
   ${S}/core/layer.cpp ${S}/core/session.cpp ${S}/core/expert_source.cpp ${S}/core/remote_experts.cpp ${S}/core/expert_cache.cpp
-  ${S}/core/native_head.cpp ${S}/core/native_dense.cpp ${S}/core/latent_dense.cpp ${S}/core/verify.cpp ${S}/core/mtp.cpp
+  ${S}/core/native_head.cpp ${S}/core/native_dense.cpp ${S}/core/latent_dense.cpp ${S}/core/latent_tables.cpp ${S}/core/verify.cpp ${S}/core/mtp.cpp
   ${S}/core/conversation_snapshot.cpp ${S}/core/conversation_state.cpp ${S}/core/conversation_memory.cpp
   ${S}/core/peer_experts.cpp ${S}/core/arch_defaults.cpp ${S}/core/vmm.cpp ${S}/core/conversation_file.cpp
   ${S}/kernels/ngram.cpp ${S}/ngram/ple_reader.cpp ${S}/platform/direct_file.cpp
