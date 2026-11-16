@@ -16,11 +16,11 @@
 namespace strata::core {
 
 #if !defined(_WIN32)
-// How the pack files are mapped.  On macOS the Metal engine wraps these mappings as GPU buffers.  With a private
-// mapping, the first GPU use of the pack takes about 20 s on a 64 GB M4 Max (145B Q3_K) on every start, and when the
-// engine exits the pack is no longer in the file cache (8 GB of file-backed memory left where a shared mapping leaves
-// 47 GB), so the next start reads it from the SSD again.  With a shared mapping the pages are used in place and stay
-// cached: the first prompt of a restart takes about 5 s.  The mapping is read-only either way.
+// How the pack files are mapped: shared on macOS, as metal/src/gguf_lite.cpp maps the model's main shard.  The
+// mapping is read-only either way and nothing writes through it; every macOS user of these readers gets it.
+// Measured on a 64 GB M4 Max with the 145B Q3_K pack, where the Metal engine wraps these mappings as GPU buffers:
+// after an engine with a private mapping exits, 8 GB of the machine's memory is file-backed, and the first prompt of
+// the next start takes 15 to 23 s; after one with a shared mapping exits, 47 GB is, and it takes about 5 s.
 #if defined(__APPLE__)
 constexpr int kPackMapFlags = MAP_SHARED;
 #else
