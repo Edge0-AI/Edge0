@@ -310,6 +310,14 @@ private:
     float *Rin_ = nullptr, *R_ = nullptr, *emb_ = nullptr, *en_ = nullptr, *e2_ = nullptr, *hn_ = nullptr, *h2_ = nullptr;
     float *mixed_ = nullptr, *inj_ = nullptr, *inj2_ = nullptr, *lo_ = nullptr, *rs_ = nullptr, *bo_ = nullptr;
     float* xn_ = nullptr;
+    /// Prompt rows that live on another card (a layer split reads the prompt on the first stage): a plain
+    /// device-to-device copy from there is an illegal access without P2P, so those rows go through pinned host memory.
+    float* pf_host_ = nullptr;
+    size_t pf_host_cap_ = 0;
+    /// The native embedding table is a singleton placed in one card's VRAM (STRATA_EMBED_VRAM=1): a drafter on
+    /// another card reads token_embd.weight from its own weight table instead (set in bind).
+    bool use_native_embed_ = true;
+    bool rows_to_rin(const float* rows, int64_t c, int T, bool cross, std::string& err);
     /// gr_read's scratch of the drafter's own (not the session's ss.block.gr: the last stage's verifier uses that one,
     /// and with --pipeline-windows a chain and that stage's window can run on the card at once)
     strata::kernels::GrWorkspace own_gr_;

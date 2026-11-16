@@ -1,5 +1,6 @@
 #include "models/edge0_35b/assets.h"
 #include "models/edge0_35b/compute.h"
+#include <algorithm>
 #include <set>
 #include "model/loading.h"
 #include "tests/support/runtime.h"

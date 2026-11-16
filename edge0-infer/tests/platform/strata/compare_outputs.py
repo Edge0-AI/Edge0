@@ -54,8 +54,11 @@ def main():
     parser.add_argument('--device', default='cuda:0')
     parser.add_argument('--strata-dir')
     parser.add_argument('--max-tokens', type=int, default=200)
+    parser.add_argument('--question', action='append', default=[],
+                        help='ask these instead of the built-in three; repeat the option for each question')
     parser.add_argument('--out', help='write all answers as JSON')
     args = parser.parse_args()
+    questions = args.question or QUESTIONS
     command = [args.cli, 'serve', '--model', args.model, '--device', args.device, '--port', '0']
     if args.strata_dir:
         command += ['--strata-dir', args.strata_dir]
@@ -81,7 +84,7 @@ def main():
         if 'proxy' not in ports or 'direct' not in ports:
             raise SystemExit('edge0-infer serve did not become ready')
         results = []
-        for question in QUESTIONS:
+        for question in questions:
             first = ask(ports['direct'], ports['alias'], question, args.max_tokens)
             second = ask(ports['direct'], ports['alias'], question, args.max_tokens)
             proxied = ask(ports['proxy'], ports['alias'], question, args.max_tokens)

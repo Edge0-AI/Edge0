@@ -159,7 +159,8 @@ def chat(base: str, key: str, messages: list, max_tokens: int, think: bool = Fal
                 for ch in j.get("choices") or []:
                     dl = ch.get("delta") or {}
                     piece = (dl.get("content") or "") + (dl.get("reasoning_content") or "")
-                    if piece:
+                    # a turn answered with a tool call alone streams only tool_calls deltas: that is an answer too
+                    if piece or dl.get("tool_calls"):
                         if first is None:
                             first = time.perf_counter() - t0
                         pieces += 1

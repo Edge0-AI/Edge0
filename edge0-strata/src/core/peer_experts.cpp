@@ -9,6 +9,7 @@
 #include "strata/kernels/quantize_act.hpp"
 #include "strata/kernels/s2_expert_grouped.hpp"
 #include "strata/kernels/window_limits.hpp"
+#include "strata/latent/latent_moe.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -16,6 +17,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 namespace strata::core {
@@ -36,6 +38,7 @@ struct Meta {                           // one block, uploaded with one copy per
     int32_t tok[CAP];
     int32_t count[4];                   // [0] groups, [1] entries
     int32_t out_row[CAP];               // multi-GPU: compact row -> entry row in the host `out`
+    int32_t ids[CAP];                   // latent: expert id per compact row (a_u's U stage reads it)
 };
 
 /// Switches the calling thread to `dev` and back.  The engine's own thread lives on device 0.
@@ -106,6 +109,10 @@ void PeerExperts::close() {
         if (d_meta_) cudaFree(d_meta_);
         if (d_q8_) cudaFree(d_q8_);
         if (d_scratch_) cudaFree(d_scratch_);
+        if (d_xl_) cudaFree(d_xl_);
+        if (d_xlq_) cudaFree(d_xlq_);
+        if (d_yl_) cudaFree(d_yl_);
+        if (d_uq_) cudaFree(d_uq_);
         if (h_x_) cudaFreeHost(h_x_);
         if (h_out_) cudaFreeHost(h_out_);
         if (h_meta_) cudaFreeHost(h_meta_);
@@ -116,9 +123,14 @@ void PeerExperts::close() {
     d_x_ = d_out_ = h_x_ = h_out_ = nullptr;
     d_meta_ = h_meta_ = d_scratch_ = nullptr;
     d_q8_ = nullptr;
+    d_xl_ = d_yl_ = nullptr;
+    d_xlq_ = d_uq_ = nullptr;
     d_sx_ = d_sh_ = nullptr;
     stream_ = refill_ = nullptr;
     refill_ev_ = nullptr;
+    tables_.close();
+    host_labels_ = nullptr;
+    latent_ = false;
     device_ = -1;
 }
 
@@ -327,10 +339,124 @@ bool PeerExperts::finish(float* out, std::string& err) {
     }
     ms_wait += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     if (launched_direct_) { launched_rows_ = 0; return true; }
-    for (size_t r = 0; r < row_of_.size(); ++r)
-        std::memcpy(out + (size_t) row_of_[r] * H, h_out_ + r * H, (size_t) H * sizeof(float));
+    if (launched_hq_) {   // latent A-only: q8_1 hq rows, one xlq_row byte-block per entry (the primary runs U)
+        const size_t xlq_row = (size_t) ((lat_ELL_ / 32) * 36);
+        for (size_t r = 0; r < row_of_.size(); ++r)
+            std::memcpy((uint8_t*) out + (size_t) row_of_[r] * xlq_row, (uint8_t*) h_out_ + r * xlq_row, xlq_row);
+    } else {
+        for (size_t r = 0; r < row_of_.size(); ++r)
+            std::memcpy(out + (size_t) row_of_[r] * H, h_out_ + r * H, (size_t) H * sizeof(float));
+    }
     launched_rows_ = 0;
+    launched_hq_ = false;
     return true;
+}
+
+void PeerExperts::bind_latent(strata::core::LatentDense* dense, const int32_t* host_labels, int64_t n_layers, int64_t E,
+                              int64_t ELL, int64_t I, int64_t Hh, int G) {
+    latent_ = true;
+    lat_ELL_ = ELL;
+    lat_I_ = I;
+    lat_H_ = Hh;
+    lat_E_ = E;
+    lat_G_ = G;
+    host_labels_ = host_labels;
+    tables_.bind(dense, host_labels, n_layers, E, Hh, ELL);
+    // per-launch latent buffers, sized once (device_ must already be open)
+    On on(device_);
+    const int64_t M = strata::kernels::kWindowMaxT;
+    auto alloc = [&](void** p, size_t bytes) {
+        if (*p) cudaFree(*p);
+        if (cudaMalloc(p, bytes) != cudaSuccess) { *p = nullptr; }
+    };
+    alloc((void**) &d_xl_, (size_t) M * G * ELL * 4);
+    alloc((void**) &d_xlq_, (size_t) M * G * (ELL / 32) * 36);
+    alloc((void**) &d_yl_, (size_t) CAP * ELL * 4);
+    alloc((void**) &d_uq_, (size_t) CAP * (ELL / 32) * 36);
+}
+
+bool PeerExperts::launch_latent(int64_t layer, const float* xl, const uint32_t* xlseq, const int32_t* ids,
+                                int64_t n_tok, int64_t k, int32_t* kind, std::string& err, float* out) {
+    launched_direct_ = false;
+    launched_hq_ = false;
+    launched_rows_ = 0;
+    row_of_.clear();
+    const int64_t n = n_tok * k;
+    if (n > CAP) { err = "peer experts: window too large"; return false; }
+    if (d_xl_ == nullptr || d_xlq_ == nullptr || d_yl_ == nullptr || d_uq_ == nullptr) {
+        err = "peer latent: not bound"; return false;
+    }
+    // The primary's D stage puts xl into mapped host memory then raises the doorbell; wait for this layer.
+    if (xlseq != nullptr) {
+        const uint32_t want = (uint32_t) (layer + 1);
+        const auto t0 = std::chrono::steady_clock::now();
+        while (*(volatile const uint32_t*) xlseq < want) {
+            if (std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count() > 20000.0) {
+                err = "peer latent: the D rows never arrived for this layer"; return false;
+            }
+            std::this_thread::yield();
+        }
+    }
+    // The adaptive tier can evict an expert between the dispatch's kind classification and this launch; a kind==2
+    // entry whose expert is no longer resident is demoted to -1 so the dispatch's latent_cpu_run recomputes it.
+    for (int64_t i = 0; i < n; ++i)
+        if (kind[i] == 2 && !has(layer, ids[i])) kind[i] = -1;
+
+    Meta& m = *(Meta*) h_meta_;
+    int groups = 0, rows = 0;
+    for (int64_t i = 0; i < n; ++i) {
+        if (kind[i] != 2) continue;
+        bool seen = false;
+        for (int64_t j = 0; j < i; ++j) if (kind[j] == 2 && ids[j] == ids[i]) { seen = true; break; }
+        if (seen) continue;
+        const int32_t slot = res_[(size_t) (layer * n_expert_ + ids[i])];
+        if (slot < 0) {   // evicted after the demotion pass: recompute on the CPU instead of failing the layer
+            for (int64_t j = 0; j < n; ++j)
+                if (kind[j] == 2 && ids[j] == ids[i]) kind[j] = -1;
+            continue;
+        }
+        m.ptr[groups] = (unsigned long long) cache_.device_slot(slot);
+        m.start[groups] = rows;
+        const int g = host_labels_[(size_t) layer * lat_E_ + ids[i]];
+        for (int64_t j = i; j < n; ++j)
+            if (kind[j] == 2 && ids[j] == ids[i]) {
+                m.dst[rows] = rows;
+                m.tok[rows] = (int32_t) ((j / k) * lat_G_ + g);   // xl row = token*G + label
+                m.out_row[rows] = (int32_t) j;
+                row_of_.push_back((int32_t) j);
+                ++rows;
+            }
+        ++groups;
+        ++experts_;
+    }
+    if (groups == 0) return true;
+    m.start[groups] = rows;
+    m.count[0] = groups;
+    m.count[1] = rows;
+    entries_ += rows;
+    launched_rows_ = rows;
+
+    On on(device_);
+    const cudaStream_t s = stream_;
+    if (!ck(cudaMemcpyAsync(d_xl_, xl, (size_t) n_tok * lat_G_ * lat_ELL_ * 4, cudaMemcpyHostToDevice, s), "xl", err) ||
+        !ck(cudaMemcpyAsync(d_meta_, h_meta_, sizeof(Meta), cudaMemcpyHostToDevice, s), "plan", err))
+        return false;
+    Meta* dm = (Meta*) d_meta_;
+    strata::kernels::quantize_q8_1_rows(d_xl_, n_tok * lat_G_, (int) lat_ELL_, d_xlq_, s);
+
+    const auto& f = strata::kernels::cpu::expert_layout().fmt[(size_t) layer];
+    const strata::kernels::NativeExpertLayout La =
+        strata::kernels::native_expert_layout(f.gu_type, f.d_type, lat_ELL_, lat_I_);
+    // A only, then quantize yl to q8_1 hq: the primary's knife-0 U stage (latent_u_matvec) runs U from these rows,
+    // exactly like the CPU share's hq - so the peer never needs the U table and U_GPU stays on.
+    strata::kernels::native_expert_grouped(La, dm->ptr, dm->start, dm->count, dm->dst, dm->tok, groups, rows, d_xlq_,
+                                           d_scratch_, d_yl_, s);
+    strata::kernels::quantize_q8_1_rows(d_yl_, rows, (int) lat_ELL_, d_uq_, s);
+
+    const size_t xlq_row = (size_t) ((lat_ELL_ / 32) * 36);
+    launched_hq_ = true;
+    launched_direct_ = false;   // hq rows are copied placement-wise in finish (no f32 scatter kernel for bytes)
+    return ck(cudaMemcpyAsync(h_out_, d_uq_, (size_t) rows * xlq_row, cudaMemcpyDeviceToHost, s), "results", err);
 }
 
 bool PeerExperts::adapt(const float* usage, const int32_t* res0, int max_swaps, std::string& err) {

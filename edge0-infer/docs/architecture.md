@@ -9,7 +9,7 @@ An overview of how `edge0-infer` is organized. It names the parts and how they w
 | Model | Engine | Hardware | How `edge0-infer` uses the engine |
 | --- | --- | --- | --- |
 | Edge0 35B | Native engine | GGML backends: Metal, CPU, Vulkan | A library in this directory, called in process; applications can also call it through the [native API](native-api.md) |
-| Edge0 145B, Edge0 120B | edge0-strata | NVIDIA GPU with CUDA | A separate engine in `edge0-strata/` of the Edge0 repository, a fork of [Strata](https://github.com/Niko1221/Strata); `edge0-infer` starts it as a child process and talks to it over a loopback port |
+| Edge0 145B, Edge0 120B | edge0-strata | NVIDIA GPU with CUDA, or Metal on macOS (Apple Silicon) | A separate engine in `edge0-strata/` of the Edge0 repository, a fork of [Strata](https://github.com/Niko1221/Strata); `edge0-infer` starts it as a child process and talks to it over a loopback port |
 
 `edge0-infer` picks the engine from the model folder given with `--model`; there is nothing to choose. A `model.json` with an `architecture` field is an asset manifest of the native engine. A `model.json` whose `model_name` names an Edge0 145B or Edge0 120B folder selects edge0-strata: `edge0-infer` starts the engine with that model's configuration template from `edge0-strata/edge0/models/`, waits until it is ready, and then forwards generation requests to it. `serve` keeps answering `/health`, `/v1/models` and `/status` itself, and `chat` keeps its own commands, so clients see the same interface for every model. The pages [Edge0 145B](edge0-145b.md) and [Edge0 120B](edge0-120b.md) describe this path; edge0-strata's own build and its launch contract with `edge0-infer` are in `edge0-strata/EDGE0.md`.
 

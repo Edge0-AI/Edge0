@@ -31,8 +31,8 @@ The runtime opens a fixed set of devices (`devices`); a model can only use devic
 
 | Flag | Native field | Default | Meaning |
 | --- | --- | --- | --- |
-| `--threads <n>` | `cpu_threads` | macOS 4; Android logical CPUs minus two (at least one); Windows `max(1, P - 2)` | CPU threads for decode; requires a CPU device; at most the logical CPU count |
-| `--prefill-threads <n>` | `cpu_prefill_threads` | macOS 4; Android all logical CPUs; Windows `min(logical, P + 2)` | CPU threads for prefill (processing the input), set independently of decode |
+| `--threads <n>` | `cpu_threads` | macOS/Linux up to 4 logical CPUs (at least one); Android logical CPUs minus two (at least one); Windows `max(1, P - 2)` | CPU threads for decode; requires a CPU device; at most the logical CPU count |
+| `--prefill-threads <n>` | `cpu_prefill_threads` | macOS/Linux up to 4 logical CPUs (at least one); Android all logical CPUs; Windows `min(logical, P + 2)` | CPU threads for prefill (processing the input), set independently of decode |
 | `--memory-budget <bytes>` | `memory_budget_bytes` | The total memory of the smallest opened device | The total budget every loaded model and session is admitted against; must be positive and not exceed the device memory |
 
 The Android thread defaults were tuned on one device and may not suit other CPU layouts. On Windows, `P` is `logical / 2`. That rule assumes two threads per core and was measured on one 6-core CPU; set the counts explicitly when the CPU has no simultaneous multithreading or has efficiency cores. `info` prints the defaults; summaries report the resolved values and whether they were given explicitly.

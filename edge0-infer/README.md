@@ -5,13 +5,13 @@ English | [Chinese](README_zh.md) | [Japanese](README_ja.md) | [Español](README
 `edge0-infer` runs mixture-of-experts (MoE) language models on your own hardware: a CLI, a local OpenAI- and Anthropic-compatible server and chat applications, with the same commands for every model. Each model runs on the engine built for it, and `edge0-infer` picks the engine from the model folder; there is nothing to choose:
 
 - **Edge0 35B** (Qwen3.6-35B-A3B with a LoRA and a trained pre-router) runs on the **native engine** in this directory, built on [GGML](https://github.com/ggml-org/ggml) and with a native C++ API, on macOS, iOS, Android, Linux and Windows. Expert weights are loaded from storage on demand into a fixed pool of slots, so a model larger than the device memory budget runs without loading all of its weights. On an Apple M5 Mac it decodes at about 25 tokens per second with a peak physical footprint of about 3.4 GiB; figures for every platform are in [Benchmarking](docs/benchmarking.md#reference-figures).
-- **Edge0 145B** and **Edge0 120B** run on **edge0-strata**, a fork of [Strata](https://github.com/Niko1221/Strata) in `edge0-strata/` of the Edge0 repository, on an NVIDIA GPU on Linux or Windows; see [Edge0 145B](docs/edge0-145b.md) and [Edge0 120B](docs/edge0-120b.md).
+- **Edge0 145B** and **Edge0 120B** run on **edge0-strata**, a fork of [Strata](https://github.com/Niko1221/Strata) in `edge0-strata/` of the Edge0 repository, on an NVIDIA GPU on Linux or Windows, and on Apple Silicon with Metal on macOS; see [Edge0 145B](docs/edge0-145b.md) and [Edge0 120B](docs/edge0-120b.md).
 
 ## Platforms
 
 | Platform | Edge0 35B (native engine) | Edge0 145B, Edge0 120B (edge0-strata) |
 | --- | --- | --- |
-| macOS (Apple silicon) | Metal, CPU | — |
+| macOS (Apple silicon) | Metal, CPU | Metal |
 | iOS | Metal | — |
 | Android | CPU | — |
 | Linux | CPU | NVIDIA GPU (CUDA 13) |

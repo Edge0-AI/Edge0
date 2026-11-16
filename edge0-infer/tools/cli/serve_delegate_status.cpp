@@ -244,7 +244,7 @@ Json status_json(const DelegateStatusInput& s) {
     if (gpu.is_object()) {
         const auto total = number(gpu, "total_mib"), used = number(gpu, "used_mib");
         devices = Json::array({Json{{"name", s.device},
-                                    {"backend", "cuda"},
+                                    {"backend", s.device == "metal" ? "metal" : "cuda"},
                                     {"description", gpu.contains("name") && gpu["name"].is_string() ? gpu["name"] : Json(nullptr)},
                                     {"memory_total_bytes", total ? Json(static_cast<std::int64_t>(*total * 1048576.0)) : Json(nullptr)},
                                     {"memory_free_bytes", total && used ? Json(static_cast<std::int64_t>((*total - *used) * 1048576.0)) : Json(nullptr)}}});

@@ -2883,6 +2883,7 @@ bool Verifier::capture(int T, std::string& err) {
         err = std::string("verify: end capture: ") + cudaGetErrorString(ce);
         return false;
     }
+#if !defined(STRATA_GPU_METAL)
     if (graph) {   // K0: dump node order (unconditional — env was not reaching the engine) (D2H / wait_flag / H2D / kernel)
         size_t nn = 0;
         if (cudaGraphGetNodes(graph, nullptr, &nn) == cudaSuccess && nn > 0) {
@@ -2909,6 +2910,7 @@ bool Verifier::capture(int T, std::string& err) {
             }
         }
     }
+#endif
 #if defined(STRATA_USE_HIP)   // 143-amdk: the same listing on HIP (kernel names by hipKernelNameRefByPtr); STRATA_VERIFY_NODES=2 also lists the first nodes in graph order
     if (std::getenv("STRATA_VERIFY_NODES") != nullptr) {
         size_t nn = 0;
@@ -3551,7 +3553,9 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         set_plan_slot(grp);
         const int tb = gtb[grp], n = gte[grp] - gtb[grp];
         progress_at("verify window: the CPU experts of layer", l);
-        if (remote_opt_) remote_opt_->begin(h_w_ + (size_t) tb * ss.k, tb, n);
+        // #233: not on a latent pack - its helpers return q8_1 hq rows scattered by the host, and the
+        // opt's accumulate-only finish would swallow them (the window then read another pass's rows)
+        if (remote_opt_ && !latent_) remote_opt_->begin(h_w_ + (size_t) tb * ss.k, tb, n);
         if (pool != nullptr) {
             strata::core::latent_xl_current() = h_latxlq_;
             strata::core::latent_xlseq_current() = h_xlseq_;
@@ -4785,7 +4789,7 @@ bool Verifier::run_slot_rows(const int* rows, int S, const int32_t* tokens, cons
         progress_at("verify batch: the CPU experts of layer", l);
         // The recorded graph consumes the helper mask and weighted sum just as
         // the solo graph does. Reset both and supply this layer's routing weights.
-        if (remote_opt_) remote_opt_->begin(h_w_, 0, S);
+        if (remote_opt_ && !latent_) remote_opt_->begin(h_w_, 0, S);
         strata::core::latent_xl_current() = h_latxlq_;
         strata::core::latent_xlseq_current() = h_xlseq_;
         strata::core::latent_act0_current() = m_latact0_;
@@ -4938,7 +4942,7 @@ int Verifier::batch_serve(PoolMultiFn pool, void* user) {
         const Clock::time_point b = Clock::now();
         cur_layer_ = want - 1;
         set_plan_slot(0);
-        if (remote_opt_) remote_opt_->begin(h_w_, 0, S);
+        if (remote_opt_ && !latent_) remote_opt_->begin(h_w_, 0, S);
         if (pool != nullptr) {
             strata::core::latent_xl_current() = h_latxlq_;
             strata::core::latent_xlseq_current() = h_xlseq_;

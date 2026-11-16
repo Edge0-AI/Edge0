@@ -55,7 +55,8 @@ CpuThreads default_cpu_threads(unsigned logical_cpus, bool android, bool windows
         const int physical = std::max(1, logical / 2);
         return {std::max(1, physical - 2), std::min(logical, physical + 2)};
     }
-    return {4, 4};
+    const int count = static_cast<int>(std::max(1u, std::min(logical_cpus, 4u)));
+    return {count, count};
 }
 CpuThreads default_cpu_threads() {
 #if defined(__ANDROID__)

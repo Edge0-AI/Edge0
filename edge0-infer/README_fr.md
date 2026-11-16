@@ -5,7 +5,7 @@
 `edge0-infer` exécute des modèles de langage à mélange d'experts (MoE) sur votre propre matériel : une CLI, un serveur local compatible OpenAI et Anthropic et des applications de discussion, avec les mêmes commandes pour tous les modèles. Chaque modèle s'exécute sur le moteur conçu pour lui, et `edge0-infer` choisit le moteur d'après le dossier du modèle ; il n'y a rien à choisir :
 
 - **Edge0 35B** (Qwen3.6-35B-A3B avec un LoRA et un pre-router entraîné) s'exécute sur le **moteur natif** de ce répertoire, construit sur [GGML](https://github.com/ggml-org/ggml) et doté d'une API C++ native, sous macOS, iOS, Android, Linux et Windows. Les poids des experts sont chargés depuis le stockage à la demande dans un ensemble fixe d'emplacements, si bien qu'un modèle plus grand que le budget mémoire de l'appareil s'exécute sans charger tous ses poids. Sur un Mac Apple M5, il décode à environ 25 tokens par seconde, avec un pic d'empreinte physique d'environ 3,4 Gio ; les chiffres de chaque plateforme se trouvent dans [Benchmarking](docs/benchmarking.md#reference-figures).
-- **Edge0 145B** et **Edge0 120B** s'exécutent sur **edge0-strata**, un fork de [Strata](https://github.com/Niko1221/Strata) dans `edge0-strata/` du dépôt Edge0, sur un GPU NVIDIA sous Linux ou Windows ; voir [Edge0 145B](docs/edge0-145b.md) et [Edge0 120B](docs/edge0-120b.md).
+- **Edge0 145B** et **Edge0 120B** s'exécutent sur **edge0-strata**, un fork de [Strata](https://github.com/Niko1221/Strata) dans `edge0-strata/` du dépôt Edge0, sur un GPU NVIDIA sous Linux ou Windows, et sur Apple Silicon avec Metal sous macOS ; voir [Edge0 145B](docs/edge0-145b.md) et [Edge0 120B](docs/edge0-120b.md).
 
 > Cette page est une traduction du [README](README.md) en anglais ; les documents liés sont en anglais.
 
@@ -13,7 +13,7 @@
 
 | Plateforme | Edge0 35B (moteur natif) | Edge0 145B, Edge0 120B (edge0-strata) |
 | --- | --- | --- |
-| macOS (Apple silicon) | Metal, CPU | — |
+| macOS (Apple silicon) | Metal, CPU | Metal |
 | iOS | Metal | — |
 | Android | CPU | — |
 | Linux | CPU | GPU NVIDIA (CUDA 13) |

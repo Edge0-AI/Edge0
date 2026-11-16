@@ -2583,7 +2583,7 @@ if(STRATA_NATIVE_EXPERTS)
     add_executable(nvfp4_decode_bench src/kernels/nvfp4_decode_bench.cpp)
     target_link_libraries(nvfp4_decode_bench PRIVATE strata_kernels CUDA::cudart)
 
-    target_sources(strata_engine PRIVATE src/core/latent_dense.cpp src/latent/latent_moe.cpp)
+    target_sources(strata_engine PRIVATE src/core/latent_dense.cpp src/core/latent_tables.cpp src/latent/latent_moe.cpp)
 
     # latent MoE layer0: D(Q8) -> A(native NVFP4) -> U(Q8) -> combine
     add_executable(latent_layer0_verify src/kernels/latent_layer0_verify.cpp)
@@ -2613,6 +2613,14 @@ if(STRATA_NATIVE_EXPERTS)
     add_executable(latent_u_check src/kernels/latent_u_check.cpp src/core/latent_dense.cpp)
     target_include_directories(latent_u_check PRIVATE ${CMAKE_SOURCE_DIR}/include)
     target_link_libraries(latent_u_check PRIVATE strata_engine strata_kernels CUDA::cudart)
+
+    add_executable(latent_tables_check src/kernels/latent_tables_check.cpp src/core/latent_tables.cpp src/core/latent_dense.cpp)
+    target_include_directories(latent_tables_check PRIVATE ${CMAKE_SOURCE_DIR}/include)
+    target_link_libraries(latent_tables_check PRIVATE strata_engine strata_kernels CUDA::cudart)
+
+    add_executable(latent_a_u_check src/kernels/latent_a_u_check.cpp src/latent/latent_moe.cpp src/core/latent_dense.cpp)
+    target_include_directories(latent_a_u_check PRIVATE ${CMAKE_SOURCE_DIR}/include)
+    target_link_libraries(latent_a_u_check PRIVATE strata_engine strata_kernels CUDA::cudart)
 
     add_executable(latent_cpu_verify src/kernels/latent_cpu_verify.cpp src/core/latent_dense.cpp)
     target_include_directories(latent_cpu_verify PRIVATE ${CMAKE_SOURCE_DIR}/include)

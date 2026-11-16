@@ -296,7 +296,7 @@ impl Manager {
         } else {
             Settings::default()
         };
-        // No executable chosen yet: use the edge0-infer that the release package puts beside this app.
+        // No executable chosen yet: use the edge0-infer that the release package ships with this app.
         if settings.executable.trim().is_empty() {
             if let Some(found) = std::env::current_exe()
                 .ok()
@@ -829,11 +829,21 @@ impl Drop for Manager {
         let _ = self.shutdown();
     }
 }
-/// The edge0-infer in `app_dir` (the directory of this app's own executable), as the release package lays
-/// them out side by side; None when it is not there (a development build, an app bundle).
+/// The edge0-infer that a release package ships with this app, given `app_dir`, the directory of this app's
+/// own executable: beside it (the Windows package), or in the bundle's `Contents/Resources` when the app runs
+/// from `Contents/MacOS` of a macOS app bundle. None when neither is there (a development build).
 pub(crate) fn bundled_executable(app_dir: &Path) -> Option<String> {
-    let path = app_dir.join(format!("edge0-infer{}", std::env::consts::EXE_SUFFIX));
-    path.is_file().then(|| path.to_string_lossy().into_owned())
+    let name = format!("edge0-infer{}", std::env::consts::EXE_SUFFIX);
+    let mut candidates = vec![app_dir.join(&name)];
+    if app_dir.file_name().is_some_and(|n| n == "MacOS") {
+        if let Some(contents) = app_dir.parent().filter(|c| c.file_name().is_some_and(|n| n == "Contents")) {
+            candidates.push(contents.join("Resources").join(&name));
+        }
+    }
+    candidates
+        .into_iter()
+        .find(|path| path.is_file())
+        .map(|path| path.to_string_lossy().into_owned())
 }
 
 #[cfg(test)]
@@ -862,6 +872,30 @@ mod tests {
             Some(exe.to_string_lossy().into_owned())
         );
         fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn finds_the_bundled_executable_in_the_app_bundle_resources() {
+        let root = directory();
+        let name = format!("edge0-infer{}", std::env::consts::EXE_SUFFIX);
+        let macos = root.join("Edge0 Chat.app").join("Contents").join("MacOS");
+        let resources = macos.parent().unwrap().join("Resources");
+        fs::create_dir_all(&macos).unwrap();
+        fs::create_dir_all(&resources).unwrap();
+        assert_eq!(bundled_executable(&macos), None);
+        let inside = resources.join(&name);
+        fs::write(&inside, b"").unwrap();
+        assert_eq!(bundled_executable(&macos), Some(inside.to_string_lossy().into_owned()));
+        // The one beside the executable comes first.
+        let beside = macos.join(&name);
+        fs::write(&beside, b"").unwrap();
+        assert_eq!(bundled_executable(&macos), Some(beside.to_string_lossy().into_owned()));
+        // Resources is only looked at from Contents/MacOS.
+        let other = root.join("bin");
+        fs::create_dir_all(&other).unwrap();
+        fs::create_dir_all(root.join("Resources")).unwrap();
+        fs::write(root.join("Resources").join(&name), b"").unwrap();
+        assert_eq!(bundled_executable(&other), None);
+        fs::remove_dir_all(root).unwrap();
     }
     #[test]
     fn memory_is_steady_only_after_a_full_window_within_tolerance() {

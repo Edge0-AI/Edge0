@@ -14,7 +14,7 @@
 
 <p align="center"><sub>Project</sub><br>
 <img src="assets/edge0-release/badge-group-divider.svg" alt="" width="540" height="16"><br>
-<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/windows-releases-badge.svg" alt="Windows / Download" height="18"></a>
+<a href="https://arxiv.org/abs/2609.18063"><img src="assets/edge0-release/badges/arxiv-badge.svg" alt="arXiv / 2609.18063" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0"><img src="assets/edge0-release/badges/github-badge.svg" alt="GitHub / Edge0-AI/Edge0" height="18"></a> <a href="https://edge0.ai/discord"><img src="assets/edge0-release/badges/discord-badge.svg" alt="Discord / Join us" height="18"></a> <a href="LICENSE"><img src="assets/edge0-release/badges/license-badge.svg" alt="License / Apache 2.0" height="18"></a> <a href="https://github.com/Edge0-AI/Edge0/releases"><img src="assets/edge0-release/badges/releases-badge.svg" alt="Windows · macOS / Download" height="18"></a>
 </p>
 
 <p align="center"><sub>Latest release</sub><br>
@@ -74,7 +74,7 @@
 
 Use it through the command line, a local API server, or the Edge0 Chat app.
 
-The latest release brings 145B and 120B latent-MoE models to a single NVIDIA GPU.
+The latest release brings 145B and 120B latent-MoE models to a single NVIDIA GPU or an Apple Silicon Mac.
 
 Trained natively at 4 bits, both models are available in Q3_K and NVFP4 for local agent workloads.
 
@@ -88,7 +88,7 @@ Support depends on the model and its engine.
 | --- | --- | --- |
 | **Linux** | NVIDIA GPU (CUDA 13) | CPU |
 | **Windows** | NVIDIA GPU (CUDA 13) | CPU, Vulkan |
-| **macOS** (Apple Silicon) | — | Metal, CPU |
+| **macOS** (Apple Silicon) | Metal | Metal, CPU |
 | **iOS** | — | Metal |
 | **Android** | — | CPU |
 
@@ -98,14 +98,14 @@ Use the [145B / 120B setup](#getting-started) for the latest release. The [previ
 
 <p>145B / 120B are the current latent-MoE series, derived from Qwen3.8-Flash-Next and trained natively at 4 bits.</p>
 
-They run on edge0-strata through `edge0-infer serve` and `edge0-infer chat`, on Linux or Windows with an NVIDIA GPU and CUDA 13.
+They run on edge0-strata through `edge0-infer serve` and `edge0-infer chat`, on Linux or Windows with an NVIDIA GPU and CUDA 13, or on macOS with Metal on Apple Silicon.
 
 **145B Q3_K · RTX 5090 D 24 GB:** 121.2 tok/s agent decode · 3554.9 tok/s 16K prefill.
 
 | Tier | Released checkpoint | Inference profile | Engine |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K or NVFP4 latent experts (1792), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K or NVFP4 latent experts (1280), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K or NVFP4 latent experts (1792), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU; macOS Apple Silicon, Metal, Q3_K) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K or NVFP4 latent experts (1280), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU; macOS Apple Silicon, Metal, Q3_K) |
 
 <details open>
 <summary><h3>Model overview · 145B Q3_K</h3></summary>
@@ -183,7 +183,7 @@ nothing counted twice.
 
 See [Usage & troubleshooting](#usage-help) for memory-saving options.
 
-The 16 GiB VRAM + 20 GiB RAM budget is a test limit, not a minimum system requirement. The Apple M2 Ultra row is a Metal measurement, not an announcement of macOS release availability.
+The 16 GiB VRAM + 20 GiB RAM budget is a test limit, not a minimum system requirement. The Apple M2 Ultra row is a Metal measurement.
 
 </details>
 
@@ -268,7 +268,7 @@ For 145B and 120B, use `serve` or `chat`; `run` belongs to the native engine.
 <details>
 <summary>Platform & documentation notes</summary>
 
-The build instructions target NVIDIA GPUs with CUDA 13 on Linux or Windows (x64 or ARM64). The Apple M2 Ultra measurements use Metal; they do not establish macOS release availability.
+The build instructions cover NVIDIA GPUs with CUDA 13 on Linux or Windows (x64 or ARM64), and Metal on Apple Silicon macOS.
 
 </details>
 
@@ -281,7 +281,7 @@ The build instructions target NVIDIA GPUs with CUDA 13 on Linux or Windows (x64 
 git clone https://github.com/Edge0-AI/Edge0.git edge0
 ```
 
-- **edge0-strata**, the engine: follow "Build (Linux, NVIDIA)" or "Build (Windows, NVIDIA)" in [edge0-strata/EDGE0.md](edge0-strata/EDGE0.md).
+- **edge0-strata**, the engine: follow "Build (Linux, NVIDIA)", "Build (Windows, NVIDIA)" or "Build (macOS, Apple Silicon)" in [edge0-strata/EDGE0.md](edge0-strata/EDGE0.md).
 - **edge0-infer**: follow "Build" (Linux) or "Windows" in [edge0-infer/docs/getting-started.md](edge0-infer/docs/getting-started.md).
 
 **2. Run from the command line.** Pass one model folder, such as `Edge0-145B-q3k`, not the folder that holds several of
@@ -304,11 +304,51 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
-<summary>Desktop app · Windows</summary>
+<summary>Two GPUs · a second card's expert tier</summary>
+
+A second NVIDIA card holds the experts that do not fit in the first one's VRAM, and decoding uses it
+for both expert formats. The cards need no NVLink or P2P.
+
+`edge0-infer` runs the engine on one card (its `--device` is one card), so for two cards start the
+engine with the config `serve/server.py --config` reads (it holds `exe`, `args`, `cwd`, `env`):
+
+- set `"gpu": [0, 1]` — the engine's device 0 is the first card, device 1 the second;
+- append to `"args"`: `"--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"`.
+
+```bash
+cd /path/to/Edge0-145B-q3k
+/path/to/edge0-strata/.venv/bin/python /path/to/edge0-strata/serve/server.py \
+  --engine strata --config ./model-two-gpus.json
+```
+
+The startup log prints the second card's tier (`peer GPU 1: … experts, … GiB`), and the server serves
+the same endpoints as on one card. `--peer-device` cannot be combined with `--layer-split` or
+`--expert-cache-device1..3`. More: [Two GPUs](edge0-strata/EDGE0.md#two-gpus-linux-nvidia).
+
+</details>
+
+<details>
+<summary>Desktop app · Windows · macOS</summary>
 
 ⬇️ **Download:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Open **Edge0 Chat** on Windows and choose a model folder, such as `Edge0-145B-q3k`, to run the model locally. To build the app from source, follow the [Edge0 Chat](edge0-infer/examples/desktop/README.md) guide.
+Open **Edge0 Chat** on Windows or macOS (Apple Silicon) and choose a model folder, such as `Edge0-145B-q3k`, to run the model locally. To build the app from source, follow the [Edge0 Chat](edge0-infer/examples/desktop/README.md) guide.
+
+</details>
+
+<details>
+<summary>Images · vision</summary>
+
+`mmproj-BF16.gguf` in the model folder is the vision encoder. Add this to the model's `model.json`, next to `args`:
+
+```json
+"vision": {"exe": "/path/to/strata-vision", "mmproj": "./mmproj-BF16.gguf",
+           "model": "./model-skeleton.gguf", "gpu": false}
+```
+
+and `--vision` to `"args"`. `strata-vision` is not in this repository: `setup.py --setup --vision yes` fetches it, or
+build `tools/vision` in a Strata checkout. The log then says `images on`; send a picture with `/image` in the chat, or an
+`image_url` part over the OpenAI API.
 
 </details>
 

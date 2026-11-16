@@ -210,8 +210,15 @@ struct Json {
             if (pos == digits) throw std::runtime_error("invalid exponent");
         }
         const auto number = text.substr(start, pos - start);
-        if (floating) return std::stod(number);
-        return std::stoll(number);
+        try {
+            if (floating) return std::stod(number);
+            return std::stoll(number);
+        } catch (const std::out_of_range&) {
+            // Unknown provider metadata is ignored, even when a valid JSON
+            // number exceeds our numeric types. Required/supported fields
+            // still reject this marker through their existing type checks.
+            return std::monostate{};
+        }
     }
     std::map<std::string, std::variant<std::string, std::int64_t, bool, double, std::monostate>> object(unsigned depth = 0) {
         need('{');

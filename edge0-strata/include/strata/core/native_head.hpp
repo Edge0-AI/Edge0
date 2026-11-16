@@ -51,7 +51,10 @@ public:
     ~NativeEmbed();
     NativeEmbed(const NativeEmbed&) = delete;
     NativeEmbed& operator=(const NativeEmbed&) = delete;
-    bool load(const std::vector<std::string>& shards, int64_t n_embd, int64_t n_vocab, std::string& err);
+    /// mapped_only: keep the table in mapped host memory (readable from every card). A layer split needs that: the
+    /// table is one singleton, loaded on the first card, and the draft layer on a later card gathers from it too.
+    bool load(const std::vector<std::string>& shards, int64_t n_embd, int64_t n_vocab, std::string& err,
+              bool mapped_only = false);
     /// Rows for device token ids.
     void gather_dev(const int32_t* tokens, int64_t n_tok, float* out, void* stream) const;
     /// One row for a host token id.
@@ -60,6 +63,9 @@ public:
     int type() const { return type_; }
     /// The table was placed in VRAM (STRATA_EMBED_VRAM=1, or the pinned / alias fallbacks) rather than mapped.
     bool in_vram() const { return dev_ != nullptr && host_ == nullptr; }
+    /// The VRAM placement's pointer (null when the table is mapped host memory): a reader on another card cannot
+    /// use it, and the table is a process-wide singleton placed on whichever card loaded it.
+    const void* vram_ptr() const { return dev_; }
 
 private:
     void* host_ = nullptr;

@@ -1,3 +1,7 @@
+# Metal build tree and the downloaded Apple metal-cpp headers.
+/build-metal/
+/third_party/metal-cpp*
+
 # Generated, not source: deterministic build products of tools/ (see docs/).
 # tiny-qwen4exp.gguf is ~113 MB, over GitHub's 100 MB file limit -- regenerate with
 #   python tools/make_tiny_model.py
