@@ -133,7 +133,7 @@ export function App() {
     catch (failure) { report(failure); }
     finally { deletingRef.current = false; setDeleting(false); }
   }
-  async function pick(directory: boolean) { const chosen = await invoke<string | null>('choose_path', { directory }); return chosen?.replace(/[\\/]$/, '') || undefined; }
+  async function pick(directory: boolean) { const chosen = await invoke<string | null>('choose_path', { directory }); return chosen || undefined; }
   async function addLocation() { try { const path = await pick(true); if (!path) return; const next = { ...settingsRef.current, assets: [...new Set([...settingsRef.current.assets, path])] }; await saveSettings(next); settingsRef.current = next; setSettings(next); await inspect(next); } catch (failure) { report(failure); } }
   async function removeLocation(path: string) { if (disabled || (service && assets.some(asset => asset.path === activePath && (asset.location ?? asset.path) === path))) return; try { const next = { ...settingsRef.current, assets: settingsRef.current.assets.filter(asset => asset !== path) }; await saveSettings(next); settingsRef.current = next; setSettings(next); setAssets(previous => previous.filter(asset => (asset.location ?? asset.path) !== path)); } catch (failure) { report(failure); } }
   async function healthCheck() { try { const info = parseInfo(await invoke<string>('engine_info', { executable: settingsRef.current.executable })); const assets = await inspect(); setHealth({ info, assets: assets.find(a => a.path === activePath) }); } catch (failure) { setHealth({ error: String(failure) }); } }
