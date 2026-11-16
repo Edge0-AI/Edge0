@@ -39,6 +39,20 @@ pub fn force(pid: u32) {
 pub fn commit_memory() -> Option<crate::service::CommitMemory> {
     None
 }
+/// Free bytes available to a non-root caller on the volume that holds `path`.
+pub fn volume_free(path: &Path) -> Option<u64> {
+    use std::os::unix::ffi::OsStrExt;
+    let mut bytes = path.as_os_str().as_bytes().to_vec();
+    if bytes.contains(&0) {
+        return None;
+    }
+    bytes.push(0);
+    let mut stat = unsafe { std::mem::zeroed::<libc::statvfs>() };
+    if unsafe { libc::statvfs(bytes.as_ptr().cast(), &mut stat) } != 0 {
+        return None;
+    }
+    Some((stat.f_bavail as u64).saturating_mul(stat.f_frsize as u64))
+}
 
 // AppKit panels must run on the application's main thread. The command routes
 // this call through AppHandle::run_on_main_thread and waits off the UI thread.

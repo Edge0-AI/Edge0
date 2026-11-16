@@ -103,6 +103,7 @@ int main() {
     // inspect --json
     const auto report = inspect_json(*detect(model), model);
     CHECK(report["adapter"] == "edge0_145b" && report["ok"] == true && report["delegated"] == true);
+    CHECK(report["model_name"] == "edge0-145b-q3k");
     CHECK(report["files"].size() == registration.files.size());
     for (const auto& file : report["files"]) {
         CHECK(file["exists"] == true);
@@ -247,6 +248,14 @@ int main() {
     }
 
     // The release templates: every model/format resolves all model files and D/U choices.
+    {
+        const char* expected[] = {"edge0-145b-q3k", "edge0-145b-fp4", "edge0-120b-q3k", "edge0-120b-fp4"};
+        int covered = 0;
+        for (const char* name : expected)
+            for (const auto& entry : registry())
+                if (entry.names.find(name) != entry.names.end()) ++covered;
+        CHECK(covered == 4);
+    }
     CHECK(registry()[1].id == "edge0_120b");
     CHECK(registry()[1].config_template == "edge0/models/edge0-120b.json");
     const auto release_template = Json::parse(R"({
@@ -273,6 +282,7 @@ int main() {
             match = detect(model);
             CHECK(match && match->registration == &entry && match->experts == named.second && match->complete());
             const auto inspected = inspect_json(*match, model);
+            CHECK(inspected["model_name"] == named.first);
             CHECK(inspected["files"].size() == entry.files.size() - (named.second == "fp4" ? 1 : 0));
             for (const auto& f : inspected["files"])
                 if (named.second == "fp4") CHECK(f["filename"] != "scales/");

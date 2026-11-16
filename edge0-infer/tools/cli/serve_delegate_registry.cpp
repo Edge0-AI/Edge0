@@ -181,6 +181,7 @@ Json inspect_json(const Match& match, const fs::path& directory, const std::map<
                          {"exists", state.exists},
                          {"bytes", state.bytes}});
     return {{"adapter", match.registration->id},
+            {"model_name", match.model_name},
             {"delegated", true},
             {"engine", match.registration->engine},
             {"directory", directory.string()},

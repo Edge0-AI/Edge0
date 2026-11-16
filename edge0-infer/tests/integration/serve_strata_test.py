@@ -838,19 +838,22 @@ def model_formats(cli, root):
 def inspect_defaults(cli, root):
     import shutil
     mac = sys.platform == 'darwin'
-    keys = {'adapter', 'delegated', 'engine', 'directory', 'ok', 'files'}
+    keys = {'adapter', 'delegated', 'engine', 'directory', 'ok', 'files', 'model_name'}
     file_keys = {'filename', 'required', 'exists', 'bytes'}
     for identifier, default_du, other_du in (('edge0_145b', 'q8', 'q4'), ('edge0_120b', 'q4', 'q8')):
         if mac:
             default_du, other_du = 'q4', 'q8'
-        model = make_model(root / ('inspect-' + identifier), model_name=identifier.replace('_', '-') + '-q3k')
+        model_name = identifier.replace('_', '-') + '-q3k'
+        model = make_model(root / ('inspect-' + identifier), model_name=model_name)
         base = [str(cli), 'inspect', '--model', str(model), '--json']
 
-        def inspect(extra, ok):
+        def inspect(extra, ok, model=model, model_name=model_name):
             result = subprocess.run([*base, *extra], capture_output=True, text=True)
             report = json.loads(result.stdout)
+            written = json.loads((model / 'model.json').read_text())['model_name']
             assert result.returncode == (0 if ok else 1) and report['ok'] == ok, (result.returncode, report)
             assert set(report) == keys
+            assert report['model_name'] == written == model_name
             assert report['adapter'] == identifier and report['delegated'] is True
             assert all(set(f) == file_keys and isinstance(f['bytes'], int) for f in report['files'])
             return result, report
@@ -879,7 +882,7 @@ def inspect_defaults(cli, root):
         shutil.rmtree(model / 'tokenizer')
         result, _ = inspect([], False)
         assert 'tokenizer/' in result.stderr and '--model-option' not in result.stderr
-    print('PASS inspect defaults: per-model D/U, only complete alternatives, unchanged App JSON schema')
+    print('PASS inspect defaults: per-model D/U, only complete alternatives, App JSON schema plus model_name')
 
 
 def platform_launch(cli, root):

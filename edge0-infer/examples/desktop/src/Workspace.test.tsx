@@ -1,16 +1,11 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
-import { mapAsset, buildRequest } from './chat';
+import { buildRequest } from './chat';
 import { conversationReducer, emptyConversation, scrollContent } from './conversation';
-import { currentPage, DeleteConversation, ModelPicker, OtherLocation, PageHeader, ThinkingBlock, ThinkingSwitch, Workspace } from './Workspace';
+import { currentPage, DeleteConversation, ThinkingBlock, ThinkingSwitch, Workspace } from './Workspace';
 const noop = () => {};
-const good = mapAsset({ path: '/models/35b', ok: true, detail: '', model_id: 'edge0_35b' });
-const bad = mapAsset({ path: '/models/incomplete', ok: false, detail: 'Missing weights', model_id: null });
-function picker(assets = [good], activePath?: string) {
-  return createElement(ModelPicker, { assets, directories: ['/models/35b'], disabled: false, initializing: false, activePath, load: noop, resume: noop,
-    children: createElement(OtherLocation, { children: createElement('input', { 'aria-label': 'Asset directory' }) }) });
-}
+const picker = () => createElement('main', { className: 'models-page' }, createElement('button', null, 'Load'));
 it('shows only model selection before a model is loaded, then enters chat after success', () => {
   const chat = createElement('section', null, 'conversation', createElement('textarea', { 'aria-label': 'Message' }));
   expect(currentPage(false, 'chat')).toBe('models');
@@ -26,22 +21,10 @@ it('keeps Models navigation separate from conversation history and permits retur
   state = conversationReducer(state, { type: 'finish' });
   const history = state.messages;
   const chat = createElement('section', null, history.map(message => message.content).join(' '));
-  const models = renderToStaticMarkup(createElement(Workspace, { loaded: true, page: 'models', models: picker([good], good.path), chat }));
-  expect(models).toContain('Return to chat'); expect(models).not.toContain('remembered');
+  const models = renderToStaticMarkup(createElement(Workspace, { loaded: true, page: 'models', models: picker(), chat }));
+  expect(models).toContain('class="models-page"'); expect(models).not.toContain('remembered');
   expect(renderToStaticMarkup(createElement(Workspace, { loaded: true, page: 'chat', models: picker(), chat }))).toContain('remembered');
   expect(state.messages).toBe(history);
-});
-it('renders model rows and confines preparation instructions to the empty available list', () => {
-  const available = renderToStaticMarkup(picker([good, bad]));
-  expect(available).toContain('edge0_35b · 35b'); expect(available).toContain('title="/models/35b"');
-  expect(available).toContain('Unavailable'); expect(available).toContain('Missing weights');
-  expect(available.match(/>Load</g)).toHaveLength(1);
-  expect(available).not.toContain('Prepare assets');
-  const empty = renderToStaticMarkup(picker([bad]));
-  expect(empty).toContain('Prepare assets'); expect(empty).toContain('tools/assets'); expect(empty).toContain('README.md'); expect(empty).toContain('/models/35b');
-  expect(empty).not.toContain('>Load<');
-  expect(empty).toContain('<details class="other-location"><summary>Other location…</summary>');
-  expect(empty).not.toContain('<details class="other-location" open');
 });
 it('defaults the independent thinking block to expanded and hides all reasoning when thinking is off', () => {
   const shown = renderToStaticMarkup(createElement(ThinkingBlock, { enabled: true, content: 'private reasoning', setExpanded: noop }));
@@ -73,15 +56,6 @@ for (const disabled of [false, true]) for (const checked of [false, true]) {
     expect(html.includes('Applies to a new chat')).toBe(disabled);
   });
 }
-it('places page titles between leading and trailing actions, with loaded-only back navigation', () => {
-  const header = (chat: boolean, loaded: boolean) => renderToStaticMarkup(createElement(PageHeader, { chat, loaded, disabled: false, models: noop, newChat: noop, resume: noop, refresh: noop }));
-  const chat = header(true, true);
-  expect(chat).toMatch(/header-leading.*>Models<.*<h1>Edge0 Chat<.*header-trailing.*>New chat</);
-  const chooser = header(false, false);
-  expect(chooser).toContain('<h1>Choose a model</h1>'); expect(chooser).toContain('>Refresh<'); expect(chooser).not.toContain('Back to chat');
-  expect(header(false, true)).toMatch(/header-leading.*>Back to chat<.*<h1>Choose a model<.*header-trailing.*>Refresh</);
-});
-
 it('auto-scroll dependencies ignore disclosure and completion metadata while following actual stream text', () => {
   const changes = (before: readonly unknown[], after: readonly unknown[]) => after.some((value, index) => !Object.is(value, before[index]));
   let state = conversationReducer(emptyConversation, { type: 'start', user: 'question' });

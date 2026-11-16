@@ -3,6 +3,7 @@ use std::{
     path::PathBuf,
     process::{Child, Command},
 };
+use windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
 use windows_sys::Win32::{
     Foundation::{CloseHandle, HANDLE},
     System::{
@@ -113,6 +114,25 @@ pub fn force(pid: u32) {
             CloseHandle(handle);
         }
     }
+}
+/// Free bytes available to this user on the volume that holds `path`.
+pub fn volume_free(path: &std::path::Path) -> Option<u64> {
+    use std::os::windows::ffi::OsStrExt;
+    let wide: Vec<u16> = path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    let mut free = 0_u64;
+    let ok = unsafe {
+        GetDiskFreeSpaceExW(
+            wide.as_ptr(),
+            &mut free,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        )
+    };
+    (ok != 0).then_some(free)
 }
 /// The system commit limit (RAM visible to Windows plus the page file) and how much of it is still free.  An
 /// allocation past the limit fails even when RAM looks free, and a GPU that shares system memory charges its VRAM to it.
