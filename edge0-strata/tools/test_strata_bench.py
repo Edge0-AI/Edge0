@@ -30,6 +30,7 @@ class FakeStrata(ThreadingHTTPServer):
     def __init__(self, ctx=32768, fail_after=None):
         super().__init__(("127.0.0.1", 0), Handler)
         self.ctx, self.prev, self.requests, self.fail_after = ctx, "", 0, fail_after
+        self.tool_calls = False          # answer a request that offers tools with a tool call only, as the engine streams it
         self.lock = threading.Lock()
         threading.Thread(target=self.serve_forever, daemon=True).start()
 
@@ -99,9 +100,16 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(b"data: " + json.dumps(d).encode() + b"\n\n")
             self.wfile.flush()
         chunk({"role": "assistant"})
-        for _ in range(gen):
-            chunk({"content": "word "})
-        chunk({}, "stop", usage={"prompt_tokens": prompt, "completion_tokens": gen, "total_tokens": prompt + gen,
+        calls = s.tool_calls and bool(req.get("tools"))
+        if calls:                        # no content and no reasoning: only tool_calls deltas, finish_reason tool_calls
+            chunk({"tool_calls": [{"index": 0, "id": "call_0", "type": "function",
+                                   "function": {"name": "read_file", "arguments": ""}}]})
+            for _ in range(gen - 1):
+                chunk({"tool_calls": [{"index": 0, "function": {"arguments": "x"}}]})
+        else:
+            for _ in range(gen):
+                chunk({"content": "word "})
+        chunk({}, "tool_calls" if calls else "stop", usage={"prompt_tokens": prompt, "completion_tokens": gen, "total_tokens": prompt + gen,
                                  "prompt_tokens_details": {"cached_tokens": cached}},
               timings={"cache_n": cached, "prompt_n": prompt - cached, "prompt_ms": 100.0,
                        "prompt_per_second": 1000.0 + n, "predicted_n": gen, "predicted_ms": 200.0, "predicted_per_second": 60.0})
@@ -157,6 +165,16 @@ class SuiteTests(unittest.TestCase):
         out = self.suite(ctx=16384, runs=1).run()
         self.assertNotIn("agent", out["skipped"])
         self.assertTrue(out["agent"]["sessions"])
+
+    def test_a_tool_call_answer_counts_as_an_answer(self):
+        # The agent session offers four tools; a turn the model answers with a tool call alone streams only tool_calls
+        # deltas.  That is an answer with a first token, not "no token came back".
+        self.srv.tool_calls = True
+        out = self.suite(runs=1).run()
+        self.assertEqual(out["failures"], [])
+        turns = out["agent"]["sessions"][0]
+        self.assertEqual(len(turns), B.AGENT_TURNS + 1)
+        self.assertTrue(all(t["ok"] and t["ttft_s"] is not None for t in turns))
 
     def test_failures_are_reported_not_hidden(self):
         self.srv.fail_after = 3                  # warm-up and calibration succeed, then every request fails
