@@ -16,6 +16,7 @@ export function Chat({ conversation, phase, loaded, model, device = 'cpu', capac
   const usage = contextUsage({ input_tokens: latest?.input_tokens, generated_tokens: latest?.generated_count, context_length: capacity });
   const list = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState<number>(), [text, setText] = useState('');
+  useEffect(() => { setEditing(undefined); setText(''); }, [conversation.id]);
   const last = messages.at(-1);
   useEffect(() => { list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' }); }, [messages.length, last?.content, last?.reasoning_content]);
   const renderMessage = (message: Message, index: number) => message.role === 'user' ? <div className="msg-user" key={index}><div className="msg-user-body">
