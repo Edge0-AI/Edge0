@@ -159,7 +159,8 @@ std::string number(const std::string& text) {
         check.imbue(std::locale::classic());
         double roundtrip=0;
         check>>roundtrip;
-        if(roundtrip==d) break;
+        // Reject saturated overflow, but keep valid subnormal underflow.
+        if(roundtrip==d && !(check.fail() && std::abs(roundtrip)==std::numeric_limits<double>::max())) break;
     }
     const auto e=s.find('e');
     const int exponent=std::stoi(s.substr(e+1));
