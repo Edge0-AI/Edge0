@@ -122,10 +122,12 @@ export class SseAccumulator {
   message: Message = { role: 'assistant', content: '', reasoning_content: '' };
   done = false;
   push(chunk: string, final = false) {
+    if (this.done) return;
     this.buffer = (this.buffer + chunk).replace(/\r\n/g, '\n');
     let index: number;
     while ((index = this.buffer.indexOf('\n\n')) >= 0) {
       this.event(this.buffer.slice(0, index)); this.buffer = this.buffer.slice(index + 2);
+      if (this.done) { this.buffer = ''; return; }
     }
     if (final && this.buffer.trim()) { this.event(this.buffer); this.buffer = ''; }
   }
@@ -199,7 +201,7 @@ export async function streamChat(fetcher: Fetcher, url: string, request: ReturnT
       const { value, done } = await reader.read();
       accumulator.push(decoder.decode(value, { stream: !done }), done);
       update({ ...accumulator.message });
-      if (done) break;
+      if (done || accumulator.done) break;
     }
     if (!accumulator.done) throw new Error('The service connection closed before completion');
   } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
