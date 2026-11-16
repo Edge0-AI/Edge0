@@ -62,6 +62,52 @@ def test_rejects_malformed_model_description(asset, description):
     assert check(asset)['issues'][0]['category'] == 'invalid_manifest'
 
 
+@pytest.mark.parametrize('version', [True, 1.0])
+def test_format_version_requires_a_json_integer(asset, version):
+    write_json(asset / 'model.json', {'format_version': version, 'architecture': 'edge0_35b'})
+    write_catalog(asset, edge0_check.ROLES)
+    report = check(asset)
+    assert report['status'] == 'failed'
+    assert report['issues'][0]['category'] == 'invalid_manifest'
+
+
+@pytest.mark.parametrize('case', ['extra', 'empty_extra', 'blank', 'quoted_role',
+                                'plus_bytes', 'spaced_bytes', 'underscored_bytes', 'unicode_bytes'])
+def test_rejects_catalog_spelling_the_native_loader_cannot_read(asset, case):
+    path = asset / 'assets.tsv'
+    lines = path.read_text().splitlines()
+    fields = lines[1].split('\t')
+    if case == 'extra':
+        fields.append('ignored')
+    elif case == 'empty_extra':
+        fields.append('')
+    elif case == 'blank':
+        lines.append('')
+    elif case == 'quoted_role':
+        fields[0] = '"' + fields[0] + '"'
+    elif case == 'plus_bytes':
+        fields[1] = '+' + fields[1]
+    elif case == 'spaced_bytes':
+        fields[1] = ' ' + fields[1] + ' '
+    elif case == 'underscored_bytes':
+        fields[1] = '_'.join(fields[1])
+    else:
+        fields[1] = fields[1].translate(str.maketrans('0123456789', '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'))
+    lines[1] = '\t'.join(fields)
+    path.write_text('\n'.join(lines) + '\n')
+    assert check(asset)['status'] == 'failed'
+
+
+def test_catalog_keeps_valid_decimal_leading_zeros(asset):
+    path = asset / 'assets.tsv'
+    lines = path.read_text().splitlines()
+    fields = lines[1].split('\t')
+    fields[1] = '000' + fields[1]
+    lines[1] = '\t'.join(fields)
+    path.write_text('\n'.join(lines) + '\n')
+    assert check(asset)['status'] == 'passed'
+
+
 def test_model_description_with_extra_fields_fails_model_check(asset):
     write_json(asset / 'model.json', {'format_version': 1, 'architecture': 'edge0_35b', 'extra': 1})
     write_catalog(asset)

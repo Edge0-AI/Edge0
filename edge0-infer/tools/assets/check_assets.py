@@ -39,12 +39,15 @@ def catalog(root: Path) -> dict:
     if not (root / 'assets.tsv').is_file():
         fail('missing_manifest', 'assets.tsv')
     with (root / 'assets.tsv').open(newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        if reader.fieldnames != CATALOG_COLUMNS:
+        reader = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
+        if next(reader, None) != CATALOG_COLUMNS:
             fail('invalid_manifest', 'invalid catalog columns')
         rows = list(reader)
     result, names = {}, set()
-    for row in rows:
+    for columns in rows:
+        if len(columns) != len(CATALOG_COLUMNS):
+            fail('invalid_manifest', 'expected four catalog columns')
+        row = dict(zip(CATALOG_COLUMNS, columns))
         role, name = row['role'], row['filename']
         if not role or role in result or not name or name in names or Path(name).name != name or name == 'assets.tsv':
             fail('invalid_manifest', f'invalid or duplicate catalog entry: {role}')
@@ -57,10 +60,9 @@ def catalog(root: Path) -> dict:
         path = root / row['filename']
         if not path.is_file() or path.is_symlink():
             fail('missing_file', row['filename'])
-        try:
-            size = int(row['bytes'])
-        except (ValueError, TypeError):
+        if not row['bytes'].isascii() or not row['bytes'].isdecimal():
             fail('invalid_manifest', row['filename'])
+        size = int(row['bytes'])
         if size != path.stat().st_size:
             fail('size_mismatch', row['filename'])
         if row['sha256'] != sha256(path):
@@ -73,7 +75,8 @@ def model_description(root: Path) -> dict:
     if not path.is_file():
         fail('missing_file', 'model.json')
     value = read_json(path)
-    if not isinstance(value, dict) or value.get('format_version') != 1 or not isinstance(value.get('architecture'), str):
+    if (not isinstance(value, dict) or type(value.get('format_version')) is not int
+            or value['format_version'] != 1 or not isinstance(value.get('architecture'), str)):
         fail('invalid_manifest', 'model.json needs format_version 1 and an architecture string')
     return value
 
