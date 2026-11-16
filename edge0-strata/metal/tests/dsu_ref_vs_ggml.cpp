@@ -1,4 +1,4 @@
-// metal/tests/dsu_ref_vs_ggml.cpp - ref_quant.cpp's IQ1_S / IQ1_M / Q6_K dequantizers against ggml's own to_float (the pinned llama.cpp
+// metal/tests/dsu_ref_vs_ggml.cpp - ref_quant.cpp's IQ1_S / IQ1_M / Q6_K / IQ2_XXS / NVFP4 dequantizers against ggml's own to_float (the pinned llama.cpp
 // tree the engine build links), bit for bit.  Built only with the engine (needs ggml-base).
 #include "ref_quant.h"
 
@@ -10,7 +10,7 @@
 
 int main() {
     int fails = 0;
-    for (int ty : {ref::IQ1_S, ref::IQ1_M, ref::Q6_K, ref::IQ2_XXS}) {
+    for (int ty : {ref::IQ1_S, ref::IQ1_M, ref::Q6_K, ref::IQ2_XXS, ref::NVFP4}) {
         const int n = 64, k = 2048;
         std::vector<uint8_t> w(ref::row_bytes(ty, k) * n);
         ref::random_blocks(ty, w.data(), n, k, 21 + ty, 0.05f);

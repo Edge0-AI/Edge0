@@ -252,6 +252,15 @@ Requirements: an Apple Silicon Mac, the Xcode Command Line Tools, CMake 3.24 or 
    ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
    ```
 
+   The decode windows' latent kernels have their own check (`cmake --build build-metal --target
+   latent_routed_parity`). It takes `--experts q3k|fp4`, `--du q4|q8`, `--latent1792` and `--ntok 1..8`,
+   and prints `PASS` for each of the three window tilings:
+
+   ```
+   ./build-metal/latent_routed_parity --experts q3k --du q4 --latent1792
+   ./build-metal/latent_routed_parity --experts fp4 --du q8 --latent1792
+   ```
+
 `edge0-infer` on macOS starts `build-metal/strata` through `.venv/bin/python` and `serve/server.py`.
 The device is `metal`, which is also the default, and the only accepted value.
 
