@@ -2,17 +2,18 @@
 #include "model/json.h"
 #include <set>
 #include <stdexcept>
+#include <string_view>
 
 namespace edge0::models::edge0_35b {
 namespace {
 using model::ParsedKind;
 using model::ParsedOutput;
 using model::ParsedReceiver;
-std::size_t character_size(const std::string& text) {
+std::size_t character_size(std::string_view text) {
     const auto c=static_cast<unsigned char>(text.front());
     return c<128?1:c<224?2:c<240?3:4;
 }
-bool whitespace(const std::string& text) {
+bool whitespace(std::string_view text) {
     unsigned cp=static_cast<unsigned char>(text.front());
     const auto size=character_size(text);
     if(size>1) {
@@ -23,7 +24,7 @@ bool whitespace(const std::string& text) {
         cp==0x1680||(cp>=0x2000&&cp<=0x200a)||cp==0x2028||cp==0x2029||
         cp==0x202f||cp==0x205f||cp==0x3000;
 }
-std::string trim(const std::string& text) {
+std::string trim(std::string_view text) {
     std::size_t first=text.size(), last=0;
     for(std::size_t i=0;i<text.size();) {
         const auto suffix=text.substr(i);
@@ -31,7 +32,7 @@ std::string trim(const std::string& text) {
         if(!whitespace(suffix)) {if(first==text.size()) first=i;last=i+n;}
         i+=n;
     }
-    return first==text.size()?std::string{}:text.substr(first,last-first);
+    return first==text.size()?std::string{}:std::string(text.substr(first,last-first));
 }
 class Parser final : public model::OutputParser {
     enum class State { reasoning, answer, function, parameter, value, closed, broken };
@@ -39,7 +40,8 @@ class Parser final : public model::OutputParser {
     bool tools_, leading_, classification_, string_value_=false, stopped_=false;
     std::string buffer_, spaces_, raw_, arguments_, value_;
     ToolCall call_;
-    std::size_t index_=0;
+    std::size_t index_=0,offset_=0;
+    std::string_view pending() const {return std::string_view(buffer_).substr(offset_);}
     std::set<std::string> keys_;
     std::vector<model::Json> definitions_;
     static constexpr const char* end_call="</tool_call>";
@@ -50,14 +52,15 @@ class Parser final : public model::OutputParser {
         return true;
     }
     std::string consume(std::size_t n,bool in_call=true) {
-        auto text=buffer_.substr(0,n);buffer_.erase(0,n);
+        auto text=buffer_.substr(offset_,n);offset_+=text.size();
         if(in_call) raw_+=text;
         return text;
     }
     bool prefix(const std::string& marker) const {
-        return buffer_.size()<marker.size() && marker.compare(0,buffer_.size(),buffer_)==0;
+        const auto text=pending();
+        return text.size()<marker.size() && marker.compare(0,text.size(),text)==0;
     }
-    bool starts(const std::string& marker) const {return buffer_.compare(0,marker.size(),marker)==0;}
+    bool starts(const std::string& marker) const {return buffer_.compare(offset_,marker.size(),marker)==0;}
     bool argument(const std::string& text,const ParsedReceiver& receive) {
         arguments_+=text;return emit(ParsedKind::tool_call_arguments,text,receive);
     }
@@ -81,7 +84,7 @@ class Parser final : public model::OutputParser {
         ++index_;state_=State::answer;leading_=true;spaces_.clear();return true;
     }
     bool process(const ParsedReceiver& receive,bool final) {
-        while(!buffer_.empty() && !stopped_) {
+        while(!pending().empty() && !stopped_) {
             const bool plain=state_==State::answer || state_==State::reasoning;
             if(plain) {
                 if(state_==State::reasoning && starts("</think>")) {
@@ -93,7 +96,7 @@ class Parser final : public model::OutputParser {
                 }
                 if(!final && ((state_==State::reasoning && prefix("</think>")) ||
                               (tools_ && prefix("<tool_call>")))) break;
-                const auto n=character_size(buffer_);
+                const auto n=character_size(pending());
                 auto text=consume(n,false);
                 if(whitespace(text)) {
                     if(!leading_) spaces_+=text;
@@ -110,7 +113,7 @@ class Parser final : public model::OutputParser {
                 continue;
             }
             if(!final && prefix(end_call)) break;
-            if(state_==State::broken) {consume(character_size(buffer_));continue;}
+            if(state_==State::broken) {consume(character_size(pending()));continue;}
             if(state_==State::value) {
                 const std::string delimiter="\n</parameter>";
                 if(starts(delimiter)) {
@@ -125,14 +128,14 @@ class Parser final : public model::OutputParser {
                     state_=State::parameter;continue;
                 }
                 if(!final && prefix(delimiter)) break;
-                auto text=consume(character_size(buffer_));
+                auto text=consume(character_size(pending()));
                 if(string_value_) {
                     auto quoted=model::json_quote(text);
                     if(!argument(quoted.substr(1,quoted.size()-2),receive)) return false;
                 } else value_+=text;
                 continue;
             }
-            if(whitespace(buffer_)) {consume(character_size(buffer_));continue;}
+            if(whitespace(pending())) {consume(character_size(pending()));continue;}
             if(state_==State::closed) {state_=State::broken;continue;}
             const std::string open=state_==State::function?"<function=":"<parameter=";
             if(state_==State::parameter && starts("</function>")) {
@@ -142,16 +145,17 @@ class Parser final : public model::OutputParser {
             }
             if(!final && (prefix(open) || (state_==State::parameter && prefix("</function>")))) break;
             if(!starts(open)) {state_=State::broken;continue;}
-            const auto close=buffer_.find('>',open.size());
+            const auto text=pending();
+            const auto close=text.find('>',open.size());
             if(close==std::string::npos) {if(!final) break;state_=State::broken;continue;}
-            auto name=trim(buffer_.substr(open.size(),close-open.size()));
+            auto name=trim(text.substr(open.size(),close-open.size()));
             if(name.empty()) {state_=State::broken;continue;}
             if(state_==State::function) {
                 consume(close+1);call_.name=name;state_=State::parameter;
                 if(!emit(ParsedKind::tool_call_begin,"",receive)) return false;
             } else {
-                if(buffer_.size()==close+1 && !final) break;
-                if(buffer_.size()==close+1 || buffer_[close+1]!='\n' || keys_.count(name)) {
+                if(text.size()==close+1 && !final) break;
+                if(text.size()==close+1 || text[close+1]!='\n' || keys_.count(name)) {
                     state_=State::broken;continue;
                 }
                 consume(close+2);
@@ -181,15 +185,16 @@ public:
     bool feed(const std::string& text,const ParsedReceiver& receive) override {
         if(stopped_) return false;
         // Preserve the pre-classification delivery granularity on the legacy path.
-        if(!tools_ && state_==State::answer && !leading_ && buffer_.empty() && spaces_.empty())
+        if(!tools_ && state_==State::answer && !leading_ && pending().empty() && spaces_.empty())
             return text.empty() || emit(ParsedKind::answer,text,receive);
+        buffer_.erase(0,offset_);offset_=0;
         buffer_+=text;return process(receive,false);
     }
     bool finish(const ParsedReceiver& receive) override {
         if(stopped_) return false;
         if(!process(receive,true)) return false;
         if(state_!=State::answer && state_!=State::reasoning) {
-            raw_+=buffer_;buffer_.clear();
+            raw_+=pending();buffer_.clear();offset_=0;
             return emit(ParsedKind::tool_call_rejected,raw_,receive,"incomplete");
         }
         if(state_==State::answer && !spaces_.empty()) {
