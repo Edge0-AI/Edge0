@@ -242,12 +242,14 @@ Requirements: an Apple Silicon Mac, the Xcode Command Line Tools, CMake 3.24 or 
    cmake --build build-metal --target moe_mm_parity
    ```
 
-   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; both of
+   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; all of
    these print `PASS`:
 
    ```
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
    ```
 
 `edge0-infer` on macOS starts `build-metal/strata` through `.venv/bin/python` and `serve/server.py`.
