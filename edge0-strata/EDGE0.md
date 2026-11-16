@@ -49,10 +49,11 @@ In this directory:
     `_MSC_VER` there too, so the existing guard was not enough.
   - `src/core/latent_dense.cpp` maps the D/U file with `CreateFileMappingW` and `MapViewOfFile` on
     Windows; it was POSIX `mmap` only.
-  - `src/core/verify.cpp` keeps the all-resident (zero-doorbell) verify path opt-in on aarch64. On an RTX
-    Spark N1X with every expert resident, that path hung the first decode window ("verify window: 6
-    tokens at position 0, host at layer step 1, the GPU rang 0", no progress for 85 s, then
-    `0xC0000409`). A 24 GB card never reaches it, because its experts do not all fit.
+  - `src/core/verify.cpp` keeps the all-resident (zero-doorbell) verify path opt-in on every platform.
+    With every expert resident, that path hung the first decode window ("verify window: 6 tokens at
+    position 0, host at layer step 1, the GPU rang 0") on an RTX Spark N1X (no progress for 85 s, then
+    `0xC0000409`) and on a 96 GB RTX PRO 6000 Blackwell under Linux (the watchdog's exit -6, #200). A
+    24 GB card never reaches it, because its experts do not all fit.
     `STRATA_VERIFY_ALL_RESIDENT=1` turns it back on for debugging; that path is not tested.
 - This file.
 - Removed because neither the Linux CUDA build nor the server uses them (each was checked against
