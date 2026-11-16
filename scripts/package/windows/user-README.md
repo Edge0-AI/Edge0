@@ -41,8 +41,8 @@ Built from commit [`{{COMMIT}}`](https://github.com/Edge0-AI/Edge0/tree/{{COMMIT
 
 1. Extract the zip to a short path, for example `C:\Edge0\`.
 2. Start `Edge0 Chat.exe`.
-3. Nothing to set for the engine: the app uses the `edge0-infer.exe` in its own folder. It saves that path with its settings (adding a model location saves them too), so if you later move `edge0-infer.exe` or the whole folder, open **Settings > Engine > Executable** and clear it (the app fills it in again) or choose the new path.
-4. Open **Models**, choose **Add location** and select a model directory (see [Model directories](#model-directories)). Then **Load** it and **Open chat**.
+3. Nothing to set for the engine: the app uses the `edge0-infer.exe` in its own folder, also after you move the folder. A path chosen under **Settings > Engine > Executable** is used instead while that file exists.
+4. Open **Models**. Choose **Download** on Edge0 145B or Edge0 120B (Q3_K or NVFP4) to download it from Hugging Face or ModelScope into a folder you pick; a paused or interrupted download continues where it stopped. Or choose **Add location** and select a model directory you already have (see [Model directories](#model-directories)). Then **Load** it and **Open chat**.
 
 The app keeps its settings (`settings.json`) and conversations under `%APPDATA%\dev.edge0.example.desktop`. Set `EDGE0_HOME` to another folder to keep them there instead.
 

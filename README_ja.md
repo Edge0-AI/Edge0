@@ -339,7 +339,7 @@ cd /path/to/Edge0-145B-q3k
 
 ⬇️ **ダウンロード：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、`Edge0-145B-q3k` などのモデルフォルダーを選ぶと、ローカルで実行できます。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
+Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、**Models** で Hugging Face または ModelScope からモデルをダウンロードするか、`Edge0-145B-q3k` などの手元のモデルフォルダーを追加して読み込むと、ローカルで実行できます。macOS ではアプリは Q3_K モデルのみを提供・実行します。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
 
 </details>
 

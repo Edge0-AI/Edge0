@@ -339,7 +339,7 @@ El registro de arranque muestra la capa de la segunda tarjeta (`peer GPU 1: … 
 
 ⬇️ **Descargar:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Abre **Edge0 Chat** en Windows o macOS (Apple Silicon) y selecciona una carpeta de modelo, como `Edge0-145B-q3k`, para ejecutarlo localmente. Para compilar la aplicación desde el código fuente, sigue la guía de [Edge0 Chat](edge0-infer/examples/desktop/README.md).
+Abre **Edge0 Chat** en Windows o macOS (Apple Silicon). En **Models**, descarga un modelo desde Hugging Face o ModelScope, o añade una carpeta de modelo que ya tengas, como `Edge0-145B-q3k`, y cárgalo para ejecutarlo localmente. En macOS la aplicación solo ofrece y ejecuta los modelos Q3_K. Para compilar la aplicación desde el código fuente, sigue la guía de [Edge0 Chat](edge0-infer/examples/desktop/README.md).
 
 </details>
 
