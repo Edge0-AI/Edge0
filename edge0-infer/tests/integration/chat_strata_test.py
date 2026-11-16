@@ -244,15 +244,11 @@ def main():
         fp4 = make_model(root / 'fp4', model_name='edge0-120b-fp4')
         record = root / 'fp4-chat'
         result, bodies = chat(args.cli, fp4, engine, record, 'hi\n')
-        if sys.platform == 'darwin':
-            assert result.returncode == 2 and 'uses fp4 experts' in result.stderr and not record.exists(), result.stderr
-            assert bodies == [] and not (fp4 / 'mtp-q2_0.gguf').exists()
-        else:
-            assert result.returncode == 0 and bodies[0]['model'] == 'edge0_120b', result.stderr
-            config = json.loads((record / 'config.json').read_text())
-            assert config['env']['STRATA_LAT_FUSED_Q3K'] == '0' and not (fp4 / 'scales').exists()
-            assert config['args'][1] == str(fp4)
-            assert_no_leftovers(record)
+        assert result.returncode == 0 and bodies[0]['model'] == 'edge0_120b', result.stderr
+        config = json.loads((record / 'config.json').read_text())
+        assert config['env']['STRATA_LAT_FUSED_Q3K'] == '0' and not (fp4 / 'scales').exists()
+        assert config['args'][1] == str(fp4)
+        assert_no_leftovers(record)
     print('PASS chat strata')
 
 

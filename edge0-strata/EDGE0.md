@@ -342,8 +342,9 @@ Notes:
   `server.py`. The shipped entries run `tools/mtp_gguf.py` to write `mtp-q2_0.gguf` into the model
   directory, so that directory must be writable. An `output` that already exists is left as it is.
 
-  Metal accepts only Q3_K expert folders (`model_name` ending in `-q3k`), `du=q4` and
-  `ple-io=direct`. An NVFP4 folder, `du=q8` or `ple-io=ram` is rejected before any process starts.
+  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. A Q3_K folder
+  (`model_name` ending in `-q3k`) defaults to `du=q4`; an NVFP4 folder keeps the model's own
+  default. `ple-io=ram` is rejected before any process starts.
 
   `edge0-infer` also sets `gpu` from `--device` (`cuda:<n>` on Linux and Windows, `metal` on macOS),
   `model_name` from `--alias`, and the `--max-context` argument from `--context`.

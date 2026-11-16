@@ -696,10 +696,12 @@ def parameters(cli, root):
         config = config_of(['--device', 'metal', '--context', '8192', '--alias', 'big'])
         assert config['gpu'] == 0 and config['model_name'] == 'big' and 'prepare' not in config
         assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '8192']
+        config = config_of(['--model-option', 'du=q8'])
+        assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q8.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '8'
         rejected = ((['--device', 'cpu'], 'must be metal'), (['--device', 'cuda'], 'must be metal'),
                     (['--device', 'cuda:0'], 'must be metal'), (['--device', 'cuda:1'], 'must be metal'),
                     (['--device', 'vulkan'], 'must be metal'), (['--prefill-device', 'cuda:0'], 'must be metal'),
-                    (['--model-option', 'du=q8'], 'only supports du=q4'), (['--model-option', 'du=q5'], 'must be q4'),
+                    (['--model-option', 'du=q5'], 'must be q4|q8'),
                     (['--model-option', 'ple-io=ram'], 'only supports ple-io=direct'),
                     (['--model-option', 'ple-io=mmap'], 'must be direct'))
     else:
@@ -779,20 +781,13 @@ def model_formats(cli, root):
                        '--expert-profile', '${MODEL_DIR}/profile.bin']
     write_templates(engine, release)
     mac = sys.platform == 'darwin'
-    for identifier, du in (('edge0_145b', 'q4' if mac else 'q8'), ('edge0_120b', 'q4')):
+    for identifier, default_du in (('edge0_145b', 'q8'), ('edge0_120b', 'q4')):
         for experts in ('q3k', 'fp4'):
+            # Metal: a q3k folder defaults to q4; an fp4 folder keeps the model's own default.
+            du = 'q4' if mac and experts == 'q3k' else default_du
             name = identifier.replace('_', '-') + '-' + experts
             model = make_model(root / name, model_name=name)
             record = root / (name + '-record')
-            if mac and experts == 'fp4':
-                result = subprocess.run([str(cli), 'serve', '--model', str(model), '--port', '0', *strata_args(engine)],
-                                        env=environment(record), capture_output=True, text=True, timeout=60)
-                assert result.returncode == 2 and 'uses fp4 experts' in result.stderr and 'Metal supports q3k' in result.stderr, result.stderr
-                assert not record.exists() and not (model / 'mtp-q2_0.gguf').exists()
-                inspected = subprocess.run([str(cli), 'inspect', '--model', str(model), '--json'], capture_output=True, text=True)
-                report = json.loads(inspected.stdout)
-                assert inspected.returncode == 1 and report['ok'] is False and 'uses fp4 experts' in inspected.stderr
-                continue
             server = Running(cli, model, engine, record)
             try:
                 config = json.loads((record / 'config.json').read_text())
@@ -858,20 +853,12 @@ def inspect_defaults(cli, root):
         inspect([], True)
         (model / ('latent_dense_' + default_du + '.bin')).unlink()
         result, _ = inspect([], False)
-        if mac:
-            assert 'latent_dense_q4.bin' in result.stderr and '--model-option' not in result.stderr, result.stderr
-            rejected = subprocess.run([*base, '--model-option', 'du=' + other_du], capture_output=True, text=True)
-            report = json.loads(rejected.stdout)
-            assert rejected.returncode == 1 and report['ok'] is False and 'only supports du=q4' in rejected.stderr, rejected.stderr
-            (model / 'latent_dense_q4.bin').write_bytes(b'q4')
-            inspect([], True)
-        else:
-            assert result.stderr.rstrip().endswith('use --model-option du=' + other_du + ' instead.'), result.stderr
-            inspect(['--model-option', 'du=' + other_du], True)
-            result, _ = inspect(['--model-option', 'du=' + default_du], False)
-            suggested = result.stderr.rsplit(' use ', 1)[1].removesuffix(' instead.\n').split()
-            assert suggested == ['--model-option', 'du=' + other_du]
-            inspect(suggested, True)
+        assert result.stderr.rstrip().endswith('use --model-option du=' + other_du + ' instead.'), result.stderr
+        inspect(['--model-option', 'du=' + other_du], True)
+        result, _ = inspect(['--model-option', 'du=' + default_du], False)
+        suggested = result.stderr.rsplit(' use ', 1)[1].removesuffix(' instead.\n').split()
+        assert suggested == ['--model-option', 'du=' + other_du]
+        inspect(suggested, True)
         shutil.rmtree(model / 'scales')
         result, _ = inspect([], False)
         assert 'scales/' in result.stderr and '--model-option' not in result.stderr
@@ -1114,21 +1101,28 @@ def mac_prepare(cli, root):
     assert silent.returncode == 1 and 'exit code 0' in silent.stderr and 'mtp_gguf.py' in silent.stderr, silent.stderr
     assert not (root / 'mac-exit0' / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
     for name, extra, message in (
-            ('mac-fp4', [], 'uses fp4 experts'),
-            ('mac-q8', ['--model-option', 'du=q8'], 'only supports du=q4'),
             ('mac-ram', ['--model-option', 'ple-io=ram'], 'only supports ple-io=direct'),
             ('mac-cuda', ['--device', 'cuda'], 'must be metal')):
-        if name == 'mac-fp4':
-            directory = make_model(root / name, model_name='edge0-120b-fp4')
-            log = root / (name + '-record')
-            result = subprocess.run([str(cli), 'serve', '--model', str(directory), '--port', '0', *strata_args(engine)],
-                                    capture_output=True, text=True, env=environment(log), timeout=60)
-            assert result.returncode == 2 and message in result.stderr and not log.exists(), result.stderr
-            assert not (directory / 'mtp-q2_0.gguf').exists()
-        else:
-            result = rejected(name, extra, message)
-            assert result.returncode == 2, (name, result.returncode, result.stderr)
-            assert not (root / name / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
+        result = rejected(name, extra, message)
+        assert result.returncode == 2, (name, result.returncode, result.stderr)
+        assert not (root / name / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
+    # An fp4 folder and du=q8 start on Metal, each with its own mtp-q2_0.gguf written once.
+    for name, model_name, extra, du in (
+            ('mac-fp4', 'edge0-145b-fp4', [], 'q8'),
+            ('mac-fp4-q4', 'edge0-145b-fp4', ['--model-option', 'du=q4'], 'q4'),
+            ('mac-fp4-120', 'edge0-120b-fp4', [], 'q4'),
+            ('mac-q8', 'edge0-145b-q3k', ['--model-option', 'du=q8'], 'q8')):
+        directory = make_model(root / name, model_name=model_name)
+        log = root / (name + '-record')
+        accepted = Running(cli, directory, engine, log, extra=extra)
+        try:
+            config = json.loads((log / 'config.json').read_text())
+            assert Path(config['env']['STRATA_LATENT_DENSE']) == directory / f'latent_dense_{du}.bin', (name, config['env'])
+            assert config['env']['STRATA_LATENT_DENSE_FMT'] == du[1:], (name, config['env'])
+            assert (directory / 'mtp-q2_0.gguf').read_bytes() == b'mtp-q2_0'
+        finally:
+            assert accepted.stop() == 0
+        assert_no_leftovers(log)
     # Ctrl-C while the script is still running kills it and does not start the service.
     sleeping = make_model(root / 'mac-sleep')
     log = root / 'mac-sleep-record'
@@ -1154,7 +1148,7 @@ def mac_prepare(cli, root):
     assert process.returncode == 1 and 'interrupted while preparing' in stderr, (process.returncode, stderr)
     assert not log.exists() and not (sleeping / 'mtp-q2_0.gguf').exists()
     assert gone(pid), 'prepare script outlived Ctrl-C'
-    print('PASS macOS prepare: once, then skipped; failure and exit 0 leave no file or service; fp4, du=q8, ple-io=ram and cuda rejected; Ctrl-C kills the script')
+    print('PASS macOS prepare: once, then skipped; failure and exit 0 leave no file or service; ple-io=ram and cuda rejected; fp4 and du=q8 start; Ctrl-C kills the script')
 
 
 def main():

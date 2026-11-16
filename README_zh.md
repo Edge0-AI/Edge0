@@ -114,8 +114,8 @@
 
 | 型号 | 已发布检查点 | 推理配置 | 引擎 |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1792），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal，Q3_K） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1280），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal，Q3_K） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1792），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1280），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal） |
 
 <a name="model-overview--145b-q3_k"></a>
 
