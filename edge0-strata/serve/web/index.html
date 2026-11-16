@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strata</title>
+<link rel="icon" href="web/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="web/tokens.css">
+<link rel="stylesheet" href="web/components.css">
+<link rel="stylesheet" href="web/app.css">
+<script>
+  // the theme before the first paint: the saved choice, else the system's
+  try {
+    const t = localStorage.getItem("strata.theme") ||
+      (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+</head>
+<body>
+<header class="st-header">
+  <span class="st-header__brand">Strata</span>
+  <nav class="st-tabs" role="tablist" aria-label="Views" data-i18n-label="tab.views">
+    <button class="st-tab" role="tab" id="tab-btn-chat" aria-controls="view-chat" aria-selected="true" data-tab="chat">
+      <svg class="st-icon st-icon--sm"><use href="web/sprite.svg#i-chat"/></svg><span data-i18n="tab.chat">Chat</span></button>
+    <button class="st-tab" role="tab" id="tab-btn-images" aria-controls="view-images" aria-selected="false" data-tab="images" hidden>
+      <svg class="st-icon st-icon--sm"><use href="web/sprite.svg#i-image"/></svg><span data-i18n="tab.images">Images</span></button>
+    <button class="st-tab" role="tab" id="tab-btn-monitor" aria-controls="view-monitor" aria-selected="false" data-tab="monitor">
+      <svg class="st-icon st-icon--sm"><use href="web/sprite.svg#i-activity"/></svg><span data-i18n="tab.monitor">Monitor</span></button>
+    <button class="st-tab" role="tab" id="tab-btn-about" aria-controls="view-about" aria-selected="false" data-tab="about">
+      <svg class="st-icon st-icon--sm"><use href="web/sprite.svg#i-info"/></svg><span data-i18n="tab.about">About</span></button>
+  </nav>
+  <span class="st-header__spacer"></span>
+  <span class="st-pill" id="pill" data-state="idle" role="status" aria-live="polite">
+    <span class="st-pill__dot"></span><span id="pill-text" data-i18n="pill.connecting">Connecting&hellip;</span></span>
+  <button class="st-btn st-btn--secondary" id="unload-btn" type="button" title="Waiting for the server" disabled>&hellip;</button>
+  <button class="st-btn st-btn--icon" id="theme-btn" title="Light / dark" aria-label="Switch between light and dark" data-i18n-title="theme.title" data-i18n-label="theme.label">
+    <svg class="st-icon"><use id="theme-icon" href="web/sprite.svg#i-moon"/></svg></button>
+</header>
+
+<main>
+  <!-- ============================ Chat ============================ -->
+  <section class="view view--chat" id="view-chat" role="tabpanel" aria-labelledby="tab-btn-chat">
+    <!-- the chats kept in this browser (Chat settings > Chats): the open one is the chat on the right -->
+    <aside class="chat-sidebar" id="sidebar" data-open="true" aria-label="Chats" data-i18n-label="sidebar.title" hidden>
+      <div class="sidebar-head">
+        <button class="st-btn st-btn--icon" id="sidebar-toggle" type="button" title="Collapse the chat list" aria-label="Collapse the chat list" aria-expanded="true">
+          <svg class="st-icon"><use href="web/sprite.svg#i-chevron"/></svg></button>
+        <span class="card-title sidebar-title" data-i18n="sidebar.title">Chats</span>
+        <button class="st-btn st-btn--icon" id="sidebar-new" type="button" title="New chat" aria-label="New chat" data-i18n-title="chat.new" data-i18n-label="chat.new">
+          <svg class="st-icon"><use href="web/sprite.svg#i-new-chat"/></svg></button>
+      </div>
+      <input class="st-input sidebar-search" id="sidebar-search" type="search" placeholder="Search chats"
+             autocomplete="off" aria-label="Search chats" data-i18n-placeholder="sidebar.search" data-i18n-label="sidebar.search">
+      <div class="sidebar-list" id="sidebar-list"></div>
+      <p class="muted small sidebar-foot" id="sidebar-foot"></p>
+    </aside>
+    <div class="chat-main">
+      <div class="chat-parent" id="chat-parent" hidden></div>
+      <div class="chat-scroll" id="chat-scroll">
+        <div class="chat" id="chat">
+          <div class="chat-empty" id="chat-empty">
+            <div class="chat-empty__title" data-i18n="chat.empty">Ask anything</div>
+            <div class="chat-empty__sub" id="chat-empty-sub">The model runs on this PC. Nothing leaves it.</div>
+          </div>
+        </div>
+      </div>
+      <div class="composer-wrap">
+        <form class="st-composer" id="composer">
+          <div class="attachments" id="attachments" hidden></div>
+          <textarea id="input" rows="2" placeholder="Ask anything&hellip;" aria-label="Message" data-i18n-placeholder="composer.placeholder" data-i18n-label="composer.message"></textarea>
+          <div class="st-composer__bar">
+            <button type="button" class="st-btn st-btn--icon" id="attach-btn" title="Attach a text file (or drop it here)" aria-label="Attach a file" data-i18n-label="composer.attachLabel">
+              <svg class="st-icon"><use href="web/sprite.svg#i-attach"/></svg></button>
+            <input type="file" id="file" multiple hidden>
+            <button type="button" class="st-btn st-btn--icon" id="new-btn" title="New chat" aria-label="New chat" data-i18n-title="chat.new" data-i18n-label="chat.new">
+              <svg class="st-icon"><use href="web/sprite.svg#i-new-chat"/></svg></button>
+            <button type="button" class="st-btn st-btn--icon" id="export-btn" title="Save this chat as Markdown" aria-label="Save this chat" data-i18n-title="composer.save" data-i18n-label="composer.saveLabel">
+              <svg class="st-icon"><use href="web/sprite.svg#i-download"/></svg></button>
+            <button type="button" class="st-btn st-btn--secondary chat-settings-button" id="sampling-btn" title="Chat settings" aria-label="Chat settings" data-i18n-title="drawer.title" data-i18n-label="drawer.title">
+              <svg class="st-icon st-icon--sm"><use href="web/sprite.svg#i-settings"/></svg>
+              <span class="chat-settings-label" data-i18n="drawer.title">Chat settings</span><span class="chat-settings-short" aria-hidden="true" data-i18n="drawer.short">Settings</span></button>
+            <span class="spacer"></span>
+            <span class="composer-hint" id="composer-hint"></span>
+            <button type="button" class="st-btn st-btn--secondary" id="stop-btn" hidden>
+              <svg class="st-icon st-icon--sm"><use href="web/sprite.svg#i-stop"/></svg><span data-i18n="composer.stop">Stop</span></button>
+            <button type="submit" class="st-btn st-btn--primary st-btn--send" id="send-btn" aria-label="Send" data-i18n-label="composer.send">
+              <svg class="st-icon"><use href="web/sprite.svg#i-send"/></svg></button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ Images ============================ -->
+  <section class="view view--images" id="view-images" role="tabpanel" aria-labelledby="tab-btn-images" hidden>
+    <div class="about">
+      <form class="st-card img-form" id="img-form">
+        <span class="card-title" id="img-title">Make an image</span>
+        <textarea class="st-input img-prompt" id="img-prompt" rows="3" placeholder="Describe the image&hellip;" aria-label="Prompt"></textarea>
+        <div class="img-row">
+          <label class="st-field">Size
+            <select class="st-input" id="img-size">
+              <option>1024x1024</option><option>1536x1024</option><option>1024x1536</option>
+              <option>768x768</option><option>512x512</option></select></label>
+          <label class="st-field">Seed
+            <input class="st-input" id="img-seed" type="number" min="0" placeholder="random"></label>
+          <button type="submit" class="st-btn st-btn--primary" id="img-go">Generate</button>
+        </div>
+        <span class="composer-hint" id="img-hint">One image at a time; a chat request waits for it (and the other way round).</span>
+      </form>
+      <div class="img-results" id="img-results"></div>
+    </div>
+  </section>
+
+  <!-- ============================ Monitor ============================ -->
+  <section class="view view--monitor" id="view-monitor" role="tabpanel" aria-labelledby="tab-btn-monitor" hidden>
+    <div class="monitor">
+      <div class="st-card state-card">
+        <div class="state-card__head">
+          <span class="card-title">Model state</span>
+          <span class="badges" id="state-badges">
+            <span class="st-badge" data-s="idle">Idle</span>
+            <span class="st-badge" data-s="unloaded">Unloaded</span>
+            <span class="st-badge st-badge--reading" data-s="reading">Reading</span>
+            <span class="st-badge st-badge--generating" data-s="generating">Generating</span>
+            <span class="st-badge st-badge--queued" data-s="queued">Queued</span>
+            <span class="st-badge st-badge--error" data-s="error">Error</span>
+          </span>
+        </div>
+        <div class="state-card__row"><span id="state-label">Waiting for a request</span><span class="muted" id="state-detail"></span></div>
+        <div class="st-progress" id="state-progress"><div class="st-progress__bar" id="state-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="metrics" id="metrics">
+        <!-- filled by app.js: Speed, GPU load, VRAM, GPU temp, Power, PCIe, CPU, Disk read -->
+      </div>
+
+      <div class="monitor-row">
+        <div class="st-card ctx-card">
+          <span class="card-title">Context fill</span>
+          <div class="ctx-gauge">
+            <svg class="st-gauge" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="st-gauge__track" cx="60" cy="60" r="50" fill="none" stroke-width="10" stroke-linecap="round"
+                      stroke-dasharray="235.6 314.2" transform="rotate(135 60 60)"/>
+              <circle class="st-gauge__fill" id="ctx-fill" cx="60" cy="60" r="50" fill="none" stroke-width="10"
+                      stroke-linecap="round" stroke-dasharray="0 314.2" transform="rotate(135 60 60)"/>
+            </svg>
+            <div class="ctx-gauge__label"><span class="ctx-gauge__pct" id="ctx-pct">0%</span><span class="muted" id="ctx-sub">&ndash;</span></div>
+          </div>
+          <div class="bar-row"><span>Experts in VRAM</span><span class="muted" id="slots-text">&ndash;</span></div>
+          <div class="st-progress"><div class="st-progress__bar" id="slots-bar" style="width:0%"></div></div>
+          <div class="bar-row"><span>System RAM</span><span class="muted" id="ram-text">&ndash;</span></div>
+          <div class="st-progress" id="ram-progress"><div class="st-progress__bar" id="ram-bar" style="width:0%"></div></div>
+          <div class="bar-row"><span>GPU temperature</span><span class="muted" id="temp-text">&ndash;</span></div>
+          <div class="st-progress" data-tone="warn"><div class="st-progress__bar" id="temp-bar" style="width:0%"></div></div>
+        </div>
+        <div class="st-card req-card">
+          <div class="req-head"><span class="card-title">Recent requests</span>
+            <button class="st-btn st-btn--secondary" id="req-all" hidden>Show all</button></div>
+          <div class="table-wrap" id="req-wrap">
+            <table class="st-table">
+              <thead><tr><th>Time</th><th>Status</th><th class="num">Prompt</th><th class="num">Reused</th><th class="num">Output</th>
+                <th class="num" title="New prompt tokens per second, excluding reused cache tokens (engine prompt time)">Prefill t/s</th><th class="num">Decode t/s</th><th class="num" title="While writing the answer: the share of the experts looked up that were already in VRAM. Experts the GPU read over PCIe (--pcie-frac) are not counted in it; their share of all routed experts is shown after it (+N% PCIe)">VRAM hit rate</th><th class="num">Duration</th></tr></thead>
+              <tbody id="req-body"><tr><td colspan="9" class="muted">No requests yet</td></tr></tbody>
+            </table>
+          </div>
+          <p class="muted req-totals" id="req-totals"></p>
+        </div>
+      </div>
+
+      <div class="st-card cc-card" id="cc-card">
+        <div class="req-head"><span class="card-title">Conversation cache</span><span class="muted small" id="cc-sum"></span></div>
+        <div class="cc-bars" id="cc-bars" hidden>
+          <div><div class="bar-row"><span>Parked conversations</span><span class="muted" id="cc-slots-text">&ndash;</span></div>
+            <div class="st-progress"><div class="st-progress__bar" id="cc-slots-bar" style="width:0%"></div></div></div>
+          <div><div class="bar-row"><span>Their memory (RAM)</span><span class="muted" id="cc-mem-text">&ndash;</span></div>
+            <div class="st-progress"><div class="st-progress__bar" id="cc-mem-bar" style="width:0%"></div></div></div>
+        </div>
+        <dl class="facts" id="cc-facts"></dl>
+        <p class="muted small cc-note" id="cc-note"></p>
+      </div>
+
+      <div class="st-card mcp-card" id="mcp-card" hidden>
+        <div class="req-head"><span class="card-title">MCP servers</span><span class="muted small" id="mcp-sum"></span></div>
+        <div class="mcp-list" id="mcp-list"></div>
+        <p class="muted small mcp-note">Their tools run on this PC with your rights, when the model decides to call them
+          (in this page's chat only; switch it off in Sampling).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ About ============================ -->
+  <section class="view view--about" id="view-about" role="tabpanel" aria-labelledby="tab-btn-about" hidden>
+    <div class="about">
+      <div class="st-card">
+        <span class="card-title">Model and engine</span>
+        <dl class="facts" id="facts-engine"></dl>
+      </div>
+      <div class="st-card">
+        <span class="card-title">This PC</span>
+        <dl class="facts" id="facts-hw"></dl>
+      </div>
+      <div class="st-card">
+        <span class="card-title">Connect your tools</span>
+        <p class="muted">Any OpenAI- or Anthropic-compatible client works with these addresses.</p>
+        <dl class="facts" id="facts-api"></dl>
+      </div>
+      <div class="st-card">
+        <span class="card-title">Settings</span>
+        <div class="st-field">
+          <label class="st-label" for="api-key">API key <output>only if the server was started with one</output></label>
+          <input class="st-input" id="api-key" type="password" autocomplete="off" placeholder="Not needed">
+        </div>
+        <div class="st-field">
+          <label class="st-label" for="lang"><span data-i18n="settings.language">Language</span></label>
+          <select class="st-input" id="lang"></select>
+          <span class="muted small" data-i18n="settings.languageNote">Chat, its settings and the buttons above are translated. The Monitor, Images and About views are still in English.</span>
+        </div>
+        <div class="toggle-row"><span>Dark theme</span>
+          <button class="st-toggle" id="dark-toggle" role="switch" aria-checked="false" aria-label="Dark theme"></button></div>
+        <p class="muted small">Chats, settings and the key are kept in this browser only.
+          <a href="https://github.com/Niko1221/Strata" target="_blank" rel="noopener noreferrer">Strata on GitHub</a></p>
+      </div>
+      <div class="st-card cfg-card" id="cfg-card" hidden>
+        <div class="req-head"><span class="card-title">Model settings</span><span class="muted small" id="cfg-file"></span></div>
+        <p class="muted small">Kept in the model's run config for every client. An empty field is the default. They
+          take effect the next time the model starts (close Strata's window and start it again).</p>
+        <form class="cfg-form" id="cfg-form"></form>
+        <div class="cfg-actions"><button class="st-btn st-btn--primary" id="cfg-save" type="button">Save</button>
+          <span class="muted small" id="cfg-msg" role="status"></span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================ Chat settings drawer ============================ -->
+<aside class="st-drawer" id="drawer" data-open="false" aria-label="Chat settings" data-i18n-label="drawer.title" aria-hidden="true">
+  <div class="st-drawer__head"><span class="card-title" data-i18n="drawer.title">Chat settings</span>
+    <button class="st-btn st-btn--icon" id="drawer-close" aria-label="Close" data-i18n-label="close">
+      <svg class="st-icon"><use href="web/sprite.svg#i-chevron"/></svg></button></div>
+  <div class="st-drawer__body">
+    <div class="st-field">
+      <label class="st-label" for="s-thinking"><span data-i18n="drawer.thinking">Thinking</span> <output id="o-thinking"></output></label>
+      <div class="seg" id="s-thinking" role="radiogroup" aria-label="Thinking" data-i18n-label="drawer.thinking">
+        <button type="button" role="radio" data-v="none" data-i18n="drawer.off">Off</button><button type="button" role="radio" data-v="low" data-i18n="drawer.low">Low</button>
+        <button type="button" role="radio" data-v="medium" data-i18n="drawer.medium">Medium</button><button type="button" role="radio" data-v="high" data-i18n="drawer.high">High</button>
+      </div>
+    </div>
+    <div class="st-field">
+      <label class="st-label" for="s-temp"><span data-i18n="drawer.temperature">Temperature</span> <output id="o-temp"></output></label>
+      <input class="st-slider" type="range" id="s-temp" min="0" max="1.5" step="0.05">
+      <span class="muted small" data-i18n="drawer.temperatureNote">0 = always the most likely word (exact, repeatable)</span>
+    </div>
+    <div class="st-field">
+      <label class="st-label" for="s-topp">Top-p <output id="o-topp"></output></label>
+      <input class="st-slider" type="range" id="s-topp" min="0.05" max="1" step="0.05">
+    </div>
+    <div class="st-field">
+      <label class="st-label" for="s-topk">Top-k <output id="o-topk"></output></label>
+      <input class="st-slider" type="range" id="s-topk" min="1" max="64" step="1">
+    </div>
+    <div class="st-field">
+      <label class="st-label" for="s-max"><span data-i18n="drawer.maxTokens">Max tokens</span> <output data-i18n="drawer.maxTokensNote">empty = until done</output></label>
+      <input class="st-input" id="s-max" type="number" min="1" step="1" placeholder="Until done" data-i18n-placeholder="drawer.untilDone">
+    </div>
+    <div class="st-field">
+      <label class="st-label" for="s-seed"><span data-i18n="drawer.seed">Seed</span> <output data-i18n="drawer.seedNote">empty = random</output></label>
+      <input class="st-input" id="s-seed" type="number" min="1" step="1" placeholder="Random" data-i18n-placeholder="drawer.random">
+    </div>
+    <div class="toggle-row"><span><span data-i18n="drawer.showThinking">Show thinking</span><br><span class="muted small" data-i18n="drawer.showThinkingNote">expanded while it streams</span></span>
+      <button class="st-toggle" id="s-show" role="switch" aria-checked="true" aria-label="Show thinking" data-i18n-label="drawer.showThinking"></button></div>
+    <div class="toggle-row"><span><span data-i18n="drawer.math">Render math</span><br><span class="muted small"
+      data-i18n="drawer.mathNote">draw equations in answers as formulas (works offline)</span></span>
+      <button class="st-toggle" id="s-math" role="switch" aria-checked="false" aria-label="Render math" data-i18n-label="drawer.math"></button></div>
+    <div class="toggle-row" id="mcp-row" hidden><span><span data-i18n="drawer.mcp">Use tools from MCP servers</span><br><span class="muted small"
+      id="mcp-row-sub">the model may call them while it answers</span></span>
+      <button class="st-toggle" id="s-mcp" role="switch" aria-checked="true" aria-label="Use tools from MCP servers" data-i18n-label="drawer.mcp"></button></div>
+    <div class="toggle-row" id="esp-row" hidden><span>Experimental speed projection<br><span class="muted small">the
+      engine's control vector; off = the stock model. Switching reads the chat again once</span></span>
+      <button class="st-toggle" id="s-esp" role="switch" aria-checked="true" aria-label="Experimental speed projection"></button></div>
+    <div class="toggle-row"><span><span data-i18n="drawer.share">Use for other apps too</span><br><span class="muted small" data-i18n="drawer.shareNote">omp and other API clients get
+      these settings for anything they do not set themselves</span></span>
+      <button class="st-toggle" id="s-share" role="switch" aria-checked="false" aria-label="Use for other apps too" data-i18n-label="drawer.share"></button></div>
+
+    <div class="drawer-group" role="group" aria-labelledby="g-chats">
+      <h3 class="drawer-group__title" id="g-chats" data-i18n="drawer.chats">Chats</h3>
+      <div class="toggle-row"><span><span data-i18n="drawer.list">Saved chats list</span><br><span class="muted small"
+        data-i18n="drawer.listNote">keeps every chat in a list on the left, in this browser only. Off: one chat, as before</span></span>
+        <button class="st-toggle" id="s-list" role="switch" aria-checked="false" aria-label="Saved chats list" data-i18n-label="drawer.list"></button></div>
+      <div class="toggle-row"><span><span data-i18n="drawer.edit">Edit and rewind messages</span><br><span class="muted small"
+        data-i18n="drawer.editNote">edit an answer, ask for a new one, or go back to an earlier message (with an Undo)</span></span>
+        <button class="st-toggle" id="s-edit" role="switch" aria-checked="false" aria-label="Edit and rewind messages" data-i18n-label="drawer.edit"></button></div>
+      <div class="st-field">
+        <label class="st-label" for="s-busy"><span data-i18n="drawer.busy">When you send while it is answering</span></label>
+        <div class="seg seg--3" id="s-busy" role="radiogroup" aria-label="When you send while it is answering" data-i18n-label="drawer.busy">
+          <button type="button" role="radio" data-v="wait" data-i18n="drawer.busyWait">Wait</button><button type="button" role="radio" data-v="queue" data-i18n="drawer.busyQueue">Send after</button>
+          <button type="button" role="radio" data-v="interject" data-i18n="drawer.busyInterject">Interrupt</button>
+        </div>
+        <span class="muted small" id="o-busy"></span>
+      </div>
+    </div>
+
+    <div class="drawer-actions">
+      <button class="st-btn st-btn--secondary" id="s-reset" type="button" data-i18n="drawer.reset">Reset</button>
+      <button class="st-btn st-btn--primary" id="s-apply" type="button" data-i18n="drawer.apply">Apply</button>
+    </div>
+  </div>
+</aside>
+<div class="scrim" id="scrim" hidden></div>
+<div class="st-toasts" id="toasts" aria-live="polite"></div>
+<script src="web/i18n.js"></script>
+<script src="web/preview.js"></script>
+<script src="web/math.js"></script>
+<script src="web/math-adapter.js"></script>
+<script src="web/history.js"></script>
+<script src="web/chatstore.js"></script>
+<script src="web/chats-ui.js"></script>
+<script src="web/app.js"></script>
+</body>
+</html>

@@ -201,8 +201,9 @@ button, input, textarea, select { color: inherit; }
 .thermal-ok { color: var(--ok); }
 .thermal-warn { color: var(--warn); }
 .thermal-error { color: var(--err); }
-.error, .loading { flex-shrink: 0; padding: var(--sp-3) var(--sp-5); color: var(--err); background: var(--err-soft); font-size: var(--fs-md); overflow-wrap: anywhere; max-height: 20dvh; overflow-y: auto; }
+.error, .loading, .warning { flex-shrink: 0; padding: var(--sp-3) var(--sp-5); color: var(--err); background: var(--err-soft); font-size: var(--fs-md); overflow-wrap: anywhere; max-height: 20dvh; overflow-y: auto; }
 .loading { color: var(--text-2); background: var(--surface-2); }
+.warning { color: var(--warn); background: var(--warn-soft); }
 .thinking-control { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-1); }
 .thinking-control.is-locked { opacity: .55; }
 .thinking-switch { display: inline-flex; align-items: center; gap: var(--sp-2); border: 0; background: transparent; padding: 0; font-size: var(--fs-sm); white-space: nowrap; }

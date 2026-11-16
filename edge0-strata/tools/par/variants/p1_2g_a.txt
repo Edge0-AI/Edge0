@@ -1,0 +1,7 @@
+# tag | gpus | parallel | groups | env | extras | work
+ctl8   | 0,1 | 8  |   |  |  | w1;w2:4,8@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+ctl4   | 0,1 | 4  |   |  |  | w2:4,8@--max-tokens 128
+g1_8   | 0,1 | 8  | 1 |  |  | w2:4,8@--max-tokens 128
+g1_4   | 0,1 | 4  | 1 |  |  | w2:4,8@--max-tokens 128
+p16g2  | 0,1 | 16 | 2 |  |  | w2:4,8@--max-tokens 128
+mtp_g1_4 | 0,1 | 4 | 1 | STRATA_BATCH_MTP=1 | | w2:4,8@--max-tokens 128

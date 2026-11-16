@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="165" height="18" viewBox="0 0 165 18" role="img" aria-labelledby="title description">
+  <title id="title">Windows · macOS | Download</title>
+  <desc id="description">Windows · macOS | Download. Visible badge label: Windows · macOS / Download. Original repository badge target: https://github.com/Edge0-AI/Edge0/releases.</desc>
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="r"><rect width="165" height="18" rx="2.7"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="105" height="18" fill="#f2f3f5"/>
+    <rect x="105" width="60" height="18" fill="#45789D"/>
+    <rect width="165" height="18" fill="url(#s)"/>
+  </g>
+  <g font-family="Verdana, Geneva, DejaVu Sans, sans-serif" font-size="9.5" text-anchor="middle" text-rendering="geometricPrecision"><text x="52.5" y="12.25" fill="#333">Windows · macOS</text><text x="135" y="12.25" fill="#FFFFFF">Download</text></g>
+</svg>

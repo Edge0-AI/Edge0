@@ -1,9 +1,9 @@
 use crate::platform;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     fs,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Write},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{
@@ -13,6 +13,23 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+
+/// When `EDGE0_DEBUG_LOG` names a file, every step of `Manager::start` and its outcome is appended there, so a load
+/// that fails (for example with ERROR_ACCESS_DENIED, os error 5, where a directory is not writable) shows which call
+/// failed.  Silent when the variable is unset, so the default behaviour is unchanged.
+fn trace(message: &str) {
+    let Ok(path) = std::env::var("EDGE0_DEBUG_LOG") else {
+        return;
+    };
+    if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = writeln!(file, "{message}");
+    }
+}
+
+/// `trace` for the rest of the crate (the autoload probe in lib.rs).
+pub fn trace_line(message: &str) {
+    trace(message);
+}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -88,6 +105,60 @@ pub struct Inspection {
 pub struct Service {
     url: String,
     pid: u32,
+    /// Set when the model left so little commit memory that the first generations may fail to allocate.
+    memory_warning: Option<String>,
+}
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CommitMemory {
+    pub limit: u64,
+    pub available: u64,
+}
+const GIB: u64 = 1 << 30;
+const MEMORY_POLL: Duration = Duration::from_millis(250);
+/// Samples that must agree before the load counts as finished: 3 s at MEMORY_POLL.
+const STEADY_SAMPLES: usize = 13;
+const STEADY_TOLERANCE: u64 = 256 << 20;
+const STEADY_LIMIT: Duration = Duration::from_secs(30);
+/// Edge0 145B's first request on a GPU that shares system memory was measured committing ~6.5 GB more than the loaded
+/// model held, so less than this left after the load can end that request with an allocation failure.
+const LOW_COMMIT: u64 = 8 * GIB;
+/// An engine's automatic expert cache fills the free VRAM, which a GPU sharing system memory charges to the commit
+/// limit.  A load leaving less than this free is reloaded with that much more VRAM left out of the cache.
+const RELOAD_BELOW: u64 = 10 * GIB;
+/// edge0-strata's own --vram-reserve-mib when none is given.
+const ENGINE_RESERVE_MIB: u32 = 700;
+/// A larger reserve leaves the expert cache too small to be worth it; that load keeps its warning instead.
+const MAX_RESERVE_MIB: u32 = 24 * 1024;
+const MAX_RELOADS: usize = 2;
+const RESERVES_FILE: &str = "memory-reserve.json";
+/// The reserve that brings a load with `memory` free up to RELOAD_BELOW, a quarter more since leaving 1 GiB of VRAM
+/// free was measured to free ~0.75 GiB of commit memory; None when it is enough already or would pass MAX_RESERVE_MIB.
+fn next_reserve(memory: CommitMemory, current: Option<u32>) -> Option<u32> {
+    let short_mib = RELOAD_BELOW.checked_sub(memory.available).filter(|short| *short > 0)? >> 20;
+    let base = current.filter(|mib| *mib > 0).unwrap_or(ENGINE_RESERVE_MIB);
+    let added = (short_mib * 5 / 4).div_ceil(256) * 256;
+    (base < MAX_RESERVE_MIB).then(|| (u64::from(base) + added).min(u64::from(MAX_RESERVE_MIB)) as u32)
+}
+fn reserve_arguments(mib: u32) -> [String; 4] {
+    ["--strata-arg".into(), "--vram-reserve-mib".into(), "--strata-arg".into(), mib.to_string()]
+}
+/// The committed bytes of the last STEADY_SAMPLES samples stay within STEADY_TOLERANCE of each other.
+fn steady(committed: &VecDeque<u64>) -> bool {
+    committed.len() >= STEADY_SAMPLES
+        && committed.iter().max().zip(committed.iter().min()).is_some_and(|(max, min)| max - min <= STEADY_TOLERANCE)
+}
+pub fn commit_warning(memory: CommitMemory) -> Option<String> {
+    (memory.available < LOW_COMMIT).then(|| {
+        let gb = |bytes: u64| bytes as f64 / 1e9;
+        format!(
+            "Low memory: with the model loaded, only {:.1} GB of the {:.1} GB Windows commit limit is free, so \
+             generating may crash with an out-of-memory error. Increase the page file (System Properties > Advanced > \
+             Performance Settings > Advanced > Virtual memory; for example a fixed size of 96 GB), restart Windows, \
+             and load the model again.",
+            gb(memory.available),
+            gb(memory.limit)
+        )
+    })
 }
 #[derive(Serialize)]
 pub struct Status {
@@ -107,6 +178,8 @@ pub struct Manager {
     epoch: AtomicU64,
     closing: AtomicBool,
     start_lock: Mutex<()>,
+    // Whether `inspect --json` reported each model directory as delegated (run by an external engine).
+    delegated: Mutex<BTreeMap<PathBuf, bool>>,
     #[cfg(test)]
     publication_gate: Mutex<Option<Arc<PublicationGate>>>,
     #[cfg(test)]
@@ -118,19 +191,30 @@ struct PublicationGate {
     resume: std::sync::Barrier,
 }
 pub fn arguments(settings: &Settings, model: &str) -> Vec<String> {
-    let mut args = vec![
-        "serve".into(),
-        "--model".into(),
-        model.into(),
-        "--device".into(),
-        settings.device.clone(),
-        "--port".into(),
-        settings.port.unwrap_or(0).to_string(),
-    ];
-    if !settings.prefill_device.is_empty() {
+    arguments_for(settings, model, false)
+}
+// A delegated model runs on the device its engine registers, so the device settings are not passed.
+pub fn arguments_for(settings: &Settings, model: &str, delegated: bool) -> Vec<String> {
+    let mut args = vec!["serve".into(), "--model".into(), model.into()];
+    if !delegated {
+        args.extend(["--device".into(), settings.device.clone()]);
+    }
+    args.extend(["--port".into(), settings.port.unwrap_or(0).to_string()]);
+    if !delegated && !settings.prefill_device.is_empty() {
         args.extend(["--prefill-device".into(), settings.prefill_device.clone()]);
     }
     args
+}
+fn is_delegated(report: Option<&serde_json::Value>) -> bool {
+    report
+        .and_then(|report| report.get("delegated"))
+        .and_then(serde_json::Value::as_bool)
+        == Some(true)
+}
+fn canonical(path: &str) -> PathBuf {
+    Path::new(path)
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(path))
 }
 pub fn ready_url(line: &str) -> Option<String> {
     let rest = line
@@ -146,8 +230,13 @@ pub fn ready_url(line: &str) -> Option<String> {
     }
     Some(format!("http://127.0.0.1:{port}"))
 }
-fn network_arguments(settings: &Settings, model: &str, token: &Path) -> Vec<String> {
-    let mut args = arguments(settings, model);
+fn network_arguments(
+    settings: &Settings,
+    model: &str,
+    token: &Path,
+    delegated: bool,
+) -> Vec<String> {
+    let mut args = arguments_for(settings, model, delegated);
     if settings.lan_access {
         args.extend([
             "--host".into(),
@@ -189,22 +278,36 @@ impl Manager {
             epoch: AtomicU64::new(0),
             closing: AtomicBool::new(false),
             start_lock: Mutex::new(()),
+            delegated: Mutex::new(BTreeMap::new()),
             #[cfg(test)]
             publication_gate: Mutex::new(None),
             #[cfg(test)]
             recovery_gate: Mutex::new(None),
         })
     }
-    fn record_path(&self) -> PathBuf {
+    pub(crate) fn record_path(&self) -> PathBuf {
         self.directory.join("serve-pid.json")
     }
     pub fn settings(&self) -> Result<Settings, String> {
         let path = self.directory.join("settings.json");
-        if !path.exists() {
-            return Ok(Settings::default());
+        let mut settings: Settings = if path.exists() {
+            serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
+                .map_err(|e| format!("Cannot read settings: {e}"))?
+        } else {
+            Settings::default()
+        };
+        // No executable chosen yet: use the edge0-infer that the release package ships with this app.
+        if settings.executable.trim().is_empty() {
+            if let Some(found) = std::env::current_exe()
+                .ok()
+                .as_deref()
+                .and_then(Path::parent)
+                .and_then(bundled_executable)
+            {
+                settings.executable = found;
+            }
         }
-        serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
-            .map_err(|e| format!("Cannot read settings: {e}"))
+        Ok(settings)
     }
     pub fn save_settings(&self, settings: &Settings) -> Result<(), String> {
         settings.validate_options()?;
@@ -322,6 +425,9 @@ impl Manager {
                     )
                 };
                 let report = serde_json::from_slice::<serde_json::Value>(&output.stdout).ok();
+                if let Ok(mut delegated) = self.delegated.lock() {
+                    delegated.insert(canonical(path), is_delegated(report.as_ref()));
+                }
                 let total_bytes = report.as_ref().and_then(|report| {
                     report
                         .get("files")?
@@ -367,10 +473,17 @@ impl Manager {
             .collect()
     }
     pub fn start(&self, settings: &Settings, model: &str) -> Result<Service, String> {
+        trace(&format!(
+            "start: model={model} executable={} assets={:?} device={} port={:?}",
+            settings.executable, settings.assets, settings.device, settings.port
+        ));
         if self.closing.load(Ordering::SeqCst) {
             return Err("The application is shutting down".into());
         }
-        settings.validate()?;
+        settings.validate().map_err(|e| {
+            trace(&format!("validate failed: {e}"));
+            e
+        })?;
         if !settings.assets.iter().any(|p| {
             p == model
                 || Path::new(model)
@@ -380,53 +493,138 @@ impl Manager {
                     .zip(Path::new(p).canonicalize().ok())
                     .is_some_and(|(parent, root)| parent == root)
         }) {
+            trace("asset check failed: the model is not under a configured asset directory");
             return Err("Select a configured asset directory".into());
         }
         let executable = Path::new(&settings.executable)
             .canonicalize()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| {
+                trace(&format!("canonicalize executable failed: {e}"));
+                e.to_string()
+            })?;
+        // Decided before any lock is taken: an unknown directory is inspected once here.
+        let known = self
+            .delegated
+            .lock()
+            .map_err(|e| e.to_string())?
+            .get(&canonical(model))
+            .copied();
+        let delegated = match known {
+            Some(value) => value,
+            None => {
+                trace(&format!("running inspect: {}", executable.display()));
+                let output = Command::new(&executable)
+                    .args(["inspect", "--model", model, "--json"])
+                    .output()
+                    .map_err(|e| {
+                        trace(&format!("inspect spawn failed: {e}"));
+                        format!("Cannot run edge0-infer: {e}")
+                    })?;
+                trace(&format!("inspect exited with {:?}", output.status.code()));
+                is_delegated(serde_json::from_slice(&output.stdout).ok().as_ref())
+            }
+        };
+        trace(&format!("delegated={delegated}"));
         let epoch = self.epoch.fetch_add(1, Ordering::SeqCst) + 1;
-        self.recover()?;
+        self.recover().map_err(|e| {
+            trace(&format!("recover failed: {e}"));
+            e
+        })?;
         let _starting = self.start_lock.lock().map_err(|e| e.to_string())?;
         if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
             return Err("Model loading cancelled".into());
         }
-        self.stop_process(None)?;
+        let key = canonical(model).to_string_lossy().into_owned();
+        let mut reserve = if delegated { self.reserves().get(&key).copied() } else { None };
+        let mut reloads = 0;
+        // the commit memory free and the reserve of the load before a reload
+        let mut previous: Option<(u64, u32)> = None;
+        loop {
+            let mut args = network_arguments(settings, model, &self.directory.join("api-token"), delegated);
+            if let Some(mib) = reserve.filter(|mib| *mib > 0) {
+                args.extend(reserve_arguments(mib));
+            }
+            let (url, pid) = self.launch(epoch, settings, &executable, args)?;
+            let memory = self.settle_memory(epoch)?;
+            if let (Some(memory), Some((before, before_mib))) = (memory, previous) {
+                let added = u64::from(reserve.unwrap_or(0).saturating_sub(before_mib)) << 20;
+                if memory.available.saturating_sub(before) < added / 2 {
+                    // Free VRAM is not commit memory here (a GPU with its own memory): reloading cannot help this model.
+                    trace("the reserve freed no commit memory; this model is not reloaded for it again");
+                    self.remember_reserve(&key, 0);
+                    reserve = Some(0);
+                }
+            }
+            let next = memory
+                .filter(|_| delegated && reserve != Some(0) && reloads < MAX_RELOADS)
+                .and_then(|memory| next_reserve(memory, reserve));
+            let (Some(memory), Some(next)) = (memory, next) else {
+                let memory_warning = memory.and_then(commit_warning);
+                trace(&format!("ready: {url} memory_warning={memory_warning:?}"));
+                return Ok(Service { url, pid, memory_warning });
+            };
+            trace(&format!("reloading with --vram-reserve-mib {next}: {} bytes of commit memory free", memory.available));
+            self.remember_reserve(&key, next);
+            previous = Some((memory.available, reserve.filter(|mib| *mib > 0).unwrap_or(ENGINE_RESERVE_MIB)));
+            reserve = Some(next);
+            reloads += 1;
+        }
+    }
+    /// Starts edge0-infer with `args` in place of any running one and waits for its ready line: the URL and pid.
+    fn launch(&self, epoch: u64, settings: &Settings, executable: &Path, args: Vec<String>) -> Result<(String, u32), String> {
+        self.stop_process(None).map_err(|e| {
+            trace(&format!("stop_process failed: {e}"));
+            e
+        })?;
         let mut publication = self.process.lock().map_err(|e| e.to_string())?;
         if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
             return Err("Model loading cancelled".into());
         }
-        let mut command = Command::new(&executable);
-        let args = network_arguments(settings, model, &self.directory.join("api-token"));
+        let mut command = Command::new(executable);
         if settings.lan_access {
             if crate::storage::read_token(&self.directory)?.is_none() {
                 return Err("Enable network access with an API token first".into());
             }
         }
+        trace(&format!("spawning: {} {:?}", executable.display(), args));
         command
             .args(args)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::piped());
-        platform::configure(&mut command)?;
-        let mut child = command
-            .spawn()
-            .map_err(|e| format!("Cannot start edge0-infer: {e}"))?;
+        platform::configure(&mut command).map_err(|e| {
+            trace(&format!("platform::configure failed: {e}"));
+            e
+        })?;
+        let mut child = command.spawn().map_err(|e| {
+            trace(&format!("spawn failed: {e}"));
+            format!("Cannot start edge0-infer: {e}")
+        })?;
+        trace(&format!("spawned pid {}", child.id()));
         let lifetime = match platform::attach(&child) {
-            Ok(v) => v,
+            Ok(v) => {
+                trace("attach: ok (job or pid-only fallback)");
+                v
+            }
             Err(e) => {
+                trace(&format!("attach failed: {e}"));
                 let _ = child.kill();
                 let _ = child.wait();
                 return Err(e);
             }
         };
         let pid = child.id();
-        let record = PidRecord { pid, executable };
+        let record = PidRecord { pid, executable: executable.to_path_buf() };
         if let Err(e) = write_json(&self.record_path(), &record) {
+            trace(&format!(
+                "write_json({}) failed: {e}",
+                self.record_path().display()
+            ));
             let _ = child.kill();
             let _ = child.wait();
             return Err(e);
         }
+        trace("pid record written");
         let stderr = match child.stderr.take() {
             Some(stderr) => stderr,
             None => {
@@ -481,7 +679,7 @@ impl Manager {
                 .iter()
                 .find_map(|line| ready_url(line));
             if let Some(url) = url {
-                return Ok(Service { url, pid });
+                return Ok((url, pid));
             }
             if Instant::now() >= deadline {
                 let detail = status.detail;
@@ -490,6 +688,59 @@ impl Manager {
             }
             thread::sleep(Duration::from_millis(50));
         }
+    }
+    /// The --vram-reserve-mib each model was last reloaded with on this machine, by its canonical path; 0 marks a model
+    /// that reloading did not help.
+    fn reserves(&self) -> BTreeMap<String, u32> {
+        fs::read(self.directory.join(RESERVES_FILE))
+            .ok()
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+            .unwrap_or_default()
+    }
+    fn remember_reserve(&self, model: &str, mib: u32) {
+        let mut reserves = self.reserves();
+        reserves.insert(model.into(), mib);
+        if let Err(e) = write_json(&self.directory.join(RESERVES_FILE), &reserves) {
+            trace(&format!("cannot remember the reserve: {e}"));
+        }
+    }
+    /// After the ready line an engine can still be filling its caches; the load is finished once the system's committed
+    /// memory has stopped moving (or STEADY_LIMIT passed).  The last reading, or None where the platform has no limit.
+    fn settle_memory(&self, epoch: u64) -> Result<Option<CommitMemory>, String> {
+        let Some(mut last) = platform::commit_memory() else {
+            return Ok(None);
+        };
+        let deadline = Instant::now() + STEADY_LIMIT;
+        let mut committed = VecDeque::from([last.limit.saturating_sub(last.available)]);
+        while !steady(&committed) && Instant::now() < deadline {
+            thread::sleep(MEMORY_POLL);
+            if self.epoch.load(Ordering::SeqCst) != epoch || self.closing.load(Ordering::SeqCst) {
+                self.stop_process(Some(epoch))?;
+                return Err("Model loading cancelled".into());
+            }
+            let status = self.status();
+            if !status.running {
+                self.stop_process(Some(epoch))?;
+                return Err(format!(
+                    "Service exited before becoming ready:\n{}",
+                    status.detail
+                ));
+            }
+            if let Some(next) = platform::commit_memory() {
+                last = next;
+                committed.push_back(next.limit.saturating_sub(next.available));
+                if committed.len() > STEADY_SAMPLES {
+                    committed.pop_front();
+                }
+            }
+        }
+        trace(&format!(
+            "memory: steady={} available={} limit={}",
+            steady(&committed),
+            last.available,
+            last.limit
+        ));
+        Ok(Some(last))
     }
     pub fn status(&self) -> Status {
         let Ok(mut process) = self.process.lock() else {
@@ -578,6 +829,23 @@ impl Drop for Manager {
         let _ = self.shutdown();
     }
 }
+/// The edge0-infer that a release package ships with this app, given `app_dir`, the directory of this app's
+/// own executable: beside it (the Windows package), or in the bundle's `Contents/Resources` when the app runs
+/// from `Contents/MacOS` of a macOS app bundle. None when neither is there (a development build).
+pub(crate) fn bundled_executable(app_dir: &Path) -> Option<String> {
+    let name = format!("edge0-infer{}", std::env::consts::EXE_SUFFIX);
+    let mut candidates = vec![app_dir.join(&name)];
+    if app_dir.file_name().is_some_and(|n| n == "MacOS") {
+        if let Some(contents) = app_dir.parent().filter(|c| c.file_name().is_some_and(|n| n == "Contents")) {
+            candidates.push(contents.join("Resources").join(&name));
+        }
+    }
+    candidates
+        .into_iter()
+        .find(|path| path.is_file())
+        .map(|path| path.to_string_lossy().into_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -588,6 +856,92 @@ mod tests {
             std::process::id(),
             NEXT_DIRECTORY.fetch_add(1, Ordering::Relaxed)
         ))
+    }
+    #[test]
+    fn finds_the_bundled_executable_beside_the_app() {
+        let dir = directory();
+        fs::create_dir_all(&dir).unwrap();
+        assert_eq!(bundled_executable(&dir), None);
+        let exe = dir.join(format!("edge0-infer{}", std::env::consts::EXE_SUFFIX));
+        fs::create_dir(&exe).unwrap(); // a directory of that name is not an executable
+        assert_eq!(bundled_executable(&dir), None);
+        fs::remove_dir(&exe).unwrap();
+        fs::write(&exe, b"").unwrap();
+        assert_eq!(
+            bundled_executable(&dir),
+            Some(exe.to_string_lossy().into_owned())
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn finds_the_bundled_executable_in_the_app_bundle_resources() {
+        let root = directory();
+        let name = format!("edge0-infer{}", std::env::consts::EXE_SUFFIX);
+        let macos = root.join("Edge0 Chat.app").join("Contents").join("MacOS");
+        let resources = macos.parent().unwrap().join("Resources");
+        fs::create_dir_all(&macos).unwrap();
+        fs::create_dir_all(&resources).unwrap();
+        assert_eq!(bundled_executable(&macos), None);
+        let inside = resources.join(&name);
+        fs::write(&inside, b"").unwrap();
+        assert_eq!(bundled_executable(&macos), Some(inside.to_string_lossy().into_owned()));
+        // The one beside the executable comes first.
+        let beside = macos.join(&name);
+        fs::write(&beside, b"").unwrap();
+        assert_eq!(bundled_executable(&macos), Some(beside.to_string_lossy().into_owned()));
+        // Resources is only looked at from Contents/MacOS.
+        let other = root.join("bin");
+        fs::create_dir_all(&other).unwrap();
+        fs::create_dir_all(root.join("Resources")).unwrap();
+        fs::write(root.join("Resources").join(&name), b"").unwrap();
+        assert_eq!(bundled_executable(&other), None);
+        fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn memory_is_steady_only_after_a_full_window_within_tolerance() {
+        let gb = |v: f64| (v * GIB as f64) as u64;
+        let mut committed: VecDeque<u64> = (0..STEADY_SAMPLES - 1).map(|_| gb(90.0)).collect();
+        assert!(!steady(&committed), "a window not yet full");
+        committed.push_back(gb(90.2));
+        assert!(steady(&committed));
+        // the expert cache filling: 40 GB in a few samples
+        let filling: VecDeque<u64> = (0..STEADY_SAMPLES).map(|i| gb(61.0 + 3.5 * i as f64)).collect();
+        assert!(!steady(&filling));
+    }
+    #[test]
+    fn warns_only_when_little_commit_memory_is_left() {
+        // measured on a 128 GB RTX Spark N1X with Edge0 145B loaded: 0.6 GB left of 104.5 GB
+        let low = commit_warning(CommitMemory { limit: 104_500_000_000, available: 600_000_000 }).unwrap();
+        assert!(low.starts_with("Low memory:"), "{low}");
+        assert!(low.contains("0.6 GB of the 104.5 GB"), "{low}");
+        assert!(low.contains("page file"), "{low}");
+        // the same PC with the development model: 24 GB left
+        assert_eq!(commit_warning(CommitMemory { limit: 102_500_000_000, available: 24_000_000_000 }), None);
+        assert!(commit_warning(CommitMemory { limit: 100 * GIB, available: LOW_COMMIT - 1 }).is_some());
+        assert!(commit_warning(CommitMemory { limit: 100 * GIB, available: LOW_COMMIT }).is_none());
+    }
+    #[test]
+    fn reloads_with_a_reserve_covering_the_commit_memory_short_of_the_target() {
+        let free = |available| CommitMemory { limit: 100 * GIB, available };
+        assert_eq!(next_reserve(free(RELOAD_BELOW), None), None);
+        // 0.5 GiB free is 9728 MiB short: 12160 MiB at the measured ratio, 12288 in whole 256 MiB, on top of the engine's 700
+        assert_eq!(next_reserve(free(GIB / 2), None), Some(700 + 12288));
+        assert_eq!(next_reserve(free(9 * GIB), Some(4000)), Some(4000 + 1280));
+        assert_eq!(next_reserve(free(0), Some(20000)), Some(MAX_RESERVE_MIB));
+        assert_eq!(next_reserve(free(0), Some(MAX_RESERVE_MIB)), None);
+        assert_eq!(
+            reserve_arguments(5000),
+            ["--strata-arg", "--vram-reserve-mib", "--strata-arg", "5000"].map(String::from)
+        );
+    }
+    #[test]
+    fn remembers_the_reserve_of_each_model() {
+        let manager = Manager::new(directory()).unwrap();
+        assert!(manager.reserves().is_empty());
+        manager.remember_reserve("/models/a", 9000);
+        manager.remember_reserve("/models/b", 0);
+        manager.remember_reserve("/models/a", 12000);
+        assert_eq!(manager.reserves(), BTreeMap::from([("/models/a".into(), 12000), ("/models/b".into(), 0)]));
     }
     #[test]
     fn parses_only_local_ready_lines() {
@@ -617,6 +971,7 @@ mod tests {
             &settings,
             "model with spaces",
             Path::new("config with spaces/api-token"),
+            false,
         );
         assert_eq!(
             &args[args.len() - 4..],
@@ -629,7 +984,8 @@ mod tests {
         );
         settings.lan_access = false;
         assert!(
-            !network_arguments(&settings, "model", Path::new("unused")).contains(&"--host".into())
+            !network_arguments(&settings, "model", Path::new("unused"), false)
+                .contains(&"--host".into())
         );
     }
     #[test]
@@ -809,6 +1165,73 @@ mod tests {
             .manager
             .start(&fixture.settings, &fixture.directory.to_string_lossy())
             .is_err());
+    }
+    fn check_delegated_directory(model_name: &str, identifier: &str) {
+        let mut fixture = Fixture::new();
+        let root = fixture.directory.join("models");
+        let big = root.join("big");
+        for folder in ["mtp", "tokenizer"] {
+            fs::create_dir_all(big.join(folder)).unwrap();
+        }
+        fs::write(
+            big.join("model.json"),
+            format!(
+                r#"{{"model_name":"{model_name}","args":["ignored"],"env":{{"ignored":"value"}}}}"#
+            ),
+        )
+        .unwrap();
+        let native = root.join("native");
+        fs::create_dir_all(&native).unwrap();
+        fs::write(
+            native.join("model.json"),
+            r#"{"architecture": "edge0_35b", "format_version": 1}"#,
+        )
+        .unwrap();
+        fixture.settings.device = "metal".into();
+        fixture.settings.prefill_device = "metal".into();
+        let big_path = big.to_string_lossy().into_owned();
+        // As a location of its own and inside a parent location: the directory itself, its subdirectories not listed.
+        for location in [big_path.clone(), root.to_string_lossy().into_owned()] {
+            fixture.settings.assets = vec![location];
+            let found = fixture.manager.inspect(&fixture.settings).unwrap();
+            let paths: Vec<_> = found.iter().map(|a| a.path.clone()).collect();
+            assert!(paths.contains(&big_path), "{paths:?}");
+            assert!(paths
+                .iter()
+                .all(|p| !p.ends_with("mtp") && !p.ends_with("tokenizer")));
+            let entry = found.iter().find(|a| a.path == big_path).unwrap();
+            assert!(entry.ok && entry.model_id.as_deref() == Some(identifier));
+        }
+        assert!(fixture.manager.delegated.lock().unwrap()[&big.canonicalize().unwrap()]);
+        assert!(!fixture.manager.delegated.lock().unwrap()[&native.canonicalize().unwrap()]);
+        // The fixture refuses device arguments for a delegated directory, so starting proves they were left out.
+        let service = fixture.manager.start(&fixture.settings, &big_path).unwrap();
+        assert_eq!(service.url, "http://127.0.0.1:41325");
+        fixture.manager.stop().unwrap();
+        assert_eq!(
+            arguments_for(&fixture.settings, &big_path, true),
+            ["serve", "--model", big_path.as_str(), "--port", "0"]
+        );
+        let native_args = arguments_for(&fixture.settings, &native.to_string_lossy(), false);
+        assert!(
+            native_args.contains(&"--device".into())
+                && native_args.contains(&"--prefill-device".into())
+        );
+        // Without a prior inspection, start asks edge0-infer itself.
+        let fresh = Manager::new(fixture.directory.join("fresh")).unwrap();
+        fresh.start(&fixture.settings, &big_path).unwrap();
+        fresh.stop().unwrap();
+    }
+    #[test]
+    fn delegated_directories_are_one_model_started_without_devices() {
+        for (name, identifier) in [
+            ("edge0-145b-q3k", "edge0_145b"),
+            ("edge0-145b-fp4", "edge0_145b"),
+            ("edge0-120b-q3k", "edge0_120b"),
+            ("edge0-120b-fp4", "edge0_120b"),
+        ] {
+            check_delegated_directory(name, identifier);
+        }
     }
     #[test]
     fn cancels_before_child_publication_without_leaking() {
@@ -1011,14 +1434,26 @@ mod tests {
         let mut empty = fixture.settings.clone();
         empty.executable = " ".into();
         let message = empty.validate().unwrap_err();
-        assert!(message.starts_with("No edge0-infer executable is configured."), "{message}");
-        assert!(message.contains("Settings > Engine > Executable"), "{message}");
+        assert!(
+            message.starts_with("No edge0-infer executable is configured."),
+            "{message}"
+        );
+        assert!(
+            message.contains("Settings > Engine > Executable"),
+            "{message}"
+        );
         let mut missing = fixture.settings.clone();
-        missing.executable = directory().join("edge0-infer").to_string_lossy().into_owned();
+        missing.executable = directory()
+            .join("edge0-infer")
+            .to_string_lossy()
+            .into_owned();
         let message = missing.validate().unwrap_err();
         assert!(message.contains(&missing.executable), "{message}");
         assert!(message.contains("moved or deleted"), "{message}");
-        assert!(message.contains("Other location… on Choose a model"), "{message}");
+        assert!(
+            message.contains("Other location… on Choose a model"),
+            "{message}"
+        );
         let mut folder = fixture.settings.clone();
         folder.executable = std::env::temp_dir().to_string_lossy().into_owned();
         assert!(folder.validate().unwrap_err().contains("was not found at"));

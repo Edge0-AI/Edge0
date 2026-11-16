@@ -35,6 +35,10 @@ pub fn force(pid: u32) {
         libc::kill(pid as i32, libc::SIGKILL);
     }
 }
+/// macOS grows its swap on demand and has no fixed commit limit to run into.
+pub fn commit_memory() -> Option<crate::service::CommitMemory> {
+    None
+}
 
 // AppKit panels must run on the application's main thread. The command routes
 // this call through AppHandle::run_on_main_thread and waits off the UI thread.

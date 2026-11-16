@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Edge0 Chat",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "dev.edge0.example.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",

@@ -60,6 +60,26 @@ def test_invalid_payloads(tmp_path):
         pack_q4_1(np.zeros(31))
 
 
+@pytest.mark.parametrize('values', [
+    np.full(32, 65520, dtype=np.float32),
+    np.full(32, -65520, dtype=np.float32),
+    np.tile(np.array([0, 2_000_000], dtype=np.float32), 16),
+    np.tile(np.array([-np.finfo(np.float32).max, np.finfo(np.float32).max]), 16),
+])
+def test_q41_rejects_unrepresentable_block_metadata(values):
+    assert np.isfinite(values).all()
+    with pytest.raises(ValueError, match='representable in F16'):
+        pack_q4_1(values)
+
+
+def test_q41_accepts_finite_f16_boundary():
+    for value in (65504, -65504):
+        payload = pack_q4_1(np.full(32, value, dtype=np.float32))
+        scale, minimum = struct.unpack('<ee', payload[:4])
+        assert scale == 0 and minimum == value
+        assert payload[4:] == bytes(16)
+
+
 def test_numeric_metadata_arrays_use_bounded_block_reads(tmp_path, monkeypatch):
     import format_gguf
 

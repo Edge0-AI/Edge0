@@ -64,7 +64,7 @@ exec::Status Session::begin_use() {
 void Session::end_use() {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (uses_) --uses_;
-    if (!uses_ && status_.release_requested) cleanup();
+    if (!uses_ && !pending_ && status_.release_requested) cleanup();
 }
 Result<Update> Session::begin_update(const std::vector<std::int32_t>& tokens) {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -97,6 +97,7 @@ exec::Status Session::commit_update(const Update& update, const exec::Completion
     status_.tokens.insert(status_.tokens.end(), update.tokens.begin(), update.tokens.end());
     status_.e += update.step.n;
     pending_ = false;
+    if (!uses_ && status_.release_requested) cleanup();
     return {};
 }
 exec::Status Session::report_interruption(const Update& update, bool submitted) {
@@ -104,6 +105,7 @@ exec::Status Session::report_interruption(const Update& update, bool submitted) 
     if (!pending_ || update.serial != serial_) return invalid("Stale update interruption");
     if (submitted) { status_.valid = false; states_.discard_checkpoint([&] { return discard_ ? discard_(*kv_, states_) : exec::Status{}; }); }
     pending_ = false;
+    if (!uses_ && status_.release_requested) cleanup();
     return {};
 }
 exec::Status Session::reset(Initialize callback) {

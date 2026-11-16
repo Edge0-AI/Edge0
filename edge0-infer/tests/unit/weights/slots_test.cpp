@@ -1,5 +1,6 @@
 #include "weights/expert_slots.h"
 #include "tests/support/runtime.h"
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>

@@ -1,0 +1,49 @@
+{
+  "exe": "${STRATA_DIR}/build/strata${EXE_SUFFIX}",
+  "args": [
+    "--pack",
+    "${MODEL_DIR}",
+    "--native",
+    "${MODEL_DIR}/model-skeleton.gguf",
+    "--native-dense-gguf",
+    "${MODEL_DIR}/model-skeleton.gguf",
+    "--ple-gguf",
+    "${MODEL_DIR}/ple-fp8.gguf",
+    "--ple-io",
+    "${PLE_IO}",
+    "--expert-profile",
+    "${MODEL_DIR}/profile.bin",
+    "--expert-cache",
+    "auto",
+    "--prefill",
+    "auto",
+    "--spec",
+    "4",
+    "--spec-min-p",
+    "0.5",
+    "--mtp",
+    "${MODEL_DIR}/mtp",
+    "--max-context",
+    "131072",
+    "--kv",
+    "int8"
+  ],
+  "cwd": "${STRATA_DIR}",
+  "tokenizer": "${MODEL_DIR}/tokenizer",
+  "model_name": "edge0-120b",
+  "env": {
+    "STRATA_LATENT_A": "${MODEL_DIR}/experts.bin",
+    "STRATA_LATENT_LABELS": "${MODEL_DIR}/labels.bin",
+    "STRATA_LATENT_DENSE": "${DU_FILE}",
+    "STRATA_LATENT_DENSE_FMT": "${DU_FMT}",
+    "STRATA_EMBED_VRAM": "1",
+    "STRATA_LATENT_FUSED": "1",
+    "STRATA_LATENT_FUSED_DU": "1",
+    "STRATA_LATENT_U_GPU": "1",
+    "STRATA_LAT_FUSED_Q3K": "${LAT_FUSED_Q3K}"
+  },
+  "gpus_asked": true,
+  "lib_dirs": [
+    "${CUDA_LIB_DIR}"
+  ]
+}

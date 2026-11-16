@@ -1,0 +1,21 @@
+# Kubernetes (Prometheus Operator): Strata behind a Service whose port is named "http".
+# The API key lives in a Secret (key "key"), sent as a bearer token.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: strata
+  labels:
+    release: kube-prometheus-stack   # whatever your Prometheus selects ServiceMonitors by
+spec:
+  selector:
+    matchLabels:
+      app: strata
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      authorization:
+        type: Bearer
+        credentials:
+          name: strata-api-key
+          key: key

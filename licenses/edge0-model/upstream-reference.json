@@ -1,0 +1,41 @@
+{
+  "upstream_license": {
+    "verified_date": "2026-11-12",
+    "repository": "Qwen/Qwen3.8-Flash-Next",
+    "license_reference_revision": "812d96e10a0dd82b69d749e68693698cf6c36daa",
+    "source_url": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/LICENSE",
+    "fixed_source_url": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/812d96e10a0dd82b69d749e68693698cf6c36daa/LICENSE",
+    "license": "Qwen Community License 1.0",
+    "sha256": "a0dc422560841fd68e06d974907f8b4c709bca44a67daad2b528437bdf676c08",
+    "bytes": 3235,
+    "user_confirmed_upstream_license": true,
+    "actual_training_base_revision_verified": false
+  },
+  "model_license_sources": [
+    {
+      "repository": "Edge0/Edge0-145B-q3k",
+      "commit": "d7de835cfce7d9bb22a3d5ebb7d1e8565d4ecf74",
+      "url": "https://huggingface.co/Edge0/Edge0-145B-q3k/blob/d7de835cfce7d9bb22a3d5ebb7d1e8565d4ecf74/release-scope.json",
+      "sha256": "9ab2d5f7bb8fef4caf664502a73a6b4371c56ad0244e81571df48587a69a11f4"
+    },
+    {
+      "repository": "Edge0/Edge0-145B-NVFP4",
+      "commit": "6aab5f4337b4c7146dd69130dad4c719f83fca03",
+      "url": "https://huggingface.co/Edge0/Edge0-145B-NVFP4/blob/6aab5f4337b4c7146dd69130dad4c719f83fca03/release-scope.json",
+      "sha256": "adcdea803989c7e76717ec308064d1d20e8bb5b12e6944cb9cbfa499137389b0"
+    },
+    {
+      "repository": "Edge0/Edge0-120B-q3k",
+      "commit": "51a60a20d6fd51385a11e8d1e5f6c767c6715088",
+      "url": "https://huggingface.co/Edge0/Edge0-120B-q3k/blob/51a60a20d6fd51385a11e8d1e5f6c767c6715088/release-scope.json",
+      "sha256": "f5a88536e8159fac311adaa16e8b44433d047ab580a568028c2cc557aac6c6b6"
+    },
+    {
+      "repository": "Edge0/Edge0-120B-NVFP4",
+      "commit": "291b1ee04fa2660f1d2edb57a66e1cdf4b460229",
+      "url": "https://huggingface.co/Edge0/Edge0-120B-NVFP4/blob/291b1ee04fa2660f1d2edb57a66e1cdf4b460229/release-scope.json",
+      "sha256": "2c7adde09899c294712f8da3e4664108ab1b239aecb7490050d55aec6c491aed"
+    }
+  ],
+  "scope": "Published model-license provenance. The Qwen license-reference revision is not a verified training or conversion revision. Original release records and their stated limits are retained in release-scope.json."
+}

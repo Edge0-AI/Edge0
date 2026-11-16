@@ -27,4 +27,4 @@ Start `build/cpu/bin/edge0-infer serve --model "$MOE_ASSETS_35B"`, then run:
 uv run --no-project --with openai==3.26.1 python examples/openai_client.py --model edge0_35b
 ```
 
-See the [server guide](../docs/openai-compatible-server.md) for supported fields.
+See the [server guide](../docs/local-server.md) for supported fields.

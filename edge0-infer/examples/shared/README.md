@@ -21,7 +21,7 @@ Math inputs and outputs are strings. Protect closed dollar or backslash-delimite
 | `duration` | `value` (seconds) | Round to tenths; below 60 s: `3.5 s`. Otherwise round to whole seconds; below 3600 s: `6 min 44 s`; from 3600 s: `2 h 14 min` (remaining seconds dropped). |
 | `device_memory` | `by_device`, shaped like `/status` `memory.ledger.by_device` | Sum `current_bytes` of devices whose `memory` is `system`, and separately of `dedicated` devices; format each as `bytes`. `dedicated` is `null` when no device is dedicated. An empty or missing map is not shown. |
 
-Apps compute display values only from engine fields; see [the status fields](../../docs/openai-compatible-server.md#status-and-lan-authentication).
+Apps compute display values only from engine fields; see [the status fields](../../docs/local-server.md#status-and-lan-authentication).
 
 ## Context usage
 
