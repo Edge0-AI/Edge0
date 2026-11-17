@@ -574,11 +574,19 @@ class McpHub:
     def template_tools(self, exclude=()) -> list[dict]:
         """The tools in the chat template's form ({name, description, parameters}); `exclude`: names the request
         brought itself (those win)."""
-        out = []
+        out, catalogs = [], {}
         for name, (s, tool) in self.routes().items():
             if name in exclude:
                 continue
-            t = next(x for x in s.tools if x["name"] == tool)
+            if s not in catalogs:
+                catalogs[s] = ({}, iter(s.tools))
+            catalog, remaining = catalogs[s]
+            if tool not in catalog:
+                for item in remaining:
+                    catalog.setdefault(item["name"], item)  # duplicate names still use the first schema
+                    if item["name"] == tool:
+                        break
+            t = catalog[tool]
             schema = t.get("inputSchema") if isinstance(t.get("inputSchema"), dict) else {}
             out.append({"name": name, "description": str(t.get("description") or t.get("title") or ""),
                         "parameters": schema or {"type": "object", "properties": {}}})

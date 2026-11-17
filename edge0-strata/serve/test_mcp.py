@@ -201,6 +201,64 @@ class HttpClient(unittest.TestCase):
         self.assertIn("could not reach", self.hub.servers["down"].error)
 
 
+class ToolCatalog(unittest.TestCase):
+    def test_template_lookup_visits_each_catalog_only_twice(self):
+        class Catalog(list):
+            visits = 0
+
+            def __iter__(self):
+                for tool in super().__iter__():
+                    self.visits += 1
+                    yield tool
+
+        hub = McpHub({"catalog": {"command": "unused"}})
+        server = hub.servers["catalog"]
+        server.status = "ready"
+        server.tools = Catalog({"name": f"tool_{i}", "description": f"description {i}",
+                                "inputSchema": {"type": "object", "properties": {str(i): {"type": "string"}}}}
+                               for i in range(128))
+        # Duplicate names keep the first schema, just as the previous linear lookup did.
+        server.tools.append({"name": "tool_127", "description": "duplicate"})
+        tools = hub.template_tools(exclude={"catalog__tool_0"})
+        self.assertEqual(len(tools), 128)
+        self.assertEqual(tools[0]["parameters"], server.tools[1]["inputSchema"])
+        self.assertEqual(tools[-1]["description"], "description 127")
+        self.assertLessEqual(server.tools.visits, 2 * len(server.tools))
+        server.tools[1]["description"] = "updated"
+        self.assertEqual(hub.template_tools()[1]["description"], "updated")
+        server.tools.visits = 0
+        self.assertEqual(hub.template_tools(exclude=set(hub._routes)), [])
+        self.assertEqual(server.tools.visits, len(server.tools))
+        server.tools.visits = 0
+        self.assertEqual(len(hub.template_tools(exclude=set(hub._routes) - {"catalog__tool_0"})), 1)
+        self.assertEqual(server.tools.visits, len(server.tools) + 1)
+
+    def test_large_http_catalog_preserves_schemas_and_calls(self):
+        from unittest.mock import patch
+        catalog = [{"name": f"tool_{i}", "title": f"Tool {i}",
+                    "inputSchema": {"type": "object", "properties": {str(i): {"type": "integer"}}}}
+                   for i in range(1023)] + [fake.TOOLS[0]]
+        with patch.object(fake, "TOOLS", catalog), patch.object(fake, "PAGE", 128):
+            httpd = fake.http_server(0)
+            hub = McpHub({"web": {"url": f"http://127.0.0.1:{httpd.server_address[1]}/mcp"}})
+            try:
+                hub.start(wait=True)
+                self.assertEqual(hub.servers["web"].status, "ready")
+                tools = hub.template_tools(exclude={"web__tool_1000"})
+                self.assertEqual(len(tools), 1023)
+                self.assertNotIn("web__tool_1000", {t["name"] for t in tools})
+                for tool, original in zip(tools, [t for t in catalog if t["name"] != "tool_1000"]):
+                    self.assertEqual(tool, {"name": "web__" + original["name"],
+                                           "description": original.get("description") or original["title"],
+                                           "parameters": original["inputSchema"]})
+                result = hub.call("web__echo", {"text": "last page"})
+                self.assertEqual((result["ok"], result["text"]), (True, "last page"))
+            finally:
+                hub.close()
+                httpd.shutdown()
+                httpd.server_close()
+
+
 class Config(unittest.TestCase):
     def test_both_spellings_and_the_file(self):
         with tempfile.TemporaryDirectory() as d:
