@@ -546,6 +546,10 @@ bool Window::prompt(const int64_t* tokens, int64_t n, int64_t pos0,
     }();
     // Reserve the configured latent chunk once. The warm-up sends prompts of
     // increasing sizes, and the runtime owns these allocations until teardown.
+    if (stream_) {
+        err = "metal prompt: the prompt chain does not read the streaming arena (STRATA_METAL_PROMPT=window, or STRATA_METAL_STREAM=0)";
+        return false;
+    }
     const int capacity = latent_on_ ? C : (int) std::min<int64_t>(C, std::max<int64_t>(n, 64));
     if (!pc_setup(capacity)) { err = "metal prompt: setup failed"; return false; }
     const double t0 = now_ms();

@@ -921,11 +921,18 @@ void Window::latent_routed(std::vector<mtl::Dispatch>& ds, int layer, int ntok) 
     const gguf::Tensor d_weight{"", {N, args.groups * args.latent}, ref::Q4_0,
                                 du_offset, latent_dense_.d_bytes()};
     gemv(ds, d_weight, XF_, latent_d_, args.groups * args.latent, ntok, 0, &latent_du_);
-    auto run = [&](const char* name, std::vector<mtl::Arg> buffers, uint32_t grid, uint32_t rows) {
+    // SSD streaming: the routed experts' kernels read their slots in the arena (function constant 20; smap and the
+    // arena's other chunks after the arguments), the experts buffer is the arena's first chunk
+    auto run = [&](const char* name, std::vector<mtl::Arg> buffers, uint32_t grid, uint32_t rows, bool experts = false) {
         mtl::Dispatch d;
-        d.p = P(latent_lib_, name, {}, name);
+        const bool arena = experts && stream_;
+        d.p = arena ? P(latent_lib_, name, mtl::Constants().b(20, true), std::string(name) + "#arena") : P(latent_lib_, name, {}, name);
         d.args = std::move(buffers);
         d.args.push_back(mtl::Arg::V(args));
+        if (arena) {
+            d.args.push_back(mtl::Arg::B(st_->smap(), (size_t) layer * NEXP * 4));
+            for (int c = 1; c < 4; ++c) d.args.push_back(mtl::Arg::B(st_->chunk(c)));
+        }
         d.grid[0] = grid;
         d.grid[1] = rows;
         d.tg[0] = 128;
@@ -935,13 +942,16 @@ void Window::latent_routed(std::vector<mtl::Dispatch>& ds, int layer, int ntok) 
         (ntok * args.groups * args.latent + 127) / 128, 1);
     const char* gate_kernel = verify ? "latent_gate_up_4"
                                     : narrow ? "latent_gate_up_8" : "latent_gate_up";
+    const mtl::Arg expert_arg = stream_ ? mtl::Arg::B(st_->chunk(0)) : mtl::Arg::B(latent_a_, a_offset);
+    // the host's turn (SSD streaming): ids_ is written (moe_route above), no kernel has read this layer's experts yet
+    if (cuts_) cuts_->push_back((int) ds.size());
     run(gate_kernel,
-        {mtl::Arg::B(latent_a_, a_offset),
+        {expert_arg,
          mtl::Arg::B(latent_labels_, label_offset), mtl::Arg::B(ids_), mtl::Arg::B(latent_d_), mtl::Arg::B(h_)},
-        args.ff / gate_rows, entries);
+        args.ff / gate_rows, entries, true);
     const bool down_narrow = verify || narrow;
-    run(down_narrow ? "latent_down_4" : "latent_down", {mtl::Arg::B(latent_a_, a_offset), mtl::Arg::B(ids_),
-                         mtl::Arg::B(h_), mtl::Arg::B(latent_down_)}, args.latent / (down_narrow ? 32 : 4), entries);
+    run(down_narrow ? "latent_down_4" : "latent_down", {expert_arg, mtl::Arg::B(ids_),
+                         mtl::Arg::B(h_), mtl::Arg::B(latent_down_)}, args.latent / (down_narrow ? 32 : 4), entries, true);
     const auto u_weights = mtl::Arg::B(latent_du_, du_offset + latent_dense_.d_bytes());
     if (latent_grouped_u_) {
         const uint32_t group_rows = ntok * args.groups;
@@ -1696,10 +1706,6 @@ void stream_atexit() {
 // froze with an 89 GB arena and 7 GB left beside a 50 GB n-gram table read through the file cache; arena_budget.h);
 // STRATA_METAL_ARENA_GB sets it.
 bool Window::stream_arena(std::string& err) {
-    if (latent_on_) {
-        err = "metal latent: the latent expert kernels do not read the streaming arena (STRATA_METAL_STREAM=0 keeps the experts resident)";
-        return false;
-    }
     uint64_t phys = 0;
     size_t len = sizeof phys;
     sysctlbyname("hw.memsize", &phys, &len, nullptr, 0);
