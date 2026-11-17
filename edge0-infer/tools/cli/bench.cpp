@@ -51,7 +51,7 @@ void breakdown(std::ostream& out,const edge0::GenerationCheckResult& result,std:
         {"total_seconds",&edge0::DecodeTiming::total_seconds}};
     bool first=true;
     for(const auto& field:fields) {
-        if(!first) out<<","; first=false; out<<"\""<<field.first<<"\":";
+        if(!first){out<<",";} first=false; out<<"\""<<field.first<<"\":";
         std::vector<double> values;for(std::size_t i=warmup;i<warmup+count;++i) values.push_back(result.decode_timing[i].*field.second);
         distribution(out,values);
     }

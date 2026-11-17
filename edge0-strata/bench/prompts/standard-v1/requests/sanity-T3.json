@@ -1,0 +1,59 @@
+{
+  "id": "sanity-T3",
+  "phase": "sanity",
+  "case_id": "T3",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "tool_call",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-T3]\nUse convert_units to convert 3 km to m."
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "convert_units",
+        "description": "Synthetic benchmark lookup; no external action is performed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "from_unit": {
+              "type": "string"
+            },
+            "to_unit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "value",
+            "from_unit",
+            "to_unit"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "expected": {
+    "kind": "tool_call",
+    "name": "convert_units",
+    "arguments": {
+      "value": 3,
+      "from_unit": "km",
+      "to_unit": "m"
+    }
+  },
+  "input_tokens_frozen": 352,
+  "max_shared_prefix_tokens": 61
+}

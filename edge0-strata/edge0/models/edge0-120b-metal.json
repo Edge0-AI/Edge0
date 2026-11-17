@@ -1,0 +1,70 @@
+{
+  "exe": "${STRATA_DIR}/build-metal/strata",
+  "cwd": "${STRATA_DIR}",
+  "backend": "metal",
+  "args": [
+    "--pack",
+    "${MODEL_DIR}",
+    "--native",
+    "${MODEL_DIR}/model-skeleton.gguf",
+    "--native-dense-gguf",
+    "${MODEL_DIR}/model-skeleton.gguf",
+    "--ple-gguf",
+    "${MODEL_DIR}/ple-fp8.gguf",
+    "--ple-io",
+    "${PLE_IO}",
+    "--expert-profile",
+    "${MODEL_DIR}/profile.bin",
+    "--expert-cache",
+    "64",
+    "--mmap-experts",
+    "--prefill",
+    "auto",
+    "--max-context",
+    "32768",
+    "--spec",
+    "4",
+    "--suffix-draft",
+    "3",
+    "--mtp",
+    "${MODEL_DIR}/mtp",
+    "--spec-min-p",
+    "0.5"
+  ],
+  "env": {
+    "STRATA_METAL_LATENT": "1",
+    "STRATA_LATENT_DENSE": "${DU_FILE}",
+    "STRATA_LATENT_DENSE_FMT": "${DU_FMT}",
+    "STRATA_LATENT_A": "${MODEL_DIR}/experts.bin",
+    "STRATA_LATENT_LABELS": "${MODEL_DIR}/labels.bin",
+    "STRATA_HC_Q8": "0",
+    "STRATA_ROUTE_TAIL_SKIP": "0",
+    "STRATA_PREFILL_CPU_SHARE": "0",
+    "STRATA_METAL_LATENT_GROUP_U": "1",
+    "STRATA_METAL_LATENT_PROMPT": "1",
+    "STRATA_METAL_PROMPT_CHUNK": "8192",
+    "STRATA_METAL_LATENT_DECODE_TILES": "1",
+    "STRATA_METAL_MATH": "fast",
+    "STRATA_METAL_LATENT_PROMPT_QSA_MM": "1",
+    "STRATA_METAL_GDN_SCAN": "gdn_scanr_4_8",
+    "STRATA_METAL_DRAFT_VOCAB": "${MODEL_DIR}/mtp/draft_vocab.bin",
+    "STRATA_DECODE_TIMING": "1",
+    "STRATA_METAL_LATENT_VERIFY_FAST": "1",
+    "STRATA_METAL_LATENT_PROMPT_TUNE": "1"
+  },
+  "tokenizer": "${MODEL_DIR}/tokenizer",
+  "model_name": "edge0-120b",
+  "lib_dirs": [],
+  "prepare": [
+    {
+      "output": "${MODEL_DIR}/mtp-q2_0.gguf",
+      "script": "tools/mtp_gguf.py",
+      "args": [
+        "--rt",
+        "${MODEL_DIR}/mtp",
+        "--out",
+        "${MODEL_DIR}/mtp-q2_0.gguf"
+      ]
+    }
+  ]
+}

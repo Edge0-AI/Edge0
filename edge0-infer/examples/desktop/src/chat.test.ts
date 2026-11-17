@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import shared from '../../shared/app.json';
 import metricsCases from '../../shared/metrics-cases.json';
 import mathCases from '../../shared/math-cases.json';
-import { appData, buildRequest, fetchWithRetry, formatMetrics, mapAsset, selectableAssets, protectMath, SseAccumulator, streamChat } from './chat';
+import { appData, buildRequest, explainFailure, fetchWithRetry, formatMetrics, mapAsset, selectableAssets, protectMath, SseAccumulator, streamChat } from './chat';
 
 describe('shared vectors and bundled app data', () => {
   it('uses the canonical prompt and ordered suggestions', () => {
@@ -111,4 +111,15 @@ for (const thinking of [false, true]) it(`normal HTTP request changes only tempe
   expect(body.temperature).toBe(0.2);
   expect(body.messages).toEqual([{ role: 'system', content: shared.system_prompt }, ...history]);
   expect(body.chat_template_kwargs).toEqual({ enable_thinking: thinking });
+});
+it('adds the low-memory warning to a generation that ended because the engine stopped', async () => {
+  const warning = 'Low memory: with the model loaded, only 0.6 GB of the 104.5 GB Windows commit limit is free.';
+  // edge0-strata ends the stream with this event when its engine process dies mid-answer
+  const fetcher = async () => new Response('data: {"error": {"type": "server_error", "message": "the engine stopped unexpectedly (exit code 0xc0000409); the next request restarts it"}}\n\ndata: [DONE]\n\n');
+  const failure = await streamChat(fetcher, 'http://127.0.0.1:1', buildRequest([], false, 'edge0_145b'), new AbortController().signal, () => {}).catch(e => e);
+  const shown = explainFailure(failure, warning);
+  expect(shown).toContain('the engine stopped unexpectedly (exit code 0xc0000409)');
+  expect(shown).toContain('ran out of memory. ' + warning);
+  expect(explainFailure(failure)).toBe(String(failure));
+  expect(explainFailure(new Error('Generation failed (400): bad request'), warning)).toBe('Error: Generation failed (400): bad request');
 });

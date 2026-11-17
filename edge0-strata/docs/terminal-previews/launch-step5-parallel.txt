@@ -1,0 +1,36 @@
+# strata launch preview: step5-parallel
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Set up   Step 5 of 9: Parallel
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ How many requests at the same time?
+ › Fit to my graphics card (1)         recommended
+   1 request
+   2 requests                          may not fit: slower answers
+   3 requests                          may not fit: slower answers
+   4 requests                          may not fit: slower answers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Your card has 12 GB of graphics memory, which fits 1 at once by Strata's rule (12 GB: 1, 20 GB: 2, 24 GB: 3,
+ 32 GB or more: 4). One person: pick 1. A team or several coding agents: more. More than fits still starts,
+ only slower.
+ ↑↓ choose   Enter next   Esc back   ? help   q quit

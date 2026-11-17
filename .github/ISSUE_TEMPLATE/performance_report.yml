@@ -7,7 +7,9 @@ body:
       value: |
         Use this for "slower than the README numbers" or "high memory / OOM" reports
         (e.g. #17, #110). The reference figures and the devices they were measured on are in
-        [Benchmarking](https://github.com/Edge0-AI/Edge0/blob/main/edge0-infer/docs/benchmarking.md#reference-figures).
+        [Benchmarking](https://github.com/Edge0-AI/Edge0/blob/main/edge0-infer/docs/benchmarking.md#reference-figures)
+        (`edge0-35b`) and on the [model page](https://github.com/Edge0-AI/Edge0/blob/main/docs/models/edge0-145b.md)
+        (`edge0-145b`, `edge0-120b`; include the GPU and its memory).
         Throughput depends on memory and storage speed — please include your total RAM and storage type.
 
   - type: dropdown
@@ -16,6 +18,8 @@ body:
       label: Model tier
       options:
         - edge0-35b
+        - edge0-145b
+        - edge0-120b
     validations:
       required: true
 
