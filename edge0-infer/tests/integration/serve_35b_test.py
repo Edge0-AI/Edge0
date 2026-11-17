@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import openai
+import anthropic
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from serve_support import Server
 from memory_metric import process_peak
@@ -109,6 +110,24 @@ def main():
         tool = {'name': 'get_weather', 'description': 'Get the current weather for a city.', 'parameters': {'type': 'object', 'properties': {'city': {'type': 'string'}}, 'required': ['city']}}
         prompt = '\u5317\u4eac\u4eca\u5929\u5929\u6c14\u600e\u4e48\u6837\uff1f'
         output = '{"temperature": 23, "condition": "\\u6674"}'
+        if args.case in ('all', 'messages'):
+            with Server(args.cli, model, root / 'messages', args.backend, ['--max-tokens', '1024']) as server:
+                client = anthropic.Anthropic(base_url=server.base, api_key='local', max_retries=0)
+                tools = [{'name': tool['name'], 'description': tool['description'], 'input_schema': tool['parameters']}]
+                history = [{'role': 'user', 'content': prompt}]
+                options = dict(model='test', max_tokens=1024, tools=tools, thinking={'type': 'enabled', 'budget_tokens': 512}, extra_body={'temperature': 0})
+                first = client.messages.create(messages=history, **options)
+                report(server, 'Messages tool first')
+                calls = [b for b in first.content if b.type == 'tool_use']
+                require(any(b.type == 'thinking' and b.thinking for b in first.content), 'Messages thinking block')
+                require(first.stop_reason == 'tool_use' and len(calls) == 1, 'Messages tool end')
+                if calls:
+                    history += [{'role': 'assistant', 'content': [b.model_dump(exclude_none=True) for b in first.content]},
+                                {'role': 'user', 'content': [{'type': 'tool_result', 'tool_use_id': c.id, 'content': output} for c in calls]}]
+                    client.messages.create(messages=history, **options)
+                    _, result = report(server, 'Messages tool second')
+                    require(result['reused_tokens'] > 0, 'Messages tool result prefix reuse')
+                client.close()
         for protocol in (p for p in ('chat', 'responses') if args.case in ('all', 'tools', p)):
             with Server(args.cli, model, root / protocol, args.backend, ['--max-tokens', '1024']) as server:
                 client = openai.OpenAI(base_url=server.base + '/v1', api_key='local', max_retries=0)

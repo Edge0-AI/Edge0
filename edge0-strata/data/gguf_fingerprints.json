@@ -1,0 +1,562 @@
+{
+ "qwen/Q2_0": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 66412853760,
+  "expert_bytes": {
+   "Q2_0": 33973862400
+  },
+  "experts_bpw": 2.25,
+  "bpw": 3.003,
+  "files": [
+   "Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+   "Q2_0/Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf"
+  ],
+  "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "qwen/IQ2_XS": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 68015068160,
+  "expert_bytes": {
+   "IQ1_M": 1101004800,
+   "IQ2_S": 18271436800,
+   "IQ2_XXS": 4757913600,
+   "Q2_0": 11324620800
+  },
+  "experts_bpw": 2.348,
+  "bpw": 3.075,
+  "files": [
+   "IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+   "IQ2_XS/Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf"
+  ],
+  "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "qwen/IQ3_XXS": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 75828974080,
+  "expert_bytes": {
+   "IQ2_S": 5373952000,
+   "IQ2_XS": 4849664000,
+   "IQ2_XXS": 3892838400,
+   "IQ3_S": 9371648000,
+   "IQ3_XXS": 3853516800,
+   "IQ4_NL": 8493465600,
+   "Q2_0": 7077888000
+  },
+  "experts_bpw": 2.842,
+  "bpw": 3.428,
+  "files": [
+   "IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+   "IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf"
+  ],
+  "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "qwen/IQ3_S": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 83606638080,
+  "expert_bytes": {
+   "IQ2_S": 10747904000,
+   "IQ3_S": 7208960000,
+   "IQ3_XXS": 10918297600,
+   "IQ4_NL": 18402508800,
+   "IQ4_XS": 891289600,
+   "Q2_0": 2123366400
+  },
+  "experts_bpw": 3.331,
+  "bpw": 3.78,
+  "files": [
+   "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+   "IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf"
+  ],
+  "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "swift/Q2_0": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 66538928640,
+  "expert_bytes": {
+   "Q2_0": 33973862400
+  },
+  "experts_bpw": 2.25,
+  "bpw": 3.008,
+  "files": [
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00001-of-00002.gguf",
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-Q2_0-00002-of-00002.gguf"
+  ],
+  "repo": "ukisai/Swift-1.5-Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "swift/IQ2_XS": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 68141143040,
+  "expert_bytes": {
+   "IQ1_M": 1101004800,
+   "IQ2_S": 18271436800,
+   "IQ2_XXS": 4757913600,
+   "Q2_0": 11324620800
+  },
+  "experts_bpw": 2.348,
+  "bpw": 3.081,
+  "files": [
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00001-of-00002.gguf",
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ2_XS-00002-of-00002.gguf"
+  ],
+  "repo": "ukisai/Swift-1.5-Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "swift/IQ3_XXS": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 75955048960,
+  "expert_bytes": {
+   "IQ2_S": 5373952000,
+   "IQ2_XS": 4849664000,
+   "IQ2_XXS": 3892838400,
+   "IQ3_S": 9371648000,
+   "IQ3_XXS": 3853516800,
+   "IQ4_NL": 8493465600,
+   "Q2_0": 7077888000
+  },
+  "experts_bpw": 2.842,
+  "bpw": 3.434,
+  "files": [
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00001-of-00002.gguf",
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ3_XXS-00002-of-00002.gguf"
+  ],
+  "repo": "ukisai/Swift-1.5-Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "coder/IQ1_M": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 58397560320,
+  "expert_bytes": {
+   "IQ2_S": 5373952000,
+   "IQ3_S": 3604480000,
+   "IQ3_XXS": 5459148800,
+   "IQ4_NL": 9201254400,
+   "IQ4_XS": 445644800,
+   "Q2_0": 1061683200
+  },
+  "experts_bpw": 3.331,
+  "bpw": 4.01,
+  "files": [
+   "IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00001-of-00002.gguf",
+   "IQ1_M/Qwen3.8-Flash-Next-GSQ-RCO-IQ1_M-00002-of-00002.gguf"
+  ],
+  "repo": "ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-Coder-GGUF"
+ },
+ "unsloth/UD-IQ4_XS": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 93671559680,
+  "expert_bytes": {
+   "IQ3_S": 33882112000,
+   "IQ4_NL": 20289945600,
+   "IQ4_XS": 891289600,
+   "Q8_0": 4456448000
+  },
+  "experts_bpw": 3.942,
+  "bpw": 4.235,
+  "files": [
+   "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf",
+   "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00002-of-00003.gguf",
+   "UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00003-of-00003.gguf"
+  ],
+  "repo": "unsloth/Qwen3.8-Flash-Next-GGUF"
+ },
+ "unsloth/UD-Q4_K_XL": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 111323630080,
+  "expert_bytes": {
+   "Q4_K": 44354764800,
+   "Q5_1": 27053260800,
+   "Q5_K": 1153433600,
+   "Q8_0": 4456448000
+  },
+  "experts_bpw": 5.101,
+  "bpw": 5.033,
+  "files": [
+   "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00001-of-00004.gguf",
+   "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00002-of-00004.gguf",
+   "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00003-of-00004.gguf",
+   "UD-Q4_K_XL/Qwen3.8-Flash-Next-UD-Q4_K_XL-00004-of-00004.gguf"
+  ],
+  "repo": "unsloth/Qwen3.8-Flash-Next-GGUF"
+ },
+ "gyro/Gyro-S": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 58475973120,
+  "expert_bytes": {
+   "TQK6": 16357785600,
+   "TQK7": 9437184000
+  },
+  "experts_bpw": 1.708,
+  "bpw": 2.644,
+  "files": [
+   "Qwen3.8-Flash-Next-Gyro-S-TQ1_0.gguf"
+  ],
+  "repo": "agentionai/Qwen3.8-Flash-Next-Gyro-GGUF"
+ },
+ "gyro/Gyro-M": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 91954731520,
+  "expert_bytes": {
+   "TQ2_T": 32086425600
+  },
+  "experts_bpw": 2.125,
+  "bpw": 4.157,
+  "files": [
+   "Qwen3.8-Flash-Next-Gyro-M-TQ2_0.gguf"
+  ],
+  "repo": "agentionai/Qwen3.8-Flash-Next-Gyro-GGUF"
+ },
+ "unsloth/UD-Q5_K_XL": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 158275381760,
+  "expert_bytes": {
+   "Q5_K": 54211379200,
+   "Q6_K": 1376256000,
+   "Q8_0": 42781900800
+  },
+  "experts_bpw": 6.515,
+  "bpw": 7.156,
+  "files": [
+   "UD-Q5_K_XL/Qwen3.8-Flash-Next-UD-Q5_K_XL-00001-of-00006.gguf",
+   "UD-Q5_K_XL/Qwen3.8-Flash-Next-UD-Q5_K_XL-00002-of-00006.gguf",
+   "UD-Q5_K_XL/Qwen3.8-Flash-Next-UD-Q5_K_XL-00003-of-00006.gguf",
+   "UD-Q5_K_XL/Qwen3.8-Flash-Next-UD-Q5_K_XL-00004-of-00006.gguf",
+   "UD-Q5_K_XL/Qwen3.8-Flash-Next-UD-Q5_K_XL-00005-of-00006.gguf",
+   "UD-Q5_K_XL/Qwen3.8-Flash-Next-UD-Q5_K_XL-00006-of-00006.gguf"
+  ],
+  "repo": "unsloth/Qwen3.8-Flash-Next-GGUF"
+ },
+ "unsloth/UD-Q6_K_XL": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 169154357760,
+  "expert_bytes": {
+   "Q6_K": 64684032000,
+   "Q8_0": 44564480000
+  },
+  "experts_bpw": 7.235,
+  "bpw": 7.648,
+  "files": [
+   "UD-Q6_K_XL/Qwen3.8-Flash-Next-UD-Q6_K_XL-00001-of-00006.gguf",
+   "UD-Q6_K_XL/Qwen3.8-Flash-Next-UD-Q6_K_XL-00002-of-00006.gguf",
+   "UD-Q6_K_XL/Qwen3.8-Flash-Next-UD-Q6_K_XL-00003-of-00006.gguf",
+   "UD-Q6_K_XL/Qwen3.8-Flash-Next-UD-Q6_K_XL-00004-of-00006.gguf",
+   "UD-Q6_K_XL/Qwen3.8-Flash-Next-UD-Q6_K_XL-00005-of-00006.gguf",
+   "UD-Q6_K_XL/Qwen3.8-Flash-Next-UD-Q6_K_XL-00006-of-00006.gguf"
+  ],
+  "repo": "unsloth/Qwen3.8-Flash-Next-GGUF"
+ },
+ "unsloth/Q8_0": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 188214008320,
+  "expert_bytes": {
+   "Q8_0": 128345702400
+  },
+  "experts_bpw": 8.5,
+  "bpw": 8.51,
+  "files": [
+   "Q8_0/Qwen3.8-Flash-Next-Q8_0-00001-of-00006.gguf",
+   "Q8_0/Qwen3.8-Flash-Next-Q8_0-00002-of-00006.gguf",
+   "Q8_0/Qwen3.8-Flash-Next-Q8_0-00003-of-00006.gguf",
+   "Q8_0/Qwen3.8-Flash-Next-Q8_0-00004-of-00006.gguf",
+   "Q8_0/Qwen3.8-Flash-Next-Q8_0-00005-of-00006.gguf",
+   "Q8_0/Qwen3.8-Flash-Next-Q8_0-00006-of-00006.gguf"
+  ],
+  "repo": "unsloth/Qwen3.8-Flash-Next-GGUF"
+ },
+ "swift/IQ3_S": {
+  "arch": "qwen4exp",
+  "tensors": 1224,
+  "bytes": 83732712960,
+  "expert_bytes": {
+   "IQ2_S": 10747904000,
+   "IQ3_S": 7208960000,
+   "IQ3_XXS": 10918297600,
+   "IQ4_NL": 18402508800,
+   "IQ4_XS": 891289600,
+   "Q2_0": 2123366400
+  },
+  "experts_bpw": 3.331,
+  "bpw": 3.786,
+  "files": [
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+   "Swift-Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf"
+  ],
+  "repo": "ukisai/Swift-1.5-Qwen3.8-Flash-Next-GSQ-RCO-GGUF"
+ },
+ "_roles": {
+  "blk.N.attn_gate.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q2_0",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.attn_k.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.attn_k_norm.weight": [
+   "F32"
+  ],
+  "blk.N.attn_output.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.attn_q.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q2_0",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.attn_q_norm.weight": [
+   "F32"
+  ],
+  "blk.N.attn_qkv.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q2_0",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.attn_v.weight": [
+   "IQ4_XS",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.ffn_down_exps.weight": [
+   "IQ4_NL",
+   "Q2_0",
+   "Q5_1",
+   "Q8_0",
+   "TQ2_T",
+   "TQK7"
+  ],
+  "blk.N.ffn_down_shexp.weight": [
+   "IQ4_NL",
+   "Q2_0",
+   "Q4_0",
+   "Q5_0",
+   "Q8_0"
+  ],
+  "blk.N.ffn_gate_exps.weight": [
+   "IQ1_M",
+   "IQ2_S",
+   "IQ2_XS",
+   "IQ2_XXS",
+   "IQ3_S",
+   "IQ3_XXS",
+   "IQ4_XS",
+   "Q2_0",
+   "Q4_K",
+   "Q5_K",
+   "TQ2_T",
+   "TQK6"
+  ],
+  "blk.N.ffn_gate_inp.weight": [
+   "BF16",
+   "F32"
+  ],
+  "blk.N.ffn_gate_inp_shexp.weight": [
+   "BF16",
+   "F32"
+  ],
+  "blk.N.ffn_gate_shexp.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q2_0",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.ffn_up_exps.weight": [
+   "IQ1_M",
+   "IQ2_S",
+   "IQ2_XS",
+   "IQ2_XXS",
+   "IQ3_S",
+   "IQ3_XXS",
+   "IQ4_XS",
+   "Q2_0",
+   "Q4_K",
+   "Q5_K",
+   "TQ2_T",
+   "TQK6"
+  ],
+  "blk.N.ffn_up_shexp.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q2_0",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.hc_attn_down.weight": [
+   "BF16",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.hc_attn_inject.weight": [
+   "BF16",
+   "F32",
+   "Q6_K"
+  ],
+  "blk.N.hc_attn_norm.weight": [
+   "F32"
+  ],
+  "blk.N.hc_attn_up.weight": [
+   "BF16",
+   "Q8_0"
+  ],
+  "blk.N.hc_ffn_down.weight": [
+   "BF16",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.hc_ffn_inject.weight": [
+   "BF16",
+   "F32",
+   "Q6_K"
+  ],
+  "blk.N.hc_ffn_norm.weight": [
+   "F32"
+  ],
+  "blk.N.hc_ffn_up.weight": [
+   "BF16",
+   "Q8_0"
+  ],
+  "blk.N.indexer.k_norm.weight": [
+   "F32"
+  ],
+  "blk.N.indexer.k_proj.weight": [
+   "BF16"
+  ],
+  "blk.N.indexer.q_norm.weight": [
+   "F32"
+  ],
+  "blk.N.indexer.q_proj.weight": [
+   "BF16"
+  ],
+  "blk.N.ple_conv1d.weight": [
+   "F16",
+   "F32"
+  ],
+  "blk.N.ple_key.weight": [
+   "BF16",
+   "Q2_0",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.ple_norm_conv.weight": [
+   "F32"
+  ],
+  "blk.N.ple_norm_key.weight": [
+   "F32"
+  ],
+  "blk.N.ple_norm_query.weight": [
+   "F32"
+  ],
+  "blk.N.ple_value.weight": [
+   "BF16",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "blk.N.ssm_a": [
+   "F32"
+  ],
+  "blk.N.ssm_alpha.weight": [
+   "BF16",
+   "F32",
+   "Q5_K"
+  ],
+  "blk.N.ssm_beta.weight": [
+   "BF16",
+   "F32",
+   "Q5_K"
+  ],
+  "blk.N.ssm_conv1d.weight": [
+   "F32"
+  ],
+  "blk.N.ssm_dt.bias": [
+   "F32"
+  ],
+  "blk.N.ssm_norm.weight": [
+   "F32"
+  ],
+  "blk.N.ssm_out.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q3_K",
+   "Q4_K",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "output.weight": [
+   "IQ4_XS",
+   "Q5_K",
+   "Q6_K",
+   "Q8_0"
+  ],
+  "output_hc_down.weight": [
+   "BF16",
+   "IQ4_NL",
+   "Q8_0"
+  ],
+  "output_hc_norm.weight": [
+   "F32"
+  ],
+  "output_hc_up.weight": [
+   "BF16",
+   "IQ4_NL",
+   "Q8_0"
+  ],
+  "per_layer_token_embd.weight": [
+   "IQ4_NL"
+  ],
+  "token_embd.weight": [
+   "IQ3_S",
+   "IQ4_XS",
+   "Q3_K",
+   "Q6_K",
+   "Q8_0"
+  ]
+ }
+}

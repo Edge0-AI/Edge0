@@ -1,5 +1,6 @@
 #include "serve_protocol.h"
 #include <chrono>
+#include <algorithm>
 #include <iomanip>
 #include <limits>
 #include <random>
@@ -9,7 +10,25 @@ namespace portal {
 Failure::Failure(int s, std::string message, std::string c, std::string p)
     : std::runtime_error(std::move(message)), status(s), code(std::move(c)), param(std::move(p)) {}
 std::string Failure::message() const { return param.empty() ? std::string(what()) : std::string(what()) + ": " + param; }
-Json Failure::body() const {
+Failure http_failure(int status) {
+    if(status==404)return Failure(status,"Unknown endpoint","not_found");
+    if(status>=400 && status<500)return Failure(status,"Bad request","invalid_request");
+    return Failure(status,"Internal error","internal_error");
+}
+Json Failure::body(Protocol protocol) const {
+    if(protocol==Protocol::messages) {
+        const char* type="api_error";
+        switch(status) {
+            case 400:type="invalid_request_error";break;
+            case 401:type="authentication_error";break;
+            case 404:type="not_found_error";break;
+            case 413:type="request_too_large";break;
+            case 429:type="rate_limit_error";break;
+            case 503:type="overloaded_error";break;
+            default:break;
+        }
+        return {{"type","error"},{"error",{{"type",type},{"message",message()}}}};
+    }
     return {{"error", {{"message", message()}, {"type", status == 429 ? "server_busy" : status >= 500 ? "server_error" : "invalid_request_error"},
                        {"param", param.empty() ? Json(nullptr) : Json(param)}, {"code", code}}}};
 }
@@ -93,8 +112,119 @@ Json probability(const edge0::TokenLogprob& p) {
     for(const auto& top:p.top) value["top_logprobs"].push_back(candidate(top));
     return value;
 }
+// Messages has its own field grammar; only scalar validation is shared.
+const Json& field(const Json& j, const std::string& key, const std::string& path) {
+    if(!j.contains(key))bad(path,"Missing field");
+    return j.at(key);
 }
-Request parse(const Json& j, Protocol protocol, const std::string& alias) {
+std::string messages_text(const Json& j,const std::string& path) {
+    if(j.is_string())return j.get<std::string>();
+    if(!j.is_array())bad(path,"Expected text or text blocks");
+    std::string text;
+    for(const auto& block:j) {
+        keys(block,{"type","text","cache_control"},path);
+        if(str(field(block,"type",path+".type"),path+".type")!="text")bad(path,"Unsupported content type","unsupported_value");
+        text+=str(field(block,"text",path+".text"),path+".text");
+    }
+    return text;
+}
+Request parse_messages(const Json& j,const std::string& alias,bool count_only) {
+    keys(j,{"model","max_tokens","messages","system","tools","tool_choice","thinking","stop_sequences",
+            "temperature","top_p","top_k","stream","metadata","service_tier","cache_control"},"");
+    if(str(required(j,"model"),"model")!=alias)throw Failure(404,"Unknown model","model_not_found","model");
+    Request r;r.protocol=Protocol::messages;r.echo=j;
+    if(!count_only || j.contains("max_tokens"))r.overrides.max_tokens=integer(required(j,"max_tokens"),"max_tokens");
+    if(j.contains("stream")) {
+        if(count_only)bad("stream","Streaming is not supported for token counting","unsupported_parameter");
+        r.stream=boolean(j["stream"],"stream");
+    }
+    if(j.contains("temperature"))r.overrides.temperature=number(j["temperature"],"temperature");
+    if(j.contains("top_p"))r.overrides.top_p=number(j["top_p"],"top_p");
+    if(j.contains("top_k"))r.overrides.top_k=integer(j["top_k"],"top_k");
+    if(j.contains("service_tier"))str(j["service_tier"],"service_tier");
+    if(j.contains("metadata")) {
+        keys(j["metadata"],{"user_id"},"metadata");
+        if(j["metadata"].contains("user_id") && !j["metadata"]["user_id"].is_null())str(j["metadata"]["user_id"],"metadata.user_id");
+    }
+    if(j.contains("stop_sequences")) {
+        if(!j["stop_sequences"].is_array())bad("stop_sequences");
+        r.overrides.stop=std::vector<std::string>{};
+        for(const auto& stop:j["stop_sequences"])r.overrides.stop->push_back(str(stop,"stop_sequences"));
+    }
+    if(j.contains("thinking")) {
+        const auto& t=j["thinking"];keys(t,{"type","budget_tokens"},"thinking");
+        const auto type=str(field(t,"type","thinking.type"),"thinking.type");
+        if(type!="enabled" && type!="adaptive" && type!="disabled")bad("thinking.type","Unsupported thinking mode","unsupported_value");
+        r.overrides.thinking=type!="disabled";
+        if(t.contains("budget_tokens") && integer(t["budget_tokens"],"thinking.budget_tokens")<=0)bad("thinking.budget_tokens");
+    }
+    if(j.contains("tool_choice")) {
+        const auto& c=j["tool_choice"];keys(c,{"type","disable_parallel_tool_use"},"tool_choice");
+        const auto type=str(field(c,"type","tool_choice.type"),"tool_choice.type");
+        if(type!="auto" && type!="none")bad("tool_choice.type","Unsupported tool choice","unsupported_value");
+        r.input.tool_choice.mode=type=="none"?edge0::ToolChoiceMode::none:edge0::ToolChoiceMode::automatic;
+        if(c.contains("disable_parallel_tool_use"))r.input.parallel_tool_calls=!boolean(c["disable_parallel_tool_use"],"tool_choice.disable_parallel_tool_use");
+    }
+    if(j.contains("tools")) {
+        if(!j["tools"].is_array())bad("tools");
+        for(const auto& tool:j["tools"]) {
+            keys(tool,{"name","description","input_schema","type","strict","cache_control"},"tools");
+            if(tool.contains("type") && str(tool["type"],"tools.type")!="custom")bad("tools.type","Unsupported tool type","unsupported_value");
+            if(tool.contains("strict") && boolean(tool["strict"],"tools.strict"))bad("tools.strict","Strict tools require constrained decoding","unsupported_value");
+            Json f={{"name",str(field(tool,"name","tools.name"),"tools.name")}};
+            if(tool.contains("description"))f["description"]=str(tool["description"],"tools.description");
+            const auto& schema=field(tool,"input_schema","tools.input_schema");
+            if(!schema.is_object())bad("tools.input_schema");
+            f["parameters"]=schema;r.input.tools.push_back({Json{{"type","function"},{"function",f}}.dump()});
+        }
+    }
+    if(j.contains("system"))r.input.messages.push_back({"system",messages_text(j["system"],"system")});
+    const auto& messages=required(j,"messages");
+    if(!messages.is_array() || messages.empty())bad("messages");
+    std::string last_role;
+    for(const auto& m:messages) {
+        keys(m,{"role","content","cache_control"},"messages");
+        edge0::TextMessage msg;msg.role=str(field(m,"role","messages.role"),"messages.role");last_role=msg.role;
+        if(msg.role!="user" && msg.role!="assistant")bad("messages.role");
+        const auto& blocks=field(m,"content","messages.content");
+        bool text_present=blocks.is_string(),has_result=false;
+        if(blocks.is_string())msg.content=blocks.get<std::string>();
+        else {
+            if(!blocks.is_array())bad("messages.content");
+            for(const auto& block:blocks) {
+                const std::string path="messages.content";
+                if(!block.is_object())bad(path);
+                const auto type=str(field(block,"type",path+".type"),path+".type");
+                if(type=="text") {
+                    keys(block,{"type","text","cache_control"},path);text_present=true;
+                    msg.content+=str(field(block,"text",path+".text"),path+".text");
+                } else if(type=="tool_result" && msg.role=="user") {
+                    keys(block,{"type","tool_use_id","content","is_error","cache_control"},path);
+                    edge0::TextMessage tool{"tool",block.contains("content")?messages_text(block["content"],path+".content"):std::string{}};
+                    tool.tool_call_id=str(field(block,"tool_use_id",path+".tool_use_id"),path+".tool_use_id");
+                    if(block.contains("is_error"))boolean(block["is_error"],path+".is_error");
+                    r.input.messages.push_back(std::move(tool));has_result=true;
+                } else if(type=="thinking" && msg.role=="assistant") {
+                    keys(block,{"type","thinking","signature","cache_control"},path);
+                    if(!msg.reasoning_content)msg.reasoning_content="";
+                    *msg.reasoning_content+=str(field(block,"thinking",path+".thinking"),path+".thinking");
+                    if(block.contains("signature"))str(block["signature"],path+".signature");
+                } else if(type=="tool_use" && msg.role=="assistant") {
+                    keys(block,{"type","id","name","input","cache_control"},path);
+                    const auto& input=field(block,"input",path+".input");if(!input.is_object())bad(path+".input");
+                    msg.tool_calls.push_back({str(field(block,"id",path+".id"),path+".id"),str(field(block,"name",path+".name"),path+".name"),input.dump()});
+                } else bad(path,"Unsupported content type","unsupported_value");
+            }
+        }
+        if(msg.role=="assistant" || text_present || !has_result)r.input.messages.push_back(std::move(msg));
+    }
+    if(last_role!="user")bad("messages","Assistant prefixes are not supported","unsupported_value");
+    return r;
+}
+
+}
+Request parse(const Json& j, Protocol protocol, const std::string& alias, bool count_only) {
+    if(protocol==Protocol::messages)return parse_messages(j,alias,count_only);
     const bool chat=protocol==Protocol::chat;
     std::set<std::string> allowed={"model","tools","tool_choice","parallel_tool_calls","stream","temperature","top_p","top_logprobs","store","metadata","user","service_tier","prompt_cache_key","promptCacheKey","safety_identifier"};
     const std::set<std::string> extra=chat ? std::set<std::string>{"messages","stream_options","seed","stop","presence_penalty","frequency_penalty","max_tokens","max_completion_tokens","logit_bias","logprobs","n","response_format","reasoning_effort","chat_template_kwargs","top_k","repetition_penalty"}
@@ -169,7 +299,7 @@ Request parse(const Json& j, Protocol protocol, const std::string& alias) {
         if(j.contains("top_k"))r.overrides.top_k=integer(j["top_k"],"top_k");
         if(j.contains("logprobs"))r.overrides.logprobs=boolean(j["logprobs"],"logprobs");
         if(j.contains("logit_bias")) {
-            if(!j["logit_bias"].is_object())bad("logit_bias");r.overrides.logit_bias=std::map<std::int32_t,double>{};
+            if(!j["logit_bias"].is_object()){bad("logit_bias");}r.overrides.logit_bias=std::map<std::int32_t,double>{};
             for(auto it=j["logit_bias"].begin();it!=j["logit_bias"].end();++it) {
                 const auto& key=it.key(); if(key.empty() || key.find_first_not_of("0123456789")!=std::string::npos)bad("logit_bias");
                 std::uint64_t n=0;for(char c:key) {n=n*10+unsigned(c-'0');if(n>INT32_MAX)bad("logit_bias");}
@@ -196,7 +326,7 @@ Request parse(const Json& j, Protocol protocol, const std::string& alias) {
             bool group=false;
             auto assistant=[&]() -> edge0::TextMessage& {if(!group) {r.input.messages.push_back({"assistant",""});group=true;}return r.input.messages.back();};
             for(const auto& item:input) {
-                if(!item.is_object())bad("input");const auto type=item.contains("type") ? str(item["type"],"input.type") : "message";
+                if(!item.is_object()){bad("input");}const auto type=item.contains("type") ? str(item["type"],"input.type") : "message";
                 if(type=="message") {
                     keys(item,{"type","role","content","id","status"},"input");auto role=str(required(item,"role"),"input.role");if(role=="developer")role="system";
                     auto text=content(required(item,"content"),{"input_text","output_text"},"input.content");
@@ -242,17 +372,17 @@ Failure failure(const edge0::Error& e, bool shutdown) {
 }
 std::string identifier(const std::string& prefix) {
     std::random_device random;std::ostringstream out;out<<prefix<<std::hex<<std::setfill('0');
-    for(int i=0;i<3;++i)out<<std::setw(8)<<static_cast<std::uint32_t>(random());return out.str();
+    for(int i=0;i<3;++i){out<<std::setw(8)<<static_cast<std::uint32_t>(random());}return out.str();
 }
 Encoder::Encoder(const Request& r,std::string alias,std::string version)
-    : request_(r),alias_(std::move(alias)),fingerprint_("edge0-infer-"+version),id_(identifier(r.protocol==Protocol::chat?"chatcmpl-":"resp_")),
+    : request_(r),alias_(std::move(alias)),fingerprint_("edge0-infer-"+version),id_(identifier(r.protocol==Protocol::chat?"chatcmpl-":r.protocol==Protocol::messages?"msg_":"resp_")),
       created_(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()) {}
 Json Encoder::chunk(Json delta,Json finish,Json probs) const {
     return {{"id",id_},{"object","chat.completion.chunk"},{"created",created_},{"model",alias_},{"system_fingerprint",fingerprint_},
             {"choices",Json::array({{{"index",0},{"delta",delta},{"finish_reason",finish},{"logprobs",probs}}})}};
 }
 std::string Encoder::event(const std::string& type,Json value) {
-    value["type"]=type;value["sequence_number"]=sequence_++;
+    value["type"]=type;if(request_.protocol!=Protocol::messages)value["sequence_number"]=sequence_++;
     return "event: "+type+"\ndata: "+value.dump()+"\n\n";
 }
 Json Encoder::response(const edge0::GenerationResult* r,const std::string& status,const edge0::MemorySnapshot& memory) const {
@@ -268,12 +398,22 @@ Json Encoder::response(const edge0::GenerationResult* r,const std::string& statu
     }
     return value;
 }
-std::vector<std::string> Encoder::begin() {
+std::vector<std::string> Encoder::begin(std::size_t input_tokens,const std::optional<edge0::GenerationProgress>& progress) {
+    if(request_.protocol==Protocol::messages) {
+        auto value=message();
+        value["usage"]={{"input_tokens",progress?progress->input_tokens-progress->reused_tokens:input_tokens},
+            {"cache_read_input_tokens",progress?Json(progress->reused_tokens):Json(nullptr)},
+            {"cache_creation_input_tokens",nullptr},{"output_tokens",0}};
+        return {event("message_start",{{"message",value}})};
+    }
     if(request_.protocol==Protocol::chat)return {"data: "+chunk({{"role","assistant"},{"content",""}}).dump()+"\n\n"};
     return {event("response.created",{{"response",response(nullptr,"in_progress")}}),event("response.in_progress",{{"response",response(nullptr,"in_progress")}})};
 }
 void Encoder::close(std::vector<std::string>& records) {
     if(active_<0)return;
+    if(request_.protocol==Protocol::messages) {
+        records.push_back(event("content_block_stop",{{"index",active_}}));active_=-1;return;
+    }
     auto& item=output_[active_];const auto type=item["type"].get<std::string>();
     Json common={{"output_index",active_},{"item_id",item["id"]}};
     if(type=="function_call") {
@@ -304,6 +444,7 @@ void Encoder::open(std::vector<std::string>& records,const edge0::OutputEvent& e
     }
 }
 std::vector<std::string> Encoder::accept(const edge0::OutputEvent& e) {
+    if(request_.protocol==Protocol::messages)return accept_message(e);
     using K=edge0::OutputKind;
     std::vector<std::string> records;
     if(e.kind==K::token_logprob) {if(e.logprob.section==K::answer)pending_probs_.push_back(probability(e.logprob));return records;}
@@ -341,7 +482,81 @@ std::vector<std::string> Encoder::accept(const edge0::OutputEvent& e) {
     }
     return records;
 }
+
+std::vector<std::string> Encoder::accept_message(const edge0::OutputEvent& e) {
+    using K=edge0::OutputKind;
+    std::vector<std::string> records;
+    if(e.kind==K::token_logprob)return records;
+    if(e.kind==K::tool_call_rejected) {pending_calls_.erase(e.index);return records;}
+    if(e.kind==K::tool_call_begin) {
+        close(records);
+        pending_calls_[e.index]={e.tool_call,{}};
+        return records;
+    }
+    if(e.kind==K::tool_call_arguments || e.kind==K::tool_call_end) {
+        const auto it=pending_calls_.find(e.index);
+        if(it==pending_calls_.end())throw std::logic_error("Tool event without begin");
+        if(e.kind==K::tool_call_arguments) {it->second.arguments+=e.text;return records;}
+        close(records);  // a text or thinking block still open ends before the tool block starts
+        const auto& pending=it->second;
+        Json block={{"type","tool_use"},{"id",pending.call.id},{"name",pending.call.name},{"input",Json::object()}};
+        const auto index=output_.size();
+        records.push_back(event("content_block_start",{{"index",index},{"content_block",block}}));
+        if(!pending.arguments.empty())records.push_back(event("content_block_delta",{{"index",index},
+            {"delta",{{"type","input_json_delta"},{"partial_json",pending.arguments}}}}));
+        records.push_back(event("content_block_stop",{{"index",index}}));
+        output_.push_back(std::move(block));
+        pending_calls_.erase(it);
+        return records;
+    }
+    const bool think=e.kind==K::reasoning;
+    const std::string type=think?"thinking":"text";
+    if(active_<0 || output_[active_]["type"]!=type) {
+        close(records);
+        Json block=think?Json{{"type",type},{"thinking",""},{"signature",""}}:Json{{"type",type},{"text",""}};
+        active_=static_cast<int>(output_.size());output_.push_back(block);
+        records.push_back(event("content_block_start",{{"index",active_},{"content_block",block}}));
+    }
+    auto& text=output_[active_][think?"thinking":"text"];text=text.get<std::string>()+e.text;
+    records.push_back(event("content_block_delta",{{"index",active_},{"delta",{{"type",think?"thinking_delta":"text_delta"},{think?"thinking":"text",e.text}}}}));
+    return records;
+}
+Json Encoder::message(const edge0::GenerationResult* r) const {
+    Json value={{"id",id_},{"type","message"},{"role","assistant"},{"model",alias_},{"content",Json::array()},
+        {"stop_reason",nullptr},{"stop_sequence",nullptr}};
+    if(!r)return value;
+    for(auto block:output_) {
+        const auto type=block["type"].get<std::string>();
+        if(type=="thinking" && !r->configuration.thinking)continue;
+        if(type=="tool_use") {
+            if(block.value("rejected",false))continue;
+            const auto call=std::find_if(r->tool_calls.begin(),r->tool_calls.end(),[&](const auto& c){return c.id==block["id"];});
+            if(call==r->tool_calls.end())continue;
+            block.erase("arguments");block["input"]=Json::parse(call->arguments_json);
+        }
+        value["content"].push_back(std::move(block));
+    }
+    const bool has_tool=std::any_of(value["content"].begin(),value["content"].end(),
+        [](const Json& block){return block["type"]=="tool_use";});
+    const char* stop="end_turn";
+    switch(r->stop_reason) {
+        case edge0::StopReason::length:stop="max_tokens";break;
+        case edge0::StopReason::capacity:stop="model_context_window_exceeded";break;
+        case edge0::StopReason::stop_string:stop="stop_sequence";break;
+        case edge0::StopReason::tool_calls:if(has_tool)stop="tool_use";break;
+        case edge0::StopReason::end_of_generation:if(has_tool)stop="tool_use";break;
+        default:break;
+    }
+    value["stop_reason"]=stop;
+    if(r->stop_reason==edge0::StopReason::stop_string && r->matched_stop)value["stop_sequence"]=*r->matched_stop;
+    value["usage"]={{"input_tokens",r->input.size()-r->reused_tokens},{"cache_read_input_tokens",r->reused_tokens},
+        {"cache_creation_input_tokens",nullptr},{"output_tokens",r->generated_count},
+        {"output_tokens_details",{{"thinking_tokens",r->reasoning_tokens}}}};
+    if(!r->rejected_tool_calls.empty())value["rejected_tool_calls"]=rejected(*r);
+    return value;
+}
 Json Encoder::complete(const edge0::GenerationResult& r,const edge0::MemorySnapshot& memory) const {
+    if(request_.protocol==Protocol::messages) {auto value=message(&r);value["metrics"]=metrics(r,memory);return value;}
     if(request_.protocol==Protocol::responses)return response(&r,reason(r)=="length"?"incomplete":"completed",memory);
     Json message={{"role","assistant"},{"content",r.text.empty() && !r.tool_calls.empty()?Json(nullptr):Json(r.text)}};
     if(r.configuration.thinking)message["reasoning_content"]=r.reasoning;
@@ -360,11 +575,20 @@ std::vector<std::string> Encoder::finish(const edge0::GenerationResult& r,const 
         records.push_back("data: [DONE]\n\n");return records;
     }
     std::vector<std::string> records;close(records);
+    if(request_.protocol==Protocol::messages) {
+        const auto full=complete(r,memory);
+        Json delta={{"delta",{{"stop_reason",full["stop_reason"]},{"stop_sequence",full["stop_sequence"]}}},{"usage",full["usage"]},{"metrics",full["metrics"]}};
+        if(full.contains("rejected_tool_calls"))delta["rejected_tool_calls"]=full["rejected_tool_calls"];
+        records.push_back(event("message_delta",delta));records.push_back(event("message_stop",Json::object()));return records;
+    }
     records.push_back(event(reason(r)=="length"?"response.incomplete":"response.completed",{{"response",complete(r,memory)}}));return records;
 }
-std::vector<std::string> Encoder::fail(const Failure& error) {
+std::vector<std::string> Encoder::fail(const Failure& error, const std::string& response_id, std::optional<std::size_t> next_sequence) {
+    if(request_.protocol==Protocol::messages)return {event("error",error.body(Protocol::messages))};
     if(request_.protocol==Protocol::chat)return {"data: "+error.body().dump()+"\n\n"};
     auto value=response(nullptr,"failed");value["error"]={{"code",error.code},{"message",error.message()}};
+    if(!response_id.empty())value["id"]=response_id;
+    if(next_sequence)sequence_=*next_sequence;
     return {event("response.failed",{{"response",value}})};
 }
 }

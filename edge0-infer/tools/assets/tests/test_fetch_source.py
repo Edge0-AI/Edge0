@@ -262,6 +262,7 @@ def test_partial_of_another_selection_is_refused(remote, tmp_path):
 def broken_response(request, monkeypatch):
     class Response:
         status = 206
+        headers = {'Content-Range': f'bytes 0-{len(BIG) - 1}/{len(BIG)}'}
 
         def __enter__(self):
             return self
@@ -376,3 +377,58 @@ def test_user_agent_survives_a_redirect(monkeypatch):
     redirected = fetch.urllib.request.HTTPRedirectHandler().redirect_request(
         original, io.BytesIO(), 307, 'Temporary Redirect', {}, ENDPOINT + '/api/resolve-cache/file')
     assert redirected.get_header('User-agent') == fetch.USER_AGENT
+
+
+@pytest.mark.l1
+def test_short_http_body_keeps_prefix_for_resume(remote, tmp_path, monkeypatch):
+    # HTTPResponse.read(size) returns EOF without IncompleteRead for a short
+    # Content-Length body, unlike the throwing fake used by the other tests.
+    from http.client import HTTPResponse
+
+    class Socket:
+        def makefile(self, *args):
+            return io.BytesIO(b'HTTP/1.1 200 OK\r\nContent-Length: ' +
+                              str(len(BIG)).encode() + b'\r\n\r\n' + BIG[:17])
+
+    response = HTTPResponse(Socket())
+    response.begin()
+    monkeypatch.setattr(fetch, '_get', lambda *args, **kwargs: response)
+    out = tmp_path / 'source'
+    with pytest.raises(fetch.FetchError, match='incomplete response'):
+        fetch.download(lock_for(remote), remote.endpoint, 5, out, ['model.safetensors'])
+    part = out.with_name('source.partial') / 'model.safetensors.part'
+    assert part.read_bytes() == BIG[:17]
+    monkeypatch.setattr(fetch, '_get', remote.get)
+    report = fetch.download(lock_for(remote), remote.endpoint, 5, out, ['model.safetensors'])
+    assert report['resumed'] == ['model.safetensors']
+    assert remote.served == [('model.safetensors', 'bytes=17-', len(BIG) - 17)]
+    assert (out / 'model.safetensors').read_bytes() == BIG
+
+
+@pytest.mark.l1
+@pytest.mark.parametrize('content_range', ['bytes 4-7/8', 'bytes 3-1/8', 'invalid', ''])
+def test_wrong_resume_range_preserves_existing_prefix(remote, tmp_path, monkeypatch, content_range):
+    out = tmp_path / 'source'
+    partial = out.with_name('source.partial')
+    partial.mkdir()
+    part = partial / 'model.safetensors.part'
+    part.write_bytes(BIG[:3])
+    monkeypatch.setattr(fetch, '_get', lambda *args, **kwargs:
+                        Response(206, b'bad', {'Content-Range': content_range}))
+    with pytest.raises(fetch.FetchError, match='invalid Content-Range'):
+        fetch.download(lock_for(remote), remote.endpoint, 5, out, ['model.safetensors'])
+    assert part.read_bytes() == BIG[:3]
+
+
+@pytest.mark.l1
+def test_partial_range_body_keeps_progress(remote, tmp_path, monkeypatch):
+    out = tmp_path / 'source'
+    partial = out.with_name('source.partial')
+    partial.mkdir()
+    part = partial / 'model.safetensors.part'
+    part.write_bytes(BIG[:3])
+    monkeypatch.setattr(fetch, '_get', lambda *args, **kwargs:
+                        Response(206, BIG[3:7], {'Content-Range': f'bytes 3-6/{len(BIG)}'}))
+    with pytest.raises(fetch.FetchError, match='incomplete response'):
+        fetch.download(lock_for(remote), remote.endpoint, 5, out, ['model.safetensors'])
+    assert part.read_bytes() == BIG[:7]

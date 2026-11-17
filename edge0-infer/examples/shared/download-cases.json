@@ -1,0 +1,219 @@
+{
+  "source_selection": [
+    {
+      "name": "modelscope faster",
+      "huggingface_ms": 820,
+      "modelscope_ms": 95,
+      "expected": "modelscope"
+    },
+    {
+      "name": "huggingface faster",
+      "huggingface_ms": 120,
+      "modelscope_ms": 400,
+      "expected": "huggingface"
+    },
+    {
+      "name": "equal time prefers modelscope",
+      "huggingface_ms": 200,
+      "modelscope_ms": 200,
+      "expected": "modelscope"
+    },
+    {
+      "name": "only huggingface reachable",
+      "huggingface_ms": 50,
+      "modelscope_ms": null,
+      "expected": "huggingface"
+    },
+    {
+      "name": "only modelscope reachable",
+      "huggingface_ms": null,
+      "modelscope_ms": 50,
+      "expected": "modelscope"
+    },
+    {
+      "name": "both unreachable",
+      "huggingface_ms": null,
+      "modelscope_ms": null,
+      "expected": null
+    }
+  ],
+  "file_filter": [
+    {
+      "name": "root metadata skipped and nested names kept",
+      "files": [
+        ".gitattributes",
+        "configuration.json",
+        "model.json",
+        "assets/.gitattributes",
+        "nested/configuration.json",
+        "README.md"
+      ],
+      "expected": [
+        "model.json",
+        "assets/.gitattributes",
+        "nested/configuration.json",
+        "README.md"
+      ]
+    }
+  ],
+  "checksum": {
+    "repo": "Edge0/Edge0-120B-q3k",
+    "revision": "51a60a20d6fd51385a11e8d1e5f6c767c6715088",
+    "path": "assets/demos/showcase-chapters.vtt",
+    "size": 251,
+    "git_blob_sha1": "38044fc4d0be8212bc9df7ce0a9bdc72b3975ea1",
+    "sha256": "406344ed03a1afbddac2ccc76683e3965d1d8b9a36a4492c0719aabfa6df4105",
+    "content_base64": "V0VCVlRUCgowMDowMDowMC4wMDAgLS0+IDAwOjAwOjM2LjU2NwpMb2NhbCBDaGF0ICYgQ29kaW5nCgowMDowMDozNi41NjcgLS0+IDAwOjAwOjU4LjQwMApWaWRlbyBQcm9kdWN0aW9uCgowMDowMDo1OC40MDAgLS0+IDAwOjAxOjE5LjU2NwpNYW5oYXR0YW4gaW4gM0QKCjAwOjAxOjE5LjU2NyAtLT4gMDA6MDE6MzguOTM0CkNhdGhlZHJhbCBXb3JsZCBCdWlsZGluZwoKMDA6MDE6MzguOTM0IC0tPiAwMDowMjowMS4zMDIKUENCIERlc2lnbgo="
+  },
+  "resume": [
+    {
+      "name": "verified, partial, missing, and overlong",
+      "files": [
+        {
+          "path": "a.bin",
+          "size": 100,
+          "state": "verified"
+        },
+        {
+          "path": "b.bin",
+          "size": 100,
+          "state": {
+            "part": 40
+          }
+        },
+        {
+          "path": "c.bin",
+          "size": 80,
+          "state": "missing"
+        },
+        {
+          "path": "d.bin",
+          "size": 50,
+          "state": {
+            "part": 80
+          }
+        },
+        {
+          "path": "e.bin",
+          "size": 20,
+          "state": {
+            "part": 20
+          }
+        }
+      ],
+      "expected": [
+        {
+          "path": "a.bin",
+          "action": "skip"
+        },
+        {
+          "path": "b.bin",
+          "action": "resume",
+          "offset": 40
+        },
+        {
+          "path": "c.bin",
+          "action": "download"
+        },
+        {
+          "path": "d.bin",
+          "action": "verify_truncated"
+        },
+        {
+          "path": "e.bin",
+          "action": "verify"
+        }
+      ],
+      "bytes_remaining": 140
+    }
+  ],
+  "responses": {
+    "huggingface_model": {
+      "sha": "51a60a20d6fd51385a11e8d1e5f6c767c6715088",
+      "id": "Edge0/Edge0-120B-q3k"
+    },
+    "huggingface_tree": [
+      {
+        "type": "directory",
+        "oid": "2c652361218a3aa48bda205c006a154935bebd7f",
+        "size": 0,
+        "path": "assets"
+      },
+      {
+        "type": "file",
+        "path": ".gitattributes",
+        "size": 1676,
+        "oid": "4ca76c253e090cfe4d8dbde69aa3e7d8c62720b9"
+      },
+      {
+        "type": "file",
+        "path": "assets/demos/showcase-chapters.vtt",
+        "size": 251,
+        "oid": "38044fc4d0be8212bc9df7ce0a9bdc72b3975ea1"
+      },
+      {
+        "type": "file",
+        "path": "assets/hero.png",
+        "size": 797049,
+        "oid": "ad4adc9774ea89bc57fcd9fb6b051009c58738ab",
+        "lfs": {
+          "oid": "16b45c4d260d69cd2a008d8697baf0060ab5639b59dddc7cc783e42b06ac9e4a",
+          "size": 797049
+        }
+      }
+    ],
+    "modelscope_files": {
+      "Code": 200,
+      "Data": {
+        "Files": [
+          {
+            "Path": "assets",
+            "Size": 0,
+            "Sha256": "",
+            "Type": "tree"
+          },
+          {
+            "Path": ".gitattributes",
+            "Size": 2195,
+            "Sha256": "8ae46d732c541f9d4f53688cdbe1048db58e96213ded15a017d146ac8e22a9d5",
+            "Type": "blob"
+          },
+          {
+            "Path": "assets/demos/showcase-chapters.vtt",
+            "Size": 251,
+            "Sha256": "406344ed03a1afbddac2ccc76683e3965d1d8b9a36a4492c0719aabfa6df4105",
+            "Type": "blob"
+          },
+          {
+            "Path": "configuration.json",
+            "Size": 73,
+            "Sha256": "f888421726665e8a84b738eed42a64875aed79de8be7daade851ac8bf4c0cef9",
+            "Type": "blob"
+          }
+        ]
+      }
+    },
+    "expected_huggingface": [
+      {
+        "path": "assets/demos/showcase-chapters.vtt",
+        "size": 251,
+        "algorithm": "git",
+        "checksum": "38044fc4d0be8212bc9df7ce0a9bdc72b3975ea1"
+      },
+      {
+        "path": "assets/hero.png",
+        "size": 797049,
+        "algorithm": "sha256",
+        "checksum": "16b45c4d260d69cd2a008d8697baf0060ab5639b59dddc7cc783e42b06ac9e4a"
+      }
+    ],
+    "expected_modelscope": [
+      {
+        "path": "assets/demos/showcase-chapters.vtt",
+        "size": 251,
+        "algorithm": "sha256",
+        "checksum": "406344ed03a1afbddac2ccc76683e3965d1d8b9a36a4492c0719aabfa6df4105"
+      }
+    ]
+  }
+}

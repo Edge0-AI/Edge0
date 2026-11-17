@@ -1,0 +1,27 @@
+# strata launch preview: q asks: keep serving or stop
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+
+
+
+
+
+
+
+
+
+
+
+
+                         ┌────────────────────────────────────────────────────────────────────┐
+                         │                                                                    │
+                         │  Leave the monitor?                                                │
+                         │  Keeping it serving lets your apps go on using the model.          │
+                         │  Stopping unloads the model and frees the graphics memory.         │
+                         │                                                                    │
+                         │  › Keep serving in the background                                  │
+                         │    Stop serving and free the memory                                │
+                         │    Stay in the monitor                                             │
+                         │  Up/Down choose   Enter confirm   Esc cancel                       │
+                         │                                                                    │
+                         └────────────────────────────────────────────────────────────────────┘

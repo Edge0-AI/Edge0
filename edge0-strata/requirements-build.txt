@@ -1,0 +1,3 @@
+# Build helpers for a local engine or vision-encoder compile. Ready-made engines do not need these.
+cmake==4.4.3
+ninja==1.13.2

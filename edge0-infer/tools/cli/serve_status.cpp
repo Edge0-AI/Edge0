@@ -121,16 +121,21 @@ bool loopback(const std::string& source) {
     }
     return octets[0] == 127;
 }
-bool authorized(const std::string& source, const std::string& token, const std::string& authorization) {
+bool authorized(const std::string& source, const std::string& token, const std::string& authorization, const std::string& api_key) {
     if (loopback(source)) return true;
     if (token.empty()) return false;
-    const auto expected = "Bearer " + token;
-    std::size_t difference = expected.size() ^ authorization.size();
-    for (std::size_t i=0;i<std::max(expected.size(),authorization.size());++i)
-        difference |= (i<expected.size()?static_cast<unsigned char>(expected[i]):0) ^
-                      (i<authorization.size()?static_cast<unsigned char>(authorization[i]):0);
-    return difference == 0;
+    auto equal = [](const std::string& expected, const std::string& actual) {
+        std::size_t difference = expected.size() ^ actual.size();
+        for (std::size_t i=0;i<std::max(expected.size(),actual.size());++i)
+            difference |= (i<expected.size()?static_cast<unsigned char>(expected[i]):0) ^
+                          (i<actual.size()?static_cast<unsigned char>(actual[i]):0);
+        return difference == 0;
+    };
+    const bool bearer = equal("Bearer " + token, authorization);
+    const bool key = equal(token, api_key);
+    return bearer | key;
 }
+
 Json memory_json(const edge0::MemorySnapshot& m) {
     Json purposes = Json::object(), devices = Json::object();
     for (const auto& entry : m.ledger.by_purpose) purposes[edge0::memory_purpose_name(entry.first)] = entry.second;

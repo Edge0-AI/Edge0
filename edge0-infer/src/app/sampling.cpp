@@ -90,12 +90,24 @@ TokenLogprob raw_logprob(const std::vector<float>& logits,std::int32_t token,std
     const double normalizer=std::log(sum);
     TokenLogprob result;result.token=token;
     result.logprob=(static_cast<double>(logits.at(static_cast<std::size_t>(token)))-maximum)-normalizer;
-    std::vector<std::int32_t> order(logits.size());
-    for(std::size_t i=0;i<order.size();++i) order[i]=static_cast<std::int32_t>(i);
-    count=std::min(count,order.size());
-    std::partial_sort(order.begin(),order.begin()+count,order.end(),[&](auto a,auto b) {
+    count=std::min(count,logits.size());
+    if (!count) return result;
+    const auto better=[&](auto a,auto b) {
         return logits[a]>logits[b] || (logits[a]==logits[b] && a<b);
-    });
+    };
+    std::vector<std::int32_t> order;
+    order.reserve(count);
+    for (std::size_t i=0;i<logits.size();++i) {
+        const auto id=static_cast<std::int32_t>(i);
+        if (order.size()<count) {
+            order.push_back(id);std::push_heap(order.begin(),order.end(),better);
+        } else if (better(id,order.front())) {
+            std::pop_heap(order.begin(),order.end(),better);
+            order.back()=id;std::push_heap(order.begin(),order.end(),better);
+        }
+    }
+    std::sort_heap(order.begin(),order.end(),better);
+    result.top.reserve(count);
     for(std::size_t i=0;i<count;++i)
         result.top.push_back({order[i],{},(static_cast<double>(logits[order[i]])-maximum)-normalizer});
     return result;

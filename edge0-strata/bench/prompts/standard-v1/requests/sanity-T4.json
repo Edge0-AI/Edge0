@@ -1,0 +1,54 @@
+{
+  "id": "sanity-T4",
+  "phase": "sanity",
+  "case_id": "T4",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "tool_call",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-T4]\nUse get_build_status for project Orion, build 17."
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_build_status",
+        "description": "Synthetic benchmark lookup; no external action is performed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {
+              "type": "string"
+            },
+            "build": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "project",
+            "build"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "expected": {
+    "kind": "tool_call",
+    "name": "get_build_status",
+    "arguments": {
+      "project": "Orion",
+      "build": 17
+    }
+  },
+  "input_tokens_frozen": 339,
+  "max_shared_prefix_tokens": 62
+}

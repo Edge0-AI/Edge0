@@ -1,0 +1,5 @@
+a_def   | 0,1 | 8 |   |  | | w2:4@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+adm_sw  | 0,1 | 8 |   | STRATA_CKPT_POOL=1;STRATA_CKPT_POOL_READY=4;STRATA_CKPT_THREADS=1;STRATA_SLOT_CKPT_MOVE=1;STRATA_SLOT_COPY_DIRECT=1;STRATA_SLOT_COPY_BATCHSYNC=1 | | w2:4@--max-tokens 128
+adm_nb  | 0,1 | 8 |   |  | --no-prefill-borrow | w2:4@--max-tokens 128
+c_min4k | 0,1 | 8 |   | STRATA_PIPED_CONCURRENT=1;STRATA_PIPED_CONCURRENT_MIN=4096 | | w2:4@--max-tokens 128;w4:4@--rounds 1 --max-tokens 128
+pp1k    | 0,1 | 8 |   |  | --prefill-pipe 1024 | w2:4@--max-tokens 128

@@ -1,0 +1,3 @@
+pmtp1_8 | 0,1 | 8 | 4 | STRATA_BATCH_MTP=1;STRATA_PIPED_MTP=1 | | w2:4,8@--max-tokens 128
+pmtp2_8 | 0,1 | 8 | 4 | STRATA_BATCH_MTP=1;STRATA_PIPED_MTP=2 | | w2:4,8@--max-tokens 128
+pmtp3_4 | 0,1 | 4 | 2 | STRATA_BATCH_MTP=1;STRATA_PIPED_MTP=3 | | w2:4,8@--max-tokens 128

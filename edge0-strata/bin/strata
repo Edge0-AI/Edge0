@@ -1,0 +1,133 @@
+#!/bin/sh
+# Strata Terminal launcher.
+#
+# An end user must not need a development checkout, a global interpreter, pip or a compiler. This
+# script finds a usable Python in a fixed order and hands over to the CLI; it installs nothing and
+# downloads nothing.
+#
+# Search order:
+#   1. $STRATA_PYTHON                        — an explicit override, always wins
+#   2. <this dir>/python/bin/python3         — the private runtime shipped with the distribution
+#   3. A Python 3.10+ found on PATH          — a developer convenience, never a requirement
+#
+# The private runtime is a *relocatable* CPython plus this distribution's dependencies, staged into
+# `python/` beside this script. `docs/work/QUALIFICATION-KIT.md` gives the staging command. When it
+# is absent the launcher still works anywhere a 3.10+ interpreter exists, and says so clearly rather
+# than failing obscurely.
+set -eu
+
+# Resolve this script's real directory, following symlinks, so `strata` can live on PATH.
+self=$0
+while [ -L "$self" ]; do
+  dir=$(CDPATH= cd -- "$(dirname -- "$self")" && pwd -P)
+  target=$(readlink "$self")
+  case $target in
+    /*) self=$target ;;
+    *) self=$dir/$target ;;
+  esac
+done
+HERE=$(CDPATH= cd -- "$(dirname -- "$self")" && pwd -P)
+
+pick_python() {
+  if [ -n "${STRATA_PYTHON:-}" ]; then
+    if [ -x "$STRATA_PYTHON" ]; then printf '%s\n' "$STRATA_PYTHON"; return 0; fi
+    echo "strata: STRATA_PYTHON=$STRATA_PYTHON is not executable" >&2
+    return 1
+  fi
+
+  # The private runtime shipped with the distribution.
+  #
+  # Two layouts are supported, and the relative depth differs between them:
+  #   * an installed distribution: <root>/bin/strata with the runtime at <root>/python/
+  #   * a source checkout:        <root>/bin/strata with no bundled runtime at all
+  # So the parent directory is checked as well as this one. Getting this wrong is silent: the
+  # launcher falls through to whatever Python is on PATH and the bundle stops being self-contained.
+  for candidate in \
+      "$HERE/../python/bin/python3" "$HERE/python/bin/python3" \
+      "$HERE/../python/bin/python"  "$HERE/python/bin/python"; do
+    if [ -x "$candidate" ]; then printf '%s\n' "$candidate"; return 0; fi
+  done
+
+  # Anything on PATH that is new enough, then the usual places an interpreter lives on macOS
+  # without being on a non-interactive PATH (Homebrew, python.org, and the interpreter a DeepSeek
+  # Harness installation already ships, which is a legitimate Python 3.12 to reuse rather than
+  # download a second copy of). Strata needs 3.10 or newer; macOS's own /usr/bin/python3 is 3.9 and
+  # is correctly rejected below.
+  for candidate in \
+      "$(command -v python3 2>/dev/null || true)" \
+      "$(command -v python 2>/dev/null || true)" \
+      /opt/homebrew/bin/python3 /usr/local/bin/python3 \
+      /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 \
+      /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 \
+      /Library/Frameworks/Python.framework/Versions/3.11/bin/python3 \
+      "/Applications/DeepSeek Harness.app/Contents/Resources/runtime/primary-runtime/dependencies/python/bin/python3" \
+      /usr/bin/python3
+  do
+    [ -n "$candidate" ] || continue
+    [ -x "$candidate" ] || continue
+    if "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info[:2] >= (3, 10) else 1)' 2>/dev/null; then
+      printf '%s\n' "$candidate"; return 0
+    fi
+  done
+
+  return 1
+}
+
+if ! PY=$(pick_python); then
+  cat >&2 <<'MSG'
+strata: no usable Python found.
+
+This distribution is meant to run on its own. If you are seeing this, the private runtime is
+missing from the install and no Python 3.10+ is on your PATH.
+
+  * Reinstall the distribution, which restores the bundled runtime, or
+  * set STRATA_PYTHON=/path/to/python3 (3.10 or newer), or
+  * install Python 3.10+ and run this launcher again.
+MSG
+  exit 5
+fi
+
+# Find the application root. Two layouts are supported so the same launcher works from a checkout
+# (`bin/strata` beside `strata.py`) and from an installed distribution (`<root>/bin/strata` with the
+# code under `<root>/`).
+if [ -f "$HERE/strata.py" ]; then
+  APP=$HERE
+elif [ -f "$HERE/../strata.py" ]; then
+  APP=$(CDPATH= cd -- "$HERE/.." && pwd -P)
+else
+  echo "strata: cannot find strata.py next to $HERE or its parent; the installation looks incomplete" >&2
+  exit 5
+fi
+
+# Only the API server needs third-party packages. `--help`, `status`, `monitor`, `timeskip` and
+# `tune plan` are deliberately stdlib-only — the CLI imports `serve.*` lazily inside the functions
+# that need it — so they must keep working on a bare interpreter. Checking them here anyway was a
+# real defect: it made `strata --help` refuse to run on an interpreter that could have answered it.
+#
+# A missing dependency is reported as a typed, actionable failure rather than a traceback, and
+# nothing is ever installed here.
+case "${1:-}" in
+  serve|bench)
+    if ! "$PY" - <<'PROBE' 2>/dev/null
+import importlib.util, sys
+need = ("jinja2", "yaml", "regex", "psutil", "requests", "numpy", "PIL")
+missing = [m for m in need if importlib.util.find_spec(m) is None]
+if missing:
+    sys.stderr.write("missing: " + ", ".join(missing) + "\n")
+    raise SystemExit(1)
+PROBE
+    then
+      echo "strata: the interpreter $PY is missing packages the API server needs." >&2
+      echo "        Run: $PY -m pip install -r \"$APP/requirements.txt\"" >&2
+      echo "        (strata status, monitor, timeskip and tune plan do not need them)" >&2
+      exit 5
+    fi
+    ;;
+esac
+
+# The private runtime must not see the user's site-packages, PYTHONHOME or PYTHONPATH.
+case $PY in
+  "$HERE"/../python/*|"$HERE"/python/*) PYTHONNOUSERSITE=1; export PYTHONNOUSERSITE; unset PYTHONHOME PYTHONPATH ;;
+esac
+
+exec "$PY" "$APP/strata.py" "$@"

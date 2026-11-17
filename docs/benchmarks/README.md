@@ -1,6 +1,6 @@
 # Benchmarks
 
-Measured speed and memory of the edge0 models on each supported platform, the
+Measured speed and memory of the models on the native engine on each supported platform, the
 devices they were measured on, and how to measure your own device are in the
 engine's [Benchmarking guide](../../edge0-infer/docs/benchmarking.md)
 ([reference figures](../../edge0-infer/docs/benchmarking.md#reference-figures)).
@@ -8,3 +8,6 @@ engine's [Benchmarking guide](../../edge0-infer/docs/benchmarking.md)
 To share a result, post the `edge0-infer bench` summary with your device,
 memory and storage type in
 [GitHub Discussions](https://github.com/Edge0-AI/Edge0/discussions).
+
+The speed and quality of edge0-145b and edge0-120b, which run on edge0-strata, are on their
+[model page](../models/edge0-145b.md).

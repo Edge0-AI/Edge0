@@ -203,11 +203,15 @@ def pack_q4_1(values: np.ndarray) -> bytes:
         raise ValueError('Q4_1 needs finite, complete blocks')
     x = x.reshape(-1, 32)
     m = x.min(axis=1)
-    d = (x.max(axis=1) - m) / 15
+    with np.errstate(over='ignore', invalid='ignore'):
+        d = (x.max(axis=1) - m) / 15
+        stored_d, stored_m = d.astype('<f2'), m.astype('<f2')
+    if not np.isfinite(stored_d).all() or not np.isfinite(stored_m).all():
+        raise ValueError('Q4_1 scale and minimum must be representable in F16')
     inv = np.divide(1, d, out=np.zeros_like(d), where=d != 0)
     q = np.floor((x - m[:, None]) * inv[:, None] + 0.5).clip(0, 15).astype(np.uint8)
     result = np.empty((len(x), 20), dtype=np.uint8)
-    result[:, :2] = d.astype('<f2').view(np.uint8).reshape(-1, 2)
-    result[:, 2:4] = m.astype('<f2').view(np.uint8).reshape(-1, 2)
+    result[:, :2] = stored_d.view(np.uint8).reshape(-1, 2)
+    result[:, 2:4] = stored_m.view(np.uint8).reshape(-1, 2)
     result[:, 4:] = q[:, :16] | (q[:, 16:] << 4)
     return result.tobytes()
