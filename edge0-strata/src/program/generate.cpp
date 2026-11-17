@@ -7868,7 +7868,11 @@ int main(int argc, char** argv) {
         // knife-0 (STRATA_LATENT_U_GPU) is what runs U from the peer's q8_1 hq rows (latent_u_matvec), so it must stay
         // on when a peer serves latent experts.
         if (const char* v = std::getenv("STRATA_LATENT_U_GPU"); v == nullptr || std::atoi(v) == 0) {
+#if defined(_WIN32)
+            _putenv_s("STRATA_LATENT_U_GPU", "1");
+#else
             setenv("STRATA_LATENT_U_GPU", "1", 1);
+#endif
             std::fprintf(stderr, "strata serve: STRATA_LATENT_U_GPU is on with --peer-device (U runs from the peer's hq rows)\n");
         }
     }

@@ -704,8 +704,8 @@ static bool mtp_dev_debug() {
 }
 static int mtp_dev_of(const void* p) {
     if (p == nullptr) return -2;
-#if defined(STRATA_GPU_METAL)
-    return 0;   // one device and one memory: the Metal runtime has no pointer attributes to ask
+#if defined(STRATA_USE_HIP) || defined(STRATA_HIP_GFX906) || defined(STRATA_GPU_METAL)
+    return -1;   // (no pointer-attribute query in the shims: reported as a failed query)
 #else
     cudaPointerAttributes at{};
     if (cudaPointerGetAttributes(&at, p) != cudaSuccess) { (void) cudaGetLastError(); return -1; }
@@ -1598,7 +1598,9 @@ bool MtpDrafter::prefill(const float* R_rows, const int32_t* next_tokens, int64_
     const int64_t NHp = g_->n_head, per_row = 1 + 4 + NHp;
     // rows from another card (a layer split): those copies go through host memory (see rows_to_rin)
     bool cross = false;
-#if !defined(STRATA_GPU_METAL)   // (Metal has one device: rows never come from another card)
+#if defined(STRATA_USE_HIP) || defined(STRATA_HIP_GFX906) || defined(STRATA_GPU_METAL)
+    // (no pointer-attribute query in the shims; these builds run one card, so the rows are never on another one)
+#else
     if (n > 0) {
         cudaPointerAttributes at{};
         if (cudaPointerGetAttributes(&at, R_rows) == cudaSuccess && at.type == cudaMemoryTypeDevice && at.device != device_)

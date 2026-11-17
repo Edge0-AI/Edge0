@@ -85,6 +85,15 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --check
 cargo test --locked --manifest-path src-tauri/Cargo.toml
 ```
 
+Download behavior is covered by the Rust tests above with a fake transport: no
+network and no port. On a machine that can reach both sources shown in the
+download dialog, this ignored test downloads one small directory from each,
+pauses, resumes, and checks every file:
+
+```sh
+cargo test --locked --manifest-path src-tauri/Cargo.toml -- --ignored --test-threads=1
+```
+
 Frontend tests read every entry of `../shared/metrics-cases.json`,
 `../shared/math-cases.json`, `../shared/status-cases.json` and
 `../shared/context-cases.json`, map `../shared/status-sample.json` to display values,
@@ -114,7 +123,9 @@ terminal shutdown rejecting queued starts, automatic/explicit ports, compatible
 legacy settings, inspection identifiers, conversation and totals storage, LAN arguments, token
 format and file permissions, and `EDGE0_HOME` holding the settings, archive and PID
 record (unset or blank keeps the platform directories). Each test owns its temporary
-directory and child processes.
+directory and child processes. They also cover the download file list, checksums,
+source choice, resume (also after the save location changed), retries, pause, two
+concurrent starts of which only one runs, and skipping unfinished `.partial` directories.
 
 A Mac can additionally check the Windows Rust source. Install Homebrew's `llvm`
 and add its `bin` directory to `PATH` for this command only; it provides the
@@ -125,11 +136,12 @@ rustup target add x86_64-pc-windows-msvc
 PATH="$(brew --prefix llvm)/bin:$PATH" cargo check --locked --manifest-path src-tauri/Cargo.toml --target x86_64-pc-windows-msvc
 ```
 
-This check has passed on macOS, including the App crate, with Homebrew LLVM.
-No `cargo-xwin` installation is required. The HTTP plugin disables its default
-features because the App only uses loopback HTTP; its dependency graph has no
-`rustls` or `ring`. Without `llvm-rc`, the check can stop in `tauri-winres` before
-checking the App crate. Record that as a blocked check, not a passed Windows build.
+No `cargo-xwin` installation is required. The HTTP plugin enables only `native-tls`
+(the operating system's certificate store) and leaves `system-proxy` off, so
+loopback requests to the local service stay direct. The normal dependency graph
+has no `rustls` or `ring`. Without `llvm-rc`, the check can stop in `tauri-winres`
+before checking the App crate. Record that as a blocked check, not a passed
+Windows build.
 
 macOS and Windows use the same React components for model selection, reasoning
 blocks and the thinking switch. Windows visual behavior still requires an actual
@@ -142,25 +154,32 @@ Windows checklist below. App tests are independent of the engine's ctest suite.
 ## Assets and first launch
 
 Prepare assets using the [asset guide](../../docs/getting-started.md#get-a-model).
-Build `edge0-infer` using the [build guide](../../docs/getting-started.md).
-On Choose a model, expand Other location… to enter the full executable path
-and one asset directory per line. This section starts collapsed, including on
-first launch before an executable has been configured.
+Build `edge0-infer` using the [build guide](../../docs/getting-started.md) and
+enter its full path under Settings > Engine > Executable, or pick it with Browse….
 With no executable configured, the app uses the `edge0-infer` that a release
 package ships with it: beside its own executable, or in `Contents/Resources` of
-the macOS app bundle.
-If no executable is configured, or the configured file has been moved or deleted,
-loading or saving reports which one it is and points to Settings > Engine > Executable
-and Other location… to set it again.
-Save runs `edge0-infer inspect --model <directory> --json` for each entry.
-Selectable options show the reported model identifier and directory name, each with a Load button; hover
-to see the full path. Failed inspections appear only under Unavailable asset
-directories, with the directory name and reason. Select an available directory
-to start the service and enter the conversation. Before loading, the conversation
-and composer are hidden. Preparation instructions and configured directory paths
-appear only when no usable model is found. Models returns to this selection page
-without unloading the model or erasing history; Return to chat reopens the loaded
-conversation, while loading another model starts a new one. Settings are JSON in Tauri's
+the macOS app bundle. That path is used for the current run only and is not
+written to the settings file. If the configured file has been moved or deleted
+and the package ships an `edge0-infer`, the app uses the shipped one for that run
+and leaves the settings file unchanged. Saving other settings keeps the
+configured path as it is in the settings file, so a path that is missing for now
+(an unplugged drive) is used again once the file is back. Otherwise, loading or saving reports that
+no executable is configured or that the configured file was not found, and points
+to Settings > Engine > Executable.
+Until a model is loaded, the chat page shows a Choose a model button that opens the
+model page. Its header has Refresh, which inspects the scan locations again, and
+Add location, which opens a folder chooser and adds the chosen folder as a scan
+location. A location that holds neither `model.json` nor `assets.tsv` is scanned
+one level down, skipping `.partial` folders. Each model directory is checked with
+`edge0-infer inspect --model <directory> --json`.
+Available models show the reported model identifier, directory name, size and
+full path, each with a Load button. Failed inspections appear only under
+Unavailable, with the reason. Load starts the service and opens the conversation.
+Before loading, the composer is hidden. Where the download catalog has no entry
+for the platform, a preparation sentence appears when no usable model is found.
+Models returns to the model page without unloading the model or erasing history;
+Open chat on the loaded model reopens its conversation, while loading another
+model starts a new one. Settings are JSON in Tauri's
 per-user application configuration directory, outside the repository.
 
 The default device is `metal` on macOS and `cpu` on Windows. Settings also allow
@@ -178,14 +197,13 @@ the chosen port unchanged and shows `Server: http://127.0.0.1:<port>` after heal
 checks succeed. A port already in use produces the service's error; the app does
 not select another port. LAN access is controlled on the Service page (see below).
 
-The chat header keeps Models on the left, Edge0 Chat centered and New chat on
-the right. Below it, the model name appears on the left and Thinking on the right,
-with the conversation-lock hint below the switch. On and Off are explicit text;
+The chat header shows the conversation title on the left and Thinking on the
+right, with the conversation-lock hint below the switch; New chat and Models are
+in the sidebar. On and Off are explicit text;
 on uses a contrasting blue track and off a gray track, including when faded and
 locked. The header and bottom composer stay visible while only the message list
 scrolls. Wide windows center the content within a bounded width. The model page
-has its own scroll area, including the expanded settings, and a fixed centered
-Choose a model header with loaded-only Back to chat and Refresh actions.
+has its own scroll area and a fixed page header with Refresh and Add location.
 
 Normal chat requests omit `max_tokens`, leaving the output limit to the engine.
 Requests explicitly include only model, complete messages, streaming, final usage,
@@ -265,7 +283,18 @@ colors elsewhere.
   `context_length` from `/v1/models`. Without a capacity no ring is shown.
 - **Models**: Loaded, Available and Unavailable groups with directory name, total
   size and, when loaded, context capacity. Scan locations can be added and removed;
-  unload a model before removing its location.
+  unload a model before removing its location. On a platform the shared catalog
+  applies to, a Download section lists those models. Download measures the two
+  sources, shows free space against the bytes still needed, and saves each model
+  in its own folder under the chosen directory (by default `Edge0-models` in the
+  user home). One download runs at a time; the Download and Resume buttons stay
+  disabled until the start request returns. Pause and quit keep the partial files;
+  Resume continues them in the folder the download started in, even after the
+  save location was changed for another download. Delete asks for confirmation, then removes the partial
+  folder. A model already on this machine is marked with its path and has no
+  Download button. The whole section is hidden when the catalog has no entry for
+  the platform. Windows lists all four catalog models. macOS lists and supports
+  only the two Q3_K models; the NVFP4 models are Windows only.
 - **Status**: reads `GET /status` once per second, only while the page is visible
   and the window is not hidden; a query starts only after the previous one returns.
   It shows the current or last request; memory in use (process physical memory, or
@@ -306,8 +335,8 @@ A checkmark below is a procedure, not a claim that it has passed on this machine
 
 | Item | Procedure and expected result |
 | --- | --- |
-| 6.8: model page | Before loading, verify Choose a model, one Load action per valid row, and no conversation or composer. The preparation sentence and configured paths appear only with no available models. Other location… starts collapsed on a fresh launch, including when the executable is unset. After loading, Models and Return to chat preserve history; another Load replaces the model and starts a new chat. |
-| 6.12/6.13: layout | Create a long conversation and scroll to its bottom: Edge0 Chat remains centered, Models and New chat remain directly reachable, and the composer remains visible. Confirm model name at left and Thinking with its hint at right below the header. Open Models: Choose a model stays centered between Back to chat and Refresh, and expanded Other location settings can be scrolled fully into view. Repeat in a narrow and a wide window. |
+| 6.8: model page | Before loading, the chat page shows Choose a model and no composer; it opens the model page, with one Load action per valid row. With no usable model, the page is titled Choose a model; its header has Refresh and Add location, and Add location opens a folder chooser and adds that folder. Where the download catalog has no entry for the platform, the preparation sentence appears instead. After loading, Models and Open chat preserve history; another Load replaces the model and starts a new chat. |
+| 6.12/6.13: layout | Create a long conversation and scroll to its bottom: the title and Thinking stay in the header, the sidebar's New chat and Models stay reachable, and the composer remains visible. Open Models: the header keeps Refresh and Add location, and the whole page, including the Download section, can be scrolled fully into view. Repeat in a narrow and a wide window. |
 | 6.14: On/Off | Check editable On, editable Off, locked On and locked Off: each shows the correct explicit text, on stays blue, off stays gray, and locked text remains readable. |
 | A1: models | Configure valid 35B assets, a second valid directory and a directory with missing files. Save. Selectable entries contain model identifier plus directory name, with the full path on hover. The missing directory appears only in the unavailable area with its reason; select each valid directory and complete a turn. |
 | A2: streaming | Ask for a long numbered explanation. The answer arrives incrementally. |
@@ -316,7 +345,7 @@ A checkmark below is a procedure, not a claim that it has passed on this machine
 | A5: suggestions | In an empty conversation, verify the four suggestions match the shared data, then click one. It sends immediately. |
 | A6: metrics | Finish a normal turn. Record tokens, TTFT, prefill, decode and peak. Compare their scale with CLI on the same device and backend; do not apply a performance threshold. Missing engine fields must disappear. |
 | A7: thinking | In an empty chat on a capable model, enable Thinking and send a prompt: reasoning appears separately. With history present the control is locked and shows Applies to a new chat. Choose New chat, disable Thinking and send another prompt: no reasoning appears. With an unsupported model the control stays disabled. |
-| 6.9: reasoning display | Enable Thinking in a new chat. Reasoning appears above the answer in a separate gray block and is expanded without clicking. Collapse it during streaming; later fragments, completion and Models/Return to chat must not reopen it. New chat with Thinking off shows no reasoning block. |
+| 6.9: reasoning display | Enable Thinking in a new chat. Reasoning appears above the answer in a separate gray block and is expanded without clicking. Collapse it during streaming; later fragments, completion and Models/Open chat must not reopen it. New chat with Thinking off shows no reasoning block. |
 | 6.10: locked switch | After sending with Thinking on, verify the disabled switch is faded but still theme-colored and its thumb remains on the right. In a new chat turn Thinking off, send, and verify the faded gray locked off state is clearly different. |
 | A8: system prompt | With the setting empty, the first request message matches shared data (unit test). Set a custom prompt and start a new chat: its first message is the new text; an older conversation still sends its original prompt. |
 | H1: history | Hold two conversations, quit and reopen: both are listed with the same content and metrics; continue one and confirm full history is sent. Replace one archive file with invalid content: the app starts, lists it as unavailable and leaves the file unchanged. Delete a conversation. |
@@ -333,6 +362,13 @@ A checkmark below is a procedure, not a claim that it has passed on this machine
 | P2: settings | Launch with no saved settings. Enter an invalid executable: a clear error appears and the app remains usable. Save valid settings, quit, reopen with the same application identifier, and verify the paths and devices persisted. |
 | Server port | Save blank, a free specified port and an occupied port in separate runs. Blank selects a real ephemeral port; specified port matches the status address; occupied port fails with a clear binding error and no fallback. Values 0, 65536, negative, decimal and nonnumeric input cannot be saved. |
 | Error path | Start an inspectable model with an unsupported device, or terminate the service externally after a successful turn. The app shows failure and stderr, prevents sending to the dead service, and can load a model again. |
+| D1: download | Windows. Record whether CUDA Toolkit 13 is installed (`CUDA_PATH` and `cublas64_13.dll` under it) and whether edge0-strata can be found. Place `edge0-infer.exe` beside the App; with the executable setting empty, inspect still runs. The download does not use the system proxy, so use a TUN-mode VPN when a source needs one. In the dialog both sources show a measured time, the faster one is selected by default, and the choice can be changed. Choose ModelScope and download Edge0 120B · Q3_K into a folder with enough free space. When it finishes, stay in that App process: the card says On this machine and the folder appears in the model list. If CUDA Toolkit 13 and edge0-strata are available, load it and complete one chat turn; otherwise record load and chat as not covered. |
+| D2: pause and delete | Windows. Start Edge0 145B · NVFP4 from ModelScope. Pause, choose Hugging Face, and resume: the state file's source is Hugging Face, and files that were already checked are checked again. Quit the App and reopen it: the card is Paused and shows the bytes already downloaded. Delete and confirm: the `.partial` folder is gone and `partial_downloads` no longer lists that download. |
+| D3: failed download | Windows. During a download, make the file hosts unreachable. The App does not use the system proxy, and an outbound firewall rule does nothing while the firewall profiles are off. Point the download host names at 127.0.0.1 in the hosts file and reset the existing TCP connections. The card shows Failed and a reason. Restore the network and Resume: the download continues, and files that already matched are not downloaded again. Under a TUN VPN, a dropped connection reconnects and the download continues. |
+| M1: macOS list | macOS. The Download section lists only Edge0 145B · Q3_K and Edge0 120B · Q3_K; neither NVFP4 model appears. Click Download: the dialog opens at once and shows Measuring response time… until both sources answer or time out, and the window stays responsive. |
+| M2: macOS pause and delete | macOS. Start Edge0 120B · Q3_K and let part of it download, then quit the App. Reopen it: the card is Paused and shows the bytes already downloaded. Resume: files that were already checked are not downloaded again. Delete and confirm: the `.partial` folder is gone and `partial_downloads` no longer lists that download. A complete download is not part of this check. |
+| M3: macOS model on this machine | macOS, on a machine whose scan locations already hold a Q3_K model folder. The matching card says On this machine with that folder's path and has no Download button. Load that folder and complete one chat turn. |
+| M4: bundled engine | macOS, release package with `edge0-infer` in `Contents/Resources`, opened from where it was downloaded without moving it. Leave the executable setting empty, load a model, quit and reopen: the model loads again and `settings.json` still has an empty `executable`. Set `executable` to a file that does not exist and reopen: the bundled engine is used and `settings.json` is unchanged. |
 
 ### macOS process checks (P1)
 
