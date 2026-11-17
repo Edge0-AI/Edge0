@@ -141,6 +141,7 @@ def chat(base: str, key: str, messages: list, max_tokens: int, think: bool = Fal
                                           **({"Authorization": "Bearer " + key} if key else {})})
     t0 = time.perf_counter()
     first, text, usage, timings, err, pieces = None, [], None, None, None, 0
+    complete = False
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             for raw in r:
@@ -149,6 +150,7 @@ def chat(base: str, key: str, messages: list, max_tokens: int, think: bool = Fal
                     continue
                 d = line[5:].strip()
                 if d == "[DONE]":
+                    complete = True
                     break
                 try:
                     j = json.loads(d)
@@ -173,6 +175,8 @@ def chat(base: str, key: str, messages: list, max_tokens: int, think: bool = Fal
         err = f"HTTP {e.code}: {e.read()[:200]!r}"
     except Exception as e:                              # noqa: BLE001
         err = repr(e)[:300]
+    if not complete and err is None:
+        err = "incomplete SSE stream: missing [DONE]"
     total = time.perf_counter() - t0
     if os.environ.get("STRATA_BENCH_ANSWERS"):
         try:

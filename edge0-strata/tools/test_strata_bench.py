@@ -31,6 +31,7 @@ class FakeStrata(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", 0), Handler)
         self.ctx, self.prev, self.requests, self.fail_after = ctx, "", 0, fail_after
         self.tool_calls = False          # answer a request that offers tools with a tool call only, as the engine streams it
+        self.stream_end = "done"         # eof, error_done or error_eof interrupt the answer before its final usage
         self.lock = threading.Lock()
         threading.Thread(target=self.serve_forever, daemon=True).start()
 
@@ -109,6 +110,12 @@ class Handler(BaseHTTPRequestHandler):
         else:
             for _ in range(gen):
                 chunk({"content": "word "})
+        if s.stream_end != "done":
+            if s.stream_end.startswith("error"):
+                self.wfile.write(b'data: {"error": {"message": "engine stopped"}}\n\n')
+                if s.stream_end == "error_done":
+                    self.wfile.write(b"data: [DONE]\n\n")
+            return
         chunk({}, "tool_calls" if calls else "stop", usage={"prompt_tokens": prompt, "completion_tokens": gen, "total_tokens": prompt + gen,
                                  "prompt_tokens_details": {"cached_tokens": cached}},
               timings={"cache_n": cached, "prompt_n": prompt - cached, "prompt_ms": 100.0,
@@ -182,6 +189,32 @@ class SuiteTests(unittest.TestCase):
         self.assertTrue(out["failures"])
         self.assertTrue(all("HTTP 500" in f["error"] for f in out["failures"]))
         self.assertIsNone(out["chat"]["decode_tps"])
+
+    def test_incomplete_and_failed_streams_are_errors_in_both_clients(self):
+        for ending in ("eof", "error_done", "error_eof"):
+            with self.subTest(ending=ending):
+                self.srv.stream_end = ending
+                expected = "missing [DONE]" if ending == "eof" else "engine stopped"
+                chat = B.chat(self.srv.base, "", [{"role": "user", "content": "hello"}], 12)
+                self.assertTrue(chat["text"])
+                self.assertIsNotNone(chat["first"])
+                self.assertFalse(B.digest(chat)["ok"])
+                self.assertIn(expected, chat["err"])
+                results = {}
+                B.serve_load.one(self.srv.base, "", "strata", 0, 20, 12, results, {}, False)
+                self.assertTrue(results[0]["text"])
+                self.assertIsNotNone(results[0]["first"])
+                self.assertIn(expected, results[0]["err"] or "")
+
+    def test_truncated_requests_do_not_produce_successful_benchmark_samples(self):
+        self.srv.stream_end = "eof"
+        suite = self.suite(runs=1)
+        suite.run_chat()
+        suite.run_clients(2)
+        self.assertEqual(len(suite.out["failures"]), len(B.PROMPTS))
+        self.assertTrue(all(not r["ok"] for r in suite.out["chat"]["requests"]))
+        self.assertIsNone(suite.out["chat"]["decode_tps"])
+        self.assertEqual(suite.out["clients"]["errors"], 2)
 
 
 class RedactionTests(unittest.TestCase):
