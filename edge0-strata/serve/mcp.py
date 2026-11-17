@@ -76,7 +76,14 @@ def _wait(slot: _Slot, timeout: float, cancel: threading.Event | None, what: str
     if "error" in msg:
         err = msg["error"] if isinstance(msg["error"], dict) else {"message": str(msg["error"])}
         raise McpError(f"{err.get('message') or 'error'} (code {err.get('code')})")
-    return msg.get("result") or {}
+    result = msg.get("result")
+    if result is not None and not isinstance(result, dict):
+        raise McpError("the server's result must be an object")
+    return result or {}
+
+
+def _request_id(value):
+    return isinstance(value, (str, int)) and not isinstance(value, bool)
 
 
 # ------------------------------------------------------------------------------------------------ transports
@@ -167,6 +174,8 @@ class StdioTransport:
         return f": {self.stderr[-1][:300]}" if self.stderr else ""
 
     def _dispatch(self, m: dict):
+        if "id" in m and not _request_id(m["id"]):
+            return                                      # an invalid id cannot match a pending request
         if "method" in m:
             if "id" in m:                                # a request from the server: we offer no client features
                 try:
@@ -343,7 +352,7 @@ class HttpTransport:
                     found = None
                     parsed = json.loads(body) if body.strip() else None
                     for m in parsed if isinstance(parsed, list) else [parsed]:
-                        if isinstance(m, dict) and m.get("id") == rid and "method" not in m:
+                        if isinstance(m, dict) and _request_id(m.get("id")) and m.get("id") == rid and "method" not in m:
                             found = m
                 if found is None:
                     raise McpError("the server's answer did not contain a response")
@@ -384,7 +393,7 @@ class HttpTransport:
                     m = None
                 data = []
                 for x in m if isinstance(m, list) else [m]:
-                    if isinstance(x, dict) and x.get("id") == rid and "method" not in x:
+                    if isinstance(x, dict) and _request_id(x.get("id")) and x.get("id") == rid and "method" not in x:
                         return x
         return None
 
@@ -457,7 +466,10 @@ class McpServer:
                                            "clientInfo": {"name": "strata", "title": "Strata", "version": "1"}},
                             timeout)
             t.protocol = str(res.get("protocolVersion") or PROTOCOL)
-            self.info = {k: v for k, v in (res.get("serverInfo") or {}).items() if k in ("name", "title", "version")}
+            info = res.get("serverInfo", {})
+            if not isinstance(info, dict):
+                raise McpError("initialize serverInfo must be an object")
+            self.info = {k: v for k, v in info.items() if k in ("name", "title", "version")}
             self.info["protocol"] = t.protocol
             t.notify("notifications/initialized")
             tools, cursor = [], None
@@ -468,7 +480,11 @@ class McpServer:
                     if "code -32601" in str(e) and not tools:   # a server without tools (prompts/resources only)
                         break
                     raise
-                tools += [x for x in page.get("tools") or [] if isinstance(x, dict) and x.get("name")]
+                listed = page.get("tools", [])
+                if not isinstance(listed, list) or any(not isinstance(x, dict) or not isinstance(x.get("name"), str)
+                                                      or not x["name"] for x in listed):
+                    raise McpError("tools/list must contain an array of tools with nonempty string names")
+                tools += listed
                 cursor = page.get("nextCursor")
                 if not cursor:
                     break

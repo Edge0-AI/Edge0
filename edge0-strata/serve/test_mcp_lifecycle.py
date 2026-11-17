@@ -111,7 +111,57 @@ sys.stdin.buffer.read()
             self.assertTrue(done, "a descendant kept stdout/stderr and close() blocked")
             self.assertNotIn("error", result)
 
+    def test_invalid_response_id_does_not_disable_later_responses(self):
+        source = """import json, sys
+for line in sys.stdin:
+    msg = json.loads(line)
+    if 'id' in msg:
+        print(json.dumps({'jsonrpc':'2.0','id':[],'result':{}}), flush=True)
+        print(json.dumps({'jsonrpc':'2.0','id':{},'result':{}}), flush=True)
+        print(json.dumps({'jsonrpc':'2.0','id':True,'result':{'wrong':True}}), flush=True)
+        print(json.dumps({'jsonrpc':'2.0','id':msg['id'],'result':{'ok':True}}), flush=True)
+"""
+        transport = self.transport(source)
+        self.assertEqual(transport.request("ping", {}, 0.5), {"ok": True})
+        self.assertEqual(transport.request("ping", {}, 0.5), {"ok": True})
 
+    def test_malformed_initialize_result_fails_and_reaps_server(self):
+        source = """import json, sys
+for line in sys.stdin:
+    msg = json.loads(line)
+    if 'id' in msg:
+        print(json.dumps({'jsonrpc':'2.0','id':msg['id'],'result':{'serverInfo':'invalid'}}), flush=True)
+"""
+        server = McpServer("malformed", {"command": sys.executable, "args": ["-u", "-c", source]}, DEFAULTS)
+        try:
+            self.assertFalse(server.start())
+            self.assertEqual(server.status, "failed")
+            self.assertIsNotNone(server.transport.proc.poll())
+        finally:
+            if server.transport is not None:
+                self.stop(server.transport)
+
+    def test_malformed_results_and_tool_names_fail_initialization(self):
+        for bad_result in ([], "not an object", {"tools": "not an array"}, {"tools": [{"name": 7}]}):
+            with self.subTest(result=bad_result):
+                source = """import json, sys
+bad = json.loads(sys.argv[1])
+for line in sys.stdin:
+    msg = json.loads(line)
+    if 'id' in msg:
+        result = {'serverInfo':{}} if msg['method']=='initialize' else bad
+        print(json.dumps({'jsonrpc':'2.0','id':msg['id'],'result':result}), flush=True)
+"""
+                server = McpServer("malformed", {"command": sys.executable,
+                                   "args": ["-u", "-c", source, json.dumps(bad_result)]}, DEFAULTS)
+                try:
+                    self.assertFalse(server.start())
+                    self.assertEqual(server.status, "failed")
+                    self.assertEqual(server.tools, [])
+                    self.assertIsNotNone(server.transport.proc.poll())
+                finally:
+                    if server.transport is not None:
+                        self.stop(server.transport)
 
 
     def test_close_does_not_signal_a_retired_process_group_twice(self):
