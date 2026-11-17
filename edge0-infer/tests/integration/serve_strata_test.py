@@ -216,6 +216,29 @@ def failures(cli, root):
     print('PASS failures: engine directory, Python, contract version, start failure, ready timeout; no leftovers')
 
 
+def invalid_ready_ports(cli, root):
+    engine = make_engine(root / 'ready-port-engine')
+    model = make_model(root / 'ready-port-model')
+    for index, port in enumerate(('wrap32', 0, -1, 65536, 2**64 - 1, 1.5, True)):
+        record = root / ('ready-port-' + str(index))
+        process = subprocess.Popen([str(cli), 'serve', '--model', str(model), '--port', '0',
+                                    *strata_args(engine), '--strata-ready-timeout', '1'],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
+                                   env=environment(record, ready_port=json.dumps(port)))
+        timed_out = False
+        try:
+            _, text = process.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
+            _, text = process.communicate(timeout=20)
+        assert_no_leftovers(record)
+        assert not timed_out and process.returncode != 0 and 'Listening:' not in text, (port, text)
+        assert 'invalid bound_port' in text, (port, text)
+    print('PASS ready record: invalid port values rejected before health checks; no process left')
+
+
 def proxy(cli, root, snapshots):
     engine = make_engine(root / 'p-engine')
     model = make_model(root / 'p-model')
@@ -1169,6 +1192,7 @@ def main():
         inspect_defaults(args.cli, root)
         refusals(args.cli, root)
         failures(args.cli, root)
+        invalid_ready_ports(args.cli, root)
         snapshots = []
         proxy(args.cli, root, snapshots)
         live_progress(args.cli, root, snapshots)

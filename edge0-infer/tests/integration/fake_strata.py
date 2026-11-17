@@ -12,6 +12,7 @@ Behaviour is controlled with environment variables:
                            requests.jsonl, sent-<n>.bin, events.jsonl
   FAKE_STRATA_FAIL_START   exit with this code before becoming ready
   FAKE_STRATA_READY_DELAY  seconds to wait before listening
+  FAKE_STRATA_READY_PORT   JSON override for bound_port; "wrap32" adds 2**32 to the actual port
   FAKE_STRATA_EXIT_AFTER   exit after this many generation requests (code 3)
   FAKE_STRATA_CHUNK_DELAY  seconds between streamed chunks (default 0.02); every
                            stream sends the answer one word per text event
@@ -422,10 +423,13 @@ def serve(argv):
         signal.signal(signal.SIGBREAK, terminate)
     if args.ready_file:
         port = server.server_address[1]
+        bound_port = json.loads(os.environ['FAKE_STRATA_READY_PORT']) if 'FAKE_STRATA_READY_PORT' in os.environ else port
+        if bound_port == 'wrap32':
+            bound_port = port + 2**32
         descriptor = os.open(args.ready_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(descriptor, 'w') as out:
             out.write(json.dumps({'schema_version': 1, 'pid': os.getpid(), 'api_url': f'http://127.0.0.1:{port}',
-                                  'bound_host': args.host, 'bound_port': port, 'model_state': 'ready'}) + '\n')
+                                  'bound_host': args.host, 'bound_port': bound_port, 'model_state': 'ready'}) + '\n')
     print(f'ready: http://127.0.0.1:{server.server_address[1]}/v1', flush=True)
     try:
         server.serve_forever()

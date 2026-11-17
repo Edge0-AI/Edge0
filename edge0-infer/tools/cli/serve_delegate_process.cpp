@@ -394,8 +394,12 @@ void Engine::start() {
         if (port_ == 0 && fs::exists(settings_.ready_file, error)) {
             std::ifstream input(settings_.ready_file, std::ios::binary);
             const auto record = Json::parse(input, nullptr, false);
-            if (!record.is_discarded() && record.contains("bound_port") && record["bound_port"].is_number_integer())
+            if (!record.is_discarded()) {
+                if (!record.contains("bound_port") || !record["bound_port"].is_number_integer() ||
+                    record["bound_port"] < 1 || record["bound_port"] > 65535)
+                    fail("edge0-strata ready file has invalid bound_port (expected integer 1..65535)");
                 port_ = record["bound_port"].get<int>();
+            }
         }
         if (port_ > 0) {
             httplib::Client client("127.0.0.1", port_);
