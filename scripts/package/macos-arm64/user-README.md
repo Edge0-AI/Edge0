@@ -29,7 +29,7 @@ Built from commit [`{{COMMIT}}`](https://github.com/Edge0-AI/Edge0/tree/{{COMMIT
    xattr -dr com.apple.quarantine "/Applications/Edge0 Chat.app"
    ```
 
-3. Nothing to set for the engine: **Settings > Engine > Executable** is **Built-in**, the `edge0-infer` inside the app, also after you move the app. **Custom** uses an `edge0-infer` you choose instead. Settings written by Edge0 Chat 0.3.0 or earlier are switched to Built-in once, on the first start.
+3. Nothing to set for the engine: **Settings > Engine > Executable** is **Built-in**, the `edge0-infer` inside the app, also after you move the app. **Custom** uses an `edge0-infer` you choose instead. Settings written by Edge0 Chat 0.3.0 or earlier are switched to Built-in once, on the first start. **Settings > Engine > Context length** is the number of tokens a conversation can hold: **Model default** keeps the length the model is set up for, and 16K to 128K or **Custom** (a whole number of K) set another; a new length applies when the model loads again.
 4. Open **Models**. Choose **Download** on Edge0 145B or Edge0 120B to download its Q3_K folder from Hugging Face or ModelScope into a folder you pick; a paused or interrupted download continues where it stopped. The app does not offer the NVFP4 folders on macOS. Or choose **Add location** and select a model directory you already have (see [Model directories](#model-directories)). Then **Load** it and **Open chat**.
 
 The app keeps its settings (`settings.json`) and conversations under `~/Library/Application Support/dev.edge0.example.desktop`. Set `EDGE0_HOME` to another folder to keep them there instead.

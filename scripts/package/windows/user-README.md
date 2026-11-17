@@ -41,7 +41,7 @@ Built from commit [`{{COMMIT}}`](https://github.com/Edge0-AI/Edge0/tree/{{COMMIT
 
 1. Extract the zip to a short path, for example `C:\Edge0\`.
 2. Start `Edge0 Chat.exe`.
-3. Nothing to set for the engine: **Settings > Engine > Executable** is **Built-in**, the `edge0-infer.exe` in the app's own folder, also after you move the folder. **Custom** uses an `edge0-infer.exe` you choose instead. Settings written by Edge0 Chat 0.3.0 or earlier are switched to Built-in once, on the first start.
+3. Nothing to set for the engine: **Settings > Engine > Executable** is **Built-in**, the `edge0-infer.exe` in the app's own folder, also after you move the folder. **Custom** uses an `edge0-infer.exe` you choose instead. Settings written by Edge0 Chat 0.3.0 or earlier are switched to Built-in once, on the first start. **Settings > Engine > Context length** is the number of tokens a conversation can hold: **Model default** keeps the length the model is set up for, and 16K to 128K or **Custom** (a whole number of K) set another; a new length applies when the model loads again.
 4. Open **Models**. Choose **Download** on Edge0 145B or Edge0 120B (Q3_K or NVFP4) to download it from Hugging Face or ModelScope into a folder you pick; a paused or interrupted download continues where it stopped. Or choose **Add location** and select a model directory you already have (see [Model directories](#model-directories)). Then **Load** it and **Open chat**.
 
 The app keeps its settings (`settings.json`) and conversations under `%APPDATA%\dev.edge0.example.desktop`. Set `EDGE0_HOME` to another folder to keep them there instead.
