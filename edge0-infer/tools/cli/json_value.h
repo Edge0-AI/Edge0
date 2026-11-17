@@ -32,7 +32,7 @@ class JsonParser {
             if (p == input.size()) error();
             const char c = input[p++];
             unsigned v = c >= '0' && c <= '9' ? c-'0' : c >= 'a' && c <= 'f' ? c-'a'+10 : c >= 'A' && c <= 'F' ? c-'A'+10 : 16;
-            if (v == 16) error(); n = n*16+v;
+            if (v == 16) { error(); } n = n*16+v;
         }
         return n;
     }
@@ -87,13 +87,13 @@ class JsonParser {
             do { const auto key = string(); if (!consume(':')) error();
                 if (!object.emplace(key,parse(depth+1)).second) error();
             } while (consume(','));
-            if (!consume('}')) error(); return Json{object};
+            if (!consume('}')) { error(); } return Json{object};
         }
         if (consume('[')) {
             Json::Array array;
             if (consume(']')) return Json{array};
             do { array.push_back(parse(depth+1)); } while (consume(','));
-            if (!consume(']')) error(); return Json{array};
+            if (!consume(']')) { error(); } return Json{array};
         }
         for (const auto& item : std::vector<std::pair<std::string, Json>>{{"true",Json{true}},{"false",Json{false}},{"null",Json{nullptr}}}) {
             if (input.compare(p,item.first.size(),item.first)==0) { p += item.first.size(); return item.second; }

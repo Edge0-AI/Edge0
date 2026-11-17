@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { invoke } from '@tauri-apps/api/core';
 import { fetch } from '@tauri-apps/plugin-http';
-import { buildRequest, streamChat, type Message } from './chat';
+import { buildRequest, explainFailure, streamChat, type Message } from './chat';
 import { validateServerPort, type GenerationPhase } from './conversation';
 import { Icon, type IconName } from './Icon';
 import { Chat } from './pages/Chat';
@@ -19,13 +19,33 @@ import { usePolling } from './state/polling';
 import { ArchiveWrites, SettingsWrites, WriteQueue } from './state/persistence';
 import { waitForHealth } from './state/health';
 import { deviceLabel, parseInfo, type EngineStatus, type Inspection } from './status';
+import { downloadBusy } from './download-logic';
+import { deleteDownload, diskFree, measureDownload, pauseDownload, startDownload, useDownloads } from './download-host';
+import { DownloadingBadge } from './download-view';
 import logo from '../src-tauri/icons/icon.png';
 import 'streamdown/styles.css';
 import './theme.css';
 import './style.css';
 type Page = 'chat' | 'models' | 'status' | 'service' | 'settings';
-interface RunningService { url: string; pid: number; }
+interface RunningService { url: string; pid: number; memory_warning?: string | null; }
 interface Model { id: string; context_length?: number; capabilities: { thinking: boolean; thinking_default: boolean }; }
+/** A finished download stores its directory in the on-disk assets list. Take that list, leave every
+ *  other field as the page currently holds it (including edits not saved yet), then inspect. */
+export async function refreshDownloadedAssets(
+  seen: number | null,
+  generation: number,
+  current: () => Settings,
+  load: () => Promise<Settings>,
+  adopt: (next: Settings) => void,
+  inspect: (settings: Settings) => Promise<unknown>,
+): Promise<Settings | undefined> {
+  if (seen == null || generation === seen) return;
+  const loaded = await load();
+  const next = { ...current(), assets: [...loaded.assets] };
+  adopt(next);
+  await inspect(next);
+  return next;
+}
 export function App() {
   const [settings, setSettings] = useState(defaultSettings), settingsRef = useRef(defaultSettings);
   const [page, setPage] = useState<Page>('chat'), [archives, setArchives] = useState<Archive[]>([]);
@@ -43,6 +63,7 @@ export function App() {
   const archiveWrites = useRef(new ArchiveWrites<Conversation>(persistence.current, conversation => invoke<void>('save_conversation', { id: conversation.id, conversation }), id => invoke<void>('delete_conversation', { id })));
   const [deleting, setDeleting] = useState(false), deletingRef = useRef(false);
   const busy = phase !== 'idle', disabled = busy || loading || initializing || deleting;
+  const memoryWarning = service?.memory_warning ?? '';
   const report = (failure: unknown) => setError(String(failure));
   function changeConversation(next: Conversation) { conversationRef.current = next; setConversation(next); }
   function remember(next: Conversation) {
@@ -79,7 +100,7 @@ export function App() {
   useEffect(() => {
     if (!service) return;
     let cancelled = false; const epoch = serviceEpoch.current;
-    const timer = setInterval(() => { void invoke<{ running: boolean; detail: string }>('service_status').then(next => { if (!cancelled && epoch === serviceEpoch.current && !next.running) { controller.current?.abort(); serviceEpoch.current++; setService(undefined); setModel(undefined); setError(`The model service exited. ${next.detail}`); } }).catch(report); }, 1500);
+    const timer = setInterval(() => { void invoke<{ running: boolean; detail: string }>('service_status').then(next => { if (!cancelled && epoch === serviceEpoch.current && !next.running) { controller.current?.abort(); serviceEpoch.current++; setService(undefined); setModel(undefined); setError(explainFailure(`The model service exited. ${next.detail}`, service.memory_warning ?? '')); } }).catch(report); }, 1500);
     return () => { cancelled = true; clearInterval(timer); };
   }, [service]);
   async function stopService() { if (busy) return; serviceEpoch.current++; setLoading(true); try { await invoke('stop_service'); setService(undefined); setModel(undefined); setStatus(previous => previous ? { ...previous, current: null } : undefined); } catch (failure) { report(failure); } finally { setLoading(false); } }
@@ -95,6 +116,8 @@ export function App() {
       const response = await fetch(started.url + '/v1/models', { signal: abort.signal }); if (!response.ok) throw new Error(`Model capabilities failed (${response.status})`);
       const selected: Model | undefined = (await response.json()).data?.[0]; if (!selected?.capabilities) throw new Error('The service does not provide model capabilities. Rebuild edge0-infer.');
       runtimeSettings.current = nextSettings; setActivePath(path); setModel(selected); setService(started); setStatus(undefined);
+      // The sidebar shows the device from /status, which is otherwise polled only on the Status and Service pages.
+      const loadedEpoch = serviceEpoch.current; void fetch(started.url + '/status').then(r => r.ok ? r.json() as Promise<EngineStatus> : undefined).then(next => { if (next && loadedEpoch === serviceEpoch.current) setStatus(next); }).catch(() => undefined);
       changeConversation(restore ?? newConversation(nextSettings.system_prompt, selected.capabilities.thinking && selected.capabilities.thinking_default, path)); setDraft(''); setPage('chat');
     } catch (failure) { if (!abort.signal.aborted) report(failure); await invoke('stop_service').catch(report); }
     finally { controller.current = null; setLoading(false); }
@@ -108,7 +131,7 @@ export function App() {
     try { await streamChat(fetch, service.url, buildRequest(history, base.thinking, model.id, temperatures[settingsRef.current.generation_style], base.systemPrompt), abort.signal, message => {
       if (abort.signal.aborted || conversationRef.current.id !== id) return;
       const previous = conversationRef.current; changeConversation({ ...previous, messages: [...previous.messages.slice(0, -1), { ...message, reasoningExpanded: previous.messages.at(-1)?.reasoningExpanded }] });
-    }); } catch (failure) { failed = true; if (!abort.signal.aborted) report(failure); }
+    }); } catch (failure) { failed = true; if (!abort.signal.aborted) setError(explainFailure(failure, memoryWarning)); }
     finally {
       if (conversationRef.current.id === id) { const previous = conversationRef.current; const messages = previous.messages.map((message, index) => index === previous.messages.length - 1 ? { ...message, stopped: abort.signal.aborted, ...((failed || abort.signal.aborted) ? { metrics: undefined } : {}) } : message); const next = { ...previous, updatedAt: Date.now(), messages }; changeConversation(next); remember(next); }
       controller.current = null; setPhase('idle');
@@ -135,14 +158,27 @@ export function App() {
   async function removeLocation(path: string) { if (disabled || (service && assets.some(asset => asset.path === activePath && (asset.location ?? asset.path) === path))) return; try { const next = { ...settingsRef.current, assets: settingsRef.current.assets.filter(asset => asset !== path) }; await saveSettings(next); settingsRef.current = next; setSettings(next); setAssets(previous => previous.filter(asset => (asset.location ?? asset.path) !== path)); } catch (failure) { report(failure); } }
   async function healthCheck() { try { const info = parseInfo(await invoke<string>('engine_info', { executable: settingsRef.current.executable })); const assets = await inspect(); setHealth({ info, assets: assets.find(a => a.path === activePath) }); } catch (failure) { setHealth({ error: String(failure) }); } }
   async function network(nextToken = false) { if (disabled) return; try { if (nextToken) { const value = generateToken(); await invoke('write_api_token', { token: value }); tokenRef.current = value; setToken(value); } else if (!settingsRef.current.lan_access) await ensureToken(); const next = { ...settingsRef.current, lan_access: nextToken || !settingsRef.current.lan_access }; await saveSettings(next); settingsRef.current = next; setSettings(next); if (service && activePath) { const current = conversationRef.current; const previousPage = page; await select(activePath, current, next); setPage(previousPage); } } catch (failure) { report(failure); } }
+  const downloads = useDownloads();
+  const seenGeneration = useRef<number | null>(null);
+  useEffect(() => {
+    if (!downloads) return;
+    const previous = seenGeneration.current;
+    seenGeneration.current = downloads.generation;
+    // The backend already wrote the new directory into settings.json. Reload assets before inspect
+    // so this process scans it, without replacing settings fields the page has not saved yet.
+    void refreshDownloadedAssets(previous, downloads.generation, () => settingsRef.current, () => invoke<Settings>('load_settings'), next => { settingsRef.current = next; setSettings(next); }, inspect).catch(report);
+  }, [downloads]);
   const loaded = !!service && !!model;
   const nav: [Page, string, IconName][] = [['chat', 'Chat', 'chat'], ['models', 'Models', 'box'], ['status', 'Status', 'pulse'], ['service', 'Service', 'server']];
-  return <div className="app window"><aside className="sidebar"><div className="brand"><img className="logo" src={logo} alt="Edge0"/><div><b>Edge0 Chat</b><small>Local · on-device</small></div></div><button className="new-chat" disabled={disabled} onClick={() => newChat()}><Icon name="plus"/>New chat</button><nav className="nav">{nav.map(([target, label, icon]) => <a key={target} className={page === target ? 'on' : ''} onClick={() => setPage(target)}><Icon name={icon}/>{label}{target === 'status' && busy && <span className="badge"><span className="dot busy"/>Generating</span>}</a>)}</nav><div className="history">{Object.entries(groupHistory(archives)).filter(([, entries]) => entries.length).map(([group, entries]) => <section key={group}><h6>{group}</h6>{entries.map(archive => <div key={archive.id} className={`thread${archive.id === conversation.id ? ' on' : ''}`}><button className="thread-title" disabled={disabled || !archive.conversation} title={archive.error ?? undefined} onClick={() => { if (!archive.conversation || disabled || deletingRef.current || !archiveWrites.current.available(archive.id)) return; remember(conversationRef.current); if (archive.conversation.modelPath && (!loaded || activePath !== archive.conversation.modelPath)) { void select(archive.conversation.modelPath, archive.conversation); } else { changeConversation(archive.conversation); setPage('chat'); setDraft(''); } }}>{archive.conversation ? title(archive.conversation.messages) : 'Unable to open conversation'}</button><DeleteConversation disabled={disabled} onDelete={() => void deleteArchive(archive.id)}/></div>)}</section>)}</div><div className="side-foot">{loaded && <><span className="dot"/>{model.id} · {deviceLabel(status?.model.device ?? settings.device, status?.engine.devices)}</>}<button className="icon-btn settings-link" title="Settings" onClick={() => setPage('settings')}><Icon name="gear"/></button></div></aside><section className="main">{error && <div role="alert" className="error">{error}</div>}{loading && <div className="loading" role="status">Loading model… First load can take several minutes. <button className="btn sm" onClick={stop}>Cancel</button></div>}
+  return <div className="app window"><aside className="sidebar"><div className="brand"><img className="logo" src={logo} alt="Edge0"/><div><b>Edge0 Chat</b><small>Local · on-device</small></div></div><button className="new-chat" disabled={disabled} onClick={() => newChat()}><Icon name="plus"/>New chat</button><nav className="nav">{nav.map(([target, label, icon]) => <a key={target} className={page === target ? 'on' : ''} onClick={() => setPage(target)}><Icon name={icon}/>{label}{target === 'status' && busy && <span className="badge"><span className="dot busy"/>Generating</span>}{target === 'models' && <DownloadingBadge active={downloadBusy(downloads?.jobs ?? [])}/>}</a>)}</nav><div className="history">{Object.entries(groupHistory(archives)).filter(([, entries]) => entries.length).map(([group, entries]) => <section key={group}><h6>{group}</h6>{entries.map(archive => <div key={archive.id} className={`thread${archive.id === conversation.id ? ' on' : ''}`}><button className="thread-title" disabled={disabled || !archive.conversation} title={archive.error ?? undefined} onClick={() => { if (!archive.conversation || disabled || deletingRef.current || !archiveWrites.current.available(archive.id)) return; remember(conversationRef.current); if (archive.conversation.modelPath && (!loaded || activePath !== archive.conversation.modelPath)) { void select(archive.conversation.modelPath, archive.conversation); } else { changeConversation(archive.conversation); setPage('chat'); setDraft(''); } }}>{archive.conversation ? title(archive.conversation.messages) : 'Unable to open conversation'}</button><DeleteConversation disabled={disabled} onDelete={() => void deleteArchive(archive.id)}/></div>)}</section>)}</div><div className="side-foot">{loaded && <><span className="dot"/>{model.id} · {status?.model.device ? deviceLabel(status.model.device, status.engine.devices) : 'device unknown'}</>}<button className="icon-btn settings-link" title="Settings" onClick={() => setPage('settings')}><Icon name="gear"/></button></div></aside><section className="main">{error && <div role="alert" className="error">{error}</div>}{memoryWarning && !error && <div role="alert" className="warning">{memoryWarning}</div>}{loading && <div className="loading" role="status">Loading model… First load can take several minutes. <button className="btn sm" onClick={stop}>Cancel</button></div>}
     {page === 'chat' && <Chat conversation={conversation} phase={phase} loaded={loaded} model={model?.id ?? ''} device={settings.device} capacity={model?.context_length} supported={model?.capabilities.thinking ?? false} draft={draft} setDraft={setDraft} send={send} stop={stop} newThinking={thinking => changeConversation({ ...conversation, thinking })} reasoningExpanded={(index, expanded) => { const next = { ...conversationRef.current, messages: conversationRef.current.messages.map((message, i) => i === index ? { ...message, reasoningExpanded: expanded } : message) }; changeConversation(next); if (!busy) remember(next); }} edit={(index, text) => { if (!disabled) void generate(editAndResend(conversationRef.current.messages, index, text)); }} redo={() => { if (!disabled) void generate(regenerate(conversationRef.current.messages)); }} copy={text => void copy(text)} models={() => setPage('models')}/>}
-    {page === 'models' && <Models assets={assets} activePath={loaded ? activePath : undefined} capacity={model?.context_length} disabled={disabled} load={path => void select(path)} unload={() => void stopService()} chat={() => setPage('chat')} refresh={() => { void inspect().catch(report); }} add={() => void addLocation()} remove={path => void removeLocation(path)}/>}
+    {page === 'models' && <Models assets={assets} activePath={loaded ? activePath : undefined} capacity={model?.context_length} disabled={disabled} load={path => void select(path)} unload={() => void stopService()} chat={() => setPage('chat')} refresh={() => { void inspect().catch(report); }} add={() => void addLocation()} remove={path => void removeLocation(path)} download={downloads ? { platform: downloads.platform, saveDirectory: downloads.save_directory, jobs: downloads.jobs, measure: measureDownload, disk: diskFree, start: startDownload, pause: pauseDownload, remove: deleteDownload, browse: () => pick(true), report } : undefined}/>}
     {page === 'status' && <Status status={status} live={loaded} allTime={aggregateTotals(savedTotals)} reset={() => keepTotals(resetTotals(totalsRef.current))}/>}
     {page === 'service' && <Service status={status} running={loaded} disabled={disabled} lan={settings.lan_access} token={token} device={settings.device} health={health} restart={() => { const current = conversationRef.current; void select(activePath, current).then(() => setPage('service')); }} stop={() => void stopService()} toggle={() => void network()} newToken={() => void network(true)} copy={text => void copy(text)} check={() => void healthCheck()}/>}
     {page === 'settings' && <SettingsPage settings={settings} port={portText} disabled={disabled} update={updateSettings} setPort={text => { setPortText(text); const valid = validateServerPort(text); if (valid.valid) updateSettings({ ...settingsRef.current, port: valid.port }); }} browse={() => { void pick(false).then(path => { if (path) updateSettings({ ...settingsRef.current, executable: path }); }).catch(report); }}/>}
   </section></div>;
 }
-createRoot(document.getElementById('root')!).render(<App/>);
+if (typeof document !== 'undefined') {
+  const root = document.getElementById('root');
+  if (root) createRoot(root).render(<App/>);
+}

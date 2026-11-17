@@ -1,0 +1,26 @@
+{
+  "id": "sanity-I4",
+  "phase": "sanity",
+  "case_id": "I4",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "instruction",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-I4]\nReply with exactly the word READY in uppercase and nothing else."
+    }
+  ],
+  "tools": null,
+  "tool_choice": null,
+  "expected": {
+    "kind": "text",
+    "value": "READY"
+  },
+  "input_tokens_frozen": 71,
+  "max_shared_prefix_tokens": 49
+}

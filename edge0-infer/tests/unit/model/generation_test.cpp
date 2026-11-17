@@ -25,10 +25,20 @@ int main(int argc, char**) {
         { std::ofstream out(root / "generation_config.json"); out << text; }
         CHECK(model::read_generation_defaults(root.string()));
     }
+    // Unknown provider fields must not constrain the supported generation defaults.
+    for (const auto& text : {
+        "{\"seed\":18446744073709551615,\"temperature\":0.7}",
+        "{\"ignored\":[-9999999999999999999999999999999999,1e999],\"top_k\":20}",
+        "{\"provider\":{\"counter\":9999999999999999999999999999999999},\"top_p\":0.9}"}) {
+        { std::ofstream out(root / "generation_config.json"); out << text; }
+        CHECK(model::read_generation_defaults(root.string()));
+    }
     for (const auto& text : {"{\"temperature\":-1}", "{\"temperature\":true}", "{\"temperature\":\"1\"}",
         "{\"top_k\":-1}", "{\"top_k\":1.5}", "{\"top_k\":false}", "{\"top_p\":0}",
         "{\"top_p\":1.5}", "{\"top_p\":null}", "{\"repetition_penalty\":0}",
-        "{\"repetition_penalty\":[]}", "{\"temperature\":1e999}", "{\"temperature\":1.}"}) {
+        "{\"repetition_penalty\":[]}", "{\"temperature\":1e999}", "{\"temperature\":1.}",
+        "{\"top_k\":18446744073709551615}", "{\"ignored\":1e+}",
+        "{\"ignored\":9999999999999999999999999999999999x}"}) {
         { std::ofstream out(root / "generation_config.json"); out << text; }
         auto result = model::read_generation_defaults(root.string());
         CHECK(!result && result.error().category == ErrorCategory::asset_invalid);

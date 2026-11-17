@@ -1,23 +1,32 @@
 function(moe_warnings target)
+    # Warnings are reported on our targets only (GGML and other third-party
+    # targets keep their own settings). They stop the build only with
+    # MOE_WARNINGS_AS_ERRORS=ON (default OFF): a compiler or version we do not
+    # build with may warn about code that is correct, and that must not stop a
+    # user's build.
     if(MSVC)
-        # Warnings as errors on our targets only (GGML and other third-party
-        # targets keep their own settings). /utf-8 compiles sources and runs
-        # with a UTF-8 execution charset (decision 2) so universal-character
-        # escapes are not rejected under code page 936 (C4566). The /wd
-        # suppressions cover the categories MSVC /W4 raises but our Clang/GCC
-        # baseline (-Wall -Wextra -Wpedantic) does not, so /WX stops new mistakes
-        # in Windows code without forcing a repo-wide cleanup of pre-existing
-        # portable code (decision 1, user 2026-10-26 option A; numbers confirmed
-        # by building under /WX):
+        # /utf-8 compiles sources and runs with a UTF-8 execution charset
+        # (decision 2) so universal-character escapes are not rejected under
+        # code page 936 (C4566). The /wd suppressions cover the categories MSVC
+        # /W4 raises but our Clang/GCC baseline (-Wall -Wextra -Wpedantic) does
+        # not, so warnings as errors stop new mistakes in Windows code without
+        # forcing a repo-wide cleanup of pre-existing portable code (decision 1,
+        # user 2026-10-26 option A; numbers confirmed by building under /WX):
         #   4244 4245 4267 4305 4310  integer, size and constant conversions
         #   4389                      signed/unsigned comparison
         #   4456                      local declaration shadows a previous one
         #   4996                      CRT "unsafe" fopen/getenv/tmpfile
         target_compile_options(${target} PRIVATE
-            /W4 /WX /permissive- /utf-8
+            /W4 /permissive- /utf-8
             /wd4244 /wd4245 /wd4267 /wd4305 /wd4310 /wd4389 /wd4456 /wd4996)
+        if(MOE_WARNINGS_AS_ERRORS)
+            target_compile_options(${target} PRIVATE /WX)
+        endif()
     else()
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+        if(MOE_WARNINGS_AS_ERRORS)
+            target_compile_options(${target} PRIVATE -Werror)
+        endif()
     endif()
 endfunction()
 

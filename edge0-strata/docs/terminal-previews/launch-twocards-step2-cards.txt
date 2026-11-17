@@ -1,0 +1,36 @@
+# strata launch preview: step2-cards
+# (text of the screen as drawn at the size named in tests/terminal/launch_previews.py)
+
+ STRATA  Set up   Step 2 of 10: Cards
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Which graphics cards should it use?
+ › RTX A4000 (card 0) + RAM   (recommended)                      fits: needs 44 GB of the 70 GB available
+   RTX A4000 (card 0) + RTX A4000 (card 1) + RAM (layer split)   fits: needs 44 GB of the 84 GB available
+   RTX A4000 (card 1) + RAM                                      fits: needs 44 GB of the 70 GB available
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ One card plus your RAM is the normal way and keeps things simple. Two cards share the layers: more room for
+ the model and prompts read about 20% faster, but a small second card can slow it down. Strata recommends one
+ of them; the choice is yours.
+ ↑↓ choose   Enter next   Esc back   ? help

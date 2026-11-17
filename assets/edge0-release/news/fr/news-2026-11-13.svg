@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="73" viewBox="0 0 620 73" role="img" aria-labelledby="title desc" lang="fr">
+<title id="title">Modèles 145B et 120B</title><desc id="desc">13 novembre 2026 · Modèles 145B et 120B · Des MoE latents pour un seul GPU NVIDIA, en Q3_K et NVFP4.</desc>
+<rect width="620" height="73" fill="#FFFFFF"/>
+<g font-family="Helvetica Neue,Helvetica,Arial,PingFang SC,Hiragino Sans,Noto Sans CJK SC,Noto Sans CJK JP,sans-serif" font-weight="400">
+<rect x="16" y="19" width="16" height="2" rx="1" fill="#E63946"/>
+<text x="16" y="37" font-size="9" fill="#E63946">13 novembre 2026</text>
+<text x="132" y="28" font-size="15" font-weight="500" letter-spacing="-.15" fill="#E63946">Modèles 145B et 120B</text>
+<text x="132" y="47" font-size="11.5" fill="#45789D">Des MoE latents pour un seul GPU NVIDIA, en Q3_K et NVFP4.</text></g><path d="M16 72 H604" stroke="#A8DADC" stroke-opacity=".5"/></svg>

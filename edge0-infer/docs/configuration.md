@@ -9,7 +9,7 @@ Every setting belongs to one of four scopes. The scope decides when the value is
 | [Model options](#model-options) | The model is loaded | One loaded model; each model declares its own | `LoadOverrides::model_options` |
 | [Generation](#generation) | Each request | One generation call | `GenerationOverrides` in `edge0/generation.h` |
 
-The reference CLI (`edge0-infer`) and the OpenAI-compatible server use the same settings and defaults as the native API; the CLI flag names are given below. Settings that only exist in the CLI or the server are listed under [Command options](#command-options).
+The reference CLI (`edge0-infer`) and the local server use the same settings and defaults as the native API; the CLI flag names are given below. Settings that only exist in the CLI or the server are listed under [Command options](#command-options).
 
 ## How a value is chosen
 
@@ -31,8 +31,8 @@ The runtime opens a fixed set of devices (`devices`); a model can only use devic
 
 | Flag | Native field | Default | Meaning |
 | --- | --- | --- | --- |
-| `--threads <n>` | `cpu_threads` | macOS 4; Android logical CPUs minus two (at least one); Windows `max(1, P - 2)` | CPU threads for decode; requires a CPU device; at most the logical CPU count |
-| `--prefill-threads <n>` | `cpu_prefill_threads` | macOS 4; Android all logical CPUs; Windows `min(logical, P + 2)` | CPU threads for prefill (processing the input), set independently of decode |
+| `--threads <n>` | `cpu_threads` | macOS/Linux up to 4 logical CPUs (at least one); Android logical CPUs minus two (at least one); Windows `max(1, P - 2)` | CPU threads for decode; requires a CPU device; at most the logical CPU count |
+| `--prefill-threads <n>` | `cpu_prefill_threads` | macOS/Linux up to 4 logical CPUs (at least one); Android all logical CPUs; Windows `min(logical, P + 2)` | CPU threads for prefill (processing the input), set independently of decode |
 | `--memory-budget <bytes>` | `memory_budget_bytes` | The total memory of the smallest opened device | The total budget every loaded model and session is admitted against; must be positive and not exceed the device memory |
 
 The Android thread defaults were tuned on one device and may not suit other CPU layouts. On Windows, `P` is `logical / 2`. That rule assumes two threads per core and was measured on one 6-core CPU; set the counts explicitly when the CPU has no simultaneous multithreading or has efficiency cores. `info` prints the defaults; summaries report the resolved values and whether they were given explicitly.
@@ -86,7 +86,7 @@ Each model declares its own options with their values and defaults; the engine v
 
 Without generation flags the model's recommendation is used. The 35B recommends, with thinking off, temperature 0.7, top-k 20, top-p 0.8; with thinking on, 1.0, 20, 0.95; both use presence penalty 1.5 and at most 32768 generated tokens, and thinking is off by default. The platform defaults are temperature 0, top-k 0, top-p 1, repetition penalty 1, no penalties and 256 generated tokens. A maximum that comes from the model or the platform is shortened to the remaining capacity; an explicit maximum is not. For greedy output use `--temperature 0 --presence-penalty 0`.
 
-Changing a generation setting between requests does not discard the conversation: the prompt is re-rendered and the reusable prefix is decided from the actual tokens. The server maps request fields to these settings as described in the [server guide](openai-compatible-server.md).
+Changing a generation setting between requests does not discard the conversation: the prompt is re-rendered and the reusable prefix is decided from the actual tokens. The server maps request fields to these settings as described in the [server guide](local-server.md).
 
 <a id="command-options"></a>
 ## Command options
@@ -98,7 +98,7 @@ These flags select inputs and outputs of one command and are not part of the con
 | all model commands | `--model <dir>` (the asset directory), `--verbose` (show GGML logs), `--help` |
 | `run` | `--user <text>`, `--user-file <file>`, `--system <text>`, `--tokens <json>`, `--turns <json>` (a scripted conversation), `--replay <blocks.json>` (repeat recorded blocks on their recorded devices: a prefill block must name a policy candidate, a decode block the decode device, and a missing device means the configured one), `--out <dir>` (write tokens and results) |
 | `chat` | `--system <text>`, `--no-warmup`, `--out <dir>` |
-| `serve` | `--host`, `--port`, `--alias`, `--no-warmup`, `--max-body-bytes`, `--write-timeout-seconds`, `--session-idle-seconds`, `--out`; see the [server guide](openai-compatible-server.md) |
+| `serve` | `--host`, `--port`, `--alias`, `--no-warmup`, `--max-body-bytes`, `--write-timeout-seconds`, `--session-idle-seconds`, `--out`; see the [server guide](local-server.md) |
 | `bench` | `--user-file <file>`, `--tokens <json>`, `--turns <json>`, `--warmup <n>`, `--ntok <n>`, `--runs <n>`, `--breakdown`; see [Benchmarking](benchmarking.md) |
 | `tokenize`, `prompt` | `--user <text>`, `--system <text>`, `--thinking on\|off`, `--pieces`, `--parse-special`, `--tokens` |
 | `info` | `--probe` (initialize each device) |

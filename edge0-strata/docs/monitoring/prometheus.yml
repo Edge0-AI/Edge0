@@ -1,0 +1,12 @@
+# Scrape a Strata server's GET /metrics (Prometheus text, vLLM's names; docs/DETAILS.md).
+# Prometheus asks for text/plain, so it gets the text format; the Monitor tab keeps the JSON.
+scrape_configs:
+  - job_name: strata
+    metrics_path: /metrics
+    scrape_interval: 15s
+    # with an API key (strata-<model>.json "api_key" or --api-key): sent as a bearer token
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/strata-api-key
+    static_configs:
+      - targets: ["127.0.0.1:8080"]

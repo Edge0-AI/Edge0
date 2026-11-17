@@ -15,7 +15,7 @@ body:
       options:
         - New backend (GPU / NPU / other accelerator)
         - New platform support
-        - Server / OpenAI-compatible API
+        - Server / OpenAI- and Anthropic-compatible API
         - CLI / native C++ API
         - Quantization / adapters (LoRA / prerouter)
         - Documentation
