@@ -1,6 +1,10 @@
 """Split serving (serve/split.py): the config, the decision, the hand-over with two fake engines, and every fallback.
 The engine-side proof (the continuation after a hand-over equals a single engine's) is tests/split_serve_exact.py."""
+import json
 import os
+import sys
+import urllib.request
+from pathlib import Path
 import tempfile
 import threading
 import unittest
@@ -265,6 +269,80 @@ class Handover(unittest.TestCase):
         self.e.close()
         self.assertFalse(os.path.exists(self.dir))
         self.assertFalse(self.p.up or self.d.up)
+
+
+class SessionDirectory(unittest.TestCase):
+    def test_shutdown_keeps_the_configured_directory_and_other_instances(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "sessions"
+            parent.mkdir()
+            sentinel = parent / "keep.txt"
+            sentinel.write_text("unrelated user file")
+            first = SplitEngine(FakeEngine("p1"), FakeEngine("d1"), work_dir=sp.session_dir({"dir": str(parent)}))
+            second = SplitEngine(FakeEngine("p2"), FakeEngine("d2"), work_dir=sp.session_dir({"dir": str(parent)}))
+            other_file = Path(second.work_dir) / "in-progress.session"
+            other_file.write_bytes(b"another instance")
+            try:
+                first.close()
+                self.assertTrue(sentinel.is_file(), "shutdown deleted the configured parent directory")
+                self.assertEqual(sentinel.read_text(), "unrelated user file")
+                self.assertEqual(other_file.read_bytes(), b"another instance")
+                self.assertNotEqual(first.work_dir, second.work_dir)
+                self.assertFalse(Path(first.work_dir).exists())
+            finally:
+                first.close()
+                second.close()
+            self.assertEqual(list(parent.iterdir()), [sentinel])
+
+    def test_failed_process_start_keeps_the_configured_directory(self):
+        from serve.server import start_split
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "sessions"
+            parent.mkdir()
+            sentinel = parent / "keep.txt"
+            sentinel.write_text("keep on failed start")
+            spec = split_spec({"split_serve": {"prefill_gpu": 0, "decode_gpu": 1,
+                                              "dir": str(parent), "shared_arena": False}})
+            with self.assertRaises(OSError):
+                start_split({"args": []}, spec, str(Path(tmp) / "missing-engine"), [], False)
+            self.assertTrue(sentinel.is_file(), "startup failure deleted the configured parent directory")
+            self.assertEqual(sentinel.read_text(), "keep on failed start")
+            self.assertEqual(list(parent.iterdir()), [sentinel])
+
+    @unittest.skipIf(os.name == "nt", "the subprocess fixture uses a POSIX executable script")
+    def test_real_http_chat_and_process_shutdown_keep_sibling_files(self):
+        from serve.frontend import ChatTemplate
+        from serve.server import ByteTokenizer, Service, serve, start_split
+        from serve.test_parallel import FAKE_BATCH
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp) / "sessions"
+            parent.mkdir()
+            sentinel = parent / "keep.txt"
+            sentinel.write_text("keep after serving")
+            exe = Path(tmp) / "engine-fixture"
+            exe.write_text("#!" + sys.executable + "\n" + FAKE_BATCH)
+            exe.chmod(0o700)
+            spec = split_spec({"split_serve": {"prefill_gpu": 0, "decode_gpu": 1, "min_prompt_tokens": 10000,
+                                              "dir": str(parent), "shared_arena": False}})
+            engine = start_split({"args": []}, spec, str(exe), [], False)
+            procs = [engine.prefill.proc, engine.decode.proc]
+            service = Service(engine, ByteTokenizer(), ChatTemplate(Path(__file__).parent / "chat_template.jinja"))
+            httpd = serve(service, port=0)
+            try:
+                body = {"messages": [{"role": "user", "content": "Hello"}], "max_tokens": 32, "reasoning_effort": "none"}
+                req = urllib.request.Request(f"http://127.0.0.1:{httpd.server_address[1]}/v1/chat/completions",
+                                             data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=20) as response:
+                    answer = json.load(response)
+                self.assertEqual(answer["choices"][0]["message"]["content"], "ok, done.")
+            finally:
+                httpd.shutdown()
+                httpd.server_close()
+                engine.close()
+            self.assertTrue(all(proc.poll() is not None for proc in procs))
+            self.assertTrue(sentinel.is_file(), "closing real engine processes deleted sibling files")
+            self.assertEqual(sentinel.read_text(), "keep after serving")
+            self.assertEqual(list(parent.iterdir()), [sentinel])
 
 
 if __name__ == "__main__":

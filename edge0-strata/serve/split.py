@@ -172,10 +172,11 @@ def arena_path(cfg: dict, spec: dict) -> tuple[str | None, str]:
 
 
 def session_dir(spec: dict) -> str:
+    """An owned work directory; the configured parent may contain unrelated files or other instances."""
     d = spec.get("dir")
     if d:
         os.makedirs(d, exist_ok=True)
-        return d
+        return tempfile.mkdtemp(prefix="strata-split-", dir=os.path.abspath(d))
     shm = "/dev/shm"
     try:
         if os.name != "nt" and os.path.isdir(shm) and os.access(shm, os.W_OK) and shutil.disk_usage(shm).free > (6 << 30):

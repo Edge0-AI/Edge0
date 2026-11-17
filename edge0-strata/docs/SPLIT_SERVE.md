@@ -44,7 +44,7 @@ server stops at start and says which).
 | --- | --- | --- |
 | `prefill_gpu`, `decode_gpu` | required | The two cards. Different cards. |
 | `min_prompt_tokens` | 2048 | A request is handed over when the decode engine would otherwise read at least this many new tokens. Below it the decode engine reads them in place. |
-| `dir` | `/dev/shm` if it has room, else the temp folder | Where the session file lives for the seconds of a hand-over. |
+| `dir` | `/dev/shm` if it has room, else the temp folder | Parent folder for the temporary session files. Each server creates its own subfolder and removes only that subfolder at shutdown or a failed start; other files in the parent are kept. |
 | `shared_arena` | `true` | One copy of the experts in RAM for both engines (Linux, a file in `/dev/shm` when the experts fit there). `false`: each engine keeps its own copy (two copies of the experts in RAM). A file name: that file backs the arena (a file on disk works; it is written once). |
 | `prefill_args`, `decode_args` | none | Extra engine arguments for one role, for example a bigger expert cache for the decode engine. They must not change the [session settings](#what-must-match). |
 
