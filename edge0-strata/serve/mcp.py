@@ -90,6 +90,7 @@ class StdioTransport:
         self.write_lock = threading.Lock()              # stdin; separate, so a full pipe can't block the reader
         self.pending: dict[int, _Slot] = {}
         self.next_id = 0
+        self.closed = False
         self.stderr = collections.deque(maxlen=40)       # its last log lines, for the error message when it fails
         self.protocol = PROTOCOL
 
@@ -112,7 +113,8 @@ class StdioTransport:
             raise McpError(f"could not start {command!r}: {e}") from None
         self._err_reader = threading.Thread(target=self._read_stderr, daemon=True)
         self._err_reader.start()
-        threading.Thread(target=self._read, daemon=True).start()
+        self._reader = threading.Thread(target=self._read, daemon=True)
+        self._reader.start()
 
     def alive(self) -> bool:
         return self.proc is not None and self.proc.poll() is None and not getattr(self, "ended", False)
@@ -216,6 +218,12 @@ class StdioTransport:
         p = self.proc
         if p is None:
             return
+        with self.lock:
+            if self.closed:
+                return
+            self.closed = True
+        # Once an already exited process has closed both pipes, its old group ID is no longer ours to signal.
+        group_live = p.poll() is None or self._reader.is_alive() or self._err_reader.is_alive()
         try:
             p.stdin.close()
         except OSError:
@@ -223,6 +231,10 @@ class StdioTransport:
         try:
             p.wait(timeout=2)
         except subprocess.TimeoutExpired:
+            pass
+        # A launcher can exit on EOF while its children still hold our output pipes.  End the group even when
+        # the launcher exited cleanly, before closing buffered streams that their reader threads may still own.
+        if group_live:
             self._kill_tree(p)
         for f in (p.stdout, p.stderr):
             try:
@@ -241,7 +253,9 @@ class StdioTransport:
                 try:
                     p.wait(timeout=2)
                 except subprocess.TimeoutExpired:
-                    os.killpg(p.pid, signal.SIGKILL)
+                    pass
+                # wait() observes only the launcher.  A child can ignore TERM after the launcher has exited.
+                os.killpg(p.pid, signal.SIGKILL)
         except (OSError, subprocess.SubprocessError):
             pass
         try:
