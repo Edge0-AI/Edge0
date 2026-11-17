@@ -126,6 +126,10 @@ void Session::request_release() {
     status_.release_requested = true;
     if (!uses_ && !pending_) cleanup();
 }
+std::int64_t Session::position() const {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return status_.e;
+}
 Snapshot Session::query() const {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     auto result = status_;

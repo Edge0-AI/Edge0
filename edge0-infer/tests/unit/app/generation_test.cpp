@@ -13,6 +13,32 @@ extern "C" unsigned file_read_counter_stop();
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <cstdlib>
+#include <new>
+namespace history_allocation_probe {
+thread_local bool active=false;
+thread_local std::size_t copies=0,bytes=0;
+constexpr std::size_t prompt=16384,generated=16;
+#if defined(__GNUC__)
+__attribute__((noinline))
+#elif defined(_MSC_VER)
+__declspec(noinline)
+#endif
+void release(void* p) noexcept {std::free(p);}
+}
+void* operator new(std::size_t bytes) {
+    using namespace history_allocation_probe;
+    if(active && bytes>=prompt*sizeof(std::int32_t) && bytes<=(prompt+generated)*sizeof(std::int32_t)) {
+        ++copies;history_allocation_probe::bytes+=bytes;
+    }
+    if(auto* p=std::malloc(bytes?bytes:1)) return p;
+    throw std::bad_alloc();
+}
+void operator delete(void* p) noexcept {history_allocation_probe::release(p);}
+void operator delete(void* p,std::size_t) noexcept {history_allocation_probe::release(p);}
+void* operator new[](std::size_t bytes) {return ::operator new(bytes);}
+void operator delete[](void* p) noexcept {history_allocation_probe::release(p);}
+void operator delete[](void* p,std::size_t) noexcept {history_allocation_probe::release(p);}
 using namespace edge0;
 using test::take;
 struct FakeAdapter : model::Adapter {
@@ -428,6 +454,24 @@ void thinking_tools_tests() {
     }
 }
 int main() {
+    {
+        using namespace history_allocation_probe;
+        Fixture f(prompt+generated);f.compute.whole=false;
+        f.compute.on_forward=[&](int) {active=f.compute.blocks.back()==1;};
+        std::size_t delivered=0;
+        const auto result=f.run(prompt,generated,[&](const OutputEvent& event)->exec::Status {
+            active=false;
+            if(event.kind==OutputKind::answer) ++delivered;
+            return {};
+        });
+        active=false;
+        std::cout<<"decode history copies="<<copies<<" bytes="<<bytes<<"\n";
+        CHECK(copies==0);
+        CHECK(result.stop_reason==StopReason::length && result.generated_count==generated && delivered==generated);
+        CHECK(result.e==prompt+generated-1 && result.text==std::string(generated,'a'));
+        const auto state=take(query_session_check(f.session));
+        CHECK(state.tokens==std::vector<std::int32_t>(prompt+generated-1,0));
+    }
     {
         Fixture f;f.compute.tail_failure=true;
         const ReplayInput input{{0},{{0,1,BlockPhase::prefill,true}}};

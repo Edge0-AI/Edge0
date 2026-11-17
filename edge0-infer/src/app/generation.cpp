@@ -589,7 +589,7 @@ struct GenerationRun {
                 if(loaded->stages.mixed()) {
                     auto facts=model->compute->stage_facts(*loaded,session->state->states(),loaded->stages.prefill);
                     facts.tokens=result.input.size()-result.reused_tokens;
-                    facts.handoff_bytes+=session->state->kv().handoff_bytes(loaded->stages.prefill,session->state->query().e);
+                    facts.handoff_bytes+=session->state->kv().handoff_bytes(loaded->stages.prefill,session->state->position());
                     auto chosen=exec::choose_prefill_backend(loaded->stages,loaded->mixed->policy,loaded->mixed->candidates,facts);
                     if(!chosen) { fail(chosen.error(),GenerationStage::forward); return false; }
                     prefill_backend=chosen.value();
@@ -719,7 +719,7 @@ struct GenerationRun {
             } else ++result.generated_count;
             const bool ends=eog&&!options.ignore_end_of_generation;
             const bool length=(options.ignore_end_of_generation?result.generated.size():result.generated_count)>=maximum;
-            const bool capacity=session->state->query().e>=before.capacity;
+            const bool capacity=session->state->position()>=before.capacity;
             if(result.generated.size()==1) first_token=model->clock_now();
             {
                 std::lock_guard<std::mutex> lock(resources.registry->progress_mutex);
@@ -757,7 +757,7 @@ struct GenerationRun {
     }
     void finish() {
         const auto finished_text = text::finish_turn(decoder, result.input.size(), result.generated,
-            session->state->query().e, result.stop_reason == StopReason::end_of_generation, result.error_stage != GenerationStage::delivery);
+            session->state->position(), result.stop_reason == StopReason::end_of_generation, result.error_stage != GenerationStage::delivery);
         result.tail_token = finished_text.tail; result.tail_is_end = finished_text.tail_is_end;
         if(result.error_stage!=GenerationStage::delivery && !output_stopped) {
             if(deliver(finished_text.text)) parser->finish([this](const model::ParsedOutput& part) { return classified(part); });
@@ -1020,7 +1020,7 @@ Result<GenerationCheckResult> replay_check(const SessionReference& session, cons
     }
     if (auto error=finish.drain(models::FinishReason::normal)) return *error;
     session->blocks = input.blocks; output.replay = input;
-    output.result.e = session->state->query().e; output.result.input_complete = true;
+    output.result.e = session->state->position(); output.result.input_complete = true;
     output.result.stop_reason = StopReason::length;
     return output;
 }

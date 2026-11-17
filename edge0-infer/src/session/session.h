@@ -52,6 +52,8 @@ public:
     void end_use();
     void invalidate();
     void request_release();
+    // Read the logical end without copying the retained token history.
+    std::int64_t position() const;
     Snapshot query() const;
     KVCache& kv() { return *kv_; }
     StateStore& states() { return states_; }
