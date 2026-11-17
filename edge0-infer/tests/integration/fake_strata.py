@@ -220,11 +220,13 @@ def handler_for(fake):
         def log_message(self, *args):
             pass
 
-        def send_json(self, status, value):
+        def send_json(self, status, value, headers=None):
             data = json.dumps(value).encode()
             self.send_response(status)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Content-Length', str(len(data)))
+            for name, value in (headers or {}).items():
+                self.send_header(name, value)
             self.end_headers()
             self.wfile.write(data)
             return data
@@ -253,6 +255,8 @@ def handler_for(fake):
                 self.send_response(status)
                 self.send_header('Content-Type', kind)
                 self.send_header('Content-Length', str(len(data)))
+                if path == '/metrics' and os.environ.get('FAKE_STRATA_RETRY_AFTER'):
+                    self.send_header('rEtRy-AfTeR', os.environ['FAKE_STRATA_RETRY_AFTER'])
                 self.end_headers()
                 self.wfile.write(data)
             elif path == '/v1/models':
@@ -276,12 +280,14 @@ def handler_for(fake):
             except ValueError:
                 self.send_json(400, {'error': {'message': 'invalid JSON', 'type': 'invalid_request_error'}})
                 return
+            advice = {'rEtRy-AfTeR': request['fake_retry_after']} if 'fake_retry_after' in request else {}
             if path == '/v1/messages/count_tokens':
-                fake.save_sent(self.send_json(int(request.get('fake_status', 200)), {'input_tokens': 17}))
+                fake.save_sent(self.send_json(int(request.get('fake_status', 200)), {'input_tokens': 17}, advice))
                 return
             if request.get('fake_error'):
                 if not request.get('stream'):
-                    fake.save_sent(self.send_json(429, {'error': {'message': 'fixture busy', 'code': 'fixture_busy'}}))
+                    fake.save_sent(self.send_json(int(request.get('fake_status', 429)),
+                                                 {'error': {'message': 'fixture busy', 'code': 'fixture_busy'}}, advice))
                 elif path == '/v1/chat/completions':
                     self.stream([b'data: {"error":{"message":"fixture failure","code":"fixture_error"}}\n\n'])
                 else:

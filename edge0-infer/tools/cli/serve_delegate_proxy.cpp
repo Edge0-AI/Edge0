@@ -66,6 +66,7 @@ struct Forward {
     bool headers = false, done = false, failed = false, complete = false;
     int status = 0;
     std::string content_type, body, failure_code, failure_message;
+    std::optional<std::string> retry_after;
     std::atomic<bool> cancel{false};
     std::unique_ptr<httplib::Client> client;
     std::thread worker;
@@ -293,6 +294,8 @@ int serve(int argc, char** argv, const Match& match) {
                     return;
                 }
                 res.status = upstream->status;
+                if (upstream->has_header("Retry-After"))
+                    res.set_header("Retry-After", upstream->get_header_value("Retry-After"));
                 res.set_content(upstream->body, upstream->has_header("Content-Type") ? upstream->get_header_value("Content-Type")
                                                                                       : std::string("application/octet-stream"));
             });
@@ -314,6 +317,8 @@ int serve(int argc, char** argv, const Match& match) {
                                         req.get_header_value("Content-Type"));
             if (!upstream) {send_error(res, 502, "edge0-strata did not answer", "upstream_unavailable", req.path);return;}
             res.status = upstream->status;
+            if (upstream->has_header("Retry-After"))
+                res.set_header("Retry-After", upstream->get_header_value("Retry-After"));
             res.set_content(upstream->body, upstream->has_header("Content-Type") ? upstream->get_header_value("Content-Type")
                                                                                : "application/octet-stream");
         });
@@ -405,6 +410,7 @@ int serve(int argc, char** argv, const Match& match) {
                 std::lock_guard<std::mutex> lock(raw->mutex);
                 raw->status = response.status;
                 raw->content_type = response.get_header_value("Content-Type");
+                if (response.has_header("Retry-After")) raw->retry_after = response.get_header_value("Retry-After");
                 raw->headers = true;
                 raw->changed.notify_all();
                 return !raw->cancel;
@@ -449,6 +455,7 @@ int serve(int argc, char** argv, const Match& match) {
             }
             res.status = f->status;
             if (f->content_type.compare(0, 17, "text/event-stream") == 0) {
+                if (f->retry_after) res.set_header("Retry-After", *f->retry_after);
                 res.set_chunked_content_provider(
                     f->content_type,
                     [f, &req, incomplete, &options](std::size_t, httplib::DataSink& sink) {
@@ -535,6 +542,7 @@ int serve(int argc, char** argv, const Match& match) {
                 // Accounting never affects forwarding: the body goes out as received and the request is still
                 // recorded (fields that could not be read stay null) and leaves the active set.
             }
+            if (f->retry_after) res.set_header("Retry-After", *f->retry_after);
             res.set_content(f->body, f->content_type.empty() ? "application/json" : f->content_type.c_str());
             finish(f, f->status);
             guard.release();

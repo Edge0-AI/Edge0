@@ -337,6 +337,43 @@ def proxy(cli, root, snapshots):
     print('PASS proxy: ready line after readiness, byte-exact forwarding of three endpoints and SSE, disconnect, models, status')
 
 
+def retry_advice(cli, root):
+    engine = make_engine(root / 'retry-engine')
+    model = make_model(root / 'retry-model')
+    record = root / 'retry-record'
+    server = Running(cli, model, engine, record, env=environment(record, metrics_status=503, retry_after='9'))
+    count = 0
+    try:
+        for path in ('/v1/chat/completions', '/v1/responses', '/v1/messages', '/v1/messages/count_tokens'):
+            for status in (429, 503):
+                for advice in (None, '0', '3', 'Tue, 17 Nov 2026 12:00:00 GMT'):
+                    body = {'fake_error': True, 'fake_status': status}
+                    if advice is not None:
+                        body['fake_retry_after'] = advice
+                    connection = http.client.HTTPConnection('127.0.0.1', server.port, timeout=30)
+                    try:
+                        connection.request('POST', path, json.dumps(body), {'Content-Type': 'application/json'})
+                        response = connection.getresponse()
+                        wire = response.read()
+                        count += 1
+                        assert response.status == status and wire == sent(record, count), (path, status, wire)
+                        assert response.getheader('Retry-After') == advice, (path, status, advice, response.getheaders())
+                    finally:
+                        connection.close()
+        connection = http.client.HTTPConnection('127.0.0.1', server.port, timeout=30)
+        try:
+            connection.request('GET', '/metrics')
+            response = connection.getresponse()
+            response.read()
+            assert response.status == 503 and response.getheader('Retry-After') == '9', response.getheaders()
+        finally:
+            connection.close()
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    print('PASS retry advice: 32 generation/count_tokens errors plus delegated metrics preserve Retry-After')
+
+
 def data_events(body):
     return [json.loads(line[5:]) for line in body.decode().splitlines() if line.startswith('data: {')]
 
@@ -1169,6 +1206,7 @@ def main():
         mac_prepare(args.cli, root)
         launch_handshake(args.cli, root)
         interrupted_responses(args.cli, root)
+        retry_advice(args.cli, root)
         inspect_defaults(args.cli, root)
         refusals(args.cli, root)
         failures(args.cli, root)
