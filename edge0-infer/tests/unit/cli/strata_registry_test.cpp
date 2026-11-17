@@ -114,6 +114,32 @@ int main() {
         if (file["filename"] == "model.json") CHECK(file["required"] == "always" && file["bytes"] == std::string(placeholder).size());
     }
 
+    // Directory aliases remain usable, but links to an ancestor must not count
+    // the same subtree repeatedly or stop the rest of inspection at ELOOP.
+    {
+        const auto linked = t.path / "linked-model";
+        complete(linked);
+        write(t.path / "shared/nested/weights", "123456789");
+        std::error_code error;
+        fs::create_directory_symlink(t.path / "shared", linked / "mtp/shared", error);
+        if (!error) {
+            fs::create_directory_symlink(t.path / "shared", linked / "mtp/second-alias");
+            fs::create_directory_symlink(linked / "mtp", linked / "mtp/back");
+            fs::create_directory_symlink(t.path / "shared", t.path / "shared/nested/back");
+            const auto inspected = inspect_json(*detect(linked), linked);
+            CHECK(inspected["ok"] == true);
+            for (const auto& file : inspected["files"])
+                if (file["filename"] == "mtp/") CHECK(file["bytes"] == 25);
+            fs::remove(linked / "mtp/back");
+            fs::remove(t.path / "shared/nested/back");
+            const auto acyclic = inspect_json(*detect(linked), linked);
+            for (const auto& file : acyclic["files"])
+                if (file["filename"] == "mtp/") CHECK(file["bytes"] == 25);
+        } else {
+            std::cout << "SKIP directory-cycle fixture: cannot create directory symlinks: " << error.message() << '\n';
+        }
+    }
+
     // Devices and model options.
     CHECK(parse_device("cuda").gpu == 0 && parse_device("cuda").name == "cuda:0" && parse_device("cuda:0").gpu == 0 &&
           parse_device("cuda:1").gpu == 1 && parse_device("cuda:1").name == "cuda:1" && parse_device("cuda:12").gpu == 12);
