@@ -100,6 +100,46 @@ class Structured(unittest.TestCase):
                 self.assertNotIn('"delta"', raw)
                 self.assertIn("data: [DONE]", raw)
 
+    def test_fenced_json_preserves_backticks_inside_strings(self):
+        expected = {"code": "```python\nprint(1)\n```", "nested": {"```": 'quote: " and }'}}
+        encoded = json.dumps(expected, ensure_ascii=False)
+        for script in (encoded, "```json\n" + encoded + "\n```", "```\n" + encoded + "\n```"):
+            for api in ("chat", "responses"):
+                for stream in (False, True):
+                    with self.subTest(fenced=script.startswith("```"), api=api, stream=stream):
+                        if api == "chat":
+                            code, reply = self.chat(script, response_format={"type": "json_object"}, stream=stream)
+                            self.assertEqual(code, 200, reply)
+                            if stream:
+                                events = [json.loads(line[6:]) for line in reply.splitlines()
+                                          if line.startswith("data: {")]
+                                self.assertFalse(any("error" in event for event in events), reply)
+                                content = "".join(event["choices"][0]["delta"].get("content", "")
+                                                  for event in events)
+                            else:
+                                content = reply["choices"][0]["message"]["content"]
+                        else:
+                            self.svc.engine = MockEngine(self.tok, script, max_context=16384)
+                            code, reply = self.request("/v1/responses", {
+                                "input": "Return the code as JSON.", "stream": stream,
+                                "reasoning": {"effort": "none"},
+                                "text": {"format": {"type": "json_object"}}})
+                            self.assertEqual(code, 200, reply)
+                            if stream:
+                                events = [json.loads(line[6:]) for line in reply.splitlines()
+                                          if line.startswith("data: {")]
+                                self.assertFalse(any(event["type"] == "response.failed" for event in events), reply)
+                                content = "".join(event["delta"] for event in events
+                                                  if event["type"] == "response.output_text.delta")
+                            else:
+                                content = "".join(part.get("text", "") for item in reply["output"]
+                                                  if item["type"] == "message" for part in item["content"])
+                        self.assertEqual(json.loads(content), expected)
+
+    def test_non_json_first_fence_does_not_select_a_later_object(self):
+        script = '```text\nnot JSON\n```\n```json\n{"answer":4}\n```'
+        self.assertEqual(self.chat(script, response_format={"type": "json_object"})[0], 502)
+
     def test_object_mode_strict_json_and_truncation(self):
         fmt = {"type": "json_object"}
         self.assertEqual(self.chat('{"answer":4}', response_format=fmt)[0], 200)

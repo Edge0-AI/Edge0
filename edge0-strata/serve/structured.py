@@ -204,9 +204,13 @@ def extract_json(text: str) -> str:
     if s.startswith("```"):
         first = s.find("\n")
         if first != -1:
-            end = s.find("```", first + 1)
-            if end != -1:
-                s = s[first + 1:end].strip()
+            s = s[first + 1:].strip()
+            start = s.find("{")
+            end = s.find("```")
+            # Backticks inside JSON strings are data. Let the balanced scan
+            # below find the object's end, but do not cross an earlier fence.
+            if end != -1 and (start == -1 or end < start):
+                s = s[:end].strip()
     start = s.find("{")
     if start == -1:
         return s
