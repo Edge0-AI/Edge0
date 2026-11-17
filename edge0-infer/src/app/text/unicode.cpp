@@ -602,11 +602,9 @@ static std::vector<size_t> unicode_regex_split_custom_qwen2(const std::string & 
 
 // Qwen3.5 system regex: "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?[\\p{L}\\p{M}]+|\\p{N}| ?[^\\s\\p{L}\\p{M}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
 // Compared to Qwen2, letter-runs also consume Unicode combining marks (\p{M}): [\p{L}\p{M}]+ instead of \p{L}+
-static std::vector<size_t> unicode_regex_split_custom_qwen35(const std::string & text, const std::vector<size_t> & offsets) {
+static std::vector<size_t> unicode_regex_split_custom_qwen35(const std::vector<uint32_t> & cpts, const std::vector<size_t> & offsets) {
     std::vector<size_t> bpe_offsets; // store the offset of each word
     bpe_offsets.reserve(offsets.size()); // Reserve memory for the approximate size
-
-    const auto cpts = unicode_cpts_from_utf8(text);
 
     size_t start = 0;
     for (auto offset : offsets) {
@@ -1042,7 +1040,7 @@ static std::vector<size_t> unicode_regex_split_custom_newlines(const std::string
     return bpe_offsets;
 }
 
-static std::vector<size_t> unicode_regex_split_custom(const std::string & text, const std::string & regex_expr, const std::vector<size_t> & offsets) {
+static std::vector<size_t> unicode_regex_split_custom(const std::string & text, const std::vector<uint32_t> & cpts, const std::string & regex_expr, const std::vector<size_t> & offsets) {
     std::vector<size_t> bpe_offsets;
 
     if (regex_expr == "'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)") {
@@ -1056,7 +1054,7 @@ static std::vector<size_t> unicode_regex_split_custom(const std::string & text, 
         bpe_offsets = unicode_regex_split_custom_qwen2(text, offsets);
     } else if (
            regex_expr == "(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])|[^\\r\\n\\p{L}\\p{N}]?[\\p{L}\\p{M}]+|\\p{N}| ?[^\\s\\p{L}\\p{M}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+") {
-        bpe_offsets = unicode_regex_split_custom_qwen35(text, offsets);
+        bpe_offsets = unicode_regex_split_custom_qwen35(cpts, offsets);
     } else if (regex_expr == "\\p{Han}+") {
         // K2's first pattern - handle all K2 patterns together
         bpe_offsets = unicode_regex_split_custom_kimi_k2(text, offsets);
@@ -1239,53 +1237,17 @@ std::vector<std::string> unicode_regex_split(const std::string & text, const std
         { unicode_cpt_flags::SYMBOL,      "\\\x24\\\x2B\x3C-\x3E\x5E\x60\\\x7C\\\x7E" }, // $+<=>^`|~
     };
 
-    // compute collapsed codepoints only if needed by at least one regex
-    bool need_collapse = false;
-    for (const auto & regex_expr : regex_exprs) {
-        // search for unicode categories
-        for (const auto & ucat : k_ucat_enum) {
-            if (std::string::npos != regex_expr.find(ucat.first)) {
-                need_collapse = true;
-                break;
-            }
-        }
-    }
-
     const auto cpts = unicode_cpts_from_utf8(text);
-
-    // generate a "collapsed" representation of the text, where all codepoints are replaced by a single byte
-    // ref: https://github.com/ggml-org/llama.cpp/pull/6920#issuecomment-2081479935
+    // Custom pre-tokenizers use codepoints directly. Build the byte-category
+    // representation only if a later expression reaches the STL fallback.
     std::string text_collapsed;
-    if (need_collapse) {
-        // collapse all unicode categories
-        text_collapsed.resize(cpts.size());
-
-        for (size_t i = 0; i < cpts.size(); ++i) {
-            // keep single-byte codepoints as is
-            if (cpts[i] < 128) {
-                text_collapsed[i] = cpts[i];
-                continue;
-            }
-
-            const auto flags = unicode_cpt_flags_from_cpt(cpts[i]);
-
-            if (flags.is_whitespace) {
-                //NOTE: C++ std::regex \s does not mach 0x85, Rust and Python regex does.
-                //text_collapsed[i] = (char) 0x85;  // <Next Line> as whitespace fallback
-                text_collapsed[i] = (char) 0x0B;    // <vertical tab> as whitespace fallback
-            } else if (k_ucat_cpt.find(flags.category_flag()) != k_ucat_cpt.end()) {
-                text_collapsed[i] = k_ucat_cpt.at(flags.category_flag());
-            } else {
-                text_collapsed[i] = (char) 0xD0; // fallback
-            }
-        }
-    }
+    bool collapse_ready = false;
 
     std::vector<size_t> bpe_offsets = { cpts.size() };
 
     for (const auto & regex_expr : regex_exprs) {
         // first, see if we have an efficient custom regex implementation
-        auto tmp = unicode_regex_split_custom(text, regex_expr, bpe_offsets);
+        auto tmp = unicode_regex_split_custom(text, cpts, regex_expr, bpe_offsets);
 
         if (!tmp.empty()) {
             bpe_offsets = std::move(tmp);
@@ -1306,6 +1268,33 @@ std::vector<std::string> unicode_regex_split(const std::string & text, const std
             const auto cpts_regex = unicode_cpts_from_utf8(regex_expr);
 
             if (use_collapsed) {
+                if (!collapse_ready) {
+                    // Collapse codepoints to one byte for category matching.
+                    // ref: https://github.com/ggml-org/llama.cpp/pull/6920#issuecomment-2081479935
+                    text_collapsed.resize(cpts.size());
+
+                    for (size_t i = 0; i < cpts.size(); ++i) {
+                        // keep single-byte codepoints as is
+                        if (cpts[i] < 128) {
+                            text_collapsed[i] = cpts[i];
+                            continue;
+                        }
+
+                        const auto flags = unicode_cpt_flags_from_cpt(cpts[i]);
+
+                        if (flags.is_whitespace) {
+                            //NOTE: C++ std::regex \s does not mach 0x85, Rust and Python regex does.
+                            //text_collapsed[i] = (char) 0x85;  // <Next Line> as whitespace fallback
+                            text_collapsed[i] = (char) 0x0B;    // <vertical tab> as whitespace fallback
+                        } else if (k_ucat_cpt.find(flags.category_flag()) != k_ucat_cpt.end()) {
+                            text_collapsed[i] = k_ucat_cpt.at(flags.category_flag());
+                        } else {
+                            text_collapsed[i] = (char) 0xD0; // fallback
+                        }
+                    }
+                    collapse_ready = true;
+                }
+
                 // sanity-check that the original regex does not contain any non-ASCII characters
                 for (size_t i = 0; i < cpts_regex.size(); ++i) {
                     if (cpts_regex[i] >= 128) {

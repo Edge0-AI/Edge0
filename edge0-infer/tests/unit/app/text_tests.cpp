@@ -7,6 +7,26 @@
 #include <random>
 using edge0::text::Bpe;
 void bpe_test() {
+  const std::string custom =
+      "(?:'[sS]|'[tT]|'[rR][eE]|'[vV][eE]|'[mM]|'[lL][lL]|'[dD])|[^\\r\\n\\p{L}"
+      "\\p{N}]?[\\p{L}\\p{M}]+|\\p{N}| ?[^\\s\\p{L}\\p{M}\\p{N}]+[\\r\\n]*|"
+      "\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+";
+  const std::string multilingual = "ab 12 \u4e2d\u6587\U0001f642";
+  require(edge0::text::unicode_regex_split(multilingual, {custom}, false) ==
+              std::vector<std::string>({"ab", " ", "1", "2", " \u4e2d\u6587", "\U0001f642"}),
+          "custom splitter preserves multilingual boundaries");
+  require(edge0::text::unicode_regex_split(multilingual, {"\\p{L}+|\\p{N}+"}, false) ==
+              std::vector<std::string>({"ab", " ", "12", " ", "\u4e2d\u6587", "\U0001f642"}),
+          "category fallback preserves unmatched text");
+  require(edge0::text::unicode_regex_split(multilingual, {custom, "\\p{L}+"}, false) ==
+              std::vector<std::string>({"ab", " ", "1", "2", " ", "\u4e2d\u6587", "\U0001f642"}),
+          "category fallback after custom splitting");
+  require(edge0::text::unicode_regex_split(multilingual, {"\\p{L}+", "\\p{N}+"}, false) ==
+              std::vector<std::string>({"ab", " ", "12", " ", "\u4e2d\u6587", "\U0001f642"}),
+          "successive category fallbacks share the original text");
+  require(edge0::text::unicode_regex_split("ab\u2003\u4e2d\u6587", {"\\s+"}, false) ==
+              std::vector<std::string>({"ab", "\u2003", "\u4e2d\u6587"}),
+          "wide fallback retains original Unicode whitespace");
   edge0::text::TokenData d;
   for (int i = 0; i < 256; ++i) {
     d.tokens.push_back(
