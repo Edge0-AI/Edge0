@@ -31,6 +31,7 @@ class FakeStrata(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", 0), Handler)
         self.ctx, self.prev, self.requests, self.fail_after = ctx, "", 0, fail_after
         self.tool_calls = False          # answer a request that offers tools with a tool call only, as the engine streams it
+        self.stream_end = "done"         # eof, error_done or error_eof interrupt the answer before its final usage
         self.lock = threading.Lock()
         threading.Thread(target=self.serve_forever, daemon=True).start()
 
@@ -109,6 +110,12 @@ class Handler(BaseHTTPRequestHandler):
         else:
             for _ in range(gen):
                 chunk({"content": "word "})
+        if s.stream_end != "done":
+            if s.stream_end.startswith("error"):
+                self.wfile.write(b'data: {"error": {"message": "engine stopped"}}\n\n')
+                if s.stream_end == "error_done":
+                    self.wfile.write(b"data: [DONE]\n\n")
+            return
         chunk({}, "tool_calls" if calls else "stop", usage={"prompt_tokens": prompt, "completion_tokens": gen, "total_tokens": prompt + gen,
                                  "prompt_tokens_details": {"cached_tokens": cached}},
               timings={"cache_n": cached, "prompt_n": prompt - cached, "prompt_ms": 100.0,
@@ -183,11 +190,38 @@ class SuiteTests(unittest.TestCase):
         self.assertTrue(all("HTTP 500" in f["error"] for f in out["failures"]))
         self.assertIsNone(out["chat"]["decode_tps"])
 
+    def test_incomplete_and_failed_streams_are_errors_in_both_clients(self):
+        for ending in ("eof", "error_done", "error_eof"):
+            with self.subTest(ending=ending):
+                self.srv.stream_end = ending
+                expected = "missing [DONE]" if ending == "eof" else "engine stopped"
+                chat = B.chat(self.srv.base, "", [{"role": "user", "content": "hello"}], 12)
+                self.assertTrue(chat["text"])
+                self.assertIsNotNone(chat["first"])
+                self.assertFalse(B.digest(chat)["ok"])
+                self.assertIn(expected, chat["err"])
+                results = {}
+                B.serve_load.one(self.srv.base, "", "strata", 0, 20, 12, results, {}, False)
+                self.assertTrue(results[0]["text"])
+                self.assertIsNotNone(results[0]["first"])
+                self.assertIn(expected, results[0]["err"] or "")
+
+    def test_truncated_requests_do_not_produce_successful_benchmark_samples(self):
+        self.srv.stream_end = "eof"
+        suite = self.suite(runs=1)
+        suite.run_chat()
+        suite.run_clients(2)
+        self.assertEqual(len(suite.out["failures"]), len(B.PROMPTS))
+        self.assertTrue(all(not r["ok"] for r in suite.out["chat"]["requests"]))
+        self.assertIsNone(suite.out["chat"]["decode_tps"])
+        self.assertEqual(suite.out["clients"]["errors"], 2)
+
 
 class RedactionTests(unittest.TestCase):
     def test_paths_names_ips_and_keys(self):
-        red = B.redactor(extra=["Jane Roe Laptop"], key="sk-secret-123456")
-        user = os.environ.get("USERNAME") or os.environ.get("USER") or "tester"
+        user = "fixture_user"
+        with mock.patch.object(B.getpass, "getuser", return_value=user):
+            red = B.redactor(extra=["Jane Roe Laptop"], key="sk-secret-123456")
         cases = [r"C:\Users\someone_else\models\a.gguf", "/home/bob/strata/x.json", "/Users/alice/Library",
                  "peer 192.168.1.20 and 10.0.0.7 and 100.101.102.103", "Authorization: Bearer abcdefghijkl12345",
                  "key sk-secret-123456 here", "name Jane Roe Laptop"]
@@ -233,6 +267,17 @@ class RedactionTests(unittest.TestCase):
         out = B.redact_obj({"a": [{"p": r"D:\Users\zed\x"}], "n": 3}, red)
         self.assertNotIn("zed", json.dumps(out))
         self.assertEqual(out["n"], 3)
+
+    def test_private_names_do_not_change_schema_keys(self):
+        red = B.redactor(extra=["agent", "machine", "schema", "results"])
+        value = {"schema": 1, "results": {"agent": [{"machine": "agent on machine at 10.0.0.7"}]}}
+        clean = B.redact_obj(value, red)
+        self.assertEqual(set(clean), {"schema", "results"})
+        self.assertEqual(clean["schema"], 1)
+        self.assertEqual(set(clean["results"]), {"agent"})
+        text = clean["results"]["agent"][0]["machine"]
+        for private in ("agent", "machine", "10.0.0.7"):
+            self.assertNotIn(private, text)
 
     def test_config_view_drops_secrets_and_cuts_paths(self):
         cfg = {"exe": r"C:\Users\me\Strata\engine\strata.exe", "args": ["--native", "/home/me/models/m-IQ3_XXS.gguf", "--ctx", "65536"],
@@ -298,6 +343,26 @@ class ReportTests(unittest.TestCase):
             self.assertIn("chat decode tok/s", table)
             self.assertIn("+100.0%", table)
             self.assertIn("engine: 1.0 -> 9.9.9", table)
+
+    def test_saved_report_remains_comparable_when_user_name_is_agent(self):
+        srv = FakeStrata()
+        self.addCleanup(srv.stop)
+        collect = B.collect_machine
+        def machine(*args, **kwargs):
+            value = collect(*args, **kwargs)
+            value["cpu"] = "agent on 10.0.0.7"
+            return value
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(B.getpass, "getuser", return_value="agent"), \
+                mock.patch.object(B, "collect_machine", side_effect=machine):
+            self.assertEqual(self.run_main(srv, d), 0)
+            folder = next(Path(d).iterdir())
+            saved = B.load_results(folder)
+            self.assertIn("agent cache hit %", B.compare_table(saved, saved))
+            readme = (folder / "README.md").read_text(encoding="utf-8")
+            self.assertIn("### Agent session", readme)
+            self.assertNotIn("agent on 10.0.0.7", readme)
+            self.assertNotIn("10.0.0.7", json.dumps(saved))
+            self.assertNotIn("agent", saved["machine"]["cpu"])
 
     def test_only_the_gpus_the_engine_uses_are_listed(self):
         """#1985: a PC with two cards, the engine on one: the report names that one, with its VRAM."""

@@ -44,6 +44,7 @@ def one(url, key, model, i, words, max_tokens, res, extra, think, nonce=""):
     t0 = time.perf_counter()
     first, n, text = None, 0, []
     err = None
+    complete = False
     try:
         with urllib.request.urlopen(req, timeout=900) as r:
             for raw in r:
@@ -52,11 +53,14 @@ def one(url, key, model, i, words, max_tokens, res, extra, think, nonce=""):
                     continue
                 d = line[5:].strip()
                 if d == "[DONE]":
+                    complete = True
                     break
                 try:
                     j = json.loads(d)
                 except ValueError:
                     continue
+                if j.get("error"):
+                    err = str(j["error"])[:300]
                 for ch in j.get("choices", []):
                     dl = ch.get("delta", {})
                     piece = (dl.get("content") or "") + (dl.get("reasoning_content") or "")
@@ -69,6 +73,8 @@ def one(url, key, model, i, words, max_tokens, res, extra, think, nonce=""):
                     n = j["usage"].get("completion_tokens", n)
     except Exception as e:                          # noqa: BLE001
         err = repr(e)
+    if not complete and err is None:
+        err = "incomplete SSE stream: missing [DONE]"
     res[i] = {"first": first, "tokens": n, "total": time.perf_counter() - t0, "text": "".join(text), "err": err}
 
 

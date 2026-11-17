@@ -106,8 +106,9 @@ def redactor(extra: list[str] = (), key: str = ""):
 
 
 def redact_obj(obj, red):
+    """Redact report text values without changing the fixed result-schema keys."""
     if isinstance(obj, dict):
-        return {red(k) if isinstance(k, str) else k: redact_obj(v, red) for k, v in obj.items()}
+        return {k: redact_obj(v, red) for k, v in obj.items()}
     if isinstance(obj, list):
         return [redact_obj(v, red) for v in obj]
     return red(obj) if isinstance(obj, str) else obj
@@ -141,6 +142,7 @@ def chat(base: str, key: str, messages: list, max_tokens: int, think: bool = Fal
                                           **({"Authorization": "Bearer " + key} if key else {})})
     t0 = time.perf_counter()
     first, text, usage, timings, err, pieces = None, [], None, None, None, 0
+    complete = False
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             for raw in r:
@@ -149,6 +151,7 @@ def chat(base: str, key: str, messages: list, max_tokens: int, think: bool = Fal
                     continue
                 d = line[5:].strip()
                 if d == "[DONE]":
+                    complete = True
                     break
                 try:
                     j = json.loads(d)
@@ -173,6 +176,8 @@ def chat(base: str, key: str, messages: list, max_tokens: int, think: bool = Fal
         err = f"HTTP {e.code}: {e.read()[:200]!r}"
     except Exception as e:                              # noqa: BLE001
         err = repr(e)[:300]
+    if not complete and err is None:
+        err = "incomplete SSE stream: missing [DONE]"
     total = time.perf_counter() - t0
     if os.environ.get("STRATA_BENCH_ANSWERS"):
         try:
@@ -1008,7 +1013,7 @@ def write_results(res: dict, parent: Path, red, log_lines: list[str]) -> Path:
     d.mkdir(parents=True)
     clean = redact_obj(res, red)
     (d / "results.json").write_text(json.dumps(clean, indent=1, ensure_ascii=False), encoding="utf-8")
-    (d / "README.md").write_text(red(render_readme(res)), encoding="utf-8")
+    (d / "README.md").write_text(render_readme(clean), encoding="utf-8")
     if log_lines:
         (d / "engine-log-excerpt.txt").write_text(red("\n".join(log_lines)) + "\n", encoding="utf-8")
     return d
