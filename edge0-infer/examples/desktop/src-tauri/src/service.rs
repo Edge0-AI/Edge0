@@ -49,6 +49,9 @@ pub struct Settings {
     pub prefill_device: String,
     #[serde(default)]
     pub port: Option<u16>,
+    /// Context length in tokens passed to `serve --context`; `None` keeps the model's own length.
+    #[serde(default)]
+    pub context: Option<u32>,
     pub theme: String,
     pub generation_style: String,
     pub system_prompt: String,
@@ -77,6 +80,7 @@ impl Default for Settings {
             device: platform::default_device().into(),
             prefill_device: String::new(),
             port: None,
+            context: None,
             theme: "system".into(),
             generation_style: "precise".into(),
             system_prompt: String::new(),
@@ -112,6 +116,12 @@ impl Settings {
         }
         if self.port == Some(0) {
             return Err("Server port must be blank or an integer from 1 to 65535".into());
+        }
+        if self
+            .context
+            .is_some_and(|tokens| tokens < 4 * 1024 || tokens % 1024 != 0)
+        {
+            return Err("Context length must be a whole number of K, 4K or more".into());
         }
         Ok(())
     }
@@ -252,6 +262,10 @@ pub fn arguments_for(settings: &Settings, model: &str, delegated: bool) -> Vec<S
     args.extend(["--port".into(), settings.port.unwrap_or(0).to_string()]);
     if !delegated && !settings.prefill_device.is_empty() {
         args.extend(["--prefill-device".into(), settings.prefill_device.clone()]);
+    }
+    // Both kinds of model take it: a delegated one passes it on as its engine's maximum context.
+    if let Some(tokens) = settings.context {
+        args.extend(["--context".into(), tokens.to_string()]);
     }
     args
 }
@@ -2034,5 +2048,46 @@ mod tests {
         explicit.port = Some(12345);
         fixture.manager.save_settings(&explicit).unwrap();
         assert_eq!(fixture.manager.settings().unwrap().port, Some(12345));
+    }
+    #[test]
+    fn without_a_context_setting_no_context_argument_is_passed() {
+        let fixture = Fixture::new();
+        let mut legacy = serde_json::to_value(&fixture.settings).unwrap();
+        legacy.as_object_mut().unwrap().remove("context");
+        let decoded: Settings = serde_json::from_value(legacy).unwrap();
+        assert_eq!(decoded.context, None);
+        for delegated in [false, true] {
+            assert!(!arguments_for(&decoded, "model", delegated).contains(&"--context".into()));
+        }
+        fixture.manager.save_settings(&decoded).unwrap();
+        let saved = fixture.manager.settings().unwrap();
+        assert_eq!(saved.context, None);
+        assert!(!arguments(&saved, "model").contains(&"--context".into()));
+    }
+    #[test]
+    fn a_context_setting_is_passed_to_native_and_delegated_models() {
+        let fixture = Fixture::new();
+        let mut settings = fixture.settings.clone();
+        settings.context = Some(16384);
+        fixture.manager.save_settings(&settings).unwrap();
+        let saved = fixture.manager.settings().unwrap();
+        assert_eq!(saved.context, Some(16384));
+        for delegated in [false, true] {
+            let args = arguments_for(&saved, "model", delegated);
+            let index = args.iter().position(|arg| arg == "--context").unwrap();
+            assert_eq!(args[index + 1], "16384");
+            assert_eq!(args.iter().filter(|arg| *arg == "--context").count(), 1);
+        }
+        for invalid in [0, 1000, 2048, 16385] {
+            settings.context = Some(invalid);
+            assert!(fixture
+                .manager
+                .save_settings(&settings)
+                .unwrap_err()
+                .contains("Context length"));
+        }
+        assert_eq!(fixture.manager.settings().unwrap().context, Some(16384));
+        settings.context = Some(200 * 1024);
+        fixture.manager.save_settings(&settings).unwrap();
     }
 }

@@ -273,3 +273,12 @@ button, input, textarea, select { color: inherit; }
   .ai-foot { flex-wrap: wrap; }
   .metrics { flex-basis: 100%; }
 }
+.ctx-row { display: flex; align-items: center; gap: var(--size-10); flex-wrap: wrap; }
+.ctx-input { display: flex; align-items: center; gap: var(--size-6); }
+.ctx-input .input { width: var(--size-64); padding: var(--size-4) var(--size-8); font-size: var(--fs-sm); text-align: right; }
+.ctx-input span { font-size: var(--fs-sm); color: var(--text-3); }
+.field [role=alert] { color: var(--err); font-size: var(--fs-sm); margin-top: var(--sp-1); }
+.ctx-warn { margin-top: var(--sp-2); padding: var(--size-8) var(--size-12); border-radius: var(--r-md); background: var(--warn-soft); color: var(--warn); font-size: var(--fs-sm); }
+.apply { display: flex; align-items: center; gap: var(--size-12); margin-top: var(--sp-2); padding: var(--size-10) var(--size-14); border-radius: var(--r-md); background: var(--accent-soft); color: var(--text); font-size: var(--fs-sm); }
+.apply .sp { flex: 1; }
+.apply .btn { white-space: nowrap; }

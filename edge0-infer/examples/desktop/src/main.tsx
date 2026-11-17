@@ -13,6 +13,7 @@ import { DeleteConversation } from './Workspace';
 import { Service, type Health } from './pages/Service';
 import { Settings as SettingsPage } from './pages/Settings';
 import { defaultSettings, generateToken, temperatures, type Settings } from './state/settings';
+import { contextDraft, nextContext, type ContextDraft } from './state/context';
 import { groupHistory, newConversation, editAndResend, regenerate, title, type Archive, type Conversation } from './state/history';
 import { aggregateTotals, emptyTotals, observeTotals, resetTotals, type SavedTotals } from './state/totals';
 import { usePolling } from './state/polling';
@@ -55,7 +56,7 @@ export function App() {
   const [assets, setAssets] = useState<Inspection[]>([]), [status, setStatus] = useState<EngineStatus>(), [health, setHealth] = useState<Health>({});
   const [savedTotals, setSavedTotals] = useState<SavedTotals>(emptyTotals), totalsRef = useRef(savedTotals);
   const tokenRef = useRef('');
-  const [token, setToken] = useState(''), [portText, setPortText] = useState('');
+  const [token, setToken] = useState(''), [portText, setPortText] = useState(''), [contextText, setContextText] = useState<ContextDraft>(() => contextDraft(null));
   const [initializing, setInitializing] = useState(true), [loading, setLoading] = useState(false), [error, setError] = useState('');
   const runtimeSettings = useRef<Settings | null>(null);
   const controller = useRef<AbortController | null>(null), serviceEpoch = useRef(0), persistence = useRef(new WriteQueue());
@@ -79,7 +80,7 @@ export function App() {
     Promise.all([invoke<Settings>('load_settings'), invoke<Archive[]>('list_conversations'), invoke<SavedTotals | null>('load_totals'), invoke<string | null>('read_api_token')]).then(async ([stored, history, totals, storedToken]) => {
       if (!active) return;
       const next = { ...defaultSettings, ...stored };
-      setSettings(next); settingsRef.current = next; setPortText(next.port?.toString() ?? ''); setArchives(history); tokenRef.current = storedToken ?? ''; setToken(tokenRef.current);
+      setSettings(next); settingsRef.current = next; setPortText(next.port?.toString() ?? ''); setContextText(contextDraft(next.context)); setArchives(history); tokenRef.current = storedToken ?? ''; setToken(tokenRef.current);
       if (totals?.version === 1 && totals.instances && totals.baselines) { totalsRef.current = totals; setSavedTotals(totals); }
       changeConversation(newConversation(next.system_prompt));
       if (next.executable) await inspect(next);
@@ -148,6 +149,9 @@ export function App() {
     const previous = runtimeSettings.current; setSettings(next); settingsRef.current = next;
     settingsWrites.current.schedule(next, async () => { if (next.engine_source === 'builtin' && !next.executable) await refillBuiltIn(); if (previous && (previous.engine_source !== next.engine_source || (next.engine_source === 'custom' && previous.executable !== next.executable) || previous.device !== next.device || previous.prefill_device !== next.prefill_device || previous.port !== next.port)) await stopService(); }, report);
   }
+  // Context length does not stop the service: the page offers Reload model while the loaded model runs with another setting.
+  function changeContext(next: ContextDraft) { setContextText(next); const value = nextContext(settingsRef.current.context ?? null, next); if (value !== undefined) updateSettings({ ...settingsRef.current, context: value }); }
+  function reloadModel() { const current = conversationRef.current; void select(activePath, current).then(() => setPage('settings')); }
   async function deleteArchive(id: string) {
     if (disabled || deletingRef.current) return;
     deletingRef.current = true; setDeleting(true);
@@ -178,7 +182,7 @@ export function App() {
     {page === 'models' && <Models assets={assets} activePath={loaded ? activePath : undefined} capacity={model?.context_length} disabled={disabled} load={path => void select(path)} unload={() => void stopService()} chat={() => setPage('chat')} refresh={() => { void inspect().catch(report); }} add={() => void addLocation()} remove={path => void removeLocation(path)} download={downloads ? { platform: downloads.platform, saveDirectory: downloads.save_directory, jobs: downloads.jobs, measure: measureDownload, disk: diskFree, start: startDownload, pause: pauseDownload, remove: deleteDownload, browse: () => pick(true), report } : undefined}/>}
     {page === 'status' && <Status status={status} live={loaded} allTime={aggregateTotals(savedTotals)} reset={() => keepTotals(resetTotals(totalsRef.current))}/>}
     {page === 'service' && <Service status={status} running={loaded} disabled={disabled} lan={settings.lan_access} token={token} device={settings.device} health={health} restart={() => { const current = conversationRef.current; void select(activePath, current).then(() => setPage('service')); }} stop={() => void stopService()} toggle={() => void network()} newToken={() => void network(true)} copy={text => void copy(text)} check={() => void healthCheck()}/>}
-    {page === 'settings' && <SettingsPage settings={settings} port={portText} disabled={disabled} update={updateSettings} setPort={text => { setPortText(text); const valid = validateServerPort(text); if (valid.valid) updateSettings({ ...settingsRef.current, port: valid.port }); }} browse={() => { void pick(false).then(path => { if (path) updateSettings({ ...settingsRef.current, executable: path }); }).catch(report); }}/>}
+    {page === 'settings' && <SettingsPage settings={settings} port={portText} disabled={disabled} update={updateSettings} setPort={text => { setPortText(text); const valid = validateServerPort(text); if (valid.valid) updateSettings({ ...settingsRef.current, port: valid.port }); }} browse={() => { void pick(false).then(path => { if (path) updateSettings({ ...settingsRef.current, executable: path }); }).catch(report); }} context={{ draft: contextText, change: changeContext, running: loaded && runtimeSettings.current ? { model: model.id, setting: runtimeSettings.current.context ?? null, length: model.context_length } : undefined, reload: reloadModel }}/>}
   </section></div>;
 }
 if (typeof document !== 'undefined') {

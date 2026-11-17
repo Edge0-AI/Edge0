@@ -192,6 +192,15 @@ settings. On macOS it runs on Metal through edge0-strata; on Linux and Windows i
 `EDGE0_STRATA_DIR` in the app's environment or an `edge0-strata/` directory beside an ancestor of the
 selected executable.
 
+Context length under Settings > Engine is the number of tokens a conversation can
+hold. **Model default** (the default) passes no `--context`, so `serve` uses the
+length the model is set up for. 16K, 32K, 64K and 128K, or **Custom** with a whole
+number of K (4 or more), pass `--context <tokens>` to `serve` for native and
+delegated models alike; the app sets no upper limit, and `serve` reports a length
+the model cannot take. Values above 128K show a memory warning. Changing it does not
+stop the running model: while the loaded model runs with another length, the
+setting shows Reload model, which loads the current model again with the new length.
+
 Server port is optional: leave it blank for an automatically assigned port, or
 enter an integer from 1 to 65535. Invalid input cannot be saved. The app passes
 the chosen port unchanged and shows `Server: http://127.0.0.1:<port>` after health
