@@ -18,6 +18,7 @@ import { aggregateTotals, emptyTotals, observeTotals, resetTotals, type SavedTot
 import { usePolling } from './state/polling';
 import { ArchiveWrites, SettingsWrites, WriteQueue } from './state/persistence';
 import { waitForHealth } from './state/health';
+import { loadStartup } from './state/startup';
 import { deviceLabel, parseInfo, type EngineStatus, type Inspection } from './status';
 import { downloadBusy } from './download-logic';
 import { deleteDownload, diskFree, measureDownload, pauseDownload, startDownload, useDownloads } from './download-host';
@@ -76,12 +77,12 @@ export function App() {
   function newChat(thinking = model?.capabilities.thinking_default ?? false, nextSettings = settingsRef.current) { if (busy || loading || deletingRef.current) return; remember(conversationRef.current); changeConversation(newConversation(nextSettings.system_prompt, thinking && !!model?.capabilities.thinking, activePath)); setDraft(''); setPage('chat'); setError(''); }
   useEffect(() => {
     let active = true;
-    Promise.all([invoke<Settings>('load_settings'), invoke<Archive[]>('list_conversations'), invoke<SavedTotals | null>('load_totals'), invoke<string | null>('read_api_token')]).then(async ([stored, history, totals, storedToken]) => {
+    loadStartup({ settings: () => invoke<Settings>('load_settings'), history: () => invoke<Archive[]>('list_conversations'), totals: () => invoke<SavedTotals | null>('load_totals'), token: () => invoke<string | null>('read_api_token') }).then(async ({ settings: next, history, totals, token, errors }) => {
       if (!active) return;
-      const next = { ...defaultSettings, ...stored };
-      setSettings(next); settingsRef.current = next; setPortText(next.port?.toString() ?? ''); setArchives(history); tokenRef.current = storedToken ?? ''; setToken(tokenRef.current);
-      if (totals?.version === 1 && totals.instances && totals.baselines) { totalsRef.current = totals; setSavedTotals(totals); }
+      setSettings(next); settingsRef.current = next; setPortText(next.port?.toString() ?? ''); setArchives(history); tokenRef.current = token; setToken(token);
+      totalsRef.current = totals; setSavedTotals(totals);
       changeConversation(newConversation(next.system_prompt));
+      if (errors.length) report(errors.map(String).join('\n'));
       if (next.executable) await inspect(next);
     }).catch(report).finally(() => { if (active) setInitializing(false); });
     return () => { active = false; controller.current?.abort(); settingsWrites.current.cancel(); };
