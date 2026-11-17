@@ -168,6 +168,40 @@ class Client(unittest.TestCase):
         self.assertTrue(any("cancelled" in e for e in seen), seen)   # notifications/cancelled reached the server
 
 
+class Routing(unittest.TestCase):
+    def test_later_servers_do_not_reassign_advertised_tool_names(self):
+        for prefix in ("files", "long-name-" * 8):
+            with self.subTest(prefix=prefix), tempfile.TemporaryDirectory() as folder:
+                first, second = prefix + ".local", prefix + " local"
+                logs = {name: Path(folder) / f"{i}.jsonl" for i, name in enumerate((first, second))}
+                hub = McpHub({name: stdio(env={"FAKE_MCP_LOG": str(logs[name])}) for name in (first, second)},
+                             {"timeout_s": 5, "start_timeout_s": 5})
+                try:
+                    # Background startup may finish in a different order from the config.
+                    self.assertTrue(hub.servers[second].start())
+                    advertised = dict(hub.routes())
+                    old_name = next(n for n, (s, t) in advertised.items() if t == "echo")
+                    self.assertEqual(hub.call(old_name, {"text": "before"})["server"], second)
+                    self.assertTrue(hub.servers[first].start())
+                    hub.status()                 # the web page also refreshes the routes while a model runs
+                    reply = hub.call(old_name, {"text": "after"})
+                    self.assertEqual((reply["server"], reply["text"]), (second, "after"))
+                    routes = hub.routes()
+                    self.assertTrue(all(routes[name] == target for name, target in advertised.items()))
+                    self.assertTrue(all(len(name) <= 64 for name in routes))
+                    self.assertEqual(len(routes), 2 * len(fake.TOOLS))
+                    new_name = next(n for n, (s, t) in routes.items() if s.name == first and t == "echo")
+                    self.assertNotEqual(new_name, old_name)
+                    self.assertEqual(hub.call(new_name, {"text": "other"})["server"], first)
+                    hub.servers[second].transport.close()
+                    self.assertEqual(hub.call(old_name, {"text": "restarted"})["server"], second)
+                    seen = {name: [json.loads(line)["arguments"]["text"] for line in path.read_text().splitlines()]
+                            for name, path in logs.items()}
+                    self.assertEqual(seen, {first: ["other"], second: ["before", "after", "restarted"]})
+                finally:
+                    hub.close()
+
+
 class HttpClient(unittest.TestCase):
     """Streamable HTTP: JSON answers, an event-stream answer, the session id."""
 

@@ -538,6 +538,8 @@ class McpHub:
         self.servers = {name: McpServer(name, cfg, self.settings) for name, cfg in servers.items()}
         self.threads: list[threading.Thread] = []
         self._routes: dict[str, tuple[McpServer, str]] = {}
+        self._route_lock = threading.Lock()
+        self._aliases: dict[tuple[str, str], str] = {}
 
     def start(self, wait: bool = False):
         """Start every server on its own thread (npx may download a package first: that must not delay the chat)."""
@@ -557,19 +559,28 @@ class McpHub:
     def routes(self) -> dict[str, tuple[McpServer, str]]:
         """tool name the model sees -> (server, the tool's own name).  A server that stopped after it was ready keeps
         its tools here: a call starts it again."""
-        out = {}
-        for s in self.servers.values():
-            if s.status not in ("ready", "stopped"):
-                continue
-            for t in s.tools:
-                name = f"{_clean(s.name)}__{_clean(t['name'])}"[:64]
-                n = 2
-                while name in out:                       # two names that differ only in cleaned characters
-                    name = f"{name[:60]}_{n}"
-                    n += 1
-                out[name] = (s, t["name"])
-        self._routes = out
-        return out
+        with self._route_lock:
+            out = {}
+            used = set(self._aliases.values())
+            for s in self.servers.values():
+                if s.status not in ("ready", "stopped"):
+                    continue
+                for t in s.tools:
+                    key = (s.name, t["name"])
+                    name = self._aliases.get(key)
+                    if name is None:
+                        base = f"{_clean(s.name)}__{_clean(t['name'])}"[:64]
+                        name, n = base, 2
+                        while name in used:
+                            suffix = f"_{n}"
+                            name = base[:64 - len(suffix)] + suffix
+                            n += 1
+                        # A later server must not steal a name already sent to a model.
+                        self._aliases[key] = name
+                        used.add(name)
+                    out[name] = (s, t["name"])
+            self._routes = out
+            return out
 
     def template_tools(self, exclude=()) -> list[dict]:
         """The tools in the chat template's form ({name, description, parameters}); `exclude`: names the request
