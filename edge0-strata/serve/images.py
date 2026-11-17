@@ -61,7 +61,7 @@ def parse_size(value, max_side: int) -> tuple[int, int]:
     """OpenAI's size, "1024x1024" (or "auto": 1024x1024) -> (width, height); each side a multiple of 32 from 256 to
     max_side."""
     if value is None or value == "auto":
-        return 1024, 1024
+        value = "1024x1024"
     if not isinstance(value, str):
         raise ImageRequestError("size: a string WIDTHxHEIGHT, e.g. \"1024x1024\"")
     m = re.fullmatch(r"\s*(\d{2,5})\s*[xX×]\s*(\d{2,5})\s*", value)
