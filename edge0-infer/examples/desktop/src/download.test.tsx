@@ -1,8 +1,8 @@
 import { Children, createElement, isValidElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
-import { catalog, catalogFor, decimalGb, enoughSpace, fastestSource, presentPath, resumeDirectory, type JobView } from './download-logic';
-import { beginDownload, DownloadDialog, openDownload, removeDownload, type DialogState, type DownloadActions } from './download-view';
+import { catalog, catalogFor, decimalGb, enoughSpace, fastestSource, presentPath, resumeDirectory, type JobView, type MeasureReport, type DiskReport } from './download-logic';
+import { beginDownload, changeDownloadDirectory, DownloadDialog, openDownload, removeDownload, type DialogState, type DownloadActions } from './download-view';
 import { Models } from './pages/Models';
 
 const noop = () => undefined;
@@ -176,6 +176,103 @@ function dialogStore() {
   const setDialog = (update: DialogState | null | ((current: DialogState | null) => DialogState | null)) => { store.state = typeof update === 'function' ? update(store.state) : update; };
   return { store, setDialog };
 }
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(done => { resolve = done; });
+  return { promise, resolve };
+}
+
+it('ignores a measurement from a closed dialog after the same model is reopened', async () => {
+  const old = deferred<MeasureReport>();
+  const { store, setDialog } = dialogStore();
+  const pending = openDownload({ ...actions(), measure: () => old.promise }, model.id, false, setDialog, noop);
+  setDialog(null);
+  await openDownload(actions(), model.id, false, setDialog, noop);
+  const latest = store.state;
+  old.resolve({ huggingface_ms: 10, modelscope_ms: null, chosen: 'huggingface' });
+  await pending;
+  expect(store.state).toEqual(latest);
+});
+
+it('keeps the selected folder space check when the initial folder probe finishes later', async () => {
+  const old = deferred<DiskReport>();
+  const { store, setDialog } = dialogStore();
+  const pending = openDownload({ ...actions(), disk: () => old.promise }, model.id, false, setDialog, noop);
+  setDialog(current => ({ ...current!, directory: 'D:/almost-full', freeBytes: 1e9, drive: 'D:' }));
+  old.resolve({ free_bytes: 400e9, drive: 'C:' });
+  await pending;
+  expect(store.state!.directory).toBe('D:/almost-full');
+  expect(store.state!.freeBytes).toBe(1e9);
+  expect(store.state!.drive).toBe('D:');
+  const shown = DownloadDialog({ model, platform: 'windows', ...store.state!, onClose: noop, onSource: noop, onMeasure: noop, onChangeDirectory: noop, onStart: noop });
+  expect(buttons(shown).find(button => button.text === 'Download')?.disabled).toBe(true);
+});
+
+it('does not close a reopened dialog when an earlier start finishes', async () => {
+  const old = deferred<void>();
+  const { store, setDialog } = dialogStore();
+  const slow = { ...actions(), start: () => old.promise };
+  await openDownload(slow, model.id, false, setDialog, noop);
+  const pending = beginDownload(slow, store.state!, setDialog, noop, { current: false });
+  setDialog(null);
+  await openDownload(actions(), model.id, false, setDialog, noop);
+  const latest = store.state;
+  old.resolve();
+  await pending;
+  expect(store.state).toEqual(latest);
+});
+
+it('keeps an explicit source choice made while the measurement is pending', async () => {
+  const report = deferred<MeasureReport>();
+  const { store, setDialog } = dialogStore();
+  const pending = openDownload({ ...actions(), measure: () => report.promise }, model.id, false, setDialog, noop);
+  setDialog(current => ({ ...current!, source: 'huggingface' }));
+  report.resolve({ huggingface_ms: 820, modelscope_ms: 95, chosen: 'modelscope' });
+  await pending;
+  expect(store.state!.source).toBe('huggingface');
+  expect(store.state!.measuring).toBe(false);
+});
+
+it('does not apply a folder picker result to a replacement dialog', async () => {
+  const old = deferred<string | undefined>();
+  const { store, setDialog } = dialogStore();
+  await openDownload(actions(), model.id, false, setDialog, noop);
+  const pending = changeDownloadDirectory({ ...actions(), browse: () => old.promise }, store.state!, setDialog, noop);
+  setDialog(null);
+  await openDownload(actions(), model.id, false, setDialog, noop);
+  const latest = store.state;
+  old.resolve('D:/stale-choice');
+  await pending;
+  expect(store.state).toEqual(latest);
+});
+
+it('keeps the newest folder request when space probes finish out of order', async () => {
+  const old = deferred<DiskReport>();
+  const { store, setDialog } = dialogStore();
+  await openDownload(actions(), model.id, false, setDialog, noop);
+  const pending = changeDownloadDirectory({ ...actions(), browse: async () => 'D:/old', disk: () => old.promise }, store.state!, setDialog, noop);
+  await Promise.resolve();
+  await changeDownloadDirectory({ ...actions(), browse: async () => 'E:/latest', disk: async () => ({ free_bytes: 2e9, drive: 'E:' }) }, store.state!, setDialog, noop);
+  old.resolve({ free_bytes: 400e9, drive: 'D:' });
+  await pending;
+  expect(store.state!.directory).toBe('E:/latest');
+  expect(store.state!.freeBytes).toBe(2e9);
+  expect(store.state!.drive).toBe('E:');
+});
+
+it('remeasures the chosen folder and leaves it alone when the picker is cancelled', async () => {
+  const { store, setDialog } = dialogStore();
+  const asked: string[] = [];
+  const selected = { ...actions(), browse: async () => 'D:/selected', disk: async (directory: string) => { asked.push(directory); return { free_bytes: 2e9, drive: 'D:' }; } };
+  await openDownload(actions(), model.id, false, setDialog, noop);
+  await changeDownloadDirectory(selected, store.state!, setDialog, noop);
+  await openDownload(selected, model.id, false, setDialog, noop, store.state!.directory);
+  await changeDownloadDirectory(actions(), store.state!, setDialog, noop);
+  expect(asked).toEqual(['D:/selected', 'D:/selected']);
+  expect(store.state!.directory).toBe('D:/selected');
+  expect(store.state!.freeBytes).toBe(2e9);
+});
 
 it('resumes in the folder of the paused download, not the current save location', async () => {
   for (const [partial, saved, expected] of [['/X/Edge0-120B-q3k.partial', '/Y', '/X'], ['D:\\old\\Edge0-120B-q3k.partial', 'C:\\Users\\you\\Edge0-models', 'D:\\old']]) {

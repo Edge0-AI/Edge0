@@ -95,6 +95,8 @@ export interface DownloadActions {
 }
 export interface DialogState {
   id: string;
+  session: symbol;
+  directoryRequest?: symbol;
   resume: boolean;
   measuring: boolean;
   /** The start request has been sent and has not returned yet. */
@@ -109,16 +111,34 @@ const emptyReport: MeasureReport = { huggingface_ms: null, modelscope_ms: null, 
 type DialogUpdate = DialogState | null | ((current: DialogState | null) => DialogState | null);
 /** Opens the download dialog in its measuring state at once, then fills in the measured sources and free space.
  * Resuming shows the folder the paused download is in, not the current save location. */
-export async function openDownload(actions: DownloadActions, id: string, resume: boolean, setDialog: (update: DialogUpdate) => void, fail: (failure: unknown) => void) {
+export async function openDownload(actions: DownloadActions, id: string, resume: boolean, setDialog: (update: DialogUpdate) => void, fail: (failure: unknown) => void, selectedDirectory?: string) {
   const partial = resume ? actions.jobs.find(job => job.id === id)?.directory : undefined;
-  const directory = (partial && resumeDirectory(partial)) || actions.saveDirectory;
-  setDialog({ id, resume, measuring: true, starting: false, report: emptyReport, source: null, directory, freeBytes: null, drive: null });
+  const directory = (partial && resumeDirectory(partial)) || selectedDirectory || actions.saveDirectory;
+  const session = Symbol('download dialog');
+  setDialog({ id, session, resume, measuring: true, starting: false, report: emptyReport, source: null, directory, freeBytes: null, drive: null });
   try {
     const [measured, space] = await Promise.all([
       actions.measure(id).catch(() => emptyReport),
       actions.disk(directory).catch(() => ({ free_bytes: 0, drive: null })),
     ]);
-    setDialog(current => current?.id === id ? { ...current, measuring: false, report: measured, source: measured.chosen, freeBytes: space.free_bytes, drive: space.drive } : current);
+    setDialog(current => current?.session === session ? {
+      ...current, measuring: false, report: measured, source: current.source ?? measured.chosen,
+      ...(current.directory === directory ? { freeBytes: space.free_bytes, drive: space.drive } : {}),
+    } : current);
+  } catch (failure) { fail(failure); }
+}
+
+/** Apply a folder picker and space probe only to the dialog and request that started them. */
+export async function changeDownloadDirectory(actions: DownloadActions, dialog: DialogState, setDialog: (update: DialogUpdate) => void, fail: (failure: unknown) => void) {
+  if (dialog.resume) return;
+  const request = Symbol('download directory');
+  setDialog(current => current?.session === dialog.session ? { ...current, directoryRequest: request } : current);
+  try {
+    const picked = await actions.browse();
+    if (!picked) return;
+    const space = await actions.disk(picked).catch(() => ({ free_bytes: 0, drive: null }));
+    setDialog(current => current?.session === dialog.session && current.directoryRequest === request
+      ? { ...current, directory: picked, freeBytes: space.free_bytes, drive: space.drive } : current);
   } catch (failure) { fail(failure); }
 }
 
@@ -127,12 +147,12 @@ export async function openDownload(actions: DownloadActions, id: string, resume:
 export async function beginDownload(actions: DownloadActions, dialog: DialogState, setDialog: (update: DialogUpdate) => void, fail: (failure: unknown) => void, sending: { current: boolean }) {
   if (!dialog.source || sending.current) return;
   sending.current = true;
-  setDialog(current => current?.id === dialog.id ? { ...current, starting: true } : current);
+  setDialog(current => current?.session === dialog.session ? { ...current, starting: true } : current);
   try {
     await actions.start(dialog.id, dialog.source, dialog.directory);
-    setDialog(current => current?.id === dialog.id ? null : current);
+    setDialog(current => current?.session === dialog.session ? null : current);
   } catch (failure) {
-    setDialog(current => current?.id === dialog.id ? { ...current, starting: false } : current);
+    setDialog(current => current?.session === dialog.session ? { ...current, starting: false } : current);
     fail(failure);
   } finally {
     sending.current = false;
@@ -164,16 +184,7 @@ export function DownloadSection({ assets, disabled, firstRun, actions }: { asset
   const busy = downloadBusy(actions.jobs);
   const jobFor = (id: string) => actions.jobs.find(job => job.id === id);
   const fail = (failure: unknown) => actions.report?.(failure);
-  const open = (id: string, resume: boolean) => openDownload(actions, id, resume, setDialog, fail);
-  async function changeDirectory() {
-    if (!dialog || dialog.resume) return;
-    try {
-      const picked = await actions.browse();
-      if (!picked) return;
-      const space = await actions.disk(picked).catch(() => ({ free_bytes: 0, drive: null }));
-      setDialog(current => current ? { ...current, directory: picked, freeBytes: space.free_bytes, drive: space.drive } : current);
-    } catch (failure) { fail(failure); }
-  }
+  const open = (id: string, resume: boolean, directory?: string) => openDownload(actions, id, resume, setDialog, fail, directory);
   const selected = dialog ? models.find(model => model.id === dialog.id) : undefined;
   const confirming = confirmId ? models.find(model => model.id === confirmId) : undefined;
   const confirmingJob = confirmId ? jobFor(confirmId) : undefined;
@@ -181,7 +192,7 @@ export function DownloadSection({ assets, disabled, firstRun, actions }: { asset
     <div className={`section-label${firstRun ? ' first' : ''}`}>Download<span className="sp"/></div>
     <div className="grid">{models.map(model => <DownloadCard key={model.id} model={model} job={jobFor(model.id)} present={presentPath(model, assets)} blocked={busy} disabled={disabled || removing.includes(model.id)} onDownload={() => void open(model.id, false)} onPause={() => void actions.pause(model.id).catch(fail)} onResume={() => void open(model.id, true)} onDelete={() => setConfirmId(model.id)}/>)}</div>
     <p className="help">Each model downloads into a folder of its own. Models already on this machine are marked instead of offered again.</p>
-    {dialog && selected && <DownloadDialog model={selected} job={jobFor(selected.id)} platform={actions.platform} resume={dialog.resume} measuring={dialog.measuring} starting={dialog.starting} report={dialog.report} source={dialog.source} directory={dialog.directory} freeBytes={dialog.freeBytes} drive={dialog.drive} onClose={() => setDialog(null)} onSource={source => setDialog(current => current ? { ...current, source } : current)} onMeasure={() => void open(selected.id, dialog.resume)} onChangeDirectory={() => void changeDirectory()} onStart={() => void beginDownload(actions, dialog, setDialog, fail, starting)}/>}
+    {dialog && selected && <DownloadDialog model={selected} job={jobFor(selected.id)} platform={actions.platform} resume={dialog.resume} measuring={dialog.measuring} starting={dialog.starting} report={dialog.report} source={dialog.source} directory={dialog.directory} freeBytes={dialog.freeBytes} drive={dialog.drive} onClose={() => setDialog(null)} onSource={source => setDialog(current => current ? { ...current, source } : current)} onMeasure={() => void open(selected.id, dialog.resume, dialog.directory)} onChangeDirectory={() => void changeDownloadDirectory(actions, dialog, setDialog, fail)} onStart={() => void beginDownload(actions, dialog, setDialog, fail, starting)}/>}
     {confirming && <div className="scrim" onClick={event => { if (event.target === event.currentTarget) setConfirmId(null); }}><div className="dialog narrow" role="alertdialog" aria-modal="true"><header><h2>Delete the partial download?</h2><p>{confirming.name} · {decimalGb(confirmingJob?.done_bytes ?? 0)} GB downloaded so far will be removed. Downloading it again starts from the beginning.</p></header><footer><button className="btn" type="button" onClick={() => setConfirmId(null)}>Keep</button><button className="btn danger" type="button" onClick={() => { const id = confirming.id; setConfirmId(null); void removeDownload(actions, id, setRemoving, fail, deleting.current); }}>Delete</button></footer></div></div>}
   </>;
 }
