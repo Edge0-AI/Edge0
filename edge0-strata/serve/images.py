@@ -221,7 +221,16 @@ class ImageGen:
     def run(self, job: dict, cancel: threading.Event | None = None) -> tuple[list[bytes], dict]:
         """Run sd-cli for `job` (parse_request's dict) -> (the PNG files' bytes in order, figures).  The caller holds
         the GPU turn.  ImageJobFailed when sd-cli fails, times out or is cancelled."""
-        work = Path(tempfile.mkdtemp(prefix="job-", dir=self.dir))
+        with tempfile.TemporaryDirectory(prefix="job-", dir=self.dir, ignore_cleanup_errors=True) as directory:
+            try:
+                return self._run(job, cancel, Path(directory))
+            except Exception:
+                self.totals["failed"] += 1
+                raise
+            finally:
+                self.progress = None
+
+    def _run(self, job: dict, cancel: threading.Event | None, work: Path) -> tuple[list[bytes], dict]:
         pattern = str(work / "img_%d.png")
         cmd = sd_cli_args(self.cfg, job, pattern)
         timeout = float(self.cfg.get("timeout_s") or 3600)
@@ -260,24 +269,15 @@ class ImageGen:
                     proc.wait(timeout=30)
                 reader.join(timeout=10)
         secs = time.monotonic() - t0
-        self.progress = None
         log = logf.read_text(encoding="utf-8", errors="replace")
         outs = [work / f"img_{i}.png" for i in range(job["n"])]
-        try:
-            if why or proc.returncode != 0 or not all(p.is_file() for p in outs):
-                self.totals["failed"] += 1
-                tail = "\n".join(log.strip().splitlines()[-12:])
-                what = why or (f"sd-cli exited with code {proc.returncode}" if proc.returncode
-                               else "sd-cli wrote no image")
-                self._say(f"image job failed: {what}\n{tail}")
-                raise ImageJobFailed(f"{what}; the end of its log:\n{tail}")
-            images = [p.read_bytes() for p in outs]
-        finally:
-            for p in work.iterdir():
-                with contextlib.suppress(OSError):
-                    p.unlink()
-            with contextlib.suppress(OSError):
-                work.rmdir()
+        if why or proc.returncode != 0 or not all(p.is_file() for p in outs):
+            tail = "\n".join(log.strip().splitlines()[-12:])
+            what = why or (f"sd-cli exited with code {proc.returncode}" if proc.returncode
+                           else "sd-cli wrote no image")
+            self._say(f"image job failed: {what}\n{tail}")
+            raise ImageJobFailed(f"{what}; the end of its log:\n{tail}")
+        images = [p.read_bytes() for p in outs]
         figures = {"seconds": round(secs, 2), "steps": job["steps"], "n": job["n"],
                    "size": f"{job['width']}x{job['height']}", "seed": job["seed"],
                    "backend": self.cfg.get("backend"), "quant": self.cfg.get("quant")}

@@ -306,6 +306,27 @@ class OverHttp(unittest.TestCase):
         self.assertFalse(self.svc.status["busy"])
         self.assertFalse(self.svc.fifo.locked())
 
+    def test_spawn_failure_cleans_up_the_job_and_allows_retry(self):
+        gen = self.svc.images
+        gen.cfg["exe"] = str(Path(self.tmp.name) / "missing-sd-cli")
+        # Exercise a real OS process-start failure, without the fixture command adapter.
+        with mock.patch.object(images_api, "sd_cli_args", REAL_ARGS):
+            for attempt in range(3):
+                code, body = self.post({"prompt": "x"})
+                self.assertEqual(code, 500, body)
+                self.assertIn("sd-cli did not start", body["error"]["message"])
+                self.assertEqual(list(gen.dir.iterdir()), [])
+                self.assertNotIn("step", gen.status())
+                self.assertEqual(gen.totals["failed"], attempt + 1)
+                self.assertFalse(self.svc.status["busy"])
+                self.assertFalse(self.svc.fifo.locked())
+        gen.cfg["exe"] = str(FAKE)
+        code, body = self.post({"prompt": "retry", "seed": 7})
+        self.assertEqual(code, 200, body)
+        self.assertEqual((gen.totals["failed"], gen.totals["jobs"]), (3, 1))
+        self.assertEqual(list(gen.dir.iterdir()), [])
+        self.assertNotIn("step", gen.status())
+
     def test_listed(self):
         code, data, _ = self.get("/v1/models")
         ids = [m["id"] for m in json.loads(data)["data"]]
