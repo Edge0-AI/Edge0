@@ -34,7 +34,7 @@ def test_origin_lists_the_copied_files():
     assert origin['path'] == 'windows/tools'
     assert set(origin['upstream_sha256']) == FILES
     assert all(len(d) == 64 for d in origin['upstream_sha256'].values())
-    assert set(origin['modifications']) == {'M1', 'M2', 'M3', 'M4'}
+    assert set(origin['modifications']) == {'M1', 'M2', 'M3', 'M4', 'M5'}
     assert FILES <= {p.name for p in CONVERT.iterdir()}
 
 
