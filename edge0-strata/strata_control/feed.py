@@ -25,6 +25,7 @@ import datetime as dt
 import json
 import re
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 
 from strata_control import signing, transfer
 from strata_control.targets import BACKEND_MATRIX, host_platform
@@ -385,11 +386,16 @@ def fetch(source: str, trusted: dict[str, bytes], **guards) -> Feed:
             location = str(path / feed_name())
             if not (path / feed_name()).is_file() and (path / FEED_NAME).is_file():
                 location = str(path / FEED_NAME)                 # a local folder made for the common feed (a test feed, an offline copy)
-    elif transfer.kind_of(source) in ("http", "https") and not source.rsplit("/", 1)[-1].endswith(".json"):
-        location = source.rstrip("/") + "/" + feed_name()
+    signature_location = location + SIGNATURE_SUFFIX
+    if transfer.kind_of(source) in ("http", "https"):
+        parts = urlsplit(source)
+        if not parts.path.endswith(".json"):
+            parts = parts._replace(path=parts.path.rstrip("/") + "/" + feed_name())
+        location = parts.geturl()
+        signature_location = parts._replace(path=parts.path + SIGNATURE_SUFFIX).geturl()
     try:
         payload = transfer.read_small(location)
-        signature = transfer.read_small(location + SIGNATURE_SUFFIX)
+        signature = transfer.read_small(signature_location)
     except transfer.TransferError as exc:
         raise FeedError(f"the update feed could not be read: {exc}", 6) from None
     guards.setdefault("server_now", transfer.server_date())
