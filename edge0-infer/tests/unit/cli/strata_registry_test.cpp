@@ -5,6 +5,8 @@
 #include "tests/support/check.h"
 #include <fstream>
 #include <cstdlib>
+#include <limits>
+#include <cmath>
 #include <random>
 #include <sstream>
 
@@ -112,6 +114,32 @@ int main() {
         if (file["filename"] == "latent_dense_q4.bin") CHECK(file["required"] == "du=q4");
         if (file["filename"] == "model-skeleton.gguf") CHECK(file["required"] == "always");
         if (file["filename"] == "model.json") CHECK(file["required"] == "always" && file["bytes"] == std::string(placeholder).size());
+    }
+
+    // Directory aliases remain usable, but links to an ancestor must not count
+    // the same subtree repeatedly or stop the rest of inspection at ELOOP.
+    {
+        const auto linked = t.path / "linked-model";
+        complete(linked);
+        write(t.path / "shared/nested/weights", "123456789");
+        std::error_code error;
+        fs::create_directory_symlink(t.path / "shared", linked / "mtp/shared", error);
+        if (!error) {
+            fs::create_directory_symlink(t.path / "shared", linked / "mtp/second-alias");
+            fs::create_directory_symlink(linked / "mtp", linked / "mtp/back");
+            fs::create_directory_symlink(t.path / "shared", t.path / "shared/nested/back");
+            const auto inspected = inspect_json(*detect(linked), linked);
+            CHECK(inspected["ok"] == true);
+            for (const auto& file : inspected["files"])
+                if (file["filename"] == "mtp/") CHECK(file["bytes"] == 25);
+            fs::remove(linked / "mtp/back");
+            fs::remove(t.path / "shared/nested/back");
+            const auto acyclic = inspect_json(*detect(linked), linked);
+            for (const auto& file : acyclic["files"])
+                if (file["filename"] == "mtp/") CHECK(file["bytes"] == 25);
+        } else {
+            std::cout << "SKIP directory-cycle fixture: cannot create directory symlinks: " << error.message() << '\n';
+        }
     }
 
     // Devices and model options.
@@ -540,14 +568,14 @@ int main() {
         {"/v1/responses","data: {\"type\":\"response.failed\"}\n\n"},
         {"/v1/messages","data: {\"type\":\"message_stop\"}\n\n"},
         {"/v1/messages","data: {\"type\":\"error\"}\n\n"}}) {
-        Accounting a;a.endpoint=entry.first;std::string pending;
+        Accounting a;a.endpoint=entry.first;SseDecoder pending;
         const std::string partial="data: {\"delta\":\"hello\"}\n\n";
         account_sse(a,pending,partial.data(),partial.size());CHECK(!a.complete);
         for(char c:entry.second)account_sse(a,pending,&c,1);
         CHECK(a.complete);
     }
     {
-        Accounting a;a.endpoint="/v1/responses";std::string pending;
+        Accounting a;a.endpoint="/v1/responses";SseDecoder pending;
         const std::string wire="data: {\"response\":{\"id\":\"resp_seen\"},\"sequence_number\":14}\n\n"
                                "data: {\"sequence_number\":3}\n\n";
         account_sse(a,pending,wire.data(),wire.size());
@@ -555,7 +583,55 @@ int main() {
         const std::string wrong="data: [DONE]\n\n";
         account_sse(a,pending,wrong.data(),wrong.size());CHECK(!a.complete);
     }
+    // Errors are terminal failures even though a streaming response started with HTTP 200.
+    for (const auto& entry : std::vector<std::pair<std::string, std::string>>{
+        {"/v1/chat/completions", R"({"error":{"type":"server_error","message":"engine failed"}})"},
+        {"/v1/messages", R"({"type":"error","error":{"type":"api_error","message":"engine failed"}})"},
+        {"/v1/responses", R"({"type":"response.failed","response":{"status":"failed","error":{"code":"server_error"}}})"}}) {
+        auto multiline = entry.second;
+        multiline.insert(multiline.find(',') + 1, "\ndata: ");
+        for (const auto& data : {entry.second, multiline}) {
+            const std::string wire = "data: " + data + "\n\ndata: [DONE]\n\n";
+            for (std::size_t chunk : {std::size_t(1), std::size_t(7), wire.size()}) {
+                Accounting failed; failed.endpoint = entry.first; SseDecoder pending;
+                for (std::size_t offset = 0; offset < wire.size(); offset += chunk)
+                    account_sse(failed, pending, wire.data() + offset, std::min(chunk, wire.size() - offset));
+                CHECK(failed.complete && pending.empty());
+                CHECK(stop_reason(failed.finish) == "failed");
+                CHECK(failed.error_code == (entry.first == "/v1/messages" ? "api_error" : "server_error"));
+            }
+        }
+    }
+    // A successful Responses object has error:null, which must not change its completion status.
+    for (const auto* value : {R"({"object":"response","status":"completed","error":null})",
+                              R"({"type":"response.completed","response":{"object":"response","status":"completed","error":null}})"}) {
+        Accounting success;
+        account(success, Json::parse(value));
+        CHECK(stop_reason(success.finish) == "end_of_generation");
+    }
     Accounting plain;
+    for (const std::string eol : {"\n", "\r\n", "\r"}) {
+        const auto wire = std::string("\xEF\xBB\xBF") + "data: {" + eol + ": keepalive" + eol + "event: message" + eol +
+            "data: \"choices\":[{\"delta\":{\"content\":\"hello\"}}]," + eol + "data" + eol +
+            "data: \"usage\":{\"prompt_tokens\":7,\"completion_tokens\":1}}" + eol + eol +
+            "data: [DONE]" + eol + eol;
+        for (std::size_t cut = 0; cut <= wire.size(); ++cut) {
+            Accounting a; a.endpoint = "/v1/chat/completions";
+            SseDecoder pending;
+            account_sse(a, pending, wire.data(), cut);
+            account_sse(a, pending, wire.data() + cut, wire.size() - cut);
+            CHECK(a.input_tokens == 7 && a.generated_tokens == 1 && a.streamed_tokens == 1 && a.complete && pending.empty());
+        }
+    }
+    {
+        Accounting a; a.endpoint = "/v1/chat/completions";
+        SseDecoder pending;
+        const std::string data_line = "data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n";
+        account_sse(a, pending, data_line.data(), data_line.size(), 1.0);
+        CHECK(!a.saw_content && !pending.empty());
+        account_sse(a, pending, "\n", 1, 2.0);
+        CHECK(a.streamed_tokens == 1 && a.first_token_seconds == 2.0 && pending.empty());
+    }
     account(plain, Json::parse(R"({"choices":[{"finish_reason":"length"}],"usage":{"prompt_tokens":13,"completion_tokens":14},
         "timings":{"cache_n":3,"prompt_n":10,"prompt_ms":163.3,"prompt_per_second":61.2,"predicted_n":14,"predicted_ms":222.5,"predicted_per_second":62.9}})"));
     CHECK(plain.input_tokens == 13 && plain.generated_tokens == 14 && plain.reused_tokens == 3 && plain.prompt_tokens_read == 10);
@@ -567,7 +643,7 @@ int main() {
                             "data: [DONE]\n\n";
     for (std::size_t split : {std::size_t(1), std::size_t(7), std::size_t(64), sse.size()}) {
         Accounting streamed;
-        std::string pending;
+        SseDecoder pending;
         for (std::size_t i = 0; i < sse.size(); i += split) account_sse(streamed, pending, sse.data() + i, std::min(split, sse.size() - i));
         CHECK(pending.empty() && streamed.finish == "stop" && streamed.input_tokens == 5 && streamed.reused_tokens == 1);
         CHECK(streamed.decode_seconds == 0.02 && streamed.predicted_tokens == 2);
@@ -585,12 +661,82 @@ int main() {
     account(messages_plain, Json::parse(R"({"type":"message","stop_reason":"end_turn",
         "usage":{"input_tokens":1,"output_tokens":50,"cache_creation_input_tokens":67,"cache_read_input_tokens":2}})"));
     CHECK(messages_plain.input_tokens == 70 && messages_plain.generated_tokens == 50 && stop_reason(messages_plain.finish) == "end_of_generation");
+    CHECK(messages_plain.reused_tokens == 2);
     Accounting messages_stream;  // message_start holds the input; message_delta does not replace it
     account(messages_stream, Json::parse(R"({"type":"message_start","message":{"type":"message","stop_reason":null,
         "usage":{"input_tokens":62,"output_tokens":0}}})"));
     account(messages_stream, Json::parse(R"({"type":"message_delta","delta":{"stop_reason":"end_turn"},
         "usage":{"input_tokens":1,"cache_creation_input_tokens":5,"cache_read_input_tokens":0,"output_tokens":42}})"));
     CHECK(messages_stream.input_tokens == 62 && messages_stream.generated_tokens == 42 && stop_reason(messages_stream.finish) == "end_of_generation");
+    CHECK(messages_stream.reused_tokens == 0);
+    // Cache counts can arrive in message_start or the final message_delta, including a reported zero.
+    const std::string cache_sse = "data: {\"type\":\"message_start\",\"message\":{\"type\":\"message\","
+        "\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":3,\"cache_read_input_tokens\":0}}}\n\n"
+        "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},"
+        "\"usage\":{\"input_tokens\":1,\"cache_creation_input_tokens\":1,\"cache_read_input_tokens\":3,\"output_tokens\":2}}\n\n"
+        "data: {\"type\":\"message_stop\"}\n\n";
+    for (std::size_t split : {std::size_t(1), std::size_t(7), cache_sse.size()}) {
+        Accounting cached;cached.endpoint="/v1/messages";SseDecoder pending;
+        for(std::size_t i=0;i<cache_sse.size();i+=split)
+            account_sse(cached,pending,cache_sse.data()+i,std::min(split,cache_sse.size()-i));
+        CHECK(cached.complete && pending.empty() && cached.input_tokens==5 && cached.reused_tokens==3);
+        CHECK(cached.generated_tokens==2 && cached.finish=="end_turn");
+        for(const auto& value:Json::array({nullptr,"3",Json::object()})) {
+            account(cached,Json{{"type","message_delta"},{"usage",{{"cache_read_input_tokens",value}}}});
+            CHECK(cached.reused_tokens==3);
+        }
+        account(cached,Json{{"type","message_delta"},{"usage",{{"cache_read_input_tokens",0}}}});
+        CHECK(cached.reused_tokens==0);
+    }
+    Accounting cache_timing;  // Explicit timing counts still override usage in the same response.
+    account(cache_timing,Json::parse(R"({"type":"message","usage":{"cache_read_input_tokens":2},"timings":{"cache_n":4}})"));
+    CHECK(cache_timing.reused_tokens==4);
+
+    // Responses report cached input tokens in their own usage detail object, without requiring timings.
+    const std::string response_cache_sse = "data: {\"type\":\"response.created\",\"response\":{\"object\":\"response\",\"status\":\"in_progress\",\"usage\":null}}\n\n"
+        "data: {\"type\":\"response.completed\",\"response\":{\"object\":\"response\",\"status\":\"completed\","
+        "\"usage\":{\"input_tokens\":10,\"input_tokens_details\":{\"cached_tokens\":7},\"output_tokens\":3}}}\n\n";
+    for(std::size_t split:{std::size_t(1),std::size_t(7),response_cache_sse.size()}) {
+        Accounting cached;cached.endpoint="/v1/responses";SseDecoder pending;
+        for(std::size_t i=0;i<response_cache_sse.size();i+=split)
+            account_sse(cached,pending,response_cache_sse.data()+i,std::min(split,response_cache_sse.size()-i));
+        CHECK(cached.complete && pending.empty() && cached.input_tokens==10 && cached.reused_tokens==7);
+    }
+    for(const auto& value:Json::array({0,3,nullptr,"3",Json::object()})) {
+        Accounting cached;
+        account(cached,Json{{"object","response"},{"usage",{{"input_tokens_details",{{"cached_tokens",value}}}}}});
+        CHECK(value.is_number_integer() ? cached.reused_tokens==value.get<std::int64_t>() : !cached.reused_tokens);
+    }
+    Accounting response_timing;
+    account(response_timing,Json::parse(R"({"type":"response.completed","timings":{"cache_n":4},
+        "response":{"object":"response","usage":{"input_tokens_details":{"cached_tokens":2}}}})"));
+    CHECK(response_timing.reused_tokens==4);
+
+    // Token counts are nonnegative int64 integers; malformed later reports must not replace a valid count.
+    for (const auto& invalid : {Json(-1), Json(1.5), Json(1.0), Json(1e100),
+                               Json(std::numeric_limits<std::uint64_t>::max()), Json(true)}) {
+        Accounting counts;
+        account(counts, Json{{"usage", {{"prompt_tokens", invalid}, {"completion_tokens", invalid},
+                                       {"prompt_tokens_details", {{"cached_tokens", invalid}}}}},
+                             {"timings", {{"cache_n", invalid}, {"prompt_n", invalid}, {"predicted_n", invalid}}}});
+        CHECK(!counts.input_tokens && !counts.generated_tokens && !counts.reused_tokens &&
+              !counts.prompt_tokens_read && !counts.predicted_tokens);
+        counts.input_tokens = 7;
+        account(counts, Json{{"usage", {{"input_tokens", invalid}}}});
+        CHECK(counts.input_tokens == 7);
+    }
+    const auto maximum_count = std::numeric_limits<std::int64_t>::max();
+    Accounting boundary_counts;
+    account(boundary_counts, Json{{"usage", {{"prompt_tokens", maximum_count}, {"completion_tokens", 0}}}});
+    CHECK(boundary_counts.input_tokens == maximum_count && boundary_counts.generated_tokens == 0);
+    Accounting overflowing_message;
+    account(overflowing_message, Json{{"type", "message"},
+                                     {"usage", {{"input_tokens", maximum_count}, {"cache_read_input_tokens", 1}}}});
+    CHECK(!overflowing_message.input_tokens);
+    account(overflowing_message, Json{{"type", "message"},
+                                     {"usage", {{"input_tokens", maximum_count - 2}, {"cache_creation_input_tokens", 1},
+                                                {"cache_read_input_tokens", 1}}}});
+    CHECK(overflowing_message.input_tokens == maximum_count);
     // Fields of the wrong type count as missing; nothing throws.
     for (const char* text : {R"({"object":null,"status":"completed"})", R"({"object":5,"status":"completed"})",
                              R"({"object":"response","status":null})", R"({"object":"response","status":5})",
@@ -613,7 +759,7 @@ int main() {
     CHECK(both.input_tokens == 13);
     // A malformed event in a stream is skipped; the events around it still count.
     Accounting skipping;
-    std::string tail;
+    SseDecoder tail;
     const std::string events = "data: {\"usage\":{\"prompt_tokens\":5}}\n\ndata: {\"object\":null}\n\ndata: {\"choices\":[{\"finish_reason\":\"stop\"}]}\n\n";
     account_sse(skipping, tail, events.data(), events.size());
     CHECK(skipping.input_tokens == 5 && skipping.finish == "stop" && tail.empty());
@@ -691,7 +837,7 @@ int main() {
             for (std::string line; std::getline(lines, line); offset += line.size() + 1)
                 if (line.rfind("data: {", 0) == 0) {
                     const auto n = content_fragments(Json::parse(line.substr(6)));
-                    if (n && first_line_end == std::string::npos) first_line_end = offset + line.size();
+                    if (n && first_line_end == std::string::npos) first_line_end = offset + line.size() + 1;
                     counted += n;
                 }
         }
@@ -700,7 +846,7 @@ int main() {
         // Cut at every byte: two chunks, the first arriving at 1 s and the second at 2 s.
         for (std::size_t cut = 0; cut <= c.sse.size(); ++cut) {
             Accounting a;
-            std::string pending;
+            SseDecoder pending;
             account_sse(a, pending, c.sse.data(), cut, 1.0);
             account_sse(a, pending, c.sse.data() + cut, c.sse.size() - cut, 2.0);
             CHECK(pending.empty() && a.saw_content && a.streamed_tokens == c.fragments);
@@ -710,7 +856,7 @@ int main() {
         // Fixed chunk sizes; the n-th chunk arrives at n s.
         for (std::size_t split : {std::size_t(1), std::size_t(7), std::size_t(64), c.sse.size()}) {
             Accounting a;
-            std::string pending;
+            SseDecoder pending;
             for (std::size_t i = 0; i < c.sse.size(); i += split)
                 account_sse(a, pending, c.sse.data() + i, std::min(split, c.sse.size() - i), double(i / split + 1));
             CHECK(pending.empty() && a.streamed_tokens == c.fragments);
@@ -781,6 +927,49 @@ int main() {
     CHECK(status["memory"]["ledger"].is_null() && status["memory"]["resident"].is_null() && status["memory"]["physical"].is_null());
     CHECK(status["system"]["memory"]["total"]["bytes"] == 8LL * 1073741824 && status["system"]["memory"]["available"]["bytes"] == 6LL * 1073741824);
     CHECK(status["system"]["memory"]["total"]["source"] == "edge0-strata" && status["system"]["thermal"]["state"].is_null());
+    for (const auto& invalid : {Json(-1.0), Json(1e100), Json(true), Json(nullptr)}) {
+        auto malformed = input;
+        malformed.external["machine"]["ram"] = {{"total_gib", invalid}, {"used_gib", 0}};
+        malformed.external["machine"]["gpu"] = {{"total_mib", invalid}, {"used_mib", 0}};
+        const auto invalid_total = status_json(malformed);
+        CHECK(invalid_total["system"]["memory"]["total"]["bytes"].is_null());
+        CHECK(invalid_total["system"]["memory"]["available"]["bytes"].is_null());
+        CHECK(invalid_total["engine"]["devices"][0]["memory_total_bytes"].is_null());
+        CHECK(invalid_total["engine"]["devices"][0]["memory_free_bytes"].is_null());
+        malformed.external["machine"]["ram"] = {{"total_gib", 8}, {"used_gib", invalid}};
+        malformed.external["machine"]["gpu"] = {{"total_mib", 8}, {"used_mib", invalid}};
+        const auto invalid_used = status_json(malformed);
+        CHECK(invalid_used["system"]["memory"]["total"]["bytes"] == 8LL * 1073741824);
+        CHECK(invalid_used["system"]["memory"]["available"]["bytes"].is_null());
+        CHECK(invalid_used["engine"]["devices"][0]["memory_free_bytes"].is_null());
+    }
+    auto memory_boundary = input;
+    memory_boundary.external["machine"]["ram"] = {{"total_gib", 1}, {"used_gib", 2}};
+    memory_boundary.external["machine"]["gpu"] = {{"total_mib", 1}, {"used_mib", 2}};
+    auto memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["available"]["bytes"].is_null());
+    CHECK(!memory_status["system"]["memory"]["available"]["reason"].get<std::string>().empty());
+    CHECK(memory_status["engine"]["devices"][0]["memory_free_bytes"].is_null());
+    memory_boundary.external["machine"]["ram"] = {{"total_gib", 1.1}, {"used_gib", 0.9}};
+    memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["available"]["bytes"] == 214748364);
+    for (double fraction : {0.0, 1.5}) {
+        memory_boundary.external["machine"]["ram"] = {{"total_gib", fraction}, {"used_gib", 0}};
+        memory_boundary.external["machine"]["gpu"] = {{"total_mib", fraction}, {"used_mib", 0}};
+        memory_status = status_json(memory_boundary);
+        CHECK(memory_status["system"]["memory"]["available"]["bytes"] == static_cast<std::int64_t>(fraction * 1073741824));
+        CHECK(memory_status["engine"]["devices"][0]["memory_free_bytes"] == static_cast<std::int64_t>(fraction * 1048576));
+    }
+    memory_boundary.external["machine"]["ram"] = {{"total_gib", 0x1p33}, {"used_gib", 0}};
+    memory_boundary.external["machine"]["gpu"] = {{"total_mib", 0x1p43}, {"used_mib", 0}};
+    memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["total"]["bytes"].is_null());
+    CHECK(memory_status["engine"]["devices"][0]["memory_total_bytes"].is_null());
+    memory_boundary.external["machine"]["ram"]["total_gib"] = std::nextafter(0x1p33, 0.0);
+    memory_boundary.external["machine"]["gpu"]["total_mib"] = std::nextafter(0x1p43, 0.0);
+    memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["total"]["bytes"] == 9223372036854774784LL);
+    CHECK(memory_status["engine"]["devices"][0]["memory_total_bytes"] == 9223372036854774784LL);
     CHECK(status["current"]["endpoint"] == "/v1/messages" && status["current"]["elapsed_seconds"] >= 2.0 && status["current"]["phase"].is_null());
     CHECK(status["totals"]["requests"] == 2 && status["totals"]["computed_tokens"].is_null() && status["totals"]["continued_turns"].is_null());
     CHECK(std::abs(status["totals"]["prefill_tokens_per_second"].get<double>() - 10 / 0.1633) < 1e-9);
@@ -800,7 +989,7 @@ int main() {
     // A stream before its first text fragment: prefill; Messages already carries the input count.
     Accounting opening;
     opening.streaming = true;
-    std::string opening_pending;
+    SseDecoder opening_pending;
     const auto& messages_sse = live_cases[2].sse;
     const auto first_event = messages_sse.substr(0, messages_sse.find("\n\n") + 2);
     account_sse(opening, opening_pending, first_event.data(), first_event.size(), 0.5);
