@@ -4856,7 +4856,7 @@ class Service:
         if not s and not effort:
             return req
         req = dict(req)
-        if "max_tokens" in s and not req.get("max_tokens") and not req.get("max_completion_tokens"):
+        if "max_tokens" in s and req.get("max_tokens") is None and req.get("max_completion_tokens") is None:
             req["max_tokens"] = s["max_tokens"]
         if effort:
             if api == "openai":
@@ -7840,7 +7840,8 @@ def make_handler(svc: Service):
             if validator is not None and (tools or req.get("strata_mcp")):
                 raise ValueError("structured response_format with tools/MCP is not supported")
             svc.load()
-            max_req = max_new = int(req.get("max_completion_tokens") or req.get("max_tokens") or 0)   # 0/-1: the rest
+            cap = req.get("max_completion_tokens")
+            max_req = max_new = int(req.get("max_tokens") or 0) if cap is None else int(cap)  # 0/-1: the rest
             # No cap of our own on the reply's length when logprobs are asked for: the reply is already bounded by
             # max_tokens (by the rest of the context when it is not sent), which is the only bound OpenAI and vLLM
             # put on it either.  A reply that is not streamed does hold every entry (its token, bytes and up to 20

@@ -126,6 +126,36 @@ class MaxTokens(unittest.TestCase):
                     self.assertEqual(self.engine.last_max_new, CTX - CTX_SLACK - pt)
                     self.assertGreater(ct, 1024)          # the whole answer, not cut at the old 1024 fallback
 
+    def test_explicit_zero_caps_win_over_shared_defaults(self):
+        cases = [("openai", {"max_tokens": 0}), ("openai", {"max_completion_tokens": 0}),
+                 ("openai", {"max_completion_tokens": 0, "max_tokens": 11}),
+                 ("anthropic", {"max_tokens": 0}), ("responses", {"max_tokens": 0})]
+        try:
+            for shared in (None, {"max_tokens": 4}):
+                code, body = self.post("/settings", {"defaults": shared})
+                self.assertEqual(code, 200, body)
+                for api, budget in cases:
+                    with self.subTest(shared=shared, api=api, budget=budget):
+                        code, body, prompt, output = self.call_any(api, **budget)
+                        self.assertEqual(code, 200, body)
+                        self.assertEqual(self.engine.last_max_new, CTX - CTX_SLACK - prompt)
+                        self.assertGreater(output, 1024)
+        finally:
+            self.svc.set_shared(None)
+
+    def test_shared_cap_still_fills_absent_and_null_caps(self):
+        try:
+            self.assertEqual(self.post("/settings", {"defaults": {"max_tokens": 4}})[0], 200)
+            for api in ("openai", "anthropic", "responses"):
+                for budget, expected in (({}, 4), ({"max_tokens": None}, 4), ({"max_tokens": 11}, 11)):
+                    with self.subTest(api=api, budget=budget):
+                        code, body, _, output = self.call_any(api, **budget)
+                        self.assertEqual(code, 200, body)
+                        self.assertEqual(self.engine.last_max_new, expected)
+                        self.assertEqual(output, expected)
+        finally:
+            self.svc.set_shared(None)
+
     def test_explicit_budget_is_honoured(self):
         for api, budget in [("openai", {"max_tokens": 50}), ("openai", {"max_completion_tokens": 50}),
                             ("openai", {"max_completion_tokens": 50, "max_tokens": 9}),
