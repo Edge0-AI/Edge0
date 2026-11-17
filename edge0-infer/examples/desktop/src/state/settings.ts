@@ -2,6 +2,9 @@ export interface PartialDownload { id: string; directory: string; }
 export interface Settings { executable: string; assets: string[]; device: string; prefill_device: string; port: number | null; theme: 'system' | 'light' | 'dark'; generation_style: 'precise' | 'balanced' | 'creative'; system_prompt: string; lan_access: boolean; download_directory: string; partial_downloads: PartialDownload[]; }
 export const defaultSettings: Settings = { executable: '', assets: [], device: 'cpu', prefill_device: '', port: null, theme: 'system', generation_style: 'precise', system_prompt: '', lan_access: false, download_directory: '', partial_downloads: [] };
 export const temperatures = { precise: 0.2, balanced: 0.7, creative: 1.0 } as const;
+export function engineSettingsChanged(running: Settings, saved: Settings): boolean {
+  return (['executable', 'device', 'prefill_device', 'port'] as const).some(field => running[field] !== saved[field]);
+}
 export function generateToken(random: Pick<Crypto, 'getRandomValues'> = crypto): string {
   const bytes = random.getRandomValues(new Uint8Array(32));
   return 'e0_sk_' + btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');

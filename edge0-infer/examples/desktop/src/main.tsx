@@ -12,7 +12,7 @@ import { Status } from './pages/Status';
 import { DeleteConversation } from './Workspace';
 import { Service, type Health } from './pages/Service';
 import { Settings as SettingsPage } from './pages/Settings';
-import { defaultSettings, generateToken, temperatures, type Settings } from './state/settings';
+import { defaultSettings, engineSettingsChanged, generateToken, temperatures, type Settings } from './state/settings';
 import { groupHistory, newConversation, editAndResend, regenerate, finishGeneration, title, type Archive, type Conversation } from './state/history';
 import { aggregateTotals, emptyTotals, observeTotals, resetTotals, type SavedTotals } from './state/totals';
 import { usePolling } from './state/polling';
@@ -62,8 +62,9 @@ export function App() {
   const [token, setToken] = useState(''), [portText, setPortText] = useState('');
   const [initializing, setInitializing] = useState(true), [loading, setLoading] = useState(false), [error, setError] = useState('');
   const runtimeSettings = useRef<Settings | null>(null);
+  const persistedSettings = useRef(defaultSettings), settingsNeedApply = useRef(false);
   const controller = useRef<AbortController | null>(null), serviceEpoch = useRef(0), persistence = useRef(new WriteQueue());
-  const settingsWrites = useRef(new SettingsWrites<SettingsUpdate>(update => persistence.current.enqueue(() => invoke<void>('save_settings', { ...update }))));
+  const settingsWrites = useRef(new SettingsWrites<SettingsUpdate>(update => persistence.current.enqueue(async () => { await invoke<void>('save_settings', { ...update }); persistedSettings.current = update.settings; })));
   const archiveWrites = useRef(new ArchiveWrites<Conversation>(persistence.current, conversation => invoke<void>('save_conversation', { id: conversation.id, conversation }), id => invoke<void>('delete_conversation', { id })));
   const [deleting, setDeleting] = useState(false), deletingRef = useRef(false);
   const busy = phase !== 'idle', disabled = busy || loading || initializing || deleting;
@@ -107,7 +108,13 @@ export function App() {
     const timer = setInterval(() => { void invoke<{ running: boolean; detail: string }>('service_status').then(next => { if (!cancelled && epoch === serviceEpoch.current && !next.running) { controller.current?.abort(); serviceEpoch.current++; setService(undefined); setModel(undefined); setError(explainFailure(`The model service exited. ${next.detail}`, service.memory_warning ?? '')); } }).catch(report); }, 1500);
     return () => { cancelled = true; clearInterval(timer); };
   }, [service]);
-  async function stopService() { if (busy) return; serviceEpoch.current++; setLoading(true); try { await invoke('stop_service'); setService(undefined); setModel(undefined); setStatus(previous => previous ? { ...previous, current: null } : undefined); } catch (failure) { report(failure); } finally { setLoading(false); } }
+  async function stopService() { if (controller.current) return; serviceEpoch.current++; setLoading(true); try { await invoke('stop_service'); runtimeSettings.current = null; setService(undefined); setModel(undefined); setStatus(previous => previous ? { ...previous, current: null } : undefined); } catch (failure) { report(failure); } finally { setLoading(false); } }
+  async function applySavedSettings() {
+    if (!settingsNeedApply.current || controller.current) return;
+    settingsNeedApply.current = false;
+    if (runtimeSettings.current && engineSettingsChanged(runtimeSettings.current, persistedSettings.current)) await stopService();
+  }
+  function settingsSaved() { settingsNeedApply.current = true; return applySavedSettings(); }
   async function ensureToken() { const current = tokenRef.current || generateToken(); if (!tokenRef.current) { await invoke('write_api_token', { token: current }); tokenRef.current = current; setToken(current); } return current; }
   async function select(path: string, restore?: Conversation, nextSettings = settingsRef.current) {
     if (controller.current || busy || initializing || deletingRef.current) return;
@@ -126,7 +133,7 @@ export function App() {
       const loadedEpoch = serviceEpoch.current; void fetch(started.url + '/status').then(r => r.ok ? r.json() as Promise<EngineStatus> : undefined).then(next => { if (next && loadedEpoch === serviceEpoch.current) setStatus(next); }).catch(() => undefined);
       changeConversation(restore ?? newConversation(nextSettings.system_prompt, selected.capabilities.thinking && selected.capabilities.thinking_default, path)); setDraft(''); setPage('chat');
     } catch (failure) { if (!abort.signal.aborted) report(failure); await invoke('stop_service').catch(report); }
-    finally { controller.current = null; setLoading(false); }
+    finally { controller.current = null; setLoading(false); await applySavedSettings(); }
   }
   async function generate(history: Message[], replacing = false) {
     if (!service || !model || busy || loading || initializing || controller.current || deletingRef.current) return;
@@ -140,16 +147,16 @@ export function App() {
     }); } catch (failure) { failed = true; if (!abort.signal.aborted) setError(explainFailure(failure, memoryWarning)); }
     finally {
       if (conversationRef.current.id === id) { const next = finishGeneration(base, conversationRef.current, { failed, stopped: abort.signal.aborted, replacing }); changeConversation(next); remember(next); }
-      controller.current = null; setPhase('idle');
+      controller.current = null; setPhase('idle'); await applySavedSettings();
     }
   }
   function send(text: string) { if (text.trim()) void generate([...conversationRef.current.messages, { role: 'user', content: text.trim() }]); }
   function stop() { if (loading) { controller.current?.abort(); void invoke('stop_service').catch(report); return; } if (phase !== 'generating' || !controller.current) return; flushSync(() => setPhase('stopping')); controller.current.abort(); }
   async function copy(text: string) { try { await navigator.clipboard.writeText(text); } catch { setError('Clipboard access was denied by the WebView.'); } }
-  async function saveSettings(next: Settings) { await settingsWrites.current.commit({ settings: next, previousAssets: [...settingsRef.current.assets] }); }
+  async function saveSettings(next: Settings) { await settingsWrites.current.commit({ settings: next, previousAssets: [...settingsRef.current.assets] }); await settingsSaved(); }
   function updateSettings(next: Settings) {
-    const previous = runtimeSettings.current; setSettings(next); settingsRef.current = next;
-    settingsWrites.current.schedule({ settings: next, previousAssets: [...next.assets] }, async () => { if (previous && (previous.executable !== next.executable || previous.device !== next.device || previous.prefill_device !== next.prefill_device || previous.port !== next.port)) await stopService(); }, report);
+    setSettings(next); settingsRef.current = next;
+    settingsWrites.current.schedule({ settings: next, previousAssets: [...next.assets] }, settingsSaved, report);
   }
   async function deleteArchive(id: string) {
     if (disabled || deletingRef.current) return;
