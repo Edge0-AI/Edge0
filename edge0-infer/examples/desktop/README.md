@@ -154,18 +154,19 @@ Windows checklist below. App tests are independent of the engine's ctest suite.
 ## Assets and first launch
 
 Prepare assets using the [asset guide](../../docs/getting-started.md#get-a-model).
-Build `edge0-infer` using the [build guide](../../docs/getting-started.md) and
-enter its full path under Settings > Engine > Executable, or pick it with Browse….
-With no executable configured, the app uses the `edge0-infer` that a release
-package ships with it: beside its own executable, or in `Contents/Resources` of
-the macOS app bundle. That path is used for the current run only and is not
-written to the settings file. If the configured file has been moved or deleted
-and the package ships an `edge0-infer`, the app uses the shipped one for that run
-and leaves the settings file unchanged. Saving other settings keeps the
-configured path as it is in the settings file, so a path that is missing for now
-(an unplugged drive) is used again once the file is back. Otherwise, loading or saving reports that
-no executable is configured or that the configured file was not found, and points
-to Settings > Engine > Executable.
+Settings > Engine > Executable has two choices. **Built-in** (the default) uses the
+`edge0-infer` that a release package ships with the app: beside its own executable,
+or in `Contents/Resources` of the macOS app bundle. No path is shown or written to
+the settings file. A build without a shipped `edge0-infer` (a development build)
+reports that it has none and points to Custom. **Custom** uses an `edge0-infer` you
+choose: build it with the [build guide](../../docs/getting-started.md), then enter
+its full path or pick it with Browse…. Only Custom writes the path to the settings
+file. A Custom path that is missing for now (an unplugged drive) stays as it is and
+is reported when the app loads a model; it is used again once the file is back.
+The settings file carries `settings_version`. A file without it was written by
+version 0.3.0 or earlier: the app clears its executable path, sets Built-in and
+writes the version once, and keeps the file as it was in
+`settings.json.before-engine-source` beside it.
 Until a model is loaded, the chat page shows a Choose a model button that opens the
 model page. Its header has Refresh, which inspects the scan locations again, and
 Add location, which opens a folder chooser and adds the chosen folder as a scan

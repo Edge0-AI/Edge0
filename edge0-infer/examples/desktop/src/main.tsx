@@ -140,10 +140,13 @@ export function App() {
   function send(text: string) { if (text.trim()) void generate([...conversationRef.current.messages, { role: 'user', content: text.trim() }]); }
   function stop() { if (loading) { controller.current?.abort(); void invoke('stop_service').catch(report); return; } if (phase !== 'generating' || !controller.current) return; flushSync(() => setPhase('stopping')); controller.current.abort(); }
   async function copy(text: string) { try { await navigator.clipboard.writeText(text); } catch { setError('Clipboard access was denied by the WebView.'); } }
+  // Built-in chosen on the page: the backend knows the app's own edge0-infer (Settings > Engine and the Service
+  // page's check read `executable`); take it from what it returns, keeping every other field the page holds.
+  async function refillBuiltIn() { const stored = await invoke<Settings>('load_settings'); if (settingsRef.current.engine_source !== 'builtin' || !stored.executable) return; const merged = { ...settingsRef.current, executable: stored.executable }; settingsRef.current = merged; setSettings(merged); }
   async function saveSettings(next: Settings) { await settingsWrites.current.commit(next); }
   function updateSettings(next: Settings) {
     const previous = runtimeSettings.current; setSettings(next); settingsRef.current = next;
-    settingsWrites.current.schedule(next, async () => { if (previous && (previous.executable !== next.executable || previous.device !== next.device || previous.prefill_device !== next.prefill_device || previous.port !== next.port)) await stopService(); }, report);
+    settingsWrites.current.schedule(next, async () => { if (next.engine_source === 'builtin' && !next.executable) await refillBuiltIn(); if (previous && (previous.engine_source !== next.engine_source || (next.engine_source === 'custom' && previous.executable !== next.executable) || previous.device !== next.device || previous.prefill_device !== next.prefill_device || previous.port !== next.port)) await stopService(); }, report);
   }
   async function deleteArchive(id: string) {
     if (disabled || deletingRef.current) return;

@@ -30,9 +30,18 @@ fn trace(message: &str) {
 pub fn trace_line(message: &str) {
     trace(message);
 }
+/// The settings format this build writes (`settings_version`). A file without it was written by 0.3.0 or
+/// earlier and is migrated once when it is read (`Manager::load_settings_unlocked`).
+pub const SETTINGS_VERSION: u32 = 1;
+/// Where the engine comes from: the edge0-infer shipped with this app (no path is stored) or a path the user chose.
+pub const ENGINE_BUILTIN: &str = "builtin";
+pub const ENGINE_CUSTOM: &str = "custom";
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Settings {
+    /// `builtin` or `custom`.
+    pub engine_source: String,
+    /// The edge0-infer of `custom`; saved only then. `settings` fills in the built-in one for `builtin`, in memory.
     pub executable: String,
     pub assets: Vec<String>,
     pub device: String,
@@ -50,6 +59,9 @@ pub struct Settings {
     /// Unfinished `<folder>.partial` directories. The Settings page does not show them.
     #[serde(default)]
     pub partial_downloads: Vec<PartialDownload>,
+    /// The format of the file; missing (0) in files written by 0.3.0 and earlier.
+    #[serde(default)]
+    pub settings_version: u32,
 }
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct PartialDownload {
@@ -59,6 +71,7 @@ pub struct PartialDownload {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            engine_source: ENGINE_BUILTIN.into(),
             executable: String::new(),
             assets: vec![],
             device: platform::default_device().into(),
@@ -70,12 +83,13 @@ impl Default for Settings {
             lan_access: false,
             download_directory: String::new(),
             partial_downloads: vec![],
+            settings_version: SETTINGS_VERSION,
         }
     }
 }
 impl Settings {
     fn validate(&self) -> Result<(), String> {
-        const WHERE: &str = "Set it under Settings > Engine > Executable.";
+        const WHERE: &str = "Choose Custom under Settings > Engine and select an edge0-infer executable, or use Built-in.";
         if self.executable.trim().is_empty() {
             return Err(format!("No edge0-infer executable is configured. {WHERE}"));
         }
@@ -88,6 +102,9 @@ impl Settings {
         self.validate_options()
     }
     fn validate_options(&self) -> Result<(), String> {
+        if ![ENGINE_BUILTIN, ENGINE_CUSTOM].contains(&self.engine_source.as_str()) {
+            return Err("Unknown engine source".into());
+        }
         if !["cpu", "metal", "vulkan"].contains(&self.device.as_str())
             || !["", "cpu", "metal", "vulkan"].contains(&self.prefill_device.as_str())
         {
@@ -340,29 +357,59 @@ impl Manager {
     pub(crate) fn record_path(&self) -> PathBuf {
         self.directory.join("serve-pid.json")
     }
+    /// Reads `settings.json`. A file without `settings_version` was written by 0.3.0 or earlier, whose
+    /// `executable` may be a path an older app found by itself (an older package's edge0-infer): it is migrated
+    /// once, whatever the path is - `executable` cleared, the engine source set to Built-in, the version written -
+    /// and the file as it was is kept beside it as `settings.json.before-engine-source`.
     fn load_settings_unlocked(&self) -> Result<Settings, String> {
         let path = self.directory.join("settings.json");
-        if path.exists() {
-            serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
-                .map_err(|e| format!("Cannot read settings: {e}"))
-        } else {
-            Ok(Settings::default())
+        if !path.exists() {
+            return Ok(Settings::default());
         }
+        let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+        let mut settings: Settings =
+            serde_json::from_slice(&bytes).map_err(|e| format!("Cannot read settings: {e}"))?;
+        if settings.settings_version < SETTINGS_VERSION {
+            fs::write(
+                self.directory.join("settings.json.before-engine-source"),
+                &bytes,
+            )
+            .map_err(|e| format!("Cannot keep the old settings: {e}"))?;
+            settings.executable.clear();
+            settings.engine_source = ENGINE_BUILTIN.into();
+            settings.settings_version = SETTINGS_VERSION;
+            self.store_settings_unlocked(&settings)?;
+            trace("settings: migrated a file without settings_version to the built-in engine");
+        }
+        Ok(settings)
     }
     fn store_settings_unlocked(&self, settings: &Settings) -> Result<(), String> {
         write_json(&self.directory.join("settings.json"), settings)
     }
-    /// No executable chosen, or the chosen file is gone: use the edge0-infer that the release package ships
-    /// with this app, in memory only. Without a bundled one the setting is left as it is, so validation
-    /// reports it.
+    /// Built-in: the edge0-infer that the release package ships with this app, in memory only (never saved).
+    /// Without one (a development build) `executable` is left empty and `resolve` reports it. Custom: as saved.
     fn fill_executable(&self, settings: &mut Settings) {
-        let usable =
-            !settings.executable.trim().is_empty() && Path::new(&settings.executable).is_file();
-        if !usable {
-            if let Some(found) = &self.bundled {
-                settings.executable = found.clone();
+        if settings.engine_source != ENGINE_CUSTOM {
+            settings.executable = self.bundled.clone().unwrap_or_default();
+        }
+    }
+    /// The settings to start or inspect with: the engine of their source, checked.
+    fn resolve(&self, settings: &Settings) -> Result<Settings, String> {
+        let mut resolved = settings.clone();
+        if resolved.engine_source != ENGINE_CUSTOM {
+            match &self.bundled {
+                Some(found) => resolved.executable = found.clone(),
+                None => {
+                    return Err(
+                        "This build of the app has no built-in edge0-infer. Choose Custom under \
+                                Settings > Engine and select an edge0-infer executable."
+                            .into(),
+                    )
+                }
             }
         }
+        resolved.validate()?;
+        Ok(resolved)
     }
     pub fn settings(&self) -> Result<Settings, String> {
         let _guard = self.settings_lock.lock().map_err(|e| e.to_string())?;
@@ -388,23 +435,19 @@ impl Manager {
         // updated these fields. Keep the on-disk download bookkeeping.
         settings.download_directory = existing.download_directory.clone();
         settings.partial_downloads = existing.partial_downloads.clone();
-        // The page saves back the whole object `settings` returned, so `executable` may be the path filled in
-        // for this run only. Unless the page changed it, keep the value in the file: the bundled path is never
-        // written, and a chosen path that is missing for now (an unplugged drive) stays for when it comes back.
-        let mut filled = existing.clone();
-        self.fill_executable(&mut filled);
-        // The bundled path counts as unchanged even when the chosen file has come back since the page loaded it.
-        let unchanged = settings.executable == existing.executable
-            || settings.executable == filled.executable
-            || self.bundled.as_deref() == Some(settings.executable.as_str());
-        if unchanged {
-            settings.executable = existing.executable.clone();
-        }
+        settings.settings_version = SETTINGS_VERSION;
         settings.validate_options()?;
-        // A kept value that this run replaces with the bundled engine is not checked again.
-        let replaced_for_this_run = unchanged && filled.executable != existing.executable;
-        if !settings.executable.is_empty() && !replaced_for_this_run {
-            settings.validate()?;
+        // Only Custom stores a path. Built-in stores none (the page holds the path `settings` filled in for this
+        // run). A Custom path that is unchanged stays even when it is missing for now (an unplugged drive); a new
+        // one must exist.
+        if settings.engine_source == ENGINE_CUSTOM {
+            let unchanged = existing.engine_source == ENGINE_CUSTOM
+                && settings.executable == existing.executable;
+            if !settings.executable.is_empty() && !unchanged {
+                settings.validate()?;
+            }
+        } else {
+            settings.executable.clear();
         }
         if !["system", "light", "dark"].contains(&settings.theme.as_str())
             || !["precise", "balanced", "creative"].contains(&settings.generation_style.as_str())
@@ -505,7 +548,7 @@ impl Manager {
         Ok(())
     }
     pub fn inspect(&self, settings: &Settings) -> Result<Vec<Inspection>, String> {
-        settings.validate()?;
+        let settings = &self.resolve(settings)?;
         let executable = Path::new(&settings.executable)
             .canonicalize()
             .map_err(|e| e.to_string())?;
@@ -628,7 +671,7 @@ impl Manager {
         if self.closing.load(Ordering::SeqCst) {
             return Err("The application is shutting down".into());
         }
-        settings.validate().map_err(|e| {
+        let settings = &self.resolve(settings).map_err(|e| {
             trace(&format!("validate failed: {e}"));
             e
         })?;
@@ -1274,6 +1317,7 @@ mod tests {
             assert!(status.success());
             let manager = Arc::new(Manager::new(directory.join("config")).unwrap());
             let settings = Settings {
+                engine_source: ENGINE_CUSTOM.into(),
                 executable: executable.to_string_lossy().into(),
                 assets: ["ready", "second", "pending", "error", "missing"]
                     .map(str::to_string)
@@ -1775,119 +1819,158 @@ mod tests {
     fn settings_on_disk(manager: &Manager) -> Vec<u8> {
         fs::read(manager.directory.join("settings.json")).unwrap()
     }
+    fn disk(manager: &Manager) -> Settings {
+        serde_json::from_slice(&settings_on_disk(manager)).unwrap()
+    }
+    /// A settings.json as 0.3.0 and earlier wrote it: no `settings_version`, no `engine_source`.
+    fn write_old_settings(manager: &Manager, executable: &str) {
+        let mut value = serde_json::to_value(Settings {
+            executable: executable.into(),
+            theme: "dark".into(),
+            ..Settings::default()
+        })
+        .unwrap();
+        let object = value.as_object_mut().unwrap();
+        object.remove("settings_version");
+        object.remove("engine_source");
+        fs::write(
+            manager.directory.join("settings.json"),
+            serde_json::to_vec_pretty(&value).unwrap(),
+        )
+        .unwrap();
+    }
     #[test]
-    fn the_bundled_executable_is_used_but_never_saved() {
+    fn old_settings_are_migrated_once_to_the_built_in_engine() {
         let root = directory();
         let (manager, bundled) = bundled_manager(&root, true);
+        // An older package's edge0-infer that still exists: the path is not looked at.
+        let old = root.join("old-package").join("edge0-infer");
+        fs::create_dir_all(old.parent().unwrap()).unwrap();
+        fs::write(&old, b"").unwrap();
+        write_old_settings(&manager, &old.to_string_lossy());
+        let before = settings_on_disk(&manager);
         let loaded = manager.settings().unwrap();
+        assert_eq!(loaded.engine_source, ENGINE_BUILTIN);
         assert_eq!(Some(loaded.executable.clone()), bundled);
-        // The page saves back the whole object it loaded.
-        manager.save_settings(&loaded).unwrap();
-        let disk: Settings = serde_json::from_slice(&settings_on_disk(&manager)).unwrap();
-        assert!(disk.executable.is_empty());
-        assert_eq!(Some(manager.settings().unwrap().executable), bundled);
-        // A path the user chose is kept.
+        let migrated = disk(&manager);
+        assert!(migrated.executable.is_empty());
+        assert_eq!(migrated.engine_source, ENGINE_BUILTIN);
+        assert_eq!(migrated.settings_version, SETTINGS_VERSION);
+        assert_eq!(migrated.theme, "dark");
+        assert_eq!(
+            fs::read(manager.directory.join("settings.json.before-engine-source")).unwrap(),
+            before
+        );
+        // The engine that starts is the bundled one.
+        assert_eq!(
+            manager.resolve(&loaded).unwrap().executable,
+            bundled.clone().unwrap()
+        );
+        fs::remove_dir_all(&root).unwrap();
+    }
+    #[test]
+    fn settings_with_the_version_are_not_migrated_again() {
+        let root = directory();
+        let (manager, _) = bundled_manager(&root, true);
         let chosen = root.join("chosen-edge0-infer");
         fs::write(&chosen, b"").unwrap();
-        let mut custom = loaded.clone();
+        let custom = Settings {
+            engine_source: ENGINE_CUSTOM.into(),
+            executable: chosen.to_string_lossy().into_owned(),
+            ..Settings::default()
+        };
+        manager.save_settings(&custom).unwrap();
+        let saved = settings_on_disk(&manager);
+        assert_eq!(manager.settings().unwrap().executable, custom.executable);
+        assert_eq!(settings_on_disk(&manager), saved);
+        assert!(!manager
+            .directory
+            .join("settings.json.before-engine-source")
+            .exists());
+        fs::remove_dir_all(&root).unwrap();
+    }
+    #[test]
+    fn custom_is_saved_used_and_kept_while_missing() {
+        let root = directory();
+        let (manager, bundled) = bundled_manager(&root, true);
+        let chosen = root.join("unplugged").join("edge0-infer");
+        fs::create_dir_all(chosen.parent().unwrap()).unwrap();
+        fs::write(&chosen, b"").unwrap();
+        let mut custom = manager.settings().unwrap();
+        custom.engine_source = ENGINE_CUSTOM.into();
         custom.executable = chosen.to_string_lossy().into_owned();
         manager.save_settings(&custom).unwrap();
-        let disk: Settings = serde_json::from_slice(&settings_on_disk(&manager)).unwrap();
-        assert_eq!(disk.executable, custom.executable);
-        assert_eq!(manager.settings().unwrap().executable, custom.executable);
-        fs::remove_dir_all(&root).unwrap();
-    }
-    #[test]
-    fn a_missing_saved_executable_falls_back_to_the_bundled_one_without_rewriting_settings() {
-        let root = directory();
-        let (manager, bundled) = bundled_manager(&root, true);
-        let gone = root.join("moved-away").join("edge0-infer");
-        let saved = Settings {
-            executable: gone.to_string_lossy().into_owned(),
-            ..Settings::default()
-        };
-        write_json(&manager.directory.join("settings.json"), &saved).unwrap();
-        let before = settings_on_disk(&manager);
-        assert_eq!(Some(manager.settings().unwrap().executable), bundled);
-        assert_eq!(settings_on_disk(&manager), before);
-        fs::remove_dir_all(&root).unwrap();
-    }
-    #[test]
-    fn saving_other_settings_keeps_a_missing_chosen_executable() {
-        let root = directory();
-        let (manager, bundled) = bundled_manager(&root, true);
-        let gone = root.join("unplugged").join("edge0-infer");
-        let saved = Settings {
-            executable: gone.to_string_lossy().into_owned(),
-            ..Settings::default()
-        };
-        write_json(&manager.directory.join("settings.json"), &saved).unwrap();
-        // The page holds what `settings` returned (the bundled path), or a copy from before the path went missing.
-        for held in [
-            manager.settings().unwrap(),
-            Settings {
-                theme: "light".into(),
-                ..saved.clone()
-            },
-        ] {
-            assert!(
-                held.executable == saved.executable || Some(&held.executable) == bundled.as_ref()
-            );
-            let mut changed = held;
-            changed.theme = "dark".into();
-            manager.save_settings(&changed).unwrap();
-            let disk: Settings = serde_json::from_slice(&settings_on_disk(&manager)).unwrap();
-            assert_eq!(disk.executable, saved.executable);
-            assert_eq!(disk.theme, "dark");
-            assert_eq!(Some(manager.settings().unwrap().executable), bundled);
-        }
-        // The page loaded the bundled path while the file was missing; the file comes back before it saves.
+        assert_eq!(disk(&manager).executable, custom.executable);
+        assert_eq!(disk(&manager).engine_source, ENGINE_CUSTOM);
+        assert_eq!(
+            manager.resolve(&custom).unwrap().executable,
+            custom.executable
+        );
+        // The file goes away for now: the path stays, it is reported, and the bundled engine is not used instead.
+        fs::remove_file(&chosen).unwrap();
         let held = manager.settings().unwrap();
-        assert_eq!(Some(&held.executable), bundled.as_ref());
-        fs::create_dir_all(gone.parent().unwrap()).unwrap();
-        fs::write(&gone, b"").unwrap();
+        assert_eq!(held.executable, custom.executable);
+        assert_ne!(Some(&held.executable), bundled.as_ref());
+        let message = manager.resolve(&held).unwrap_err();
+        assert!(message.contains("moved or deleted"), "{message}");
         let mut changed = held;
         changed.theme = "light".into();
         manager.save_settings(&changed).unwrap();
-        let disk: Settings = serde_json::from_slice(&settings_on_disk(&manager)).unwrap();
-        assert_eq!(disk.executable, saved.executable);
-        assert_eq!(disk.theme, "light");
-        // Once the file is back it is used again.
-        assert_eq!(manager.settings().unwrap().executable, saved.executable);
-        // Clearing the field on the page does clear it.
-        let mut cleared = manager.settings().unwrap();
-        cleared.executable.clear();
-        manager.save_settings(&cleared).unwrap();
-        let disk: Settings = serde_json::from_slice(&settings_on_disk(&manager)).unwrap();
-        assert!(disk.executable.is_empty());
+        assert_eq!(disk(&manager).executable, custom.executable);
+        assert_eq!(disk(&manager).theme, "light");
+        // A new path must exist.
+        let mut other = changed.clone();
+        other.executable = root.join("absent").to_string_lossy().into_owned();
+        assert!(manager
+            .save_settings(&other)
+            .unwrap_err()
+            .contains("edge0-infer executable was not found"));
         fs::remove_dir_all(&root).unwrap();
     }
     #[test]
-    fn without_a_bundled_executable_a_missing_one_is_still_reported() {
+    fn built_in_saves_no_path() {
+        let root = directory();
+        let (manager, bundled) = bundled_manager(&root, true);
+        let loaded = manager.settings().unwrap();
+        assert_eq!(loaded.engine_source, ENGINE_BUILTIN);
+        assert_eq!(Some(loaded.executable.clone()), bundled);
+        // The page saves back the whole object it loaded, the filled-in path included.
+        manager.save_settings(&loaded).unwrap();
+        assert!(disk(&manager).executable.is_empty());
+        // Back from Custom to Built-in: the chosen path is dropped.
+        let chosen = root.join("chosen-edge0-infer");
+        fs::write(&chosen, b"").unwrap();
+        let mut custom = loaded.clone();
+        custom.engine_source = ENGINE_CUSTOM.into();
+        custom.executable = chosen.to_string_lossy().into_owned();
+        manager.save_settings(&custom).unwrap();
+        let mut back = manager.settings().unwrap();
+        back.engine_source = ENGINE_BUILTIN.into();
+        manager.save_settings(&back).unwrap();
+        assert!(disk(&manager).executable.is_empty());
+        assert_eq!(Some(manager.settings().unwrap().executable), bundled);
+        let mut unknown = back.clone();
+        unknown.engine_source = "auto".into();
+        assert!(manager
+            .save_settings(&unknown)
+            .unwrap_err()
+            .contains("engine source"));
+        fs::remove_dir_all(&root).unwrap();
+    }
+    #[test]
+    fn built_in_without_a_bundled_engine_is_reported() {
         let root = directory();
         let (manager, bundled) = bundled_manager(&root, false);
         assert_eq!(bundled, None);
-        assert!(manager.settings().unwrap().executable.is_empty());
-        let gone = root.join("moved-away").join("edge0-infer");
-        let saved = Settings {
-            executable: gone.to_string_lossy().into_owned(),
-            ..Settings::default()
-        };
-        write_json(&manager.directory.join("settings.json"), &saved).unwrap();
-        let before = settings_on_disk(&manager);
         let loaded = manager.settings().unwrap();
-        assert_eq!(loaded.executable, saved.executable);
-        assert_eq!(settings_on_disk(&manager), before);
-        let message = loaded.validate().unwrap_err();
-        assert!(message.contains("moved or deleted"), "{message}");
+        assert!(loaded.executable.is_empty());
+        let message = manager.resolve(&loaded).unwrap_err();
+        assert!(message.contains("no built-in edge0-infer"), "{message}");
         assert!(
-            message.contains("Settings > Engine > Executable"),
+            message.contains("Custom under Settings > Engine"),
             "{message}"
         );
-        assert!(manager
-            .save_settings(&loaded)
-            .unwrap_err()
-            .contains("edge0-infer executable was not found"));
+        assert!(manager.start(&loaded, "ready").is_err());
         fs::remove_dir_all(&root).unwrap();
     }
     #[test]
@@ -1902,7 +1985,7 @@ mod tests {
             "{message}"
         );
         assert!(
-            message.contains("Settings > Engine > Executable"),
+            message.contains("Custom under Settings > Engine"),
             "{message}"
         );
         let mut missing = fixture.settings.clone();
