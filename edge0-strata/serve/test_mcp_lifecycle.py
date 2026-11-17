@@ -48,7 +48,44 @@ class StdioOwnership(unittest.TestCase):
         transport.proc.wait(timeout=3)
         transport.close()
 
+    def test_full_stdin_pipe_obeys_request_deadline(self):
+        transport = self.transport("import time; time.sleep(30)")
+        worker, result = captured(lambda: transport.request("tools/call", {"text": "x" * 2**20}, 0.1))
+        worker.join(0.8)
+        done = not worker.is_alive()
+        if not done:
+            self.stop(transport)
+            worker.join(3)
+        self.assertTrue(done, "the request stayed blocked in the child's full stdin pipe")
+        self.assertIsInstance(result.get("error"), McpTimeout, result)
 
+    def test_full_stdin_pipe_obeys_cancellation(self):
+        transport = self.transport("import time; time.sleep(30)")
+        cancel = threading.Event()
+        worker, result = captured(lambda: transport.request("tools/call", {"text": "x" * 2**20}, 30, cancel))
+        time.sleep(0.1)
+        cancel.set()
+        worker.join(0.8)
+        done = not worker.is_alive()
+        if not done:
+            self.stop(transport)
+            worker.join(3)
+        self.assertTrue(done, "cancellation stayed blocked in the child's full stdin pipe")
+        self.assertIsInstance(result.get("error"), McpCancelled, result)
+
+    def test_concurrent_large_requests_preserve_message_boundaries(self):
+        source = """import json, sys
+for line in sys.stdin:
+    msg = json.loads(line)
+    print(json.dumps({'jsonrpc':'2.0','id':msg['id'],'result':{'length':len(msg['params']['text'])}}), flush=True)
+"""
+        transport = self.transport(source)
+        calls = [captured(lambda n=n: transport.request("echo", {"text": "x" * n}, 3))
+                 for n in (100000, 100001, 100002, 100003)]
+        for n, (worker, result) in zip((100000, 100001, 100002, 100003), calls):
+            worker.join(4)
+            self.assertFalse(worker.is_alive())
+            self.assertEqual(result, {"value": {"length": n}})
 
     def test_close_ends_descendant_after_parent_exits_on_eof(self):
         with tempfile.TemporaryDirectory() as directory:

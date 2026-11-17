@@ -24,6 +24,7 @@ import hashlib
 from pathlib import Path
 import json
 import os
+import queue
 import re
 import shutil
 import signal
@@ -87,7 +88,7 @@ class StdioTransport:
         self.name, self.cfg = name, cfg
         self.proc = None
         self.lock = threading.Lock()                    # the pending requests
-        self.write_lock = threading.Lock()              # stdin; separate, so a full pipe can't block the reader
+        self.writes = queue.Queue()                      # one writer owns stdin; callers never wait in pipe.write
         self.pending: dict[int, _Slot] = {}
         self.next_id = 0
         self.closed = False
@@ -113,6 +114,8 @@ class StdioTransport:
             raise McpError(f"could not start {command!r}: {e}") from None
         self._err_reader = threading.Thread(target=self._read_stderr, daemon=True)
         self._err_reader.start()
+        self._writer = threading.Thread(target=self._write, daemon=True)
+        self._writer.start()
         self._reader = threading.Thread(target=self._read, daemon=True)
         self._reader.start()
 
@@ -182,13 +185,35 @@ class StdioTransport:
             slot.done.set()
 
     def _send(self, msg: dict):
+        if not self.alive():
+            raise McpError(f"the server is not running{self._tail()}")
         data = json.dumps(msg, ensure_ascii=False).encode("utf-8") + b"\n"
+        sent = threading.Event()
+        self.writes.put((data, sent))
+        return sent
+
+    def _write(self):
+        """Serialize all writes, including notifications, without parking a request or the response reader."""
         try:
-            with self.write_lock:
+            while (item := self.writes.get()) is not None:
+                data, sent = item
                 self.proc.stdin.write(data)
                 self.proc.stdin.flush()
+                sent.set()
+                del item, data, sent                    # do not keep the last tool arguments while idle
         except (OSError, ValueError):
-            raise McpError(f"the server stopped{self._tail()}") from None
+            self.ended = True
+            err = McpError(f"the server stopped{self._tail()}")
+            with self.lock:
+                slots, self.pending = list(self.pending.values()), {}
+            for slot in slots:
+                slot.error = err
+                slot.done.set()
+        finally:
+            try:
+                self.proc.stdin.close()
+            except OSError:
+                pass
 
     def request(self, method: str, params: dict, timeout: float, cancel=None):
         if not self.alive():
@@ -199,16 +224,23 @@ class StdioTransport:
             rid = self.next_id
             self.pending[rid] = slot
         try:
-            self._send({"jsonrpc": "2.0", "id": rid, "method": method, "params": params})
+            sent = self._send({"jsonrpc": "2.0", "id": rid, "method": method, "params": params})
             return _wait(slot, timeout, cancel, method)
         except (McpTimeout, McpCancelled) as e:
+            if not sent.is_set():
+                # A partially written JSON line cannot be retracted.  Retire this transport, so the next call
+                # starts a fresh server, and let cleanup unblock its sole writer without delaying cancellation.
+                self.ended = True
+                threading.Thread(target=self._kill_tree, args=(self.proc,), daemon=True).start()
+            else:
+                try:                                     # cancellation is queued, never another blocking write
+                    self.notify("notifications/cancelled", {"requestId": rid, "reason": str(e)})
+                except McpError:
+                    pass
+            raise
+        finally:
             with self.lock:
                 self.pending.pop(rid, None)
-            try:                                         # tell the server to stop working on it
-                self.notify("notifications/cancelled", {"requestId": rid, "reason": str(e)})
-            except McpError:
-                pass
-            raise
 
     def notify(self, method: str, params: dict | None = None):
         self._send({"jsonrpc": "2.0", "method": method, **({"params": params} if params is not None else {})})
@@ -224,10 +256,10 @@ class StdioTransport:
             self.closed = True
         # Once an already exited process has closed both pipes, its old group ID is no longer ours to signal.
         group_live = p.poll() is None or self._reader.is_alive() or self._err_reader.is_alive()
-        try:
-            p.stdin.close()
-        except OSError:
-            pass
+        self.ended = True
+        # The writer owns stdin's buffer lock.  It closes stdin after its last queued message; if a pipe is full,
+        # the bounded process wait below ends the process before we join or close any buffered pipe.
+        self.writes.put(None)
         try:
             p.wait(timeout=2)
         except subprocess.TimeoutExpired:
@@ -236,6 +268,7 @@ class StdioTransport:
         # the launcher exited cleanly, before closing buffered streams that their reader threads may still own.
         if group_live:
             self._kill_tree(p)
+        self._writer.join(timeout=1)
         for f in (p.stdout, p.stderr):
             try:
                 f.close()
