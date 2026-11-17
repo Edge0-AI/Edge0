@@ -265,6 +265,8 @@ moe_add_test(NAME moe_test_edge0_35b_forward LEVEL L2 COMMAND moe_test_edge0_35b
 if(MOE_BUILD_CLI)
     moe_add_test(NAME moe_test_forward_cli LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/forward_test.py" --cli $<TARGET_FILE:edge0-infer>)
+    moe_add_test(NAME moe_test_token_json_cli LEVEL L2 COMMAND ${moe_python}
+        "${PROJECT_SOURCE_DIR}/tests/integration/token_json_test.py" $<TARGET_FILE:edge0-infer>)
 endif()
 # Answer suites compare this platform's logits against the repository answers
 # (exported on macOS). -X utf8 forces Python UTF-8 Mode so the harnesses decode

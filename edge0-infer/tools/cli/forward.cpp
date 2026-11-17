@@ -6,6 +6,7 @@
 namespace cli {
 void model_option(std::map<std::string,std::string>&,const std::string&);
 void weight_activity(std::ostream&,const edge0::WeightActivity&);
+std::vector<std::int32_t> tokens(const std::string&,const std::string&);
 }
 #include "edge0/forward_check.h"
 #include <cctype>
@@ -17,27 +18,6 @@ void weight_activity(std::ostream&,const edge0::WeightActivity&);
 #include <stdexcept>
 edge0::LogReceiver cli_log_receiver(bool verbose);
 namespace {
-std::vector<std::int32_t> tokens(const std::string& json,const std::string& name) {
-    const auto key=json.find('"'+name+'"');
-    if(key==std::string::npos)throw std::runtime_error("Missing token array: "+name);
-    auto index=json.find(':',key+name.size()+2);
-    auto spaces=[&] { while(index<json.size()&&std::isspace(static_cast<unsigned char>(json[index])))++index; };
-    if(index==std::string::npos)throw std::runtime_error("Invalid token JSON");
-    ++index; spaces(); if(index==json.size()||json[index++]!='[')throw std::runtime_error("Expected token array");
-    std::vector<std::int32_t> result; spaces();
-    if(index<json.size()&&json[index]==']')return result;
-    while(index<json.size()) {
-        spaces(); auto start=index;
-        while(index<json.size()&&std::isdigit(static_cast<unsigned char>(json[index])))++index;
-        if(start==index)throw std::runtime_error("Expected nonnegative token ID");
-        const auto value=std::stoull(json.substr(start,index-start));
-        if(value>std::uint64_t(std::numeric_limits<std::int32_t>::max()))throw std::runtime_error("Token ID out of range");
-        result.push_back(std::int32_t(value)); spaces();
-        if(index<json.size()&&json[index]==']')return result;
-        if(index==json.size()||json[index++]!=',')throw std::runtime_error("Expected comma in token array");
-    }
-    throw std::runtime_error("Unterminated token array");
-}
 void write(const std::filesystem::path& path,const void* data,std::size_t size) {
     std::ofstream stream(path,std::ios::binary); stream.write(static_cast<const char*>(data),std::streamsize(size));
     if(!stream)throw std::runtime_error("Cannot write output: "+path.string());
@@ -74,7 +54,7 @@ int forward_command(int argc,char** argv) {
         if(std::filesystem::exists(out))throw std::runtime_error("Output directory already exists");
         std::ifstream source(input); if(!source)throw std::runtime_error("Cannot read tokens");
         const std::string json((std::istreambuf_iterator<char>(source)),{});
-        options.input=tokens(json,"input"); options.generated=tokens(json,"generated");
+        options.input=cli::tokens(json,"input"); options.generated=cli::tokens(json,"generated");
         const auto log_receiver=cli_log_receiver(verbose);
         for(const auto& item:edge0::query_capabilities(false,log_receiver).devices)if(item.backend==device){options.device=item.name;break;}
         if(options.device.empty()) {std::cerr<<"SKIP: requested device unavailable\n";return 77;}

@@ -1,5 +1,6 @@
 #pragma once
-// Minimal JSON value and parser for the CLI input files (turns, replay). Integers only; strict syntax.
+// Minimal JSON value and parser for CLI input files. Numeric accessors require
+// integers; other numeric literals are retained for uninterpreted metadata.
 #include <cctype>
 #include <cstdint>
 #include <map>
@@ -9,9 +10,10 @@
 #include <vector>
 namespace cli {
 struct Json {
+    struct NumberLiteral { std::string text; };
     using Array = std::vector<Json>;
     using Object = std::map<std::string, Json>;
-    std::variant<std::nullptr_t, bool, std::int64_t, std::string, Array, Object> value = nullptr;
+    std::variant<std::nullptr_t, bool, std::int64_t, NumberLiteral, std::string, Array, Object> value = nullptr;
     const Object& object() const { return std::get<Object>(value); }
     const Array& array() const { return std::get<Array>(value); }
     const std::string& string() const { return std::get<std::string>(value); }
@@ -103,7 +105,26 @@ class JsonParser {
         if (p == input.size() || !std::isdigit(static_cast<unsigned char>(input[p]))) error();
         if (input[p]=='0') ++p;
         else while (p < input.size() && std::isdigit(static_cast<unsigned char>(input[p]))) ++p;
-        return Json{static_cast<std::int64_t>(std::stoll(input.substr(start,p-start)))};
+        bool other_number = false;
+        const auto digits = [&] {
+            const auto begin = p;
+            while (p < input.size() && std::isdigit(static_cast<unsigned char>(input[p]))) ++p;
+            if (p == begin) error();
+        };
+        if (p < input.size() && input[p] == '.') {
+            other_number = true; ++p; digits();
+        }
+        if (p < input.size() && (input[p] == 'e' || input[p] == 'E')) {
+            other_number = true; ++p;
+            if (p < input.size() && (input[p] == '+' || input[p] == '-')) ++p;
+            digits();
+        }
+        const auto number = input.substr(start,p-start);
+        if (!other_number) {
+            try { return Json{static_cast<std::int64_t>(std::stoll(number))}; }
+            catch (const std::out_of_range&) {}
+        }
+        return Json{Json::NumberLiteral{number}};
     }
 public:
     explicit JsonParser(const std::string& text) : input(text) {}
