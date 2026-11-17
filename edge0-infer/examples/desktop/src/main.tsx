@@ -108,6 +108,8 @@ export function App() {
   async function select(path: string, restore?: Conversation, nextSettings = settingsRef.current) {
     if (controller.current || busy || initializing || deletingRef.current) return;
     remember(conversationRef.current); setError(''); setLoading(true); serviceEpoch.current++; setService(undefined); setModel(undefined);
+    // Reading an archive must not depend on the original model still being available.
+    if (restore) { changeConversation(restore); setDraft(''); setPage('chat'); }
     const abort = new AbortController(); controller.current = abort;
     try {
       if (nextSettings.lan_access) await ensureToken();

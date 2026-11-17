@@ -95,10 +95,10 @@ it('generates exactly 32 cryptographic bytes in unpadded base64url', () => {
   const token = generateToken(random as Pick<Crypto, 'getRandomValues'>);
   expect(random.getRandomValues.mock.calls[0][0]).toHaveLength(32); expect(token).toMatch(/^e0_sk_[A-Za-z0-9_-]{43}$/); expect(token).toHaveLength(49); expect(maskToken(token)).not.toContain(token); expect(generateToken()).not.toBe(generateToken());
 });
-it('renders only the unloaded guidance, then the fixed composer and message actions', () => {
+it('keeps unloaded history readable, then enables the composer and message actions', () => {
   const conversation: Conversation = { id: 'fixture', createdAt: 0, updatedAt: 0, systemPrompt: 'system', thinking: true, messages: [{ role: 'user', content: 'question' }, { role: 'assistant', content: '```js\nconst x = 1;\n```', reasoning_content: 'thinking', metrics: { input_tokens: 12, generated_count: 3 } }] };
   const props = { conversation, phase: 'idle' as const, loaded: false, model: 'fixture', capacity: 1024, supported: true, draft: '', setDraft: noop, send: noop, stop: noop, newThinking: noop, reasoningExpanded: noop, edit: noop, redo: noop, copy: noop, models: noop };
-  const unloaded = renderToStaticMarkup(createElement(Chat, props)); expect(unloaded).toContain('Load a model'); expect(unloaded).not.toContain('class="composer"');
+  const unloaded = renderToStaticMarkup(createElement(Chat, props)); expect(unloaded).toContain('const x = 1;'); expect(unloaded).not.toContain('class="composer"');
   const loaded = renderToStaticMarkup(createElement(Chat, { ...props, loaded: true }));
   for (const text of ['title="Copy"', 'title="Copy reasoning"', 'title="Copy code"', 'title="Edit and resend"', 'title="Regenerate"', '15 / 1,024 tokens', 'class="reason" open']) expect(loaded).toContain(text);
   const generating = renderToStaticMarkup(createElement(Chat, { ...props, loaded: true, phase: 'generating' })); expect(generating).not.toContain('title="Regenerate"'); expect(generating).not.toContain('class="ai-foot"'); expect(generating).not.toContain('aria-label="Generating"'); expect(generating).toContain('class="cursor"'); expect(generating).toContain('>Stop<');
