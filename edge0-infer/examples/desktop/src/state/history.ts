@@ -15,3 +15,12 @@ export function groupHistory(archives: Archive[], now = new Date()) {
 }
 export function regenerate(messages: Message[]): Message[] { return messages.at(-1)?.role === 'assistant' ? messages.slice(0, -1) : messages; }
 export function editAndResend(messages: Message[], index: number, text: string): Message[] { return messages[index]?.role === 'user' && text.trim() ? [...messages.slice(0, index), { role: 'user', content: text.trim() }] : messages; }
+/** A failed replacement with no output must not erase the previously saved answer. */
+export function finishGeneration(original: Conversation, current: Conversation, result: { failed: boolean; stopped: boolean; replacing: boolean }): Conversation {
+  const last = current.messages.at(-1);
+  if (result.replacing && (result.failed || result.stopped) && !last?.content && !last?.reasoning_content) return original;
+  const messages = current.messages.map((message, index) => index === current.messages.length - 1 ? {
+    ...message, stopped: result.stopped, ...((result.failed || result.stopped) ? { metrics: undefined } : {}),
+  } : message);
+  return { ...current, updatedAt: Date.now(), messages };
+}
