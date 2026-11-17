@@ -1,5 +1,6 @@
 #include "serve_delegate_status.h"
 #include "serve_protocol.h"
+#include <cmath>
 #include <limits>
 
 #include <exception>
@@ -14,6 +15,17 @@ std::optional<std::int64_t> integer(const Json& object, const char* key) {
 std::optional<double> number(const Json& object, const char* key) {
     if (!object.is_object() || !object.contains(key) || !object[key].is_number()) return std::nullopt;
     return object[key].get<double>();
+}
+std::optional<std::int64_t> memory_bytes(std::optional<double> amount, double unit) {
+    if (!amount) return std::nullopt;
+    const double bytes = *amount * unit;
+    // INT64_MAX rounds up to 2^63 as a double: the upper bound must be exclusive.
+    if (!std::isfinite(bytes) || bytes < 0 || bytes >= 0x1p63) return std::nullopt;
+    return static_cast<std::int64_t>(bytes);
+}
+std::optional<std::int64_t> memory_available(std::optional<double> total, std::optional<double> used, double unit) {
+    if (!memory_bytes(total, unit) || !memory_bytes(used, unit)) return std::nullopt;
+    return memory_bytes(*total - *used, unit);
 }
 template <class T> void take(std::optional<T>& target, const std::optional<T>& value) {
     if (value) target = value;
@@ -224,13 +236,13 @@ Json system_memory(const Json& portal_system, const Json& external) {
     Json system = portal_system;
     const Json ram = external.is_object() && external.contains("machine") && external["machine"].is_object() &&
                              external["machine"].contains("ram") ? external["machine"]["ram"] : Json(nullptr);
-    auto value = [&](std::optional<double> gib) {
-        if (!gib) return Json{{"bytes", nullptr}, {"source", "edge0-strata"}, {"reason", "not reported by edge0-strata"}};
-        return Json{{"bytes", static_cast<std::int64_t>(*gib * 1073741824.0)}, {"source", "edge0-strata"}, {"reason", ""}};
+    auto value = [&](std::optional<std::int64_t> bytes) {
+        if (!bytes) return Json{{"bytes", nullptr}, {"source", "edge0-strata"}, {"reason", "not available from edge0-strata"}};
+        return Json{{"bytes", *bytes}, {"source", "edge0-strata"}, {"reason", ""}};
     };
     const auto total = number(ram, "total_gib"), used = number(ram, "used_gib");
-    system["memory"] = {{"total", value(total)},
-                        {"available", value(total && used ? std::optional<double>(*total - *used) : std::nullopt)}};
+    system["memory"] = {{"total", value(memory_bytes(total, 1073741824.0))},
+                        {"available", value(memory_available(total, used, 1073741824.0))}};
     return system;
 }
 
@@ -246,8 +258,8 @@ Json status_json(const DelegateStatusInput& s) {
         devices = Json::array({Json{{"name", s.device},
                                     {"backend", s.device == "metal" ? "metal" : "cuda"},
                                     {"description", gpu.contains("name") && gpu["name"].is_string() ? gpu["name"] : Json(nullptr)},
-                                    {"memory_total_bytes", total ? Json(static_cast<std::int64_t>(*total * 1048576.0)) : Json(nullptr)},
-                                    {"memory_free_bytes", total && used ? Json(static_cast<std::int64_t>((*total - *used) * 1048576.0)) : Json(nullptr)}}});
+                                    {"memory_total_bytes", nullable(memory_bytes(total, 1048576.0))},
+                                    {"memory_free_bytes", nullable(memory_available(total, used, 1048576.0))}}});
     }
     Json version = external.is_object() && external.contains("engine") && external["engine"].is_string() ? external["engine"] : Json(nullptr);
     Json engine{{"version", version},          {"source_commit", nullptr}, {"source_modified", nullptr},

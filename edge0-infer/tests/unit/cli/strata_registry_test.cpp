@@ -5,6 +5,7 @@
 #include "tests/support/check.h"
 #include <fstream>
 #include <cstdlib>
+#include <cmath>
 #include <random>
 #include <sstream>
 
@@ -771,6 +772,49 @@ int main() {
     CHECK(status["memory"]["ledger"].is_null() && status["memory"]["resident"].is_null() && status["memory"]["physical"].is_null());
     CHECK(status["system"]["memory"]["total"]["bytes"] == 8LL * 1073741824 && status["system"]["memory"]["available"]["bytes"] == 6LL * 1073741824);
     CHECK(status["system"]["memory"]["total"]["source"] == "edge0-strata" && status["system"]["thermal"]["state"].is_null());
+    for (const auto& invalid : {Json(-1.0), Json(1e100), Json(true), Json(nullptr)}) {
+        auto malformed = input;
+        malformed.external["machine"]["ram"] = {{"total_gib", invalid}, {"used_gib", 0}};
+        malformed.external["machine"]["gpu"] = {{"total_mib", invalid}, {"used_mib", 0}};
+        const auto invalid_total = status_json(malformed);
+        CHECK(invalid_total["system"]["memory"]["total"]["bytes"].is_null());
+        CHECK(invalid_total["system"]["memory"]["available"]["bytes"].is_null());
+        CHECK(invalid_total["engine"]["devices"][0]["memory_total_bytes"].is_null());
+        CHECK(invalid_total["engine"]["devices"][0]["memory_free_bytes"].is_null());
+        malformed.external["machine"]["ram"] = {{"total_gib", 8}, {"used_gib", invalid}};
+        malformed.external["machine"]["gpu"] = {{"total_mib", 8}, {"used_mib", invalid}};
+        const auto invalid_used = status_json(malformed);
+        CHECK(invalid_used["system"]["memory"]["total"]["bytes"] == 8LL * 1073741824);
+        CHECK(invalid_used["system"]["memory"]["available"]["bytes"].is_null());
+        CHECK(invalid_used["engine"]["devices"][0]["memory_free_bytes"].is_null());
+    }
+    auto memory_boundary = input;
+    memory_boundary.external["machine"]["ram"] = {{"total_gib", 1}, {"used_gib", 2}};
+    memory_boundary.external["machine"]["gpu"] = {{"total_mib", 1}, {"used_mib", 2}};
+    auto memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["available"]["bytes"].is_null());
+    CHECK(!memory_status["system"]["memory"]["available"]["reason"].get<std::string>().empty());
+    CHECK(memory_status["engine"]["devices"][0]["memory_free_bytes"].is_null());
+    memory_boundary.external["machine"]["ram"] = {{"total_gib", 1.1}, {"used_gib", 0.9}};
+    memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["available"]["bytes"] == 214748364);
+    for (double fraction : {0.0, 1.5}) {
+        memory_boundary.external["machine"]["ram"] = {{"total_gib", fraction}, {"used_gib", 0}};
+        memory_boundary.external["machine"]["gpu"] = {{"total_mib", fraction}, {"used_mib", 0}};
+        memory_status = status_json(memory_boundary);
+        CHECK(memory_status["system"]["memory"]["available"]["bytes"] == static_cast<std::int64_t>(fraction * 1073741824));
+        CHECK(memory_status["engine"]["devices"][0]["memory_free_bytes"] == static_cast<std::int64_t>(fraction * 1048576));
+    }
+    memory_boundary.external["machine"]["ram"] = {{"total_gib", 0x1p33}, {"used_gib", 0}};
+    memory_boundary.external["machine"]["gpu"] = {{"total_mib", 0x1p43}, {"used_mib", 0}};
+    memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["total"]["bytes"].is_null());
+    CHECK(memory_status["engine"]["devices"][0]["memory_total_bytes"].is_null());
+    memory_boundary.external["machine"]["ram"]["total_gib"] = std::nextafter(0x1p33, 0.0);
+    memory_boundary.external["machine"]["gpu"]["total_mib"] = std::nextafter(0x1p43, 0.0);
+    memory_status = status_json(memory_boundary);
+    CHECK(memory_status["system"]["memory"]["total"]["bytes"] == 9223372036854774784LL);
+    CHECK(memory_status["engine"]["devices"][0]["memory_total_bytes"] == 9223372036854774784LL);
     CHECK(status["current"]["endpoint"] == "/v1/messages" && status["current"]["elapsed_seconds"] >= 2.0 && status["current"]["phase"].is_null());
     CHECK(status["totals"]["requests"] == 2 && status["totals"]["computed_tokens"].is_null() && status["totals"]["continued_turns"].is_null());
     CHECK(std::abs(status["totals"]["prefill_tokens_per_second"].get<double>() - 10 / 0.1633) < 1e-9);
