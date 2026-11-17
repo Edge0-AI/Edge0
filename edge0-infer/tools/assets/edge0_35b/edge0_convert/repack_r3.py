@@ -4,6 +4,7 @@
 # Local modifications (everything else is unchanged; see ORIGIN.json):
 #   (M4) tokenizer.ggml.pre is qwen35, matching the shipped tokenizer.json pre-tokenizer.
 #   (M6) runtime Q4_1 tensors are packed in bounded row chunks.
+#   (M7) --verify checks runtime Q4_1 values with block-scoped FP16 exemptions.
 """repack_r3.py — 35b → GGUF with llama.cpp canonical naming (the runtime artifact).
 
 Built on the lossless repack core (tools/repack_mlx_to_gguf.py, proven bit-exact),
@@ -24,7 +25,7 @@ this script does three things and nothing else:
      byte_fallback=true
 
 Gates: tensor count / name-set identity against the registry; ba permutation
-reversible; Q4_1 sampled pack two-sided sha. Output: <stem>.gguf.
+reversible; Q4_1 full or sampled two-sided value parity. Output: <stem>.gguf.
 """
 import argparse, json, math, os, re, struct, sys, time
 import decimal
@@ -33,8 +34,7 @@ if hasattr(sys.stdout, "reconfigure"):                      # issue #128: Window
     sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from repack_mlx_to_gguf import (StIndex, GgufWriter, KV, T_F32, T_F16, T_Q4_1, ALIGN, QK41,
-                                DT_Q41, mlx_q_bytes, pack_q41_rows, deq_mlx_side, deq_gguf_side,
-                                sha16)
+                                DT_Q41, mlx_q_bytes, pack_q41_rows, deq_mlx_side, deq_gguf_side)
 import repack_mlx_to_gguf as core
 
 
@@ -119,12 +119,39 @@ def load_ba(idx, kb, ka, n_k, n_v):
     return q, S, Bs, K
 
 
+def q41_parity(q, scales, biases, blocks, exempt):
+    """Compare float32 bits, allowing only the packer's specific 32-value groups."""
+    source = deq_mlx_side(q, scales, biases)
+    converted = deq_gguf_side(blocks)
+    different = source.view(np.uint32) != converted.view(np.uint32)
+    bad_blocks = different.reshape(len(q), -1, QK41).any(axis=-1)
+    for row, block in exempt:
+        bad_blocks[row, block] = False
+    return dict(ok=not bool(bad_blocks.any()), mal_groups=len(exempt),
+                diff_elems=int(different.sum()))
+
+
+def record_q41_parity(audit, name, q, scales, biases, blocks, exempt, row_start=0):
+    result = q41_parity(q, scales, biases, blocks, exempt)
+    audit["gates"].append(dict(t=name, rows=f"{row_start}:{row_start + len(q)}", **result))
+    if not result["ok"]:
+        audit["errors"].append(f"{name}: Q4_1 parity mismatch @{row_start} (outside exemptions)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", required=True); ap.add_argument("--out", required=True)
-    ap.add_argument("--verify", default="all")
+    ap.add_argument("--verify", default="all",
+                    help="all rows, or N sampled rows per tensor (their chunks are checked); 0 keeps the first-row sentinel")
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
+    if a.verify != "all":
+        try:
+            a.verify = int(a.verify)
+            if a.verify < 0:
+                raise ValueError
+        except ValueError:
+            ap.error("--verify must be 'all' or a non-negative integer")
     cfg = json.load(open(os.path.join(a.dir, "config.json"), encoding="utf8"))["text_config"]
     n_k, n_v = cfg["linear_num_key_heads"], cfg["linear_num_value_heads"]
     nl, intv = cfg["num_hidden_layers"], cfg["full_attention_interval"]
@@ -139,7 +166,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     stem = os.path.basename(a.dir.rstrip("\\/"))
     gp = os.path.join(a.out, f"{stem}.gguf")
-    t0, audit = time.time(), dict(tool=R3VER, tier=stem, mode="r3", gates=[], errors=[])
+    t0, audit = time.time(), dict(tool=R3VER, tier=stem, mode="r3", verify=a.verify, gates=[], errors=[])
     w = GgufWriter(gp)
 
     # ---- metadata (required read set + overrides) ----
@@ -233,12 +260,16 @@ def main():
     w.finalize()
 
     n_done = 0
+    full_verify = a.verify == "all"
+    rng = np.random.default_rng(20260928)
     for r3n, kind, src in table:
         if kind == "q41":
             base = src[:-7]
             W = idx.load(src); S = idx.load(base + ".scales"); Bs = idx.load(base + ".biases")
             lead = W.shape[:-1]; rows = int(np.prod(lead)) if lead else 1
             Wf, Sf, Bsf = W.reshape(rows, -1), S.reshape(rows, -1), Bs.reshape(rows, -1)
+            picks = (set() if full_verify else
+                     {int(row) // core.CHUNK for row in rng.choice(rows, min(rows, a.verify), replace=False)})
             for i0 in range(0, rows, core.CHUNK):
                 i1 = min(i0 + core.CHUNK, rows)
                 q = mlx_q_bytes(Wf[i0:i1])
@@ -247,14 +278,14 @@ def main():
                 # Only tensor boundaries are aligned; an intermediate row chunk
                 # can end inside an alignment block.
                 if i0 == 0:
-                    a_side = deq_mlx_side(q[:1], Sf[:1], Bsf[:1])
-                    b_side = deq_gguf_side(blocks[:1])
-                    same = bool(sha16(a_side.tobytes()) == sha16(b_side.tobytes()))
-                    row0_ex = any(r == 0 for (r, _b) in exm)
-                    st = "OK" if same else ("EXEMPT" if row0_ex else "FAIL")
+                    sentinel = q41_parity(q[:1], Sf[:1], Bsf[:1], blocks[:1],
+                                          {(r, b) for r, b in exm if r == 0})
+                    st = "FAIL" if not sentinel["ok"] else ("EXEMPT" if sentinel["diff_elems"] else "OK")
                     audit["gates"].append(dict(t=r3n, sentinel=st))
                     if st == "FAIL":
                         audit["errors"].append(f"{r3n}: sentinel row non-exempt mismatch")
+                if full_verify or i0 // core.CHUNK in picks:
+                    record_q41_parity(audit, r3n, q, Sf[i0:i1], Bsf[i0:i1], blocks, exm, i0)
                 del q, blocks, exm
             w.align_pad()
         elif kind in ("f32i8", "f32i8_1d"):
@@ -290,8 +321,10 @@ def main():
         elif kind == "ba":
             kb, ka = src
             q, S, Bs, K = load_ba(idx, kb, ka, n_k, n_v)
-            blocks, _ = pack_q41_rows(q, S, Bs, "ssm_ba")
+            blocks, exm = pack_q41_rows(q, S, Bs, "ssm_ba")
             w.write(blocks.tobytes()); w.align_pad()
+            if full_verify or a.verify > 0:
+                record_q41_parity(audit, r3n, q, S, Bs, blocks, exm)
             # reversibility gate: undo the permutation and compare against the pre-interleave source q rows for exact equality
             wb = idx.load(kb); wa = idx.load(ka)
             qb = mlx_q_bytes(wb.reshape(n_v, -1)); qa = mlx_q_bytes(wa.reshape(n_v, -1))

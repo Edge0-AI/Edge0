@@ -6,7 +6,8 @@
     "M3": "lora_mlx_to_gguf.py: verify_against_base reads GGUF files with tools/assets/format_gguf.py instead of the upstream gguf Python package",
     "M4": "repack_r3.py: tokenizer.ggml.pre is qwen35 instead of qwen2, matching the pre-tokenizer of the shipped tokenizer.json",
     "M5": "convert_mlx_to_gguf.py: cache identity covers source files, converter dependencies and the engine contract; cache hits honor requested artifact comparisons",
-    "M6": "repack_r3.py: bound expanded Q4_1 packing workspace with row chunks, preserving tensor boundary alignment"
+    "M6": "repack_r3.py: bound expanded Q4_1 packing workspace with row chunks, preserving tensor boundary alignment",
+    "M7": "repack_r3.py: honor full or sampled Q4_1 value verification, including interleaved BA tensors, with per-block exemptions"
   },
   "path": "windows/tools",
   "repository": "https://github.com/Edge0-AI/Edge0",
