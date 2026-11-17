@@ -63,6 +63,8 @@ struct Forward {
     std::mutex mutex;
     std::condition_variable changed;
     std::deque<std::string> chunks;
+    std::size_t queued_bytes = 0;
+    bool event_stream = false;
     bool headers = false, done = false, failed = false, complete = false;
     int status = 0;
     std::string content_type, body, failure_code, failure_message;
@@ -76,6 +78,7 @@ struct Forward {
     std::string pending;
     void abort() {
         cancel = true;
+        changed.notify_all();
         if (client) client->stop();
     }
     ~Forward() {
@@ -405,15 +408,23 @@ int serve(int argc, char** argv, const Match& match) {
                 std::lock_guard<std::mutex> lock(raw->mutex);
                 raw->status = response.status;
                 raw->content_type = response.get_header_value("Content-Type");
+                raw->event_stream = raw->content_type.compare(0, 17, "text/event-stream") == 0;
                 raw->headers = true;
                 raw->changed.notify_all();
                 return !raw->cancel;
             };
             upstream.content_receiver = [raw](const char* data, std::size_t size, std::size_t, std::size_t) {
-                std::lock_guard<std::mutex> lock(raw->mutex);
-                raw->chunks.emplace_back(data, size);
+                std::unique_lock<std::mutex> lock(raw->mutex);
+                // Bound queued stream data to 256 KiB plus one receive chunk.
+                // A slow downstream then applies TCP backpressure upstream.
+                raw->changed.wait(lock, [raw] { return raw->cancel || !raw->event_stream || raw->queued_bytes < 256 * 1024; });
+                if (raw->cancel) return false;
+                if (raw->event_stream) {
+                    raw->chunks.emplace_back(data, size);
+                    raw->queued_bytes += size;
+                } else raw->body.append(data, size);
                 raw->changed.notify_all();
-                return !raw->cancel;
+                return true;
             };
             f->worker = std::thread([raw, upstream] {
                 auto result = raw->client->send(upstream);
@@ -448,7 +459,7 @@ int serve(int argc, char** argv, const Match& match) {
                 return;
             }
             res.status = f->status;
-            if (f->content_type.compare(0, 17, "text/event-stream") == 0) {
+            if (f->event_stream) {
                 res.set_chunked_content_provider(
                     f->content_type,
                     [f, &req, incomplete, &options](std::size_t, httplib::DataSink& sink) {
@@ -457,6 +468,8 @@ int serve(int argc, char** argv, const Match& match) {
                             while (!f->chunks.empty()) {
                                 auto chunk = std::move(f->chunks.front());
                                 f->chunks.pop_front();
+                                f->queued_bytes -= chunk.size();
+                                f->changed.notify_all();
                                 try {
                                     // The request's age when this chunk is forwarded; the first text fragment is
                                     // stamped with it (current.first_token_seconds).
@@ -512,8 +525,6 @@ int serve(int argc, char** argv, const Match& match) {
                     f->changed.wait_for(lock, std::chrono::milliseconds(20));
                     if (!f->done && req.is_connection_closed()) { f->client_gone = true; lock.unlock(); f->abort(); lock.lock(); }
                 }
-                for (auto& chunk : f->chunks) f->body += chunk;
-                f->chunks.clear();
             }
             if (f->worker.joinable()) f->worker.join();
             const bool json_content = f->content_type.find("application/json") != std::string::npos || f->content_type.find("+json") != std::string::npos;

@@ -1,5 +1,6 @@
 """serve, inspect and the other subcommands for a delegated model, against the fake edge0-strata."""
 import argparse
+import hashlib
 import http.client
 import json
 import os
@@ -349,6 +350,53 @@ def carries_text(event):
     if event.get('type') == 'response.output_text.delta':
         return bool(event['delta'])
     return event.get('type') == 'content_block_delta' and bool(event['delta'].get('text'))
+
+
+def stream_backpressure(cli, root):
+    engine = make_engine(root / 'backpressure-engine')
+    model = make_model(root / 'backpressure-model')
+    for finish in ('drain', 'disconnect'):
+        record = root / ('backpressure-' + finish)
+        server = Running(cli, model, engine, record)
+        connection = http.client.HTTPConnection('127.0.0.1', server.port, timeout=30)
+        response = None
+        try:
+            connection.connect()
+            connection.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+            connection.request('POST', '/v1/chat/completions', json.dumps({'stream': True, 'fake_bulk_stream': True}),
+                               {'Content-Type': 'application/json'})
+            response = connection.getresponse()
+            assert response.status == 200
+            deadline = time.monotonic() + 4
+            while time.monotonic() < deadline:
+                assert not any(e['event'] == 'bulk_finished' for e in events(record)), 'proxy buffered the entire unread stream'
+                time.sleep(0.02)
+            assert any(e['event'] == 'bulk_started' for e in events(record))
+            if finish == 'drain':
+                server.process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
+                actual, expected = hashlib.sha256(), hashlib.sha256()
+                for chunk in iter(lambda: response.read(65536), b''):
+                    actual.update(chunk)
+                for _ in range(1024): expected.update(b':' + b'x' * 65533 + b'\n\n')
+                expected.update(b'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n')
+                assert actual.digest() == expected.digest(), 'stream forwarding changed bytes'
+            else:
+                connection.sock.shutdown(socket.SHUT_RDWR)
+                response.close()
+                connection.close()
+                deadline = time.monotonic() + 5
+                while not any(e['event'] == 'bulk_cancelled' for e in events(record)):
+                    assert time.monotonic() < deadline, 'backpressured producer did not cancel'
+                    time.sleep(0.02)
+                code, _, body = request(server.port, 'POST', '/v1/chat/completions', {'fake_bulk_json': True})
+                assert code == 200 and json.loads(body)['padding'] == 'x' * (2 * 1024 * 1024)
+                assert body == sent(record, 1)
+        finally:
+            if response is not None: response.close()
+            connection.close()
+            assert server.stop() == 0
+        assert_no_leftovers(record)
+    print('PASS stream backpressure: paused consumers bound producer progress, drain/shutdown/cancel, large JSON')
 
 
 def live_progress(cli, root, snapshots):
@@ -1169,6 +1217,7 @@ def main():
         mac_prepare(args.cli, root)
         launch_handshake(args.cli, root)
         interrupted_responses(args.cli, root)
+        stream_backpressure(args.cli, root)
         inspect_defaults(args.cli, root)
         refusals(args.cli, root)
         failures(args.cli, root)

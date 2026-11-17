@@ -32,6 +32,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import socket
 import socketserver
 import subprocess
 import sys
@@ -276,6 +277,12 @@ def handler_for(fake):
             except ValueError:
                 self.send_json(400, {'error': {'message': 'invalid JSON', 'type': 'invalid_request_error'}})
                 return
+            if request.get('fake_bulk_stream'):
+                self.bulk_stream()
+                return
+            if request.get('fake_bulk_json'):
+                fake.save_sent(self.send_json(200, {'padding': 'x' * (2 * 1024 * 1024)}))
+                return
             if path == '/v1/messages/count_tokens':
                 fake.save_sent(self.send_json(int(request.get('fake_status', 200)), {'input_tokens': 17}))
                 return
@@ -358,6 +365,27 @@ def handler_for(fake):
                     'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': ''.join(pieces)}, 'finish_reason': 'stop'}],
                     'usage': usage, 'timings': timings}))
             fake.finished_generation()
+
+        def bulk_stream(self):
+            # A fast producer and a paused consumer exercise real TCP backpressure.
+            self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 32768)
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/event-stream')
+            self.send_header('Transfer-Encoding', 'chunked')
+            self.end_headers()
+            block = b':' + b'x' * 65533 + b'\n\n'
+            terminal = b'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+            try:
+                for index in range(1024):
+                    self.wfile.write(b'%x\r\n%s\r\n' % (len(block), block))
+                    if index == 0:
+                        fake.log('events.jsonl', {'event': 'bulk_started'})
+                self.wfile.write(b'%x\r\n%s\r\n0\r\n\r\n' % (len(terminal), terminal))
+                self.wfile.flush()
+                fake.log('events.jsonl', {'event': 'bulk_finished'})
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                fake.log('events.jsonl', {'event': 'bulk_cancelled'})
+                self.close_connection = True
 
         def stream(self, events):
             self.send_response(200)
