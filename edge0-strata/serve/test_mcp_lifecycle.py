@@ -111,6 +111,22 @@ sys.stdin.buffer.read()
             self.assertTrue(done, "a descendant kept stdout/stderr and close() blocked")
             self.assertNotIn("error", result)
 
+    def test_close_does_not_signal_a_retired_process_group_twice(self):
+        transport = self.transport("import sys; sys.stdin.buffer.read()")
+        transport.close()
+        with patch("serve.mcp.os.killpg", side_effect=AssertionError("a retired process group was signalled")):
+            transport.close()
+
+    def test_close_does_not_signal_a_process_group_after_both_pipes_ended(self):
+        transport = self.transport("pass")
+        transport.proc.wait(timeout=3)
+        transport._reader.join(2)
+        transport._err_reader.join(2)
+        self.assertFalse(transport._reader.is_alive())
+        self.assertFalse(transport._err_reader.is_alive())
+        with patch("serve.mcp.os.killpg", side_effect=AssertionError("an expired process group was signalled")):
+            transport.close()
+
     def test_invalid_response_id_does_not_disable_later_responses(self):
         source = """import json, sys
 for line in sys.stdin:
@@ -164,30 +180,18 @@ for line in sys.stdin:
                         self.stop(server.transport)
 
 
-    def test_close_does_not_signal_a_retired_process_group_twice(self):
-        transport = self.transport("import sys; sys.stdin.buffer.read()")
-        transport.close()
-        with patch("serve.mcp.os.killpg", side_effect=AssertionError("a retired process group was signalled")):
-            transport.close()
-
-    def test_close_does_not_signal_a_process_group_after_both_pipes_ended(self):
-        transport = self.transport("pass")
-        transport.proc.wait(timeout=3)
-        transport._reader.join(2)
-        transport._err_reader.join(2)
-        self.assertFalse(transport._reader.is_alive())
-        self.assertFalse(transport._err_reader.is_alive())
-        with patch("serve.mcp.os.killpg", side_effect=AssertionError("an expired process group was signalled")):
-            transport.close()
-
-
 class HttpOwnership(unittest.TestCase):
     def setUp(self):
         self.stop_stream = threading.Event()
         self.stream_ended = threading.Event()
         self.server_response = threading.Event()
+        self.block_server_reply = False
+        self.reply_closed = threading.Event()
+        self.independent_started = threading.Event()
+        self.independent_release = threading.Event()
         self.notification = threading.Event()
         self.messages = []
+        self.headers = []
         case = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -197,8 +201,17 @@ class HttpOwnership(unittest.TestCase):
             def do_POST(self):
                 message = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                 case.messages.append(message)
+                case.headers.append(dict(self.headers))
                 if "method" not in message:
                     case.server_response.set()
+                    if case.block_server_reply:
+                        self.connection.settimeout(2)
+                        try:
+                            if self.connection.recv(1) == b"":
+                                case.reply_closed.set()
+                        except TimeoutError:
+                            pass
+                        return
                     self.send_response(202)
                     self.end_headers()
                     return
@@ -211,7 +224,13 @@ class HttpOwnership(unittest.TestCase):
                 self.send_header("Content-Type", "text/event-stream")
                 self.end_headers()
                 try:
-                    if message["method"] == "ping-before-result":
+                    if message["method"] == "independent":
+                        case.independent_started.set()
+                        if case.independent_release.wait(3):
+                            response = {"jsonrpc": "2.0", "id": message["id"], "result": {"independent": True}}
+                            self.wfile.write(("data: " + json.dumps(response) + "\n\n").encode())
+                            self.wfile.flush()
+                    elif message["method"] == "ping-before-result":
                         request = {"jsonrpc": "2.0", "id": "server-ping",
                                    "method": message["params"].get("server_method", "ping")}
                         self.wfile.write(("data: " + json.dumps(request) + "\n\n").encode())
@@ -237,6 +256,7 @@ class HttpOwnership(unittest.TestCase):
 
     def tearDown(self):
         self.stop_stream.set()
+        self.independent_release.set()
         self.transport.close()
         self.httpd.shutdown()
         self.httpd.server_close()
@@ -254,7 +274,79 @@ class HttpOwnership(unittest.TestCase):
         self.assertEqual(response["id"], "server-ping")
         self.assertEqual(response["error"]["code"], -32601)
 
+    def test_proxy_and_authorization_headers_remain_supported(self):
+        proxy = f"http://127.0.0.1:{self.httpd.server_port}"
+        transport = HttpTransport("proxy", {"url": "http://strata-mcp.invalid/mcp",
+                                            "headers": {"Authorization": "Bearer fixture"}})
+        with patch.dict(os.environ, {"http_proxy": proxy, "HTTP_PROXY": proxy, "no_proxy": "", "NO_PROXY": ""}):
+            try:
+                self.assertEqual(transport.request("ping-before-result", {}, 1.5), {"ok": True})
+            finally:
+                transport.close()
+        self.assertTrue(all(h.get("Authorization") == "Bearer fixture" for h in self.headers))
 
+    def test_deadline_closes_keepalive_stream(self):
+        with self.assertRaises(McpTimeout):
+            self.transport.request("never-result", {}, 0.1)
+        self.assertTrue(self.notification.wait(0.5), "the server should receive cancellation")
+        self.assertTrue(self.stream_ended.wait(0.5), "the timed-out request kept reading the SSE stream")
+        self.assertEqual(self.transport.request("ping-before-result", {}, 1.5), {"ok": True})
+
+    def test_cancel_closes_keepalive_stream(self):
+        cancel = threading.Event()
+        timer = threading.Timer(0.1, cancel.set)
+        timer.start()
+        try:
+            with self.assertRaises(McpCancelled):
+                self.transport.request("never-result", {}, 30, cancel)
+        finally:
+            timer.cancel()
+        self.assertTrue(self.notification.wait(0.5))
+        self.assertTrue(self.stream_ended.wait(0.5), "the cancelled request kept reading the SSE stream")
+
+    def test_close_releases_active_stream_without_a_session_id(self):
+        worker, result = captured(lambda: self.transport.request("never-result", {}, 30))
+        deadline = time.monotonic() + 1
+        while not self.messages and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(self.messages)
+        self.transport.close()
+        worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertIsInstance(result.get("error"), McpError)
+        self.assertTrue(self.stream_ended.wait(0.5))
+
+    def test_cancel_releases_server_reply_and_keeps_another_call_running(self):
+        self.block_server_reply = True
+        cancel = threading.Event()
+        waiting, other = captured(lambda: self.transport.request("independent", {}, 3))
+        worker, result = captured(lambda: self.transport.request("ping-before-result", {}, 30, cancel))
+        try:
+            self.assertTrue(self.independent_started.wait(1))
+            self.assertTrue(self.server_response.wait(1))
+            cancel.set()
+            worker.join(1)
+            self.assertFalse(worker.is_alive())
+            self.assertIsInstance(result.get("error"), McpCancelled)
+            self.assertTrue(self.reply_closed.wait(0.7), "the derived reply POST outlived its cancelled call")
+            self.assertTrue(waiting.is_alive(), "cancelling one call closed another request's connection")
+            self.independent_release.set()
+            waiting.join(1)
+            self.assertEqual(other, {"value": {"independent": True}})
+            deadline = time.monotonic() + 1
+            while self.transport.calls and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertFalse(self.transport.calls)
+        finally:
+            cancel.set()
+            self.independent_release.set()
+
+    def test_deadline_releases_a_blocked_server_reply_post(self):
+        self.block_server_reply = True
+        with self.assertRaises(McpTimeout):
+            self.transport.request("ping-before-result", {}, 0.2)
+        self.assertTrue(self.server_response.is_set())
+        self.assertTrue(self.reply_closed.wait(0.7), "the derived reply POST outlived its request deadline")
 
 
 if __name__ == "__main__":

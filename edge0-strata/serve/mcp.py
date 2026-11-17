@@ -21,6 +21,7 @@ from __future__ import annotations
 import collections
 import base64
 import hashlib
+import http.client
 from pathlib import Path
 import json
 import os
@@ -28,6 +29,7 @@ import queue
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -306,6 +308,61 @@ class StdioTransport:
             pass
 
 
+class _HttpCall:
+    """Own the sockets of one POST, including redirects, so cancellation can interrupt a buffered read."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.sockets = []
+        self.stopped = False
+
+    @staticmethod
+    def _shutdown(sock):
+        try:
+            sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+
+    def connected(self, sock):
+        with self.lock:
+            if not self.stopped:
+                self.sockets.append(sock)
+                return
+        self._shutdown(sock)
+        raise McpCancelled("stopped")
+
+    def stop(self):
+        with self.lock:
+            self.stopped = True
+            sockets, self.sockets = self.sockets, []
+        for sock in sockets:
+            self._shutdown(sock)
+
+    def open(self, request, timeout):
+        call = self
+
+        class HttpConnection(http.client.HTTPConnection):
+            def connect(self):
+                super().connect()
+                call.connected(self.sock)
+
+        class HttpsConnection(http.client.HTTPSConnection):
+            def connect(self):
+                super().connect()
+                call.connected(self.sock)
+
+        class HttpHandler(urllib.request.HTTPHandler):
+            def http_open(self, req):
+                return self.do_open(HttpConnection, req)
+
+        class HttpsHandler(urllib.request.HTTPSHandler):
+            def https_open(self, req):
+                return self.do_open(HttpsConnection, req, context=self._context)
+
+        # Keep urllib's proxy, redirect and certificate-verification behavior.  Only connection ownership changes.
+        return urllib.request.build_opener(HttpHandler(), HttpsHandler()).open(request, timeout=timeout)
+
+
 class HttpTransport:
     """A server at an address (Streamable HTTP): every message is a POST; the answer is JSON or an event stream that
     carries it.  The session id the server hands out at `initialize` rides on every later request."""
@@ -319,6 +376,7 @@ class HttpTransport:
         self.next_id = 0
         self.lock = threading.Lock()
         self.broken = None
+        self.calls = set()
 
     def start(self):
         pass
@@ -335,18 +393,24 @@ class HttpTransport:
             h["MCP-Protocol-Version"] = self.protocol
         return h
 
-    def _post(self, msg: dict, rid, timeout: float, slot: _Slot | None):
+    def _post(self, msg: dict, rid, timeout: float, slot: _Slot | None, call=None, release_call=True):
+        if call is None:
+            call = _HttpCall()
+            with self.lock:
+                if self.broken:
+                    raise self.broken
+                self.calls.add(call)
         try:
             req = urllib.request.Request(self.url, data=json.dumps(msg, ensure_ascii=False).encode("utf-8"),
                                          headers=self._headers(), method="POST")
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            with call.open(req, timeout) as r:
                 if r.headers.get("Mcp-Session-Id"):
                     self.session = r.headers["Mcp-Session-Id"]
                 if slot is None:                         # a notification: 202, nothing to read
                     return
                 ctype = r.headers.get("Content-Type", "")
                 if "text/event-stream" in ctype:
-                    found = self._from_events(r, rid, timeout)
+                    found = self._from_events(r, rid, timeout, call)
                 else:
                     body = r.read()
                     found = None
@@ -375,10 +439,13 @@ class HttpTransport:
                 raise err from None
             slot.error = err
         finally:
+            if release_call:
+                with self.lock:
+                    self.calls.discard(call)
             if slot is not None:
                 slot.done.set()
 
-    def _from_events(self, r, rid, timeout):
+    def _from_events(self, r, rid, timeout, call):
         """Read the event stream until the event that answers `rid` (it may carry notifications first)."""
         data = []
         for raw in r:
@@ -402,24 +469,29 @@ class HttpTransport:
                             reply["result"] = {}
                         else:
                             reply["error"] = {"code": -32601, "message": f"method not supported: {x['method']}"}
-                        self._post(reply, None, timeout, None)
+                        # The reply belongs to this request: cancelling its outer stream must also interrupt a
+                        # reply POST waiting for response headers.  Only the outer POST releases their owner.
+                        self._post(reply, None, timeout, None, call, release_call=False)
                     elif x["id"] == rid:
                         return x
         return None
 
     def request(self, method: str, params: dict, timeout: float, cancel=None):
-        if self.broken:
-            raise self.broken
         with self.lock:
+            if self.broken:
+                raise self.broken
             self.next_id += 1
             rid = self.next_id
+            call = _HttpCall()
+            self.calls.add(call)
         slot = _Slot()
         # the POST runs on its own thread so the stop button and the deadline are noticed while it waits
         threading.Thread(target=self._post, args=({"jsonrpc": "2.0", "id": rid, "method": method, "params": params},
-                                                  rid, timeout + 5, slot), daemon=True).start()
+                                                  rid, timeout + 5, slot, call), daemon=True).start()
         try:
             return _wait(slot, timeout, cancel, method)
         except (McpTimeout, McpCancelled) as e:
+            call.stop()
             threading.Thread(target=self._quiet_notify, args=("notifications/cancelled",
                                                               {"requestId": rid, "reason": str(e)}), daemon=True).start()
             raise
@@ -435,6 +507,11 @@ class HttpTransport:
                    None, 10, None)
 
     def close(self):
+        with self.lock:
+            self.broken = McpError("the transport is closed")
+            calls = list(self.calls)
+        for call in calls:
+            call.stop()
         if not self.session:
             return
         try:                                             # end the session on the server (it may not allow that)
