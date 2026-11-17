@@ -8,8 +8,20 @@ namespace delegate {
 namespace {
 using Json = StatusJson;
 std::optional<std::int64_t> integer(const Json& object, const char* key) {
-    if (!object.is_object() || !object.contains(key) || !object[key].is_number()) return std::nullopt;
-    return object[key].get<std::int64_t>();
+    if (!object.is_object() || !object.contains(key)) return std::nullopt;
+    const auto& value = object[key];
+    if (!value.is_number_integer() || value < 0 || value > std::numeric_limits<std::int64_t>::max()) return std::nullopt;
+    return value.get<std::int64_t>();
+}
+std::optional<std::int64_t> input_total(std::optional<std::int64_t> uncached,
+                                      std::optional<std::int64_t> created, std::optional<std::int64_t> read) {
+    if (!uncached && !created && !read) return std::nullopt;
+    std::int64_t total = 0;
+    for (const auto& part : {uncached, created, read}) {
+        if (part.value_or(0) > std::numeric_limits<std::int64_t>::max() - total) return std::nullopt;
+        total += part.value_or(0);
+    }
+    return total;
 }
 std::optional<double> number(const Json& object, const char* key) {
     if (!object.is_object() || !object.contains(key) || !object[key].is_number()) return std::nullopt;
@@ -49,7 +61,7 @@ void account(Accounting& a, const Json& body) {
             const auto uncached = integer(usage, "input_tokens");
             const auto created = integer(usage, "cache_creation_input_tokens");
             const auto read = integer(usage, "cache_read_input_tokens");
-            if (uncached || created || read) a.input_tokens = uncached.value_or(0) + created.value_or(0) + read.value_or(0);
+            take(a.input_tokens, input_total(uncached, created, read));
         } else if (type != "message_delta") {
             // message_delta repeats input counts; the one in message_start stands, the delta only adds the output.
             take(a.input_tokens, integer(usage, "input_tokens"));

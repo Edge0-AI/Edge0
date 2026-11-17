@@ -5,6 +5,7 @@
 #include "tests/support/check.h"
 #include <fstream>
 #include <cstdlib>
+#include <limits>
 #include <random>
 #include <sstream>
 
@@ -581,6 +582,31 @@ int main() {
     account(messages_stream, Json::parse(R"({"type":"message_delta","delta":{"stop_reason":"end_turn"},
         "usage":{"input_tokens":1,"cache_creation_input_tokens":5,"cache_read_input_tokens":0,"output_tokens":42}})"));
     CHECK(messages_stream.input_tokens == 62 && messages_stream.generated_tokens == 42 && stop_reason(messages_stream.finish) == "end_of_generation");
+    // Token counts are nonnegative int64 integers; malformed later reports must not replace a valid count.
+    for (const auto& invalid : {Json(-1), Json(1.5), Json(1.0), Json(1e100),
+                               Json(std::numeric_limits<std::uint64_t>::max()), Json(true)}) {
+        Accounting counts;
+        account(counts, Json{{"usage", {{"prompt_tokens", invalid}, {"completion_tokens", invalid},
+                                       {"prompt_tokens_details", {{"cached_tokens", invalid}}}}},
+                             {"timings", {{"cache_n", invalid}, {"prompt_n", invalid}, {"predicted_n", invalid}}}});
+        CHECK(!counts.input_tokens && !counts.generated_tokens && !counts.reused_tokens &&
+              !counts.prompt_tokens_read && !counts.predicted_tokens);
+        counts.input_tokens = 7;
+        account(counts, Json{{"usage", {{"input_tokens", invalid}}}});
+        CHECK(counts.input_tokens == 7);
+    }
+    const auto maximum_count = std::numeric_limits<std::int64_t>::max();
+    Accounting boundary_counts;
+    account(boundary_counts, Json{{"usage", {{"prompt_tokens", maximum_count}, {"completion_tokens", 0}}}});
+    CHECK(boundary_counts.input_tokens == maximum_count && boundary_counts.generated_tokens == 0);
+    Accounting overflowing_message;
+    account(overflowing_message, Json{{"type", "message"},
+                                     {"usage", {{"input_tokens", maximum_count}, {"cache_read_input_tokens", 1}}}});
+    CHECK(!overflowing_message.input_tokens);
+    account(overflowing_message, Json{{"type", "message"},
+                                     {"usage", {{"input_tokens", maximum_count - 2}, {"cache_creation_input_tokens", 1},
+                                                {"cache_read_input_tokens", 1}}}});
+    CHECK(overflowing_message.input_tokens == maximum_count);
     // Fields of the wrong type count as missing; nothing throws.
     for (const char* text : {R"({"object":null,"status":"completed"})", R"({"object":5,"status":"completed"})",
                              R"({"object":"response","status":null})", R"({"object":"response","status":5})",
