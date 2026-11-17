@@ -19,6 +19,7 @@ import { usePolling } from './state/polling';
 import { ArchiveWrites, SettingsWrites, WriteQueue } from './state/persistence';
 import { waitForHealth } from './state/health';
 import { loadStartup } from './state/startup';
+import { AssetInspections } from './state/inspection';
 import { deviceLabel, parseInfo, type EngineStatus, type Inspection } from './status';
 import { downloadBusy } from './download-logic';
 import { deleteDownload, diskFree, measureDownload, pauseDownload, startDownload, useDownloads } from './download-host';
@@ -55,6 +56,7 @@ export function App() {
   const [phase, setPhase] = useState<GenerationPhase>('idle'), [draft, setDraft] = useState('');
   const [service, setService] = useState<RunningService>(), [model, setModel] = useState<Model>(), [activePath, setActivePath] = useState('');
   const [assets, setAssets] = useState<Inspection[]>([]), [status, setStatus] = useState<EngineStatus>(), [health, setHealth] = useState<Health>({});
+  const inspections = useRef(new AssetInspections(() => settingsRef.current, next => invoke<Inspection[]>('inspect_assets', { settings: next }), setAssets));
   const [savedTotals, setSavedTotals] = useState<SavedTotals>(emptyTotals), totalsRef = useRef(savedTotals);
   const tokenRef = useRef('');
   const [token, setToken] = useState(''), [portText, setPortText] = useState('');
@@ -74,7 +76,7 @@ export function App() {
     void archiveWrites.current.save(next).catch(report);
   }
   function keepTotals(next: SavedTotals) { totalsRef.current = next; setSavedTotals(next); void persistence.current.enqueue(() => invoke<void>('save_totals', { totals: next })).catch(report); }
-  async function inspect(next = settingsRef.current) { const result = await invoke<Inspection[]>('inspect_assets', { settings: next }); setAssets(result); return result; }
+  function inspect(next = settingsRef.current) { return inspections.current.inspect(next); }
   function newChat(thinking = model?.capabilities.thinking_default ?? false, nextSettings = settingsRef.current) { if (busy || loading || deletingRef.current) return; remember(conversationRef.current); changeConversation(newConversation(nextSettings.system_prompt, thinking && !!model?.capabilities.thinking, activePath)); setDraft(''); setPage('chat'); setError(''); }
   useEffect(() => {
     let active = true;
