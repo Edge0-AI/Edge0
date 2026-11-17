@@ -1,6 +1,7 @@
 #include "weights/expert_slots.h"
 #include <algorithm>
 #include <limits>
+#include <unordered_map>
 namespace edge0::weights {
 namespace {
 Error conflict(const char* message) { return {ErrorCategory::conflict,message}; }
@@ -26,6 +27,7 @@ Result<std::shared_ptr<Preparation>> ExpertPool::prepare(const std::vector<std::
     if (closed_ || !pending_.expired()) return conflict("Pool closed or preparation pending");
     const auto count=description_.slots;
     std::vector<RegionInfo> current;
+    current.reserve(count*3);
     for (std::size_t i=0;i<count*3;++i) {
         auto region=weights_->query_state(storage_,i); if(!region) return region.error();
         if (region.value().uses || region.value().state==RegionState::writing || region.value().state==RegionState::isolated)
@@ -40,13 +42,19 @@ Result<std::shared_ptr<Preparation>> ExpertPool::prepare(const std::vector<std::
     auto& result=preparation->result_; result.activity.demand=experts.size();
     std::set<std::size_t> protected_slots;
     // Resolve every hit before selecting any replacement.
-    for (auto expert:experts) for (std::size_t slot=0;slot<count;++slot) {
-        if (current[slot].state!=RegionState::published || current[slot].binding.id!=id(description_.layer,expert,0)) continue;
+    std::unordered_map<std::string,std::int32_t> wanted;
+    wanted.reserve(experts.size());
+    for(auto expert:experts) wanted.emplace(id(description_.layer,expert,0),expert);
+    for (std::size_t slot=0;slot<count;++slot) {
+        if (current[slot].state!=RegionState::published) continue;
+        const auto found=wanted.find(current[slot].binding.id);
+        if(found==wanted.end() || result.mapping.count(found->second)) continue;
+        const auto expert=found->second;
         bool hit=true;
         for (std::size_t p=1;p<3;++p) hit=hit && current[p*count+slot].state==RegionState::published &&
             current[p*count+slot].binding.id==id(description_.layer,expert,p);
         if (!hit) return conflict("Inconsistent projection mapping");
-        result.mapping[expert]=slot; protected_slots.insert(slot); ++result.activity.hits; break;
+        result.mapping[expert]=slot; protected_slots.insert(slot); ++result.activity.hits;
     }
     std::vector<LoadItem> items;
     for (auto expert:experts) {

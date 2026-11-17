@@ -4,6 +4,27 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <new>
+namespace lookup_allocations {
+thread_local bool active=false;
+thread_local std::size_t count=0;
+#if defined(__GNUC__)
+__attribute__((noinline))
+#elif defined(_MSC_VER)
+__declspec(noinline)
+#endif
+void release(void* pointer) noexcept {std::free(pointer);}
+}
+void* operator new(std::size_t bytes) {
+    if(lookup_allocations::active) ++lookup_allocations::count;
+    if(auto* pointer=std::malloc(bytes?bytes:1)) return pointer;
+    throw std::bad_alloc();
+}
+void operator delete(void* pointer) noexcept {lookup_allocations::release(pointer);}
+void operator delete(void* pointer,std::size_t) noexcept {lookup_allocations::release(pointer);}
+void* operator new[](std::size_t bytes) {return ::operator new(bytes);}
+void operator delete[](void* pointer) noexcept {lookup_allocations::release(pointer);}
+void operator delete[](void* pointer,std::size_t) noexcept {lookup_allocations::release(pointer);}
 using namespace edge0;
 using namespace edge0::weights;
 using test::take;
@@ -39,6 +60,29 @@ int main(int argc,char** argv) {
         auto current=take(pool->prepare({4,0,1,3}));
         CHECK(!pool->abandon(pending)); CHECK(!pool->prepare({2}));
         auto ready=take(pool->await_ready(current)); CHECK(ready.activity.loads==0);
+        {
+            // A populated pool must not allocate a binding key for every demand/slot pair.
+            // Keep keys beyond small-string storage on both libstdc++ and libc++.
+            auto wide=description; wide.layer=4294967295U; wide.slots=128;
+            wide.experts.resize(256,description.experts.front());
+            auto cached=take(ExpertPool::create_pools(w,backend,wide));
+            std::vector<std::int32_t> all,demand;
+            for(std::int32_t expert=0;expert<128;++expert) all.push_back(expert);
+            for(std::int32_t expert=96;expert<128;++expert) demand.push_back(expert);
+            const auto populated=take(cached->await_ready(take(cached->prepare(all))));
+            const auto reads_before=w.read_count();
+            lookup_allocations::count=0;lookup_allocations::active=true;
+            auto hit_preparation=take(cached->prepare(demand));
+            lookup_allocations::active=false;
+            const auto allocations=lookup_allocations::count;
+            const auto hits=take(cached->await_ready(hit_preparation));
+            CHECK(hits.activity.hits==demand.size() && hits.activity.loads==0);
+            CHECK(w.read_count()==reads_before);
+            for(const auto expert:demand) CHECK(hits.mapping.at(expert)==populated.mapping.at(expert));
+            std::cout<<"cached slot lookup allocations="<<allocations<<" slots="<<wide.slots<<" demand="<<demand.size()<<'\n';
+            CHECK(!cached->close());
+            CHECK(allocations<=8*wide.slots+16*demand.size());
+        }
         // Compare whole-array mul_mat_id with a resident tensor containing the
         // same experts in model order. IDs in the slot graph come from bindings.
         auto reference=take(w.create_storage(backend,{{{GGML_TYPE_F32,{4,4,6}},1}}, edge0::exec::Purpose::resident_weights));
