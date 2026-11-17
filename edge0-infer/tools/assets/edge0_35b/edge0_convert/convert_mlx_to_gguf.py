@@ -5,6 +5,7 @@
 #   (M1) CONVERTER_REV is the pinned upstream revision instead of a git lookup;
 #   (M2) only the 35b tier is accepted; the 8b converter is not imported.
 #   (M5) cache reuse checks input/tool identity and honors requested comparisons.
+#   (M8) accepted source directory spellings produce the canonical base filename.
 """convert_mlx_to_gguf.py — single entry for on-device MLX→GGUF conversion.
 
 The app ships MLX artifacts only; this script (distributed with the app) runs the
@@ -186,6 +187,11 @@ def main():
         run_step([sys.executable, os.path.join(TOOLS, "repack_r3_8b.py"), "--dir", d, "--out", out],
                  "r3-8b", log)
         n_min = 500
+    # The repacker uses the source basename, including accepted edge0_35b names.
+    # Normalize its completed file before the adapter gate and manifest consume it.
+    produced_base = os.path.join(out, f"{stem}.gguf")
+    if os.path.abspath(produced_base) != os.path.abspath(arts["gguf"]):
+        os.replace(produced_base, arts["gguf"])
     # ---- step 2: adapter ----
     # --base pins the cross-check gate to the base GGUF THIS run produced (issue #128:
     # the gate used to hardcode <repo>/windows/models/... and missed the app's ~/.edge0 layout).

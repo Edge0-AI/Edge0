@@ -91,5 +91,3 @@ def make_source(path: Path, *, vocab: int = 64, hidden: int = 64, layers: int = 
             lora[base + '.lora_A'] = np.full((16, hidden), 0.25, '<f2')
             lora[base + '.lora_B'] = np.full((64, 16), 0.125, '<f2')
     write_safetensors(path / 'lora_edge0_35b.safetensors', lora)
-
-
