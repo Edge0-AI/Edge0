@@ -186,8 +186,9 @@ class SuiteTests(unittest.TestCase):
 
 class RedactionTests(unittest.TestCase):
     def test_paths_names_ips_and_keys(self):
-        red = B.redactor(extra=["Jane Roe Laptop"], key="sk-secret-123456")
-        user = os.environ.get("USERNAME") or os.environ.get("USER") or "tester"
+        user = "fixture_user"
+        with mock.patch.object(B.getpass, "getuser", return_value=user):
+            red = B.redactor(extra=["Jane Roe Laptop"], key="sk-secret-123456")
         cases = [r"C:\Users\someone_else\models\a.gguf", "/home/bob/strata/x.json", "/Users/alice/Library",
                  "peer 192.168.1.20 and 10.0.0.7 and 100.101.102.103", "Authorization: Bearer abcdefghijkl12345",
                  "key sk-secret-123456 here", "name Jane Roe Laptop"]
@@ -233,6 +234,17 @@ class RedactionTests(unittest.TestCase):
         out = B.redact_obj({"a": [{"p": r"D:\Users\zed\x"}], "n": 3}, red)
         self.assertNotIn("zed", json.dumps(out))
         self.assertEqual(out["n"], 3)
+
+    def test_private_names_do_not_change_schema_keys(self):
+        red = B.redactor(extra=["agent", "machine", "schema", "results"])
+        value = {"schema": 1, "results": {"agent": [{"machine": "agent on machine at 10.0.0.7"}]}}
+        clean = B.redact_obj(value, red)
+        self.assertEqual(set(clean), {"schema", "results"})
+        self.assertEqual(clean["schema"], 1)
+        self.assertEqual(set(clean["results"]), {"agent"})
+        text = clean["results"]["agent"][0]["machine"]
+        for private in ("agent", "machine", "10.0.0.7"):
+            self.assertNotIn(private, text)
 
     def test_config_view_drops_secrets_and_cuts_paths(self):
         cfg = {"exe": r"C:\Users\me\Strata\engine\strata.exe", "args": ["--native", "/home/me/models/m-IQ3_XXS.gguf", "--ctx", "65536"],
@@ -298,6 +310,26 @@ class ReportTests(unittest.TestCase):
             self.assertIn("chat decode tok/s", table)
             self.assertIn("+100.0%", table)
             self.assertIn("engine: 1.0 -> 9.9.9", table)
+
+    def test_saved_report_remains_comparable_when_user_name_is_agent(self):
+        srv = FakeStrata()
+        self.addCleanup(srv.stop)
+        collect = B.collect_machine
+        def machine(*args, **kwargs):
+            value = collect(*args, **kwargs)
+            value["cpu"] = "agent on 10.0.0.7"
+            return value
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(B.getpass, "getuser", return_value="agent"), \
+                mock.patch.object(B, "collect_machine", side_effect=machine):
+            self.assertEqual(self.run_main(srv, d), 0)
+            folder = next(Path(d).iterdir())
+            saved = B.load_results(folder)
+            self.assertIn("agent cache hit %", B.compare_table(saved, saved))
+            readme = (folder / "README.md").read_text(encoding="utf-8")
+            self.assertIn("### Agent session", readme)
+            self.assertNotIn("agent on 10.0.0.7", readme)
+            self.assertNotIn("10.0.0.7", json.dumps(saved))
+            self.assertNotIn("agent", saved["machine"]["cpu"])
 
     def test_only_the_gpus_the_engine_uses_are_listed(self):
         """#1985: a PC with two cards, the engine on one: the report names that one, with its VRAM."""

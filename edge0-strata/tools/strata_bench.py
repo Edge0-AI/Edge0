@@ -106,8 +106,9 @@ def redactor(extra: list[str] = (), key: str = ""):
 
 
 def redact_obj(obj, red):
+    """Redact report text values without changing the fixed result-schema keys."""
     if isinstance(obj, dict):
-        return {red(k) if isinstance(k, str) else k: redact_obj(v, red) for k, v in obj.items()}
+        return {k: redact_obj(v, red) for k, v in obj.items()}
     if isinstance(obj, list):
         return [redact_obj(v, red) for v in obj]
     return red(obj) if isinstance(obj, str) else obj
@@ -1008,7 +1009,7 @@ def write_results(res: dict, parent: Path, red, log_lines: list[str]) -> Path:
     d.mkdir(parents=True)
     clean = redact_obj(res, red)
     (d / "results.json").write_text(json.dumps(clean, indent=1, ensure_ascii=False), encoding="utf-8")
-    (d / "README.md").write_text(red(render_readme(res)), encoding="utf-8")
+    (d / "README.md").write_text(render_readme(clean), encoding="utf-8")
     if log_lines:
         (d / "engine-log-excerpt.txt").write_text(red("\n".join(log_lines)) + "\n", encoding="utf-8")
     return d
