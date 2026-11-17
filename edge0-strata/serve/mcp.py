@@ -346,7 +346,7 @@ class HttpTransport:
                     return
                 ctype = r.headers.get("Content-Type", "")
                 if "text/event-stream" in ctype:
-                    found = self._from_events(r, rid)
+                    found = self._from_events(r, rid, timeout)
                 else:
                     body = r.read()
                     found = None
@@ -378,8 +378,7 @@ class HttpTransport:
             if slot is not None:
                 slot.done.set()
 
-    @staticmethod
-    def _from_events(r, rid):
+    def _from_events(self, r, rid, timeout):
         """Read the event stream until the event that answers `rid` (it may carry notifications first)."""
         data = []
         for raw in r:
@@ -393,7 +392,18 @@ class HttpTransport:
                     m = None
                 data = []
                 for x in m if isinstance(m, list) else [m]:
-                    if isinstance(x, dict) and _request_id(x.get("id")) and x.get("id") == rid and "method" not in x:
+                    if not isinstance(x, dict) or not _request_id(x.get("id")):
+                        continue
+                    if "method" in x:
+                        # Streamable HTTP can carry server requests before the result.  Responses are separate
+                        # POSTs, just like notifications, so a server waiting for our ping reply can make progress.
+                        reply = {"jsonrpc": "2.0", "id": x["id"]}
+                        if x["method"] == "ping":
+                            reply["result"] = {}
+                        else:
+                            reply["error"] = {"code": -32601, "message": f"method not supported: {x['method']}"}
+                        self._post(reply, None, timeout, None)
+                    elif x["id"] == rid:
                         return x
         return None
 

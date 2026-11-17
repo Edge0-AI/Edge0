@@ -212,7 +212,9 @@ class HttpOwnership(unittest.TestCase):
                 self.end_headers()
                 try:
                     if message["method"] == "ping-before-result":
-                        self.wfile.write(b'data: {"jsonrpc":"2.0","id":"server-ping","method":"ping"}\n\n')
+                        request = {"jsonrpc": "2.0", "id": "server-ping",
+                                   "method": message["params"].get("server_method", "ping")}
+                        self.wfile.write(("data: " + json.dumps(request) + "\n\n").encode())
                         self.wfile.flush()
                         if case.server_response.wait(0.7):
                             response = {"jsonrpc": "2.0", "id": message["id"], "result": {"ok": True}}
@@ -240,6 +242,17 @@ class HttpOwnership(unittest.TestCase):
         self.httpd.server_close()
         self.http_thread.join(3)
 
+    def test_server_ping_receives_response_before_tool_result(self):
+        self.assertEqual(self.transport.request("ping-before-result", {}, 1.5), {"ok": True})
+        responses = [m for m in self.messages if "method" not in m]
+        self.assertEqual(responses, [{"jsonrpc": "2.0", "id": "server-ping", "result": {}}])
+
+    def test_unsupported_server_request_receives_method_not_found(self):
+        self.assertEqual(self.transport.request("ping-before-result", {"server_method": "unsupported"}, 1.5),
+                         {"ok": True})
+        response = next(m for m in self.messages if "method" not in m)
+        self.assertEqual(response["id"], "server-ping")
+        self.assertEqual(response["error"]["code"], -32601)
 
 
 
