@@ -334,6 +334,22 @@ Notes:
   the engine reads `<model>/mtp-q2_0.gguf`. `STRATA_METAL_DRAFT_VOCAB` points at
   `${MODEL_DIR}/mtp/draft_vocab.bin`.
 
+  On Metal the routed experts (`experts.bin`) stay in memory when the Mac has room for them, and are
+  read from the SSD as they are needed when it does not. The engine decides at start and logs
+  `strata metal: latent experts resident` or `strata metal: latent experts streamed from the SSD`
+  with the sizes and the limit it compared. When streaming, the experts live in a slot arena that
+  is filled first from `STRATA_METAL_EXPERT_PROFILE` (the templates set it to
+  `${MODEL_DIR}/profile.bin`); the decode window and the prompt chain both read from that arena, and
+  a prompt's buffers are placed in it while the prompt runs. If the configured prompt chunk
+  (`STRATA_METAL_PROMPT_CHUNK`) does not fit, the chunk is halved, down to 1024 rows, and the engine
+  logs the chunk size it uses. These variables change the choice:
+
+  | Variable | Effect |
+  | --- | --- |
+  | `STRATA_METAL_STREAM` | `1` always streams the experts, `0` always keeps them in memory |
+  | `STRATA_METAL_ARENA_GB` | the arena size in GB instead of the size the engine computes |
+  | `STRATA_METAL_KEEP_FREE_GB` | memory in GB the engine leaves free when it sizes the arena |
+
   A Metal template may contain `prepare`, an array of files to create before the server starts. Each
   entry has `output`, `script` (a path relative to this directory) and `args`, and those strings use
   the placeholders above. `edge0-infer` runs a missing `output` with this directory's Python, or with
