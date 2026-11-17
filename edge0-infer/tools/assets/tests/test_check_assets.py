@@ -145,6 +145,44 @@ def test_reject_invalid_hyperparameter_type_or_sign(asset, value):
     assert result['issues'][0]['category'] == 'hyperparameter_mismatch'
 
 
+@pytest.mark.parametrize('key', ['qwen3next.rope.freq_base', 'qwen3next.attention.layer_norm_rms_epsilon'])
+@pytest.mark.parametrize('value', [None, Value(6, 0.0), Value(6, -1.0), Value(6, float('nan')),
+                                  Value(6, float('inf')), Value(6, float('-inf')), Value(12, 1.0),
+                                  Value(4, 1), Value(7, True), Value(8, '1.0')])
+def test_reject_invalid_runtime_float(asset, key, value):
+    def change(metadata, tensors):
+        if value is None:
+            metadata.pop(key)
+        else:
+            metadata[key] = value
+    rewrite(asset, change)
+    report = check(asset)
+    assert report['status'] == 'failed'
+    assert report['issues'][0]['category'] == 'hyperparameter_mismatch'
+    assert key in report['issues'][0]['detail']
+
+
+@pytest.mark.parametrize('value', [None, Value(4, 0), Value(5, -1), Value(5, 4096),
+                                  Value(10, 4096), Value(6, 4096.0), Value(7, True)])
+def test_reject_invalid_context_length(asset, value):
+    key = 'qwen3next.context_length'
+    rewrite(asset, lambda metadata, tensors: metadata.pop(key) if value is None else metadata.update({key: value}))
+    report = check(asset)
+    assert report['status'] == 'failed'
+    assert report['issues'][0]['category'] == 'hyperparameter_mismatch'
+    assert key in report['issues'][0]['detail']
+
+
+@pytest.mark.parametrize('context, frequency, epsilon', [(1, 1.0, 1e-8), (4096, 1e6, 1e-5), (2**32 - 1, 1e7, 1e-6)])
+def test_accept_valid_runtime_hyperparameters(asset, context, frequency, epsilon):
+    rewrite(asset, lambda metadata, tensors: metadata.update({
+        'qwen3next.context_length': Value(4, context),
+        'qwen3next.rope.freq_base': Value(6, frequency),
+        'qwen3next.attention.layer_norm_rms_epsilon': Value(6, epsilon),
+    }))
+    assert check(asset)['status'] == 'passed'
+
+
 def rewrite_prerouter(root, mutate):
     path = root / 'prerouter.gguf'
     reader = Reader(path)
