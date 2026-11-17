@@ -355,6 +355,11 @@ target_include_directories(moe_test_generate PRIVATE "${PROJECT_SOURCE_DIR}" "${
 target_link_libraries(moe_test_generate PRIVATE moe_app)
 moe_warnings(moe_test_generate)
 moe_add_test(NAME moe_test_generate LEVEL L2 COMMAND moe_test_generate)
+add_executable(moe_test_generation_result unit/app/generation_result_test.cpp)
+target_include_directories(moe_test_generation_result PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(moe_test_generation_result PRIVATE moe_app)
+moe_warnings(moe_test_generation_result)
+moe_add_test(NAME moe_test_generation_result LEVEL L2 COMMAND moe_test_generation_result)
 if(MOE_BUILD_CLI)
     moe_add_test(NAME moe_test_bench_cli LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/bench_cli_test.py" $<TARGET_FILE:edge0-infer>)

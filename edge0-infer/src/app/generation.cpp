@@ -869,7 +869,7 @@ Result<GenerationResult> generate(const SessionReference& session,const ChatInpu
     const GenerationConfiguration& configuration,const GenerationOverrides& overrides,OutputReceiver receiver,const CancelToken* cancel_token) {
     auto result=generate_impl(session,nullptr,&chat,configuration,overrides,{},std::move(receiver),cancel_token);
     if(!result) return result.error();
-    return result.value().result;
+    return std::move(result).value().result;
 }
 Result<GenerationCheckResult> generate_tokens_check(const SessionReference& session,const std::vector<std::int32_t>& tokens,
     const GenerationConfiguration& configuration,const GenerationOverrides& overrides,const GenerationCheckOptions& options,OutputReceiver receiver,const CancelToken* cancel_token) {
