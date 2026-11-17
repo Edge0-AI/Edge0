@@ -382,7 +382,7 @@ function Invoke-Build {
         LLAMA = $LlamaCommit; PYTHON = $PyVersion; WHEELS = $wheelList
         CRT = "$($C.Title), $(Split-Path $env:VCToolsRedistDir.TrimEnd('\') -Leaf)"; PATH_FLAGS = $pathFlags
     }
-    $readme = Get-Content -Raw "$PSScriptRoot\user-README.md"
+    $readme = Get-Content -Raw "$src\scripts\package\windows\user-README.md"
     $readme = [regex]::Replace($readme, '(?s)<!-- arch:(\w+) -->\r?\n(.*?)<!-- /arch -->\r?\n', {
             param($m) if ($m.Groups[1].Value -eq $Arch) { $m.Groups[2].Value } else { '' } })
     foreach ($k in $values.Keys) { $readme = $readme.Replace("{{$k}}", [string]$values[$k]) }

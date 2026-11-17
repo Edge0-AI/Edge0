@@ -199,7 +199,7 @@ build() {
     "$BUILD_PY" "$HERE/notices.py" --title "Edge0 Chat $version (macOS, Apple Silicon)" \
         --cargo-manifest "$DESKTOP/src-tauri/Cargo.toml" --vendor "$CACHE/cargo-vendor" --npm "$DESKTOP" \
         > "$stage/licenses/THIRD-PARTY-NOTICES.txt"
-    "$BUILD_PY" - "$HERE/user-README.md" "$stage/README.md" <<EOF
+    "$BUILD_PY" - "$SRC/scripts/package/macos-arm64/user-README.md" "$stage/README.md" <<EOF
 import sys
 text = open(sys.argv[1]).read()
 for key, value in {
