@@ -176,7 +176,7 @@ exec::Status resolve_context_capacity(LoadConfiguration& c,std::optional<std::in
     return {};
 }
 exec::Status resolve_prefill_chunk(LoadConfiguration& configuration,std::optional<std::int64_t> requested) {
-    const auto chunk=requested.value_or(4096);
+    const auto chunk=requested.value_or(std::min<std::int64_t>(4096,configuration.context));
     if(chunk<=0 || chunk>configuration.context) return invalid("Prefill chunk is outside context capacity");
     configuration.prefill_chunk=chunk;
     configuration.sources["prefill_chunk"]=requested?ConfigurationSource::request:ConfigurationSource::platform;

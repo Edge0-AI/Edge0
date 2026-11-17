@@ -574,6 +574,15 @@ int main() {
             auto error=app::resolve_prefill_chunk(configuration,invalid);
             CHECK(error && error->category==ErrorCategory::invalid_argument);
         }
+        for(std::int64_t capacity:{1,64,3500,4096,8192}) {
+            configuration.context=capacity;
+            CHECK(!app::resolve_prefill_chunk(configuration,{}));
+            CHECK(configuration.prefill_chunk==std::min<std::int64_t>(4096,capacity));
+            CHECK(configuration.sources.at("prefill_chunk")==ConfigurationSource::platform);
+            CHECK(!app::resolve_prefill_chunk(configuration,capacity));
+            CHECK(configuration.sources.at("prefill_chunk")==ConfigurationSource::request);
+            CHECK(app::resolve_prefill_chunk(configuration,capacity+1));
+        }
     }
     {
         Fixture f(8192);f.model->configuration.prefill_chunk=4096;

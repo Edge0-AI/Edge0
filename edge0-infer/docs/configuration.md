@@ -46,7 +46,7 @@ The Android thread defaults were tuned on one device and may not suit other CPU 
 | `--prefill-device cpu\|metal\|vulkan` | `prefill_device` | Same as `device` | The device that processes the input. When it differs from `device`, the two phases run on different devices and the state is handed over between them; with the same device nothing changes. An unavailable device is rejected with `unsupported` and is not replaced with CPU |
 | `--stage-policy <name>` | `stage_policy` | `fixed` | How each request chooses its prefill device; `fixed` always uses `prefill_device` and is currently the only policy |
 | `--context <n>` | `context` | The model's recommendation (16384 for the 35B), otherwise 4096; never above the model's context length | Session capacity in tokens: prompt, history and generated tokens together |
-| `--prefill-chunk <n>` | `prefill_chunk` | 4096 | The largest number of input tokens computed in one step; 1 to the context capacity. Larger chunks use more working memory |
+| `--prefill-chunk <n>` | `prefill_chunk` | 4096, limited to the context capacity | The largest number of input tokens computed in one step; 1 to the context capacity. An explicit value above the capacity is rejected. Larger chunks use more working memory |
 
 `describe` accepts `--device`, `--prefill-chunk`, `--model-option` and the runtime flags. `--prefill-device` and `--stage-policy` are accepted by `run`, `chat`, `bench` and `serve`.
 

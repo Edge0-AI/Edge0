@@ -19,6 +19,17 @@ int main() {
     CHECK(defaults.prefill_chunk==4096 && defaults.sources.at("prefill_chunk")==ConfigurationSource::platform);
     CHECK(defaults.model_options.at("prefill_read")=="auto" && defaults.sources.at("prefill_read")==ConfigurationSource::model);
     CHECK(defaults.model_options.at("prefill_ahead_min_tokens")=="3000" && defaults.sources.at("prefill_ahead_min_tokens")==ConfigurationSource::model);
+    LoadOverrides smaller;smaller.context=3500;
+    auto bounded=take(resolve_load_configuration(runtime,directory,smaller));
+    CHECK(bounded.context==3500 && bounded.prefill_chunk==3500);
+    CHECK(bounded.sources.at("prefill_chunk")==ConfigurationSource::platform);
+    auto bounded_model=take(load_model(runtime,bounded));
+    auto bounded_session=take(create_session(bounded_model));
+    GenerationOverrides one;one.temperature=0;one.presence_penalty=0;one.max_tokens=1;
+    auto bounded_result=take(generate(bounded_session,std::vector<TextMessage>{{"user","hello"}},
+        take(resolve_generation_configuration(bounded_model,one))));
+    CHECK(!bounded_result.error && bounded_result.state_valid && bounded_result.input_complete);
+    take(release_session(bounded_session));take(unload_model(bounded_model));
     for(std::int64_t chunk:{0,16385}) {
         LoadOverrides invalid;invalid.prefill_chunk=chunk;
         auto result=resolve_load_configuration(runtime,directory,invalid);
