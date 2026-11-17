@@ -1,4 +1,18 @@
 import type { EngineStatus, Totals } from '../status';
+import type { Fetcher } from '../chat';
+/** A last totals snapshot must not leave Stop or a model switch waiting indefinitely. */
+export async function fetchStatus(fetcher: Fetcher, url: string, timeoutMs = 2000): Promise<EngineStatus> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_, reject) => { timer = setTimeout(() => { const error = new Error('Status request timed out'); controller.abort(error); reject(error); }, timeoutMs); });
+  const request = async () => {
+    const response = await fetcher(url + '/status', { signal: controller.signal });
+    if (!response.ok) { await response.body?.cancel(); throw new Error(`Status failed (${response.status})`); }
+    return response.json() as Promise<EngineStatus>;
+  };
+  try { return await Promise.race([request(), deadline]); }
+  finally { clearTimeout(timer!); controller.abort(); }
+}
 export interface SavedTotals { version: 1; instances: Record<string, Totals>; baselines: Record<string, Totals>; }
 export const emptyTotals = (): SavedTotals => ({ version: 1, instances: {}, baselines: {} });
 export const observeTotals = (saved: SavedTotals, status: Pick<EngineStatus, 'instance' | 'totals'>): SavedTotals => ({ ...saved, instances: { ...saved.instances, [status.instance.id]: structuredClone(status.totals) } });

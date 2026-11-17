@@ -14,7 +14,7 @@ import { Service, type Health } from './pages/Service';
 import { Settings as SettingsPage } from './pages/Settings';
 import { defaultSettings, engineSettingsChanged, generateToken, temperatures, type Settings } from './state/settings';
 import { groupHistory, newConversation, editAndResend, regenerate, finishGeneration, title, type Archive, type Conversation } from './state/history';
-import { aggregateTotals, emptyTotals, observeTotals, resetTotals, type SavedTotals } from './state/totals';
+import { aggregateTotals, emptyTotals, fetchStatus, observeTotals, resetTotals, type SavedTotals } from './state/totals';
 import { usePolling } from './state/polling';
 import { ArchiveWrites, SettingsWrites, WriteQueue } from './state/persistence';
 import { waitForHealth } from './state/health';
@@ -55,6 +55,7 @@ export function App() {
   const [conversation, setConversation] = useState(() => newConversation()), conversationRef = useRef(conversation);
   const [phase, setPhase] = useState<GenerationPhase>('idle'), [draft, setDraft] = useState('');
   const [service, setService] = useState<RunningService>(), [model, setModel] = useState<Model>(), [activePath, setActivePath] = useState('');
+  const serviceRef = useRef<RunningService | undefined>(undefined), statusReads = useRef(new WriteQueue());
   const [assets, setAssets] = useState<Inspection[]>([]), [status, setStatus] = useState<EngineStatus>(), [health, setHealth] = useState<Health>({});
   const inspections = useRef(new AssetInspections(() => settingsRef.current, next => invoke<Inspection[]>('inspect_assets', { settings: next }), setAssets));
   const [savedTotals, setSavedTotals] = useState<SavedTotals>(emptyTotals), totalsRef = useRef(savedTotals);
@@ -70,6 +71,7 @@ export function App() {
   const busy = phase !== 'idle', disabled = busy || loading || initializing || deleting;
   const memoryWarning = service?.memory_warning ?? '';
   const report = (failure: unknown) => setError(String(failure));
+  function changeService(next: RunningService | undefined) { serviceRef.current = next; setService(next); }
   function changeConversation(next: Conversation) { conversationRef.current = next; setConversation(next); }
   function remember(next: Conversation) {
     if (!next.messages.length || !archiveWrites.current.available(next.id)) return;
@@ -96,19 +98,23 @@ export function App() {
     const apply = () => { document.documentElement.dataset.theme = settings.theme === 'system' ? media.matches ? 'dark' : 'light' : settings.theme; };
     apply(); media.addEventListener('change', apply); return () => media.removeEventListener('change', apply);
   }, [settings.theme]);
-  async function readStatus() {
-    if (!service) return;
+  function readStatus() {
+    const current = serviceRef.current;
+    if (!current) return Promise.resolve();
     const epoch = serviceEpoch.current;
-    try { const response = await fetch(service.url + '/status'); if (!response.ok) throw new Error(`Status failed (${response.status})`); const next: EngineStatus = await response.json(); if (epoch !== serviceEpoch.current) return; setStatus(next); keepTotals(observeTotals(totalsRef.current, next)); } catch (failure) { if (epoch === serviceEpoch.current) report(failure); }
+    return statusReads.current.enqueue(async () => {
+      if (epoch !== serviceEpoch.current) return;
+      try { const next = await fetchStatus(fetch, current.url); if (epoch !== serviceEpoch.current) return; setStatus(next); keepTotals(observeTotals(totalsRef.current, next)); } catch (failure) { if (epoch === serviceEpoch.current) report(failure); }
+    });
   }
   usePolling(readStatus, !!service && (page === 'status' || page === 'service'));
   useEffect(() => {
     if (!service) return;
     let cancelled = false; const epoch = serviceEpoch.current;
-    const timer = setInterval(() => { void invoke<{ running: boolean; detail: string }>('service_status').then(next => { if (!cancelled && epoch === serviceEpoch.current && !next.running) { controller.current?.abort(); serviceEpoch.current++; setService(undefined); setModel(undefined); setError(explainFailure(`The model service exited. ${next.detail}`, service.memory_warning ?? '')); } }).catch(report); }, 1500);
+    const timer = setInterval(() => { void invoke<{ running: boolean; detail: string }>('service_status').then(next => { if (!cancelled && epoch === serviceEpoch.current && !next.running) { controller.current?.abort(); serviceEpoch.current++; changeService(undefined); setModel(undefined); setError(explainFailure(`The model service exited. ${next.detail}`, service.memory_warning ?? '')); } }).catch(report); }, 1500);
     return () => { cancelled = true; clearInterval(timer); };
   }, [service]);
-  async function stopService() { if (controller.current) return; serviceEpoch.current++; setLoading(true); try { await invoke('stop_service'); runtimeSettings.current = null; setService(undefined); setModel(undefined); setStatus(previous => previous ? { ...previous, current: null } : undefined); } catch (failure) { report(failure); } finally { setLoading(false); } }
+  async function stopService() { if (controller.current) return; setLoading(true); try { await readStatus(); serviceEpoch.current++; await invoke('stop_service'); runtimeSettings.current = null; changeService(undefined); setModel(undefined); setStatus(previous => previous ? { ...previous, current: null } : undefined); } catch (failure) { report(failure); } finally { setLoading(false); } }
   async function applySavedSettings() {
     if (!settingsNeedApply.current || controller.current) return;
     settingsNeedApply.current = false;
@@ -118,21 +124,23 @@ export function App() {
   async function ensureToken() { const current = tokenRef.current || generateToken(); if (!tokenRef.current) { await invoke('write_api_token', { token: current }); tokenRef.current = current; setToken(current); } return current; }
   async function select(path: string, restore?: Conversation, nextSettings = settingsRef.current) {
     if (controller.current || busy || initializing || deletingRef.current) return;
-    remember(conversationRef.current); setError(''); setLoading(true); serviceEpoch.current++; setService(undefined); setModel(undefined);
+    remember(conversationRef.current); setError(''); setLoading(true);
     // Reading an archive must not depend on the original model still being available.
     if (restore) { changeConversation(restore); setDraft(''); setPage('chat'); }
     const abort = new AbortController(); controller.current = abort;
     try {
+      await readStatus(); abort.signal.throwIfAborted();
+      serviceEpoch.current++; changeService(undefined); setModel(undefined);
       if (nextSettings.lan_access) await ensureToken();
       const started = await invoke<RunningService>('start_service', { settings: nextSettings, model: path }); abort.signal.throwIfAborted();
       await waitForHealth(fetch, started.url, abort.signal);
       const response = await fetch(started.url + '/v1/models', { signal: abort.signal }); if (!response.ok) throw new Error(`Model capabilities failed (${response.status})`);
       const selected: Model | undefined = (await response.json()).data?.[0]; if (!selected?.capabilities) throw new Error('The service does not provide model capabilities. Rebuild edge0-infer.');
-      runtimeSettings.current = nextSettings; setActivePath(path); setModel(selected); setService(started); setStatus(undefined);
+      runtimeSettings.current = nextSettings; setActivePath(path); setModel(selected); changeService(started); setStatus(undefined);
       // The sidebar shows the device from /status, which is otherwise polled only on the Status and Service pages.
-      const loadedEpoch = serviceEpoch.current; void fetch(started.url + '/status').then(r => r.ok ? r.json() as Promise<EngineStatus> : undefined).then(next => { if (next && loadedEpoch === serviceEpoch.current) setStatus(next); }).catch(() => undefined);
+      void readStatus();
       changeConversation(restore ?? newConversation(nextSettings.system_prompt, selected.capabilities.thinking && selected.capabilities.thinking_default, path)); setDraft(''); setPage('chat');
-    } catch (failure) { if (!abort.signal.aborted) report(failure); await invoke('stop_service').catch(report); }
+    } catch (failure) { if (!abort.signal.aborted) report(failure); await invoke('stop_service').catch(report); runtimeSettings.current = null; changeService(undefined); setModel(undefined); }
     finally { controller.current = null; setLoading(false); await applySavedSettings(); }
   }
   async function generate(history: Message[], replacing = false) {
@@ -147,7 +155,7 @@ export function App() {
     }); } catch (failure) { failed = true; if (!abort.signal.aborted) setError(explainFailure(failure, memoryWarning)); }
     finally {
       if (conversationRef.current.id === id) { const next = finishGeneration(base, conversationRef.current, { failed, stopped: abort.signal.aborted, replacing }); changeConversation(next); remember(next); }
-      controller.current = null; setPhase('idle'); await applySavedSettings();
+      controller.current = null; setPhase('idle'); void readStatus(); await applySavedSettings();
     }
   }
   function send(text: string) { if (text.trim()) void generate([...conversationRef.current.messages, { role: 'user', content: text.trim() }]); }
