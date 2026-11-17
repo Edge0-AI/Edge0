@@ -66,6 +66,14 @@ class Request(unittest.TestCase):
             with self.subTest(req=req), self.assertRaises(images_api.ImageRequestError):
                 images_api.parse_request(req, self.CFG)
 
+    def test_default_size_obeys_the_configured_limit(self):
+        for fields in ({}, {"size": None}, {"size": "auto"}, {"size": "1024x1024"}):
+            with self.subTest(fields=fields):
+                with self.assertRaises(images_api.ImageRequestError):
+                    images_api.parse_request({"prompt": "x", **fields}, {"max_side": 512})
+                job = images_api.parse_request({"prompt": "x", **fields}, {"max_side": 1024})
+                self.assertEqual((job["width"], job["height"]), (1024, 1024))
+
 
 class Command(unittest.TestCase):
     def test_the_model_cards_command(self):
@@ -305,6 +313,46 @@ class OverHttp(unittest.TestCase):
         self.assertEqual(self.svc.images.totals["failed"], 1)
         self.assertFalse(self.svc.status["busy"])
         self.assertFalse(self.svc.fifo.locked())
+
+    def test_oversized_default_does_not_launch_an_image_job(self):
+        self.svc.images.cfg["max_side"] = 512
+        record = Path(self.tmp.name) / "sd-args.json"
+        with mock.patch.dict(os.environ, {"FAKE_SD_ARGS": str(record)}):
+            for fields in ({}, {"size": None}, {"size": "auto"}, {"size": "1024x1024"}):
+                with self.subTest(fields=fields):
+                    record.unlink(missing_ok=True)
+                    code, body = self.post({"prompt": "x", **fields})
+                    self.assertEqual(code, 400, body)
+                    self.assertIn("512", body["error"]["message"])
+                    self.assertFalse(record.exists())
+            self.assertEqual(self.svc.images.totals["jobs"], 0)
+            self.assertEqual(list(self.svc.images.dir.iterdir()), [])
+            code, body = self.post({"prompt": "x", "size": "512x512"})
+        self.assertEqual(code, 200, body)
+        self.assertEqual(body["size"], "512x512")
+        args = json.loads(record.read_text())
+        self.assertEqual((args[args.index("-W") + 1], args[args.index("-H") + 1]), ("512", "512"))
+
+    def test_spawn_failure_cleans_up_the_job_and_allows_retry(self):
+        gen = self.svc.images
+        gen.cfg["exe"] = str(Path(self.tmp.name) / "missing-sd-cli")
+        # Exercise a real OS process-start failure, without the fixture command adapter.
+        with mock.patch.object(images_api, "sd_cli_args", REAL_ARGS):
+            for attempt in range(3):
+                code, body = self.post({"prompt": "x"})
+                self.assertEqual(code, 500, body)
+                self.assertIn("sd-cli did not start", body["error"]["message"])
+                self.assertEqual(list(gen.dir.iterdir()), [])
+                self.assertNotIn("step", gen.status())
+                self.assertEqual(gen.totals["failed"], attempt + 1)
+                self.assertFalse(self.svc.status["busy"])
+                self.assertFalse(self.svc.fifo.locked())
+        gen.cfg["exe"] = str(FAKE)
+        code, body = self.post({"prompt": "retry", "seed": 7})
+        self.assertEqual(code, 200, body)
+        self.assertEqual((gen.totals["failed"], gen.totals["jobs"]), (3, 1))
+        self.assertEqual(list(gen.dir.iterdir()), [])
+        self.assertNotIn("step", gen.status())
 
     def test_listed(self):
         code, data, _ = self.get("/v1/models")

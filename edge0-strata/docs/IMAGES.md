@@ -73,7 +73,7 @@ quarter overlap decodes in half the time of sd.cpp's default half overlap.
 | Field | Meaning |
 | --- | --- |
 | `prompt` | The description (required). |
-| `size` | `WIDTHxHEIGHT`, each side a multiple of 32 from 256 to 2048 (`max_side`). Default and `auto`: `1024x1024`. |
+| `size` | `WIDTHxHEIGHT`, each side a multiple of 32 from 256 to 2048 (`max_side`). Default and `auto`: `1024x1024`, also subject to `max_side`; choose an explicit smaller size when the configured limit is below 1024. |
 | `n` | Images, 1 to 4 (`max_n`). Image *i* uses seed + *i*. |
 | `response_format` | `b64_json` (default) or `url` (`/v1/images/files/<random name>.png`; the server keeps the newest 64). |
 | `seed` | Strata's: a whole number for a repeatable image. Default: random; the answer says which. |
