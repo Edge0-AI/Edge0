@@ -170,6 +170,16 @@ def main():
         assert len(rejected) == 2
         print('(c) rejected input rollback passed', flush=True)
 
+        limited = ['--context', '32', '--prefill-chunk', '32', '--model-option',
+                   'prefill_ahead_min_tokens=32', '--max-tokens', '64', '--presence-penalty', '0', '--no-warmup']
+        regenerated, process = chat('capacity-regeneration', 'hi\n/regen\n/new\nhi\n/quit\n', limited)
+        assert len(regenerated) == 3, ('context-limited answer lost from history', process.stderr)
+        assert 'No answer to regenerate' not in process.stderr
+        for tokens, result, answer in regenerated:
+            assert result['stop_reason'] == 'capacity' and result['state_valid'] and answer
+            assert tokens == regenerated[0][0] and answer == regenerated[0][2]
+        print('Context-limited answers remain available for regeneration and reset', flush=True)
+
         empty, process = chat('empty', '/regen\n/quit\n')
         assert not empty and 'No answer to regenerate' in process.stderr, '(d) empty regeneration'
         assert not (root / 'empty').exists(), '(d) no result files'

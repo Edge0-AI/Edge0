@@ -21,6 +21,15 @@ int main() {
         CHECK(history.size()==expected.size());
         for(std::size_t i=0;i<history.size();++i) CHECK(history[i].role==expected[i].role && history[i].content==expected[i].content);
     }
+    for(bool valid:{false,true}) for(bool failed:{false,true}) {
+        auto candidate=previous;candidate.push_back({"user","last question"});
+        edge0::GenerationResult result;result.stop_reason=edge0::StopReason::capacity;
+        result.state_valid=valid;result.text="truncated answer";
+        if(failed) result.error=edge0::Error{edge0::ErrorCategory::backend_error,"failed"};
+        const auto history=cli::completed_history(candidate,previous,result);
+        CHECK(history.size()==(valid&&!failed?4:2));
+        if(valid&&!failed) CHECK(history.back().content=="truncated answer");
+    }
 
     for (const auto& line : {"", " ", "\t\r", "\r", " \t\n"})
         CHECK(cli::classify_chat_line(line).first == "empty");

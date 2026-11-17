@@ -134,6 +134,8 @@ Each line is one turn. Answers go to standard output; thinking text and status l
 
 Ctrl-C stops the current answer; the conversation can continue.
 
+The native chat keeps a valid answer that stops at the context limit, so `/regen` can repeat that turn. Use `/new` to clear the full context before starting another conversation.
+
 For Edge0 145B and Edge0 120B, `chat` starts edge0-strata and takes the same commands; see Chat for [Edge0 145B](edge0-145b.md#chat) and [Edge0 120B](edge0-120b.md#chat):
 
 ```sh
