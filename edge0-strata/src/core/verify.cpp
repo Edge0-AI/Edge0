@@ -1268,17 +1268,16 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
     if (h_plan_err_ != nullptr) *(volatile uint32_t*) h_plan_err_ = 0;
     if (hits.h_res != nullptr && hits.d_res != nullptr && hits.cache_base != nullptr) {
         const char* v_ar = std::getenv("STRATA_VERIFY_ALL_RESIDENT");
-#if defined(STRATA_CPU_ARM64)
-        // Windows on ARM64: this all-resident (zero-doorbell) path hangs the first decode window - measured here
-        // with the q3k l1280 pack, every expert resident: "verify window: 6 tokens at position 0, host at layer
-        // step 1, the GPU rang 0", no progress for 85 s, then the watchdog's 0xC0000409.  Layer 1 was reached and
-        // never returned; with STRATA_VERIFY_ALL_RESIDENT=0 the same request answers in 0.8 s.  A 24 GB card never
-        // reaches this path (its experts do not all fit), which is why the Linux validation passed.  Opt-in here
-        // until the path is fixed, so the default cannot take it.
+        // This all-resident (zero-doorbell) path hangs the first decode window wherever every expert fits:
+        //  - Windows on ARM64 (RTX Spark N1X), q3k l1280 pack: "verify window: 6 tokens at position 0, host at
+        //    layer step 1, the GPU rang 0", no progress for 85 s, then the watchdog's 0xC0000409.  Layer 1 was
+        //    reached and never returned; with STRATA_VERIFY_ALL_RESIDENT=0 the same request answers in 0.8 s.
+        //  - Linux x86-64, RTX PRO 6000 Blackwell 96 GB (sm_120), 145B NVFP4 with --expert-cache auto (24576 of
+        //    24576 experts): the same stall report on the first request, then exit -6 (#200).  With 24000 slots
+        //    the path is not taken and the request answers normally.
+        // A 24 GB card never reaches this path (its experts do not all fit), which is why the validation passed.
+        // Opt-in on every platform until the path is fixed, so the default cannot take it.
         const bool ar_enabled = v_ar != nullptr && std::atoi(v_ar) != 0;
-#else
-        const bool ar_enabled = v_ar == nullptr || std::atoi(v_ar) != 0;
-#endif
         if (ar_enabled) {
             bool all_ok = true;
             for (int64_t l = lb_; l < le_ && all_ok; ++l) {
