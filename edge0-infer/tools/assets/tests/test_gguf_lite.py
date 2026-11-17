@@ -40,6 +40,20 @@ def test_q41_hand_computed():
     assert pack_q4_1(np.full(32, 2, dtype=np.float32)) == struct.pack('<ee', 0, 2) + bytes(16)
 
 
+@pytest.mark.parametrize('element_type', [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12])
+def test_empty_array_supported_types(tmp_path, element_type):
+    path = tmp_path / 'empty.gguf'
+    metadata = {'empty': Value(9, [], element_type)}
+    write(path, metadata, [])
+    assert Reader(path).metadata == metadata
+
+
+@pytest.mark.parametrize('metadata_type', [5, 10, 11])
+def test_writer_rejects_non_uint32_alignment(tmp_path, metadata_type):
+    with pytest.raises(ValueError, match='alignment'):
+        write(tmp_path / 'alignment.gguf', {'general.alignment': Value(metadata_type, 32)}, [])
+
+
 def test_truncation(tmp_path):
     path = tmp_path / 'valid.gguf'
     write(path, {'name': Value(8, 'hello')}, [('t', (32,), Q4_1, bytes(20))])
