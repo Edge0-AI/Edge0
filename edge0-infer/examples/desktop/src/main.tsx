@@ -30,6 +30,7 @@ import './style.css';
 type Page = 'chat' | 'models' | 'status' | 'service' | 'settings';
 interface RunningService { url: string; pid: number; memory_warning?: string | null; }
 interface Model { id: string; context_length?: number; capabilities: { thinking: boolean; thinking_default: boolean }; }
+interface SettingsUpdate { settings: Settings; previousAssets: string[]; }
 /** A finished download stores its directory in the on-disk assets list. Take that list, leave every
  *  other field as the page currently holds it (including edits not saved yet), then inspect. */
 export async function refreshDownloadedAssets(
@@ -60,7 +61,7 @@ export function App() {
   const [initializing, setInitializing] = useState(true), [loading, setLoading] = useState(false), [error, setError] = useState('');
   const runtimeSettings = useRef<Settings | null>(null);
   const controller = useRef<AbortController | null>(null), serviceEpoch = useRef(0), persistence = useRef(new WriteQueue());
-  const settingsWrites = useRef(new SettingsWrites<Settings>(next => persistence.current.enqueue(() => invoke<void>('save_settings', { settings: next }))));
+  const settingsWrites = useRef(new SettingsWrites<SettingsUpdate>(update => persistence.current.enqueue(() => invoke<void>('save_settings', { ...update }))));
   const archiveWrites = useRef(new ArchiveWrites<Conversation>(persistence.current, conversation => invoke<void>('save_conversation', { id: conversation.id, conversation }), id => invoke<void>('delete_conversation', { id })));
   const [deleting, setDeleting] = useState(false), deletingRef = useRef(false);
   const busy = phase !== 'idle', disabled = busy || loading || initializing || deleting;
@@ -143,10 +144,10 @@ export function App() {
   function send(text: string) { if (text.trim()) void generate([...conversationRef.current.messages, { role: 'user', content: text.trim() }]); }
   function stop() { if (loading) { controller.current?.abort(); void invoke('stop_service').catch(report); return; } if (phase !== 'generating' || !controller.current) return; flushSync(() => setPhase('stopping')); controller.current.abort(); }
   async function copy(text: string) { try { await navigator.clipboard.writeText(text); } catch { setError('Clipboard access was denied by the WebView.'); } }
-  async function saveSettings(next: Settings) { await settingsWrites.current.commit(next); }
+  async function saveSettings(next: Settings) { await settingsWrites.current.commit({ settings: next, previousAssets: [...settingsRef.current.assets] }); }
   function updateSettings(next: Settings) {
     const previous = runtimeSettings.current; setSettings(next); settingsRef.current = next;
-    settingsWrites.current.schedule(next, async () => { if (previous && (previous.executable !== next.executable || previous.device !== next.device || previous.prefill_device !== next.prefill_device || previous.port !== next.port)) await stopService(); }, report);
+    settingsWrites.current.schedule({ settings: next, previousAssets: [...next.assets] }, async () => { if (previous && (previous.executable !== next.executable || previous.device !== next.device || previous.prefill_device !== next.prefill_device || previous.port !== next.port)) await stopService(); }, report);
   }
   async function deleteArchive(id: string) {
     if (disabled || deletingRef.current) return;

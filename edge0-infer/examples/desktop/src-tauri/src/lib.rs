@@ -1,3 +1,4 @@
+mod asset_locations;
 mod download;
 mod platform;
 mod service;
@@ -151,8 +152,12 @@ async fn load_settings(state: tauri::State<'_, Arc<Manager>>) -> Result<Settings
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
-fn save_settings(state: tauri::State<'_, Arc<Manager>>, settings: Settings) -> Result<(), String> {
-    state.save_settings(&settings)
+fn save_settings(
+    state: tauri::State<'_, Arc<Manager>>,
+    settings: Settings,
+    previous_assets: Option<Vec<String>>,
+) -> Result<(), String> {
+    state.save_settings_with_asset_base(&settings, previous_assets.as_deref())
 }
 #[tauri::command]
 async fn inspect_assets(

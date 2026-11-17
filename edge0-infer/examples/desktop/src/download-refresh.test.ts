@@ -2,8 +2,8 @@ import { expect, it } from 'vitest';
 import { refreshDownloadedAssets } from './main';
 import { defaultSettings, type Settings } from './state/settings';
 
-// save_settings keeps download_directory and partial_downloads from disk and writes every other
-// field from the object the page sends. assets are one of those written fields.
+// The compatibility save path without previousAssets keeps download_directory and
+// partial_downloads from disk. Asset-delta reconciliation is tested in asset_locations.rs.
 function savedSettings(incoming: Settings, onDisk: Settings): Settings {
   return { ...incoming, download_directory: onDisk.download_directory, partial_downloads: onDisk.partial_downloads };
 }

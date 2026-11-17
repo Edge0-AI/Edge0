@@ -381,9 +381,23 @@ impl Manager {
         Ok(settings)
     }
     pub fn save_settings(&self, settings: &Settings) -> Result<(), String> {
+        self.save_settings_with_asset_base(settings, None)
+    }
+    pub fn save_settings_with_asset_base(
+        &self,
+        settings: &Settings,
+        previous_assets: Option<&[String]>,
+    ) -> Result<(), String> {
         let _guard = self.settings_lock.lock().map_err(|e| e.to_string())?;
         let existing = self.load_settings_unlocked()?;
         let mut settings = settings.clone();
+        if let Some(previous) = previous_assets {
+            settings.assets = crate::asset_locations::merge_asset_locations(
+                &existing.assets,
+                previous,
+                &settings.assets,
+            );
+        }
         // The model page saves the whole settings object and can be holding a copy from before a download
         // updated these fields. Keep the on-disk download bookkeeping.
         settings.download_directory = existing.download_directory.clone();
@@ -1431,6 +1445,37 @@ mod tests {
             }]
         );
         assert_eq!(loaded.theme, "dark");
+    }
+    #[test]
+    fn a_queued_page_save_keeps_a_finished_download_and_honors_explicit_removal() {
+        let fixture = Fixture::new();
+        fixture.manager.save_settings(&fixture.settings).unwrap();
+        let previous = fixture.settings.assets.clone();
+        let finished = fixture
+            .directory
+            .join("downloaded")
+            .to_string_lossy()
+            .into_owned();
+        fixture
+            .manager
+            .note_download_finished(&finished, "edge0-145b-q3k")
+            .unwrap();
+        let mut stale = fixture.settings.clone();
+        stale.theme = "dark".into();
+        fixture
+            .manager
+            .save_settings_with_asset_base(&stale, Some(&previous))
+            .unwrap();
+        let mut loaded = fixture.manager.settings().unwrap();
+        assert!(loaded.assets.contains(&finished));
+        assert_eq!(loaded.theme, "dark");
+        let previous = loaded.assets.clone();
+        loaded.assets.retain(|path| path == &finished);
+        fixture
+            .manager
+            .save_settings_with_asset_base(&loaded, Some(&previous))
+            .unwrap();
+        assert_eq!(fixture.manager.settings().unwrap().assets, vec![finished]);
     }
     #[test]
     fn missing_partial_directory_is_dropped_without_persisting_a_bundled_executable() {
