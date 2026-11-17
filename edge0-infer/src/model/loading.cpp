@@ -181,7 +181,7 @@ Result<std::shared_ptr<LoadedModel>> load(const LoadRequest& request, const Adap
     resolved_stages.consumption = request.consumption; resolved_stages.transfer = request.transfer;
     auto defaults = read_generation_defaults(request.directory);
     if (!defaults) return defaults.error();
-    auto catalog = open_catalog(request.directory);
+    auto catalog = open_catalog(request.directory, adapters);
     if (!catalog) return catalog.error();
     auto adapter = select_adapter(catalog.value(), adapters);
     if (!adapter) return adapter.error();

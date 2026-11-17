@@ -8,7 +8,7 @@ import re
 import sys
 
 CLI = "tools/cli"
-DOCS = ("docs/configuration.md", "docs/openai-compatible-server.md")
+DOCS = ("docs/configuration.md", "docs/local-server.md")
 # The CLI compares every argument against a string literal such as "--threads".
 CLI_FLAG = re.compile(r'"(--[a-z][a-z0-9-]*)')
 CODE_SPAN = re.compile(r"`([^`\n]+)`")

@@ -3,7 +3,7 @@
 `android-cli` is an executable replacement for `edge0-infer` on the host. It uses
 `ANDROID_SERIAL`, `MOE_ANDROID_ROOT`, `MOE_TINY` and `MOE_ASSETS_35B`. Build the Android
 binary and explicitly install it with `android_push.py --tiny`; `--check` only reports differences.
-The [Android guide](../../docs/getting-started.md#android-cpu) shows the commands.
+The [Android guide](../../docs/getting-started.md#android) shows the commands.
 
 The wrapper checks the device manifest before mapping a known model path. Input files
 (`--tokens`, `--turns`, `--replay`, `--user-file`, `--check`) are copied into a unique remote

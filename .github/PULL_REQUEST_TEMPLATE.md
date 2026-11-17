@@ -16,7 +16,7 @@ Fixes #
 
 ## How was it tested?
 
-<!-- Commands you ran, platform and backend, hardware/chip. Paste the `edge0-infer bench` summary for perf changes. -->
+<!-- Commands you ran, platform and backend, hardware/chip. Paste the `edge0-infer bench` summary for perf changes. For edge0-145b / edge0-120b, which run through edge0-strata, paste the community benchmark report (BENCH.bat / ./bench.sh) instead: `edge0-infer bench` uses the native loader and cannot measure a delegated model. -->
 
 ## Checklist
 

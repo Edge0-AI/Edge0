@@ -1,0 +1,23 @@
+{
+  "id": "concurrency-r1-c4",
+  "phase": "concurrency",
+  "case_id": "short-burst",
+  "repetition": 1,
+  "round": 1,
+  "seed": 4,
+  "max_output_tokens": 512,
+  "concurrency": 4,
+  "category": null,
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case concurrency-r1-c4]\nExplain how a hash table finds a value, including collisions and one small example."
+    }
+  ],
+  "tools": null,
+  "tool_choice": null,
+  "expected": null,
+  "input_tokens_frozen": 78,
+  "max_shared_prefix_tokens": 51
+}

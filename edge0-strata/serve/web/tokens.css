@@ -1,0 +1,87 @@
+/* Strata UI — tokens. Derived from the Gainsty design system.
+   Light is default; dark via <html data-theme="dark">.
+   Values marked (derived) are not in the Gainsty source and were added for the app. */
+
+/* Outfit (SIL Open Font License 1.1, serve/web/fonts/OFL.txt): one variable font, weights 100-900 */
+@font-face{font-family:"Outfit";src:url("../fonts/outfit-latin-wght.woff2") format("woff2-variations");font-weight:100 900;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Outfit";src:url("../fonts/outfit-latin-ext-wght.woff2") format("woff2-variations");font-weight:100 900;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+:root{
+  /* type */
+  --st-font:"Outfit",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --st-font-mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",monospace; /* (derived) */
+  --st-fs-xs:12px;  --st-fs-sm:13px; --st-fs-md:14px; --st-fs-base:16px;
+  --st-fs-lg:18px;  --st-fs-xl:24px; --st-fs-stat:32px; --st-fs-display:40px;
+  --st-fw-regular:400; --st-fw-medium:500; --st-fw-bold:700; --st-fw-black:900;
+  --st-lh-tight:1.1; --st-lh-body:1.55;
+
+  /* spacing (4pt) */
+  --st-s-1:4px; --st-s-2:8px; --st-s-3:12px; --st-s-4:16px; --st-s-5:20px;
+  --st-s-6:24px; --st-s-8:32px; --st-s-10:40px; --st-s-12:48px; --st-s-16:64px;
+
+  /* radius */
+  --st-r-sm:8px; --st-r-md:14px; --st-r-lg:20px; --st-r-xl:24px; --st-r-pill:9999px;
+
+  /* motion (derived) */
+  --st-ease:cubic-bezier(.2,.7,.2,1); --st-dur:160ms;
+
+  /* color — light */
+  --st-bg:#f9fafb;
+  --st-surface:#ffffff;
+  --st-surface-2:#f7f7f7;
+  --st-line:#dee5ee;
+  --st-line-soft:#eeeeee;
+  --st-ink:#221e1f;
+  --st-ink-soft:#303030;
+  --st-ink-muted:#6f6f6f;        /* Gainsty #7a7a7a darkened slightly for 4.5:1 on white */
+  --st-icon:#2F384C;             /* Anron default */
+
+  --st-accent:#10b981;
+  --st-accent-hover:#0c8a60;
+  --st-accent-ink:#ffffff;
+  --st-accent-tint:#ecfdf5;
+  --st-accent-text:#0c8a60;      /* accent used as text on light */
+  --st-focus:#405de6;
+
+  --st-info:#0f97ff;     --st-info-tint:#e8f4ff;    --st-info-text:#0668c2;
+  --st-warn:#e39b0b;     --st-warn-tint:#fff6e0;    --st-warn-text:#8a5a00;   /* (derived) */
+  --st-danger:#e0283f;   --st-danger-tint:#fdecee;  --st-danger-text:#b01a2e; /* (derived) */
+
+  --st-code-bg:#1b1f23;  --st-code-ink:#e6e9ec;  /* code blocks stay dark in both themes (derived) */
+
+  --st-sh-card:0 18px 7px rgba(0,0,0,.01),0 10px 6px rgba(0,0,0,.02),0 4px 4px rgba(0,0,0,.03),0 1px 2px rgba(0,0,0,.04);
+  --st-sh-bar:0 54px 21px rgba(0,0,0,.01),0 30px 18px rgba(0,0,0,.03),0 13px 13px rgba(0,0,0,.05),0 3px 7px rgba(0,0,0,.06);
+  --st-sh-pop:0 10px 40px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.06);
+  color-scheme:light;
+}
+
+/* color — dark (all derived) */
+[data-theme="dark"]{
+  --st-bg:#0e1113;
+  --st-surface:#161a1d;
+  --st-surface-2:#1d2226;
+  --st-line:#2a3036;
+  --st-line-soft:#22272c;
+  --st-ink:#eef1f3;
+  --st-ink-soft:#c7cdd3;
+  --st-ink-muted:#8e979f;
+  --st-icon:#c7cdd3;
+
+  --st-accent:#34d399;
+  --st-accent-hover:#4ade80;
+  --st-accent-ink:#052e20;
+  --st-accent-tint:rgba(52,211,153,.12);
+  --st-accent-text:#4ade80;
+  --st-focus:#7b93ff;
+
+  --st-info:#3aa9ff;     --st-info-tint:rgba(58,169,255,.12);  --st-info-text:#7cc4ff;
+  --st-warn:#f5b53d;     --st-warn-tint:rgba(245,181,61,.12);  --st-warn-text:#f8c96a;
+  --st-danger:#ff5a6e;   --st-danger-tint:rgba(255,90,110,.12);--st-danger-text:#ff8a98;
+
+  --st-code-bg:#0a0c0e;  --st-code-ink:#e6e9ec;
+
+  --st-sh-card:0 1px 2px rgba(0,0,0,.4);
+  --st-sh-bar:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.35);
+  --st-sh-pop:0 16px 48px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.4);
+  color-scheme:dark;
+}

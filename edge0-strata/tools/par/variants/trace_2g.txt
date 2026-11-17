@@ -1,0 +1,2 @@
+tr_c4 | 0,1 | 8 |   | STRATA_PAR_COUNTERS=1;STRATA_TRACE=1 | | w2:4@--max-tokens 128
+tr_c1 | 0,1 | 8 |   | STRATA_PAR_COUNTERS=1;STRATA_TRACE=1 | | w2:1@--max-tokens 128

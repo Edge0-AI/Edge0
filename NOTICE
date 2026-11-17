@@ -19,15 +19,27 @@ llama.cpp tokenizer code (MIT License)
 
 cpp-httplib (MIT License)
   - `edge0-infer/third_party/cpp-httplib/` (version 0.60.1), used only by the
-    CLI and the OpenAI-compatible server.
+    CLI and the local server.
     License: `edge0-infer/third_party/cpp-httplib/LICENSE`.
   Copyright (c) 2017 yhirose.
 
 nlohmann/json (MIT License)
   - `edge0-infer/third_party/nlohmann-json/` (version 3.12.0), used only by the
-    CLI and the OpenAI-compatible server.
+    CLI and the local server.
     License: `edge0-infer/third_party/nlohmann-json/LICENSE.MIT`.
   Copyright (c) 2013-2025 Niels Lohmann.
+
+Strata (MIT License)
+  - `edge0-strata/` is a fork of Strata (https://github.com/Niko1221/Strata),
+    imported from the fork at commit f1933b1 plus the source files recorded in
+    `edge0-strata/edge0/IMPORTED_UNCOMMITTED.txt`, whose merge base with upstream
+    Strata is commit c62d5e3. The license is kept verbatim in
+    `edge0-strata/LICENSE`; `edge0-strata/EDGE0.md` records the origin and the
+    changes. Third-party code in it keeps its own license and notice files
+    (`edge0-strata/third_party/`): ggml, project-maya, the libstrix notice, and
+    `ggml-tq`, which is derived from the ggml of the agentionai/llama.cpp fork
+    (MIT License, the ggml authors).
+  Copyright (c) 2026 Niko1221 and the Strata contributors.
 
 All other files are Copyright (c) 2025 edge0 contributors, licensed under
 the Apache License, Version 2.0 (see LICENSE).

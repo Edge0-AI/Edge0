@@ -1,3 +1,4 @@
+mod download;
 mod platform;
 mod service;
 mod storage;
@@ -86,6 +87,59 @@ async fn choose_path(_app: tauri::AppHandle, directory: bool) -> Result<Option<S
         }
     }).await.map_err(|e| e.to_string())?
 }
+// The download commands can wait on the network or on removing a large folder. Run them off the main thread
+// (where a synchronous command runs on macOS) so the window stays responsive and can show "Measuring".
+async fn blocking<T: Send + 'static>(
+    work: impl FnOnce() -> T + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|e| e.to_string())
+}
+#[tauri::command]
+async fn measure_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+) -> Result<download::MeasureReport, String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.measure(&id)).await?
+}
+#[tauri::command]
+async fn start_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+    source: String,
+    directory: String,
+) -> Result<(), String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.start(&id, &source, &directory)).await?
+}
+#[tauri::command]
+async fn pause_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+) -> Result<(), String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.pause(&id)).await?
+}
+#[tauri::command]
+async fn delete_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+) -> Result<(), String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.delete(&id)).await?
+}
+#[tauri::command]
+fn download_snapshot(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+) -> Result<download::Snapshot, String> {
+    hub.snapshot()
+}
+#[tauri::command]
+async fn disk_free(path: String) -> Result<download::DiskReport, String> {
+    blocking(move || download::DownloadHub::disk(&path)).await
+}
 #[tauri::command]
 async fn load_settings(state: tauri::State<'_, Arc<Manager>>) -> Result<Settings, String> {
     let manager = state.inner().clone();
@@ -135,14 +189,57 @@ async fn service_status(state: tauri::State<'_, Arc<Manager>>) -> Result<service
         .await
         .map_err(|e| e.to_string())
 }
+/// The directories the app keeps its state in: (data, config).  Data holds the conversation archive; config holds
+/// the settings, the API token and serve-pid.json.  When `home` (EDGE0_HOME) is set and not blank, both are that
+/// directory, for a process that cannot write the platform's own directories (a locked-down profile, a sandboxed
+/// launcher, a portable copy); otherwise they are the platform directories, as before.
+fn state_directories<E>(
+    home: Option<std::ffi::OsString>,
+    data: impl FnOnce() -> Result<std::path::PathBuf, E>,
+    config: impl FnOnce() -> Result<std::path::PathBuf, E>,
+) -> Result<(std::path::PathBuf, std::path::PathBuf), E> {
+    match home {
+        Some(path) if !path.to_string_lossy().trim().is_empty() => {
+            let directory = std::path::PathBuf::from(path);
+            Ok((directory.clone(), directory))
+        }
+        _ => Ok((data()?, config()?)),
+    }
+}
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .setup(|app| {
-            let config = app.path().app_config_dir()?;
+            let (home, config) = state_directories(
+                std::env::var_os("EDGE0_HOME"),
+                || app.path().app_data_dir(),
+                || app.path().app_config_dir(),
+            )?;
+            std::fs::create_dir_all(&home)?;
+            std::fs::create_dir_all(&config)?;
             let manager = Arc::new(Manager::new(config.clone())?);
+            let downloads = Arc::new(download::DownloadHub::new(manager.clone()));
+            // EDGE0_AUTOLOAD=1 loads the first configured asset directory shortly after start-up, without the UI,
+            // so a load can be run unattended; with EDGE0_DEBUG_LOG set, each step of it is written to that file.
+            if std::env::var("EDGE0_AUTOLOAD").as_deref() == Ok("1") {
+                let auto = manager.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_secs(3));
+                    match auto.settings() {
+                        Ok(settings) => match settings.assets.first().cloned() {
+                            Some(model) => match auto.start(&settings, &model) {
+                                Ok(_) => service::trace_line("autoload: started"),
+                                Err(e) => service::trace_line(&format!("autoload failed: {e}")),
+                            },
+                            None => service::trace_line("autoload: no asset configured"),
+                        },
+                        Err(e) => service::trace_line(&format!("autoload: settings failed: {e}")),
+                    }
+                });
+            }
             app.manage(manager);
-            app.manage(storage::Store::new(config, app.path().app_data_dir()?));
+            app.manage(downloads);
+            app.manage(storage::Store::new(config, home));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -160,7 +257,13 @@ pub fn run() {
             read_api_token,
             write_api_token,
             engine_info,
-            choose_path
+            choose_path,
+            measure_download,
+            start_download,
+            pause_download,
+            delete_download,
+            download_snapshot,
+            disk_free
         ])
         .build(tauri::generate_context!())
         .expect("Failed to initialize Edge0 Chat");
@@ -170,6 +273,9 @@ pub fn run() {
         // The event loop is already closing, so this fallback must join cleanup
         // synchronously instead of dispatching another event-loop exit request.
         if matches!(event, tauri::RunEvent::Exit) {
+            if let Some(downloads) = handle.try_state::<Arc<download::DownloadHub>>() {
+                downloads.pause_all();
+            }
             let _ = handle.state::<Arc<Manager>>().shutdown();
             shutdown.store(2, Ordering::SeqCst);
             return;
@@ -186,13 +292,67 @@ pub fn run() {
             api.prevent_exit();
             let shutdown = shutdown.clone();
             let manager = handle.state::<Arc<Manager>>().inner().clone();
+            let downloads = handle.state::<Arc<download::DownloadHub>>().inner().clone();
             manager.begin_shutdown();
             let handle = handle.clone();
             std::thread::spawn(move || {
+                downloads.pause_all();
                 let _ = manager.stop();
                 shutdown.store(2, Ordering::SeqCst);
                 handle.exit(0);
             });
         }
     });
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    #[test]
+    fn edge0_home_holds_settings_archive_and_pid_record() {
+        let home = std::env::temp_dir().join(format!("edge0-home-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&home);
+        let platform = |name: &str| -> Result<PathBuf, String> {
+            Err(format!("{name} must not be asked for"))
+        };
+        let (data, config) = state_directories(
+            Some(home.clone().into_os_string()),
+            || platform("data"),
+            || platform("config"),
+        )
+        .unwrap();
+        assert_eq!((data.clone(), config.clone()), (home.clone(), home.clone()));
+        let manager = Manager::new(config.clone()).unwrap();
+        manager.save_settings(&Settings::default()).unwrap();
+        assert!(home.join("settings.json").is_file());
+        assert_eq!(manager.record_path(), home.join("serve-pid.json"));
+        let store = storage::Store::new(config, data);
+        let conversation = serde_json::json!({"id": "c1", "createdAt": 1, "updatedAt": 2, "systemPrompt": "fixed",
+            "thinking": true, "messages": [{"role": "user", "content": "hi"}]});
+        store.save("c1", &conversation).unwrap();
+        assert!(home.join("conversations").join("c1.json").is_file());
+        std::fs::remove_dir_all(&home).unwrap();
+    }
+    #[test]
+    fn without_edge0_home_the_platform_directories_are_used() {
+        let platform = (
+            PathBuf::from("platform-data"),
+            PathBuf::from("platform-config"),
+        );
+        for home in [None, Some(""), Some("  ")] {
+            let chosen = state_directories::<String>(
+                home.map(std::ffi::OsString::from),
+                || Ok(platform.0.clone()),
+                || Ok(platform.1.clone()),
+            )
+            .unwrap();
+            assert_eq!(chosen, platform, "{home:?}");
+        }
+        let failed = state_directories::<String>(
+            None,
+            || Err("no data directory".into()),
+            || Ok(PathBuf::new()),
+        );
+        assert_eq!(failed, Err("no data directory".into()));
+    }
 }

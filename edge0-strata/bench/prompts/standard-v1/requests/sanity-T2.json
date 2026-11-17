@@ -1,0 +1,54 @@
+{
+  "id": "sanity-T2",
+  "phase": "sanity",
+  "case_id": "T2",
+  "repetition": 1,
+  "round": null,
+  "seed": 1,
+  "max_output_tokens": 2048,
+  "concurrency": 1,
+  "category": "tool_call",
+  "target_input_tokens": null,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[case sanity-T2]\nUse get_weather for Zagreb in celsius."
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Synthetic benchmark lookup; no external action is performed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            },
+            "unit": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "city",
+            "unit"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "expected": {
+    "kind": "tool_call",
+    "name": "get_weather",
+    "arguments": {
+      "city": "Zagreb",
+      "unit": "celsius"
+    }
+  },
+  "input_tokens_frozen": 335,
+  "max_shared_prefix_tokens": 62
+}

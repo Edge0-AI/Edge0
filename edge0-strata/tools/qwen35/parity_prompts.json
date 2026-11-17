@@ -1,0 +1,12 @@
+[
+  "Write a short story about a lighthouse keeper who finds a message in a bottle.",
+  "Implement an LRU cache in Python with get and put in O(1), and add three unit tests.",
+  "What is 17 * 23 + 144 / 12? Show the steps.",
+  "Explain how a refrigerator works to a ten-year-old.",
+  "Translate into German: The train to Munich leaves at half past seven, platform four.",
+  "List five differences between TCP and UDP.",
+  "Summarize the plot of Romeo and Juliet in three sentences.",
+  "Write a JSON object describing a book with title, author, year and three tags.",
+  "If all bloops are razzies and all razzies are lazzies, are all bloops lazzies? Explain.",
+  "Write a haiku about autumn rain on a city street."
+]

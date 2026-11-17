@@ -11,7 +11,7 @@ from serve_support import Server
 
 
 def check_schema(snapshots):
-    document = (Path(__file__).resolve().parents[2] / 'docs/openai-compatible-server.md').read_text()
+    document = (Path(__file__).resolve().parents[2] / 'docs/local-server.md').read_text()
     table = document.split('<!-- status-fields-begin -->')[1].split('<!-- status-fields-end -->')[0]
     fields = {}
     for line in table.splitlines():

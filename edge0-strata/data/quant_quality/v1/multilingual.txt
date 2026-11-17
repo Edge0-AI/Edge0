@@ -1,0 +1,116 @@
+Strata lässt **[Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next)** auf einem normalen PC laufen.
+Das ist ein großes, kluges KI-Modell, das sonst meist einen Server braucht. Es chattet, schreibt Code, versteht
+Bilder und arbeitet mit deinen Apps und Coding-Agents zusammen. Nichts verlässt deinen PC.
+
+## Wie schnell ist es?
+
+Wir haben es auf zwei ganz normalen Gaming-PCs gemessen. Ein Token ist etwa ¾ eines Wortes.
+
+- **Schreibt Antworten:** wie schnell die Antwort in einem kurzen Chat erscheint. 60 Tokens pro Sekunde sind
+  schneller, als du lesen kannst.
+- **Liest deinen Prompt:** wie schnell es aufnimmt, was du schickst (hier ein Dokument, Code oder Chatverlauf mit
+  32K Tokens).
+
+<table>
+<tr><th>NVIDIA: RTX 5070 (12 GB), Ryzen 5 7600, 64 GB RAM</th><th>AMD: RX 9070 XT (16 GB), Ryzen 9 3900X, 47 GB RAM</th></tr>
+<tr><td>
+
+| Größe | Schreibt Antworten | Liest deinen Prompt |
+| --- | ---: | ---: |
+| **Q2_0** | 94 Tokens/s | 2,650 Tokens/s |
+| **IQ2_XS** | 79 Tokens/s | 2,090 Tokens/s |
+| **IQ3_XXS** | 62 Tokens/s | 1,750 Tokens/s |
+| **IQ3_S** | 53 Tokens/s | 1,620 Tokens/s |
+| **Coder** | 55 Tokens/s | 2,180 Tokens/s |
+
+</td><td>
+
+| Größe | Schreibt Antworten | Liest deinen Prompt |
+| --- | ---: | ---: |
+| **Q2_0** | 60 Tokens/s | 1,160 Tokens/s |
+| **IQ2_XS** | 52 Tokens/s | 1,110 Tokens/s |
+| **Coder** | 44 Tokens/s | 1,420 Tokens/s |
+
+</td></tr>
+</table>
+
+NVIDIA: Q2_0 mit Engine 0.1.36, die anderen Zeilen mit 0.1.26 (4K Antworten, 32K Prompts). Die vollständigen
+Tabellen stehen in [DETAILS.md](docs/DETAILS.md#speed-measured). Eine Karte mit mehr VRAM ist schneller: Eine
+RTX 3090 (24 GB) sollte etwa 100-140 Tokens pro Sekunde schreiben. Lange Chats un
+
+Strata fait tourner **[Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next)** sur un PC normal. C'est
+un grand modèle d'IA, très capable, qui demande d'habitude un serveur. Il discute, écrit du code, lit des images et
+fonctionne avec vos applications et vos agents de code. Rien ne quitte votre PC.
+
+## Quelle est sa vitesse ?
+
+Nous l'avons mesurée sur deux PC de jeu ordinaires. Un token correspond à environ ¾ d'un mot.
+
+- **Écrit les réponses :** la vitesse à laquelle la réponse s'affiche dans une courte discussion. 60 tokens par seconde, c'est plus rapide que votre lecture.
+- **Lit votre prompt :** la vitesse à laquelle il absorbe ce que vous envoyez (ici un document, du code ou un historique de discussion de 32K tokens).
+
+<table>
+<tr><th>NVIDIA : RTX 5070 (12 Go), Ryzen 5 7600, 64 Go de RAM</th><th>AMD : RX 9070 XT (16 Go), Ryzen 9 3900X, 47 Go de RAM</th></tr>
+<tr><td>
+
+| Taille | Écrit les réponses | Lit votre prompt |
+| --- | ---: | ---: |
+| **Q2_0** | 94 tokens/s | 2,650 tokens/s |
+| **IQ2_XS** | 79 tokens/s | 2,090 tokens/s |
+| **IQ3_XXS** | 62 tokens/s | 1,750 tokens/s |
+| **IQ3_S** | 53 tokens/s | 1,620 tokens/s |
+| **Coder** | 55 tokens/s | 2,180 tokens/s |
+
+</td><td>
+
+| Taille | Écrit les réponses | Lit votre prompt |
+| --- | ---: | ---: |
+| **Q2_0** | 60 tokens/s | 1,160 tokens/s |
+| **IQ2_XS** | 52 tokens/s | 1,110 tokens/s |
+| **Coder** | 44 tokens/s | 1,420 tokens/s |
+
+</td></tr>
+</table>
+
+NVIDIA : Q2_0 avec le moteur 0.1.36, les autres lignes ave
+
+Strata を使うと、**[Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next)** を一般的な PC で動かせます。
+通常はサーバーを必要とする大規模で高性能な AI モデルで、チャットやコードの生成、画像の読み取りができます。
+アプリやコーディングエージェントとも連携でき、データは PC の外に送信されません。
+
+## どのくらい速い？
+
+一般的なゲーミング PC 2 台で速度を測定しました。英語の場合、1 トークンはおよそ ¾ 語に相当します。
+
+- **生成速度：** 短いチャットで回答を生成する速度です。毎秒 60 トークンなら、人が読むよりも速く文章が表示されます。
+- **プロンプトの読み込み：** 入力した内容を読み込む速度です。ここでは、文書やコード、チャット履歴など 32K トークン分を読み込ませています。
+
+<table>
+<tr><th>NVIDIA: RTX 5070 (12 GB), Ryzen 5 7600, 64 GB RAM</th><th>AMD: RX 9070 XT (16 GB), Ryzen 9 3900X, 47 GB RAM</th></tr>
+<tr><td>
+
+| モデルサイズ | 生成速度 | プロンプトの読み込み |
+| --- | ---: | ---: |
+| **Q2_0** | 94 tokens/s | 2,650 tokens/s |
+| **IQ2_XS** | 79 tokens/s | 2,090 tokens/s |
+|
+
+Strata 能在普通电脑上运行 **[Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next)**。这是一个又大又聪明的
+AI 模型，通常要用服务器才能跑。它能聊天、写代码、看图片，还能配合你的应用和编程智能体一起工作。所有数据都留在你的电脑上。
+
+## 速度有多快？
+
+我们在两台普通的游戏电脑上做了测试。一个 token 大约相当于 ¾ 个英文单词。
+
+- **写回答：** 短对话中回复出现的速度。每秒 60 个 token 已经比你的阅读速度还快。
+- **读提示：** 读入你发送内容的速度（这里是一份 32K token 的文档、代码或聊天记录）。
+
+<table>
+<tr><th>NVIDIA：RTX 5070（12 GB）、Ryzen 5 7600、64 GB 内存</th><th>AMD：RX 9070 XT（16 GB）、Ryzen 9 3900X、47 GB 内存</th></tr>
+<tr><td>
+
+| 规格 | 写回答 | 读提示 |
+| --- | ---: | ---: |
+| **Q2_0** | 94 tokens/s | 2,650 tokens/s |
+| **IQ2_XS** | 79 tokens/s | 2,090 tokens/s |
+| **IQ3_XXS**

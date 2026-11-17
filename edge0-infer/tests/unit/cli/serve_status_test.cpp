@@ -1,6 +1,13 @@
 #include "tools/cli/serve_status.h"
 #include "tests/support/check.h"
 int main() {
+    CHECK(portal::authorized("192.0.2.1","key","","key"));
+    CHECK(!portal::authorized("192.0.2.1","key","","wrong"));
+    CHECK(!portal::authorized("192.0.2.1","key","",""));
+    CHECK(portal::authorized("192.0.2.1","key","Bearer wrong","key"));
+    CHECK(portal::authorized("192.0.2.1","key","Bearer key","wrong"));
+    CHECK(portal::authorized("127.0.0.1","key","wrong","wrong"));
+
     using namespace portal;
     for (const auto& address : {"127.0.0.1","127.5.0.1","::1","::ffff:127.0.0.1"})
         for (const auto& header : {"","Bearer wrong","Bearer secre","Bearer secret","Bearer secret-more"})
