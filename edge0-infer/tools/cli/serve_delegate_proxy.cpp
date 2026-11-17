@@ -78,7 +78,11 @@ struct Forward {
     Accounting accounting;
     SseDecoder pending;
     void abort() {
-        cancel = true;
+        {
+            // Keep cancellation and the producer wait under the same mutex.
+            std::lock_guard<std::mutex> lock(mutex);
+            cancel = true;
+        }
         changed.notify_all();
         if (client) client->stop();
     }
