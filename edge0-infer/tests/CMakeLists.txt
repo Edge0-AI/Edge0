@@ -1,3 +1,10 @@
+add_executable(moe_test_generation_json unit/cli/generation_json_test.cpp
+    "${PROJECT_SOURCE_DIR}/tools/cli/diagnostics.cpp")
+target_include_directories(moe_test_generation_json PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include")
+target_include_directories(moe_test_generation_json SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/nlohmann-json")
+target_link_libraries(moe_test_generation_json PRIVATE edge0::edge0)
+moe_warnings(moe_test_generation_json)
+moe_add_test(NAME moe_test_generation_json LEVEL L1 COMMAND moe_test_generation_json)
 add_executable(moe_test_platform unit/platform/backend_test.cpp)
 target_include_directories(moe_test_platform PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}"
     "${PROJECT_SOURCE_DIR}/third_party/ggml/include")
@@ -28,6 +35,15 @@ else()
     set(moe_python sh "${PROJECT_SOURCE_DIR}/tests/support/run_python.sh")
 endif()
 if(MOE_BUILD_CLI)
+    add_executable(moe_test_bench_generation unit/cli/bench_generation_test.cpp)
+    target_include_directories(moe_test_bench_generation PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/src")
+    target_include_directories(moe_test_bench_generation SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/nlohmann-json")
+    target_link_libraries(moe_test_bench_generation PRIVATE edge0::edge0 moe_model)
+    moe_warnings(moe_test_bench_generation)
+    moe_add_test(NAME moe_test_bench_generation LEVEL L2 COMMAND moe_test_bench_generation
+        $<TARGET_FILE:edge0-infer> "${PROJECT_SOURCE_DIR}")
+    moe_add_test(NAME moe_test_bench_generation_metal LEVEL L2 DEVICE COMMAND moe_test_bench_generation
+        $<TARGET_FILE:edge0-infer> "${PROJECT_SOURCE_DIR}" metal)
     moe_add_test(NAME moe_test_cli LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/cli_test.py" --cli $<TARGET_FILE:edge0-infer>
         --origin "${PROJECT_SOURCE_DIR}/third_party/GGML_ORIGIN" --metal $<BOOL:${GGML_METAL}>)
@@ -453,6 +469,8 @@ moe_add_test(NAME moe_test_perf_hosts LEVEL L1 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/perf/hosts_test.py")
 moe_add_test(NAME moe_test_perf_report LEVEL L1 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/perf/report_test.py")
+moe_add_test(NAME moe_test_perf_generation_metadata LEVEL L1 COMMAND ${moe_python}
+    "${PROJECT_SOURCE_DIR}/tests/perf/generation_metadata_test.py")
 moe_add_test(NAME moe_test_perf_turns LEVEL L1 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/perf/turns_test.py")
 moe_add_test(NAME moe_test_model_support LEVEL L1 COMMAND ${moe_python}

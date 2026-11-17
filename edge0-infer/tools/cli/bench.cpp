@@ -10,6 +10,7 @@
 #include <limits>
 #include <stdexcept>
 #include "json_value.h"
+#include "generation_json.h"
 namespace cli {
 const char* sampling_help();
 bool sampling_option(const std::string&, const std::string&, edge0::GenerationOverrides&);
@@ -269,6 +270,7 @@ int bench_command(int argc,char** argv) {
             if(checked.first_end_token_position) std::cout<<*checked.first_end_token_position;else std::cout<<"null";
             std::cout<<",\"request_summary\":";cli::request_summary(std::cout,timing);
             std::cout<<",\"runtime\":";cli::runtime_json(std::cout,runtime);
+            std::cout<<",\"generation\":"<<cli::generation_json(result.configuration);
             std::cout<<",\"memory_snapshot\":";cli::memory_snapshot(std::cout,memory);
             std::cout<<",\"weight_activity\":";cli::weight_activity(std::cout,result.weight_activity);
             if(detailed) { std::cout<<",\"breakdown\":";breakdown(std::cout,checked,std::size_t(warmup),std::size_t(ntok),fixed); }
@@ -280,7 +282,8 @@ int bench_command(int argc,char** argv) {
                  <<",\"decode_forwards\":"<<ntok*static_cast<double>(runs)
                  <<",\"decode_tokens_per_second\":"<<ntok*static_cast<double>(runs)/decode_total<<",\"engine\":";
         cli::engine_identity(std::cout,capabilities);std::cout<<",\"runtime\":";cli::runtime_json(std::cout,runtime);std::cout<<",\"model\":";
-        cli::model_description(std::cout,description);std::cout<<"}\n";
+        cli::model_description(std::cout,description);
+        std::cout<<",\"generation\":"<<cli::generation_json(configuration)<<"}\n";
         take(edge0::unload_model(model));return 0;
     } catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
 }
