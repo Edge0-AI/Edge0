@@ -49,7 +49,7 @@ bool Window::coop_k4() {
 
 bool Window::pc_setup(int C) {
     PromptBufs& b = pb_;
-    if (b.C >= C) return true;
+    if (b.C >= C || (stream_ && b.C > 0)) return true;   // (streaming: placed once, at the size that fits)
     const double t0 = now_ms();
     const char* tune = std::getenv("STRATA_METAL_LATENT_PROMPT_TUNE");
     const bool tuned = latent_on_ && tune && std::strcmp(tune, "1") == 0;
@@ -65,14 +65,32 @@ bool Window::pc_setup(int C) {
     }
     b = PromptBufs{b.lib, b.lgdn, b.lqsa, b.k4};   // (re)allocated below for the larger chunk
     b.v3e = !latent_on_ && b.k4 && T("blk.0.ffn_gate_exps.weight").type < 144;
-    b.C = C;
-    const size_t MT = (size_t) C;
     const int MB = (int) max_cells_ / 4 + 2;
     b.expert_tm = tuned ? 32 : 16;
+    const int expert_width = latent_on_ ? (int) latent_args_.latent : N;
+    // The buffers.  Resident: allocated.  Streaming (the latent layout, SSD streaming): measured first, then placed in a
+    // region of the expert arena (ExpertStream::region; its slots are held only while a prompt runs, as the GGUF path's
+    // prompt_gemm_init does), so a prompt costs no decode memory.  A chunk whose buffers the arena cannot take
+    // (region_fits: no arena buffer is that big, or a size class would be left with fewer than a layer's experts) is
+    // halved, down to 1024 rows; 1024 rows that still do not fit get their own allocation (ExpertStream::region).
+    uint64_t need = 0;
+    uint8_t* region = nullptr;
+    bool measure = false;
+    auto AB = [&](size_t bytes) -> mtl::Buffer {
+        if (!stream_) return cx_->alloc(bytes);
+        const size_t r = (bytes + 16383) / 16384 * 16384;
+        if (measure) { need += r; return mtl::Buffer{}; }
+        mtl::Buffer o = cx_->wrap(region, r);
+        region += r;
+        return o;
+    };
+    auto F32 = [&](size_t n) { return AB(4 * n); };
+    auto F16 = [&](size_t n) { return AB(2 * n); };
+    auto make = [&](int rows) {
+    b.C = rows;
+    const size_t MT = (size_t) rows;
     b.maxrows = (int) MT * TOPK + NEXP * b.expert_tm;
     const int nblk_max = ((int) MT * TOPK + 1023) / 1024;
-    auto F32 = [&](size_t n) { return cx_->alloc(4 * n); };
-    auto F16 = [&](size_t n) { return cx_->alloc(2 * n); };
     b.R = F32(MT * HC * N); b.bo = F32(MT * N); b.inj[0] = F32(MT * HC); b.inj[1] = F32(MT * HC); b.xn = F32(MT * HC * N);
     b.xnh = F16(MT * HC * N); b.V = F32(MT * (LR + HC)); b.loh = F16(MT * LR); b.mixed = F32(MT * N); b.mixh = F16(MT * N);
     b.fused = gdn_fused_inputs(cx_->device_name());
@@ -87,13 +105,12 @@ bool Window::pc_setup(int C) {
     b.ggb = F32(MT * 48 * 2); b.gkq = F32(MT * 16); b.go = F32(MT * 6144);
     b.qfull = F32(MT * 12288); b.kcur = F32(MT * 512); b.vcur = F32(MT * 512); b.iqr = F32(MT * 512); b.ikr = F32(MT * 128);
     b.qcur = F32(MT * 24 * 256); b.qcurh = F16(MT * 24 * 256); b.qidx = F32(MT * 4 * 128); b.scores = F32(MT * MB);
-    b.qids = cx_->alloc(4 * MT * PC_QB); b.part = F32(MT * PC_QCHUNKS * 24 * 258); b.XQ = F32(4 * MT * 6144 + MT * 384);
+    b.qids = AB(4 * MT * PC_QB); b.part = F32(MT * PC_QCHUNKS * 24 * 258); b.XQ = F32(4 * MT * 6144 + MT * 384);
     b.xqh = F16(MT * 6144);
-    b.logits = F32(MT * NEXP); b.ids = cx_->alloc(4 * MT * TOPK); b.wts = F32(MT * TOPK);
-    b.bcnt = cx_->alloc(4 * (size_t) nblk_max * NEXP); b.boff = cx_->alloc(4 * (size_t) nblk_max * NEXP);
-    b.eoff = cx_->alloc(4 * NEXP); b.tiles = cx_->alloc(8 * (size_t) (b.maxrows / b.expert_tm + 1)); b.meta = cx_->alloc(64);
-    b.stok = cx_->alloc(4 * (size_t) b.maxrows); b.sw = F32(b.maxrows); b.pos = cx_->alloc(4 * MT * TOPK);
-    const int expert_width = latent_on_ ? (int) latent_args_.latent : N;
+    b.logits = F32(MT * NEXP); b.ids = AB(4 * MT * TOPK); b.wts = F32(MT * TOPK);
+    b.bcnt = AB(4 * (size_t) nblk_max * NEXP); b.boff = AB(4 * (size_t) nblk_max * NEXP);
+    b.eoff = AB(4 * NEXP); b.tiles = AB(8 * (size_t) (b.maxrows / b.expert_tm + 1)); b.meta = AB(64);
+    b.stok = AB(4 * (size_t) b.maxrows); b.sw = F32(b.maxrows); b.pos = AB(4 * MT * TOPK);
     b.XS = F16((size_t) b.maxrows * expert_width); b.HS = F16((size_t) b.maxrows * NFF);
     b.YE = F32((size_t) b.maxrows * expert_width);
     if (latent_on_) {
@@ -121,6 +138,24 @@ bool Window::pc_setup(int C) {
     b.qn = F32(MT * 10240); b.gated = F32(MT * 10240); b.normW = F32(MT * 10240);
     if (had_on_) b.mixr = F32(MT * N);
     b.Wpk = F16((size_t) 10240 * N); b.Wpv = F16((size_t) N * N);
+    };
+    int C_eff = C;
+    if (stream_) {
+        for (;;) {
+            need = 0;
+            measure = true;
+            make(C_eff);
+            if (C_eff <= 1024 || st_->region_fits(need)) break;
+            C_eff = std::max(1024, C_eff / 2 / 64 * 64);
+        }
+        measure = false;
+        region = st_->region(need);
+        if (region == nullptr) return false;
+        std::fprintf(stderr, "strata metal stream: latent prompt chunks of %d rows (%d configured): %.2f GB of prompt buffers, %s\n",
+                     C_eff, C, need / 1e9, st_->region_fits(need) ? "in the expert arena while a prompt runs"
+                                                                     : "their own allocation (the arena has no room for them)");
+    }
+    make(C_eff);
     // the expert GEMM tiles (prompt_chain's defaults): v3 gate/up 16,32,32,4 and down 16,64,32,2 with the M5 layout,
     // else v2
     b.gu3[0] = 16; b.gu3[1] = 32; b.gu3[2] = 32; b.gu3[3] = 4;
@@ -128,7 +163,7 @@ bool Window::pc_setup(int C) {
     b.meta.as<uint32_t>()[2] = b.v3e ? NFF / (b.gu3[1] * b.gu3[3]) : NFF / 64;
     b.meta.as<uint32_t>()[5] = b.v3e ? N / (b.dn3[1] * b.dn3[3]) : expert_width / 64;
     std::fprintf(stderr, "strata metal: prompt kernels (mac-kern's prompt chain) for chunks of %d rows, %s, ready in %.0f ms\n",
-                 C, b.k4 ? "matrix-unit register operands (COOP_K4)" : "the older expert / attention kernels (no M5 layout)",
+                 b.C, b.k4 ? "matrix-unit register operands (COOP_K4)" : "the older expert / attention kernels (no M5 layout)",
                  now_ms() - t0);
     return true;
 }
@@ -162,6 +197,7 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
     b.host_ms += now_ms() - th0;
     std::vector<mtl::Dispatch> ds;
     ds.reserve(2400);
+    std::vector<int> cuts;   // SSD streaming: one host's turn per layer, before its routed experts are read
     static const bool stage_profile = std::getenv("STRATA_METAL_LATENT_PROMPT_PROFILE") != nullptr;
     static const bool latent_qsa_mm = [] {
         const char* e = std::getenv("STRATA_METAL_LATENT_PROMPT_QSA_MM");
@@ -371,8 +407,8 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
             ma = {0, a.up_off, a.down_off, a.expert_bytes, a.expert_bytes, a.gu_row, a.down_row, a.latent, NFF};
             gu_type = ref::Q3_K;
             down_type = ref::IQ4_NL;
-            expert_weights = &latent_a_;
-            ebase = (size_t) l * NEXP * a.expert_bytes;
+            expert_weights = stream_ ? &st_->chunk(0) : &latent_a_;   // streaming: the arena (its slots hold the blobs)
+            ebase = stream_ ? 0 : (size_t) l * NEXP * a.expert_bytes;
             du_offset = (size_t) l * (latent_dense_.d_bytes() + latent_dense_.u_bytes());
             latent_project(du_offset, N, la.width, (uint32_t) latent_dense_.d_row_bytes(), b.mixh, false);
         } else {
@@ -403,13 +439,30 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
         ds.push_back(g);
         end_stage("route_D");
         auto tl3 = [](const int* t) { return std::to_string(t[0]) + "_" + std::to_string(t[1]) + "_" + std::to_string(t[2]) + "_" + std::to_string(t[3]); };
+        // SSD streaming (latent): the experts' kernels read the arena (function constant 20; smap and chunks 1..3 after
+        // their arguments), and the host's turn comes first: ids are written (route_topk above), ExpertStream::at_layer
+        // puts this layer's routed experts in place (all of them held for the chunk) and reads the next layer's ahead
+        const bool arena = latent_on_ && stream_;
+        const mtl::Constants on20 = mtl::Constants().b(20, true);
+        auto arena_args = [&](mtl::Dispatch& d) {
+            if (!arena) return;
+            d.args.push_back(mtl::Arg::B(st_->smap(), (size_t) l * NEXP * 4));
+            for (int c = 1; c < 4; ++c) d.args.push_back(mtl::Arg::B(st_->chunk(c)));
+        };
+        if (arena) cuts.push_back((int) ds.size());
         mtl::Dispatch gu;
         const bool staged = b.lat_gu16.handle && nT >= PC_STAGE_GU_MIN;
         if (staged) {
             const uint32_t q3[4] = {ma.n_embd, ma.n_ff, ma.gu_row, uint32_t(ma.gu_stride)};
-            D(P_(b.lib, "latent_prompt_q3_stage"),
-              {mtl::Arg::B(*expert_weights, ebase), mtl::Arg::B(b.lat_gu16), mtl::Arg::V(q3)},
-              (2 * ma.n_ff * (ma.n_embd / 32) + 127) / 128, NEXP, 128);
+            mtl::Dispatch st;
+            st.p = arena ? P_(b.lib, "latent_prompt_q3_stage", on20, "latent_prompt_q3_stage#arena") : P_(b.lib, "latent_prompt_q3_stage");
+            st.args = {mtl::Arg::B(*expert_weights, ebase), mtl::Arg::B(b.lat_gu16), mtl::Arg::V(q3)};
+            arena_args(st);
+            st.grid[0] = (2 * ma.n_ff * (ma.n_embd / 32) + 127) / 128;
+            st.grid[1] = NEXP;
+            st.tg[0] = 128;
+            mtl::require_fit(st, "prompt-chain dispatch");
+            ds.push_back(std::move(st));
             gu.p = P_(b.lib, "latent_prompt_gu_f16");
         } else if (b.v3e) {
             const std::string fn = "mm_gu3_" + std::to_string(gu_type) + "_" + tl3(b.gu3);
@@ -417,9 +470,11 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
         } else {
             const char* latent_tile = b.expert_tm == 32 ? "_32_64_32_2" : "_16_64_64_2";
             const std::string fn = "mm_gu2_" + std::to_string(gu_type) + (latent_on_ ? latent_tile : gu2_tile(gu_type));
-            gu.p = P_(b.lib, fn, mtl::Constants().i(5, 0), fn + "#p0");
+            gu.p = arena ? P_(b.lib, fn, mtl::Constants().i(5, 0).b(20, true), fn + "#p0#arena")
+                         : P_(b.lib, fn, mtl::Constants().i(5, 0), fn + "#p0");
         }
         gu.args = {staged ? mtl::Arg::B(b.lat_gu16) : mtl::Arg::B(*expert_weights, ebase), mtl::Arg::B(b.XS), mtl::Arg::B(b.HS), mtl::Arg::B(b.tiles), mtl::Arg::V(ma)};
+        if (!staged) arena_args(gu);
         gu.tg[0] = b.v3e ? 32 * b.gu3[3] : 64;
         gu.indirect = &b.meta;
         gu.ind_off = 2 * 4;
@@ -432,9 +487,11 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
             dn.p = P_(b.lib, fn, mtl::Constants().b(7, true), fn + "#k4");
         } else {
             const std::string tile = b.expert_tm == 32 ? "_32_64_32_2" : dn2_tile(down_type);
-            dn.p = P_(b.lib, "mm_down2_" + std::to_string(down_type) + tile);
+            const std::string fn = "mm_down2_" + std::to_string(down_type) + tile;
+            dn.p = arena ? P_(b.lib, fn, on20, fn + "#arena") : P_(b.lib, fn);
         }
         dn.args = {mtl::Arg::B(*expert_weights, ebase), mtl::Arg::B(b.HS), mtl::Arg::B(b.YE), mtl::Arg::B(b.tiles), mtl::Arg::V(ma)};
+        arena_args(dn);
         dn.tg[0] = b.v3e ? 32 * b.dn3[3] : 64;
         dn.indirect = &b.meta;
         dn.ind_off = 5 * 4;
@@ -497,7 +554,12 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
         D(P_(b.lib, "gr_norm"), {mtl::Arg::B(b.R), mtl::Arg::B(b.bo), mtl::Arg::B(b.inj[cur_inj]),
                                 mtl::Arg::B(W_, T("output_hc_norm.weight").offset), mtl::Arg::B(b.xn), mtl::Arg::V(a)}, HC, nT, 256);
     }
-    if (stage_ends.empty()) {
+    if (!cuts.empty()) {   // (the stage profile is not taken while streaming)
+        seg_T_ = nT;
+        cut_ids_ = b.ids.as<int32_t>();
+        b.gpu_ms += 1000.0 * cx_->run_graph_seg(ds, cuts, [](void* u, int s) { ((Window*) u)->at_cut(s); }, this);
+        cut_ids_ = nullptr;
+    } else if (stage_ends.empty()) {
         b.gpu_ms += 1000.0 * cx_->run(ds);
     } else {
         end_stage("final");
@@ -546,16 +608,27 @@ bool Window::prompt(const int64_t* tokens, int64_t n, int64_t pos0,
     }();
     // Reserve the configured latent chunk once. The warm-up sends prompts of
     // increasing sizes, and the runtime owns these allocations until teardown.
-    if (stream_) {
-        err = "metal prompt: the prompt chain does not read the streaming arena (STRATA_METAL_PROMPT=window, or STRATA_METAL_STREAM=0)";
-        return false;
-    }
+    // SSD streaming: the arena is up before the buffers are placed in it, its region is held while the prompt runs
+    // (emptied: the plan's meta words are written again for every chunk), and the chunks are the size that fits
+    if (stream_ && !st_->ready() && !stream_arena(err)) return false;
     const int capacity = latent_on_ ? C : (int) std::min<int64_t>(C, std::max<int64_t>(n, 64));
     if (!pc_setup(capacity)) { err = "metal prompt: setup failed"; return false; }
+    const int CC = stream_ ? pb_.C : C;
+    struct Hold {
+        Window* w;
+        explicit Hold(Window* w_) : w(w_) { if (w) w->prompt_region(true); }
+        ~Hold() { if (w) w->prompt_region(false); }
+    } hold(stream_ ? this : nullptr);
+    if (stream_) std::fprintf(stderr, "strata metal stream: latent prompt of %lld tokens in %lld chunks of up to %d rows\n",
+                              (long long) n, (long long) ((n + CC - 1) / CC), CC);
     const double t0 = now_ms();
     pb_.gpu_ms = pb_.host_ms = pb_.mtp_ms = 0;
-    for (int64_t c = 0; c < n; c += C) {
-        const int nT = (int) std::min<int64_t>(C, n - c);
+    for (int64_t c = 0; c < n; c += CC) {
+        const int nT = (int) std::min<int64_t>(CC, n - c);
+        if (stream_) {
+            pb_.meta.as<uint32_t>()[2] = NFF / 64;
+            pb_.meta.as<uint32_t>()[5] = (uint32_t) latent_args_.latent / 64;
+        }
         if (pos0 + c + nT + 1 >= max_cells_) { err = "metal prompt: the prompt runs past the context"; return false; }
         if (!pc_chunk(tokens + c, nT, pos0 + c, err)) return false;
         if (on_chunk) {
