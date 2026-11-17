@@ -48,6 +48,22 @@ int main() {
         CHECK(budget.current() == occupied);
     }
     CHECK(budget.current() == 0);
+    for (const std::int64_t capacity : {1, 7, 127, 257, 513}) {
+        for (const std::int64_t alignment : {1, 8, 256}) {
+            auto cache = take(KVCache::create(budget, backend, capacity, {{"k", GGML_TYPE_F16, {1}, 1, alignment}}));
+            for (const Step step : {Step{0, 1}, {0, capacity}, {capacity / 2, capacity - capacity / 2}, {capacity - 1, 1}}) {
+                const auto width = take(cache->history_length("k", step));
+                const auto mask = take(cache->causal_mask("k", step));
+                const auto visible = ggml_fp32_to_fp16(0.0f);
+                const auto hidden = ggml_fp32_to_fp16(-INFINITY);
+                CHECK(mask.size() == static_cast<std::size_t>(width * step.n));
+                for (std::int64_t row = 0; row < step.n; ++row)
+                    for (std::int64_t column = 0; column < width; ++column)
+                        CHECK(mask[static_cast<std::size_t>(row * width + column)] == (column <= step.e + row ? visible : hidden));
+            }
+        }
+    }
+    CHECK(budget.current() == 0);
     {
         auto cache = take(KVCache::create(budget, backend, 200, {{"outer", GGML_TYPE_F16, {64, 2}, 2, 1}, {"middle", GGML_TYPE_F16, {64, 2}, 1, 1}}));
         auto graph = take(exec::create_graph(budget, backend, exec::Phase::decode));

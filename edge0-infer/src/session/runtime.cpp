@@ -89,10 +89,15 @@ Result<std::vector<ggml_fp16_t>> KVCache::causal_mask(const std::string& name, S
     auto length = history_length(name, step); if (!length) return length.error();
     if (static_cast<std::uint64_t>(step.n) > std::numeric_limits<std::size_t>::max() / sizeof(ggml_fp16_t) / static_cast<std::uint64_t>(length.value()))
         return invalid("Mask size overflow");
-    std::vector<ggml_fp16_t> result(static_cast<std::size_t>(length.value() * step.n));
-    for (std::int64_t row = 0; row < step.n; ++row)
-        for (std::int64_t column = 0; column < length.value(); ++column)
-            result[static_cast<std::size_t>(row * length.value() + column)] = ggml_fp32_to_fp16(column <= step.e + row ? 0.0f : -std::numeric_limits<float>::infinity());
+    std::vector<ggml_fp16_t> result(static_cast<std::size_t>(length.value() * step.n), ggml_fp32_to_fp16(0.0f));
+    const auto hidden = ggml_fp32_to_fp16(-std::numeric_limits<float>::infinity());
+    // Each row sees the prefix through its own token. Only the suffix,
+    // including alignment padding, needs masking; the FP16 values are constant.
+    for (std::int64_t row = 0; row < step.n; ++row) {
+        const auto visible = static_cast<std::size_t>(step.e + row + 1);
+        const auto offset = static_cast<std::size_t>(row * length.value());
+        std::fill_n(result.data() + offset + visible, static_cast<std::size_t>(length.value()) - visible, hidden);
+    }
     return result;
 }
 std::shared_ptr<void> StateStore::remove(const std::string& name) {
