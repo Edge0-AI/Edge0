@@ -917,6 +917,34 @@ def platform_launch(cli, root):
     assert_no_leftovers(record)
 
 
+def health_deadline(cli, root):
+    engine = make_engine(root / 'deadline-engine')
+    model = make_model(root / 'deadline-model')
+    command = [str(cli), 'serve', '--model', str(model), '--port', '0', *strata_args(engine), '--strata-ready-timeout', '1']
+    for name, delay in (('delayed', {'health_delay': 3}), ('drip', {'health_drip': 0.3})):
+        record = root / ('deadline-' + name)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                   env=environment(record, **delay),
+                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
+        started = time.monotonic()
+        try:
+            _, output = process.communicate(timeout=4)
+            assert process.returncode == 1 and 'not ready within 1' in output and 'Listening:' not in output, output
+            assert time.monotonic() - started < 3, output
+        finally:
+            if process.poll() is None:
+                process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
+                process.communicate(timeout=15)
+        assert_no_leftovers(record)
+    # A slower but in-budget health probe still starts normally.
+    record = root / 'deadline-control'
+    server = Running(cli, model, engine, record, extra=('--strata-ready-timeout', '3'),
+                     env=environment(record, health_delay=0.2))
+    assert server.stop() == 0
+    assert_no_leftovers(record)
+    print('PASS health deadline: late 200/dripping body rejected within budget, timely health accepted, child cleanup')
+
+
 def interrupted_responses(cli, root):
     engine = make_engine(root / 'interrupt-engine')
     model = make_model(root / 'interrupt-model')
@@ -1168,6 +1196,7 @@ def main():
         root = Path(folder)
         mac_prepare(args.cli, root)
         launch_handshake(args.cli, root)
+        health_deadline(args.cli, root)
         interrupted_responses(args.cli, root)
         inspect_defaults(args.cli, root)
         refusals(args.cli, root)

@@ -232,6 +232,19 @@ def handler_for(fake):
         def do_GET(self):
             path = self.path.split('?')[0]
             if path == '/health':
+                time.sleep(float(os.environ.get('FAKE_STRATA_HEALTH_DELAY', '0')))
+                drip = float(os.environ.get('FAKE_STRATA_HEALTH_DRIP', '0'))
+                if drip:
+                    data = b'{"ok":true}'
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Content-Length', str(len(data)))
+                    self.end_headers()
+                    for byte in data:
+                        self.wfile.write(bytes([byte]))
+                        self.wfile.flush()
+                        time.sleep(drip)
+                    return
                 self.send_json(200, {'status': 'ok', 'service': 'strata', 'loaded': True, 'model': fake.config.get('model_name')})
             elif path in ('/v1/status', '/metrics', '/props'):
                 # The description endpoints a benchmark reads; what was sent is recorded for byte comparisons.
