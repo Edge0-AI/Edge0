@@ -90,8 +90,9 @@ def write_catalog(root: Path, roles: dict | None = None) -> None:
             writer.writerow([role, p.stat().st_size, sha256(p), name])
 
 
-def check(root: str | Path) -> dict:
+def _check(root: str | Path) -> tuple[dict, dict]:
     root = Path(root)
+    rows = {}
     report = {'status': 'failed', 'model': None, 'structure': 'not_executed', 'integrity': 'not_executed',
               'tensors': 'not_executed', 'numerical': {'status': 'not_executed', 'reason': 'No verified numerical reference supplied.'}, 'issues': []}
     try:
@@ -106,19 +107,30 @@ def check(root: str | Path) -> dict:
         report['issues'].append({'category': exc.category, 'detail': str(exc)})
     except (OSError, ValueError, TypeError, OverflowError) as exc:
         report['issues'].append({'category': 'invalid_asset', 'detail': str(exc)})
-    return report
+    return report, rows
+
+
+def check(root: str | Path) -> dict:
+    return _check(root)[0]
 
 
 def compare(a: str | Path, b: str | Path) -> dict:
     a, b = Path(a), Path(b)
-    checks = [check(a), check(b)]
+    validated = [_check(a), _check(b)]
+    checks = [report for report, _ in validated]
     if any(r['status'] != 'passed' for r in checks):
         return {'status': 'failed', 'checks': checks}
     if checks[0]['model'] != checks[1]['model']:
         return {'status': 'failed', 'differences': [{'kind': 'model', 'models': [r['model'] for r in checks]}]}
     module = model_module(checks[0]['model'])
+    digests = [{row['filename']: row['sha256'] for row in rows.values()} for _, rows in validated]
+    whole_file_equal = {name: digests[0][name] == digests[1][name] for name in module.ROLES.values()}
     differences = []
     for name in module.GGUF_FILES:
+        # Integrity checking already read and hashed each payload. Identical
+        # files need no second read; differing ones still get tensor diagnostics.
+        if whole_file_equal[name]:
+            continue
         left, right = Reader(a / name), Reader(b / name)
         if left.metadata != right.metadata:
             differences.append({'file': name, 'kind': 'metadata'})
@@ -128,10 +140,10 @@ def compare(a: str | Path, b: str | Path) -> dict:
         for tensor in sorted(set(right.tensors) - set(left.tensors)):
             differences.append({'file': name, 'kind': 'tensor', 'tensor': tensor})
     for name in module.TEXT_FILES:
-        if (a / name).read_bytes() != (b / name).read_bytes():
+        if not whole_file_equal[name]:
             differences.append({'file': name, 'kind': 'text'})
     return {'status': 'failed' if differences else 'passed', 'differences': differences,
-            'whole_file_equal': {n: sha256(a / n) == sha256(b / n) for n in module.ROLES.values()}}
+            'whole_file_equal': whole_file_equal}
 
 
 def main():

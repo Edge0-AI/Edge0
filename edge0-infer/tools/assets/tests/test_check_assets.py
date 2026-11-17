@@ -1,10 +1,12 @@
 from copy import deepcopy
+from collections import Counter
 import shutil
 import struct
 
 import pytest
 
 from asset_common import write_json
+import check_assets
 from check_assets import MODELS, check, compare, write_catalog
 from edge0_35b import check as edge0_check
 from format_gguf import Reader, Value, tensor_size, write
@@ -93,6 +95,53 @@ def test_pass_and_compare(asset, tmp_path):
     result = compare(asset, other)
     assert result['status'] == 'failed'
     assert result['differences'] == [{'file': 'base.gguf', 'kind': 'tensor', 'tensor': first}]
+
+
+def test_compare_equal_assets_reads_each_payload_once(asset, tmp_path, monkeypatch):
+    other = tmp_path / 'other'
+    shutil.copytree(asset, other)
+    hashes, tensors = Counter(), Counter()
+    original_hash, original_digest = check_assets.sha256, Reader.digest
+
+    def counted_hash(path):
+        hashes[path] += 1
+        return original_hash(path)
+
+    def counted_digest(reader, name):
+        tensors[reader.path] += 1
+        return original_digest(reader, name)
+
+    monkeypatch.setattr(check_assets, 'sha256', counted_hash)
+    monkeypatch.setattr(Reader, 'digest', counted_digest)
+    result = compare(asset, other)
+    assert result['status'] == 'passed' and all(result['whole_file_equal'].values())
+    assert len(hashes) == 2 * len(edge0_check.ROLES)
+    assert set(hashes.values()) == {1}
+    assert not tensors
+
+
+@pytest.mark.parametrize('change', ['metadata', 'text', 'padding', 'corrupt'])
+def test_compare_still_checks_different_and_corrupt_files(asset, tmp_path, change):
+    other = tmp_path / 'other'
+    shutil.copytree(asset, other)
+    if change == 'metadata':
+        rewrite(other, lambda m, t: m.update({'test.note': Value(8, 'different')}))
+    elif change == 'text':
+        (other / 'chat_template.jinja').write_text('different template')
+    else:
+        with (other / 'base.gguf').open('ab') as file:
+            file.write(b'\0' * 32)
+    if change != 'corrupt':
+        write_catalog(other)
+    result = compare(asset, other)
+    if change == 'corrupt':
+        assert result['status'] == 'failed'
+        assert result['checks'][1]['issues'][0]['category'] == 'size_mismatch'
+    else:
+        name = 'chat_template.jinja' if change == 'text' else 'base.gguf'
+        assert result['whole_file_equal'][name] is False
+        assert result['status'] == ('passed' if change == 'padding' else 'failed')
+        assert result['differences'] == ([] if change == 'padding' else [{'file': name, 'kind': change}])
 
 
 @pytest.mark.parametrize('category', ['missing_manifest', 'size_mismatch', 'digest_mismatch', 'unlisted_file', 'missing_tensor', 'extra_tensor', 'representation_mismatch', 'shape_mismatch', 'unaligned_tensor', 'hyperparameter_mismatch'])
