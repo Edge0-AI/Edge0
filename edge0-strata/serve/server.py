@@ -2919,11 +2919,18 @@ class Vision:
                 raise ValueError(f"the image's data: URL could not be read ({e})") from None
         if source.startswith(("http://", "https://")):
             return Vision.download(source)
-        path = source[7:] if source.startswith("file://") else source
+        path, host = source, ""
+        if source.startswith("file://"):
+            uri = urlsplit(source)
+            path, host = uri.path, uri.netloc
+            if re.fullmatch(r"[A-Za-z]:(?:\\.*)?", host):  # legacy file://C:/... or file://C:\\...
+                path, host = host + path, ""
+            if host.lower() == "localhost":
+                host = ""
+            path = urllib.request.url2pathname(path)
         # refused before anything looks at the path: file://host/share/x.png is \\host\share\x.png ("file://C:/x.png",
         # a drive, is a client's spelling of file:///C:/x.png)
-        host = re.split(r"[/\\]", path, maxsplit=1)[0] if source.startswith("file://") else ""
-        if network_path(path) or host and not re.fullmatch(r"[A-Za-z]:|localhost", host, re.IGNORECASE):
+        if host or network_path(path):
             raise ValueError("an image file must be on this computer: network paths (\\\\host\\share, //host/share, "
                              "file://host/...) are not read")
         if path and os.path.isfile(path):
