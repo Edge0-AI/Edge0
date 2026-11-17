@@ -530,14 +530,14 @@ int main() {
         {"/v1/responses","data: {\"type\":\"response.failed\"}\n\n"},
         {"/v1/messages","data: {\"type\":\"message_stop\"}\n\n"},
         {"/v1/messages","data: {\"type\":\"error\"}\n\n"}}) {
-        Accounting a;a.endpoint=entry.first;std::string pending;
+        Accounting a;a.endpoint=entry.first;SseDecoder pending;
         const std::string partial="data: {\"delta\":\"hello\"}\n\n";
         account_sse(a,pending,partial.data(),partial.size());CHECK(!a.complete);
         for(char c:entry.second)account_sse(a,pending,&c,1);
         CHECK(a.complete);
     }
     {
-        Accounting a;a.endpoint="/v1/responses";std::string pending;
+        Accounting a;a.endpoint="/v1/responses";SseDecoder pending;
         const std::string wire="data: {\"response\":{\"id\":\"resp_seen\"},\"sequence_number\":14}\n\n"
                                "data: {\"sequence_number\":3}\n\n";
         account_sse(a,pending,wire.data(),wire.size());
@@ -546,6 +546,28 @@ int main() {
         account_sse(a,pending,wrong.data(),wrong.size());CHECK(!a.complete);
     }
     Accounting plain;
+    for (const std::string eol : {"\n", "\r\n", "\r"}) {
+        const auto wire = std::string("\xEF\xBB\xBF") + "data: {" + eol + ": keepalive" + eol + "event: message" + eol +
+            "data: \"choices\":[{\"delta\":{\"content\":\"hello\"}}]," + eol + "data" + eol +
+            "data: \"usage\":{\"prompt_tokens\":7,\"completion_tokens\":1}}" + eol + eol +
+            "data: [DONE]" + eol + eol;
+        for (std::size_t cut = 0; cut <= wire.size(); ++cut) {
+            Accounting a; a.endpoint = "/v1/chat/completions";
+            SseDecoder pending;
+            account_sse(a, pending, wire.data(), cut);
+            account_sse(a, pending, wire.data() + cut, wire.size() - cut);
+            CHECK(a.input_tokens == 7 && a.generated_tokens == 1 && a.streamed_tokens == 1 && a.complete && pending.empty());
+        }
+    }
+    {
+        Accounting a; a.endpoint = "/v1/chat/completions";
+        SseDecoder pending;
+        const std::string data_line = "data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n";
+        account_sse(a, pending, data_line.data(), data_line.size(), 1.0);
+        CHECK(!a.saw_content && !pending.empty());
+        account_sse(a, pending, "\n", 1, 2.0);
+        CHECK(a.streamed_tokens == 1 && a.first_token_seconds == 2.0 && pending.empty());
+    }
     account(plain, Json::parse(R"({"choices":[{"finish_reason":"length"}],"usage":{"prompt_tokens":13,"completion_tokens":14},
         "timings":{"cache_n":3,"prompt_n":10,"prompt_ms":163.3,"prompt_per_second":61.2,"predicted_n":14,"predicted_ms":222.5,"predicted_per_second":62.9}})"));
     CHECK(plain.input_tokens == 13 && plain.generated_tokens == 14 && plain.reused_tokens == 3 && plain.prompt_tokens_read == 10);
@@ -557,7 +579,7 @@ int main() {
                             "data: [DONE]\n\n";
     for (std::size_t split : {std::size_t(1), std::size_t(7), std::size_t(64), sse.size()}) {
         Accounting streamed;
-        std::string pending;
+        SseDecoder pending;
         for (std::size_t i = 0; i < sse.size(); i += split) account_sse(streamed, pending, sse.data() + i, std::min(split, sse.size() - i));
         CHECK(pending.empty() && streamed.finish == "stop" && streamed.input_tokens == 5 && streamed.reused_tokens == 1);
         CHECK(streamed.decode_seconds == 0.02 && streamed.predicted_tokens == 2);
@@ -603,7 +625,7 @@ int main() {
     CHECK(both.input_tokens == 13);
     // A malformed event in a stream is skipped; the events around it still count.
     Accounting skipping;
-    std::string tail;
+    SseDecoder tail;
     const std::string events = "data: {\"usage\":{\"prompt_tokens\":5}}\n\ndata: {\"object\":null}\n\ndata: {\"choices\":[{\"finish_reason\":\"stop\"}]}\n\n";
     account_sse(skipping, tail, events.data(), events.size());
     CHECK(skipping.input_tokens == 5 && skipping.finish == "stop" && tail.empty());
@@ -681,7 +703,7 @@ int main() {
             for (std::string line; std::getline(lines, line); offset += line.size() + 1)
                 if (line.rfind("data: {", 0) == 0) {
                     const auto n = content_fragments(Json::parse(line.substr(6)));
-                    if (n && first_line_end == std::string::npos) first_line_end = offset + line.size();
+                    if (n && first_line_end == std::string::npos) first_line_end = offset + line.size() + 1;
                     counted += n;
                 }
         }
@@ -690,7 +712,7 @@ int main() {
         // Cut at every byte: two chunks, the first arriving at 1 s and the second at 2 s.
         for (std::size_t cut = 0; cut <= c.sse.size(); ++cut) {
             Accounting a;
-            std::string pending;
+            SseDecoder pending;
             account_sse(a, pending, c.sse.data(), cut, 1.0);
             account_sse(a, pending, c.sse.data() + cut, c.sse.size() - cut, 2.0);
             CHECK(pending.empty() && a.saw_content && a.streamed_tokens == c.fragments);
@@ -700,7 +722,7 @@ int main() {
         // Fixed chunk sizes; the n-th chunk arrives at n s.
         for (std::size_t split : {std::size_t(1), std::size_t(7), std::size_t(64), c.sse.size()}) {
             Accounting a;
-            std::string pending;
+            SseDecoder pending;
             for (std::size_t i = 0; i < c.sse.size(); i += split)
                 account_sse(a, pending, c.sse.data() + i, std::min(split, c.sse.size() - i), double(i / split + 1));
             CHECK(pending.empty() && a.streamed_tokens == c.fragments);
@@ -790,7 +812,7 @@ int main() {
     // A stream before its first text fragment: prefill; Messages already carries the input count.
     Accounting opening;
     opening.streaming = true;
-    std::string opening_pending;
+    SseDecoder opening_pending;
     const auto& messages_sse = live_cases[2].sse;
     const auto first_event = messages_sse.substr(0, messages_sse.find("\n\n") + 2);
     account_sse(opening, opening_pending, first_event.data(), first_event.size(), 0.5);

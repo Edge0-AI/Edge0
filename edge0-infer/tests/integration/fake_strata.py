@@ -12,6 +12,7 @@ Behaviour is controlled with environment variables:
                            requests.jsonl, sent-<n>.bin, events.jsonl
   FAKE_STRATA_FAIL_START   exit with this code before becoming ready
   FAKE_STRATA_READY_DELAY  seconds to wait before listening
+  FAKE_STRATA_SSE_FORMAT   pretty-print chat data fields with lf, crlf, or cr line endings
   FAKE_STRATA_EXIT_AFTER   exit after this many generation requests (code 3)
   FAKE_STRATA_CHUNK_DELAY  seconds between streamed chunks (default 0.02); every
                            stream sends the answer one word per text event
@@ -340,16 +341,19 @@ def handler_for(fake):
             timings = fake.timings(prompt, len(pieces) + len(reasoning))
             model = request.get('model')
             if request.get('stream'):
+                sse_format = os.environ.get('FAKE_STRATA_SSE_FORMAT')
+                eol = {'lf': '\n', 'crlf': '\r\n', 'cr': '\r'}.get(sse_format, '\n')
                 def event(delta, finish=None, extra=None):
                     chunk = {'id': 'chatcmpl-fake', 'object': 'chat.completion.chunk', 'created': 1, 'model': model,
                              'choices': [{'index': 0, 'delta': delta, 'finish_reason': finish}]}
                     chunk.update(extra or {})
-                    return ('data: ' + json.dumps(chunk) + '\n\n').encode()
+                    lines = json.dumps(chunk, indent=2 if sse_format else None).splitlines()
+                    return (eol.join('data: ' + line for line in lines) + eol + eol).encode()
                 events = [event({'role': 'assistant', 'content': ''})]
                 events += [event({'reasoning_content': r + ' '}) for r in reasoning]
                 events += [event({'content': p}) for p in pieces]
                 events.append(event({}, 'stop', {'usage': usage, 'timings': timings}))
-                events.append(b'data: [DONE]\n\n')
+                events.append(('data: [DONE]' + eol + eol).encode())
                 self.stream(events)
             else:
                 time.sleep(fake.body_delay)

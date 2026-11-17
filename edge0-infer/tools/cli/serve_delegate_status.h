@@ -1,4 +1,5 @@
 #pragma once
+#include "serve_sse.h"
 // /status, request records and response accounting for the delegate-mode proxy.
 // Pure functions: the proxy feeds them what it forwarded and what edge0-strata's
 // /v1/status reported; nothing here performs I/O.
@@ -39,9 +40,9 @@ void account(Accounting&, const StatusJson& body);
 // and `response.custom_tool_call_input.delta`; Messages `content_block_delta` with a `text_delta`, `thinking_delta`
 // or `input_json_delta`.  Empty text, a role, a finish reason, usage or timings alone count 0.
 std::int64_t content_fragments(const StatusJson& event);
-// Splits SSE text into events and accounts each data object; keeps the unfinished tail in `pending`.  `elapsed` is
-// the request's age when this chunk arrived: the first fragment that carries text is stamped with it.
-void account_sse(Accounting&, std::string& pending, const char* data, std::size_t size, double elapsed = 0);
+// Splits SSE text into events and accounts each data object; keeps unfinished framing in `pending`. `elapsed` is
+// the request's age when this chunk arrived: the first complete event that carries text is stamped with it.
+void account_sse(Accounting&, SseDecoder& pending, const char* data, std::size_t size, double elapsed = 0);
 std::string stop_reason(const std::string& finish);
 
 struct ProxyRecord {

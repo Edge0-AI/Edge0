@@ -73,7 +73,7 @@ struct Forward {
     std::string endpoint, source;
     bool stream = false, client_gone = false;
     Accounting accounting;
-    std::string pending;
+    SseDecoder pending;
     void abort() {
         cancel = true;
         if (client) client->stop();

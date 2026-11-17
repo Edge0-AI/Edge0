@@ -112,24 +112,14 @@ std::int64_t content_fragments(const Json& event) {
     return fragments;
 }
 
-void account_sse(Accounting& a, std::string& pending, const char* data, std::size_t size, double elapsed) {
-    pending.append(data, size);
-    std::size_t start = 0;
-    for (;;) {
-        const auto end = pending.find('\n', start);
-        if (end == std::string::npos) break;
-        std::string line = pending.substr(start, end - start);
-        start = end + 1;
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.compare(0, 5, "data:") != 0) continue;
-        auto payload = line.substr(5);
-        if (!payload.empty() && payload.front() == ' ') payload.erase(0, 1);
+void account_sse(Accounting& a, SseDecoder& pending, const char* data, std::size_t size, double elapsed) {
+    pending.push(data, size, [&](const std::string& payload) {
         if (payload == "[DONE]") {
             if (a.endpoint == "/v1/chat/completions") a.complete = true;
-            continue;
+            return;
         }
         const auto value = Json::parse(payload, nullptr, false);
-        if (value.is_discarded()) continue;
+        if (value.is_discarded()) return;
         try {
             const auto type = text(value, "type");
             if (a.endpoint == "/v1/responses") {
@@ -155,8 +145,7 @@ void account_sse(Accounting& a, std::string& pending, const char* data, std::siz
         } catch (const std::exception&) {
             // Accounting never affects forwarding: an event that cannot be read is left out of the record.
         }
-    }
-    pending.erase(0, start);
+    });
 }
 
 StatusJson proxy_error(int status, const std::string& path) {
