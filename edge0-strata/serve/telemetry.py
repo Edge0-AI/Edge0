@@ -493,7 +493,8 @@ class _CpuRamFallback:
             return None
         try:
             f = [int(x) for x in open("/proc/stat").readline().split()[1:]]
-            return f[3] + f[4], sum(f)
+            # Linux already includes guest and guest_nice in user and nice.  Adding them again overstates load.
+            return f[3] + f[4], sum(f[:8])
         except (OSError, ValueError):
             return None
 
