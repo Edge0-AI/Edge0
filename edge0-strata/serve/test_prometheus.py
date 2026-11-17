@@ -96,6 +96,14 @@ class Units(unittest.TestCase):
         self.assertNotIn(("strata:gpu_power_watts", lab + ',gpu="0"'), got)   # not measured: no sample
         self.assertEqual(got[("strata:ram_total_bytes", lab)], 64 << 30)
 
+    def test_model_labels_escape_line_feeds_without_changing_the_name(self):
+        for model in ("plain", "line one\nline two", r"literal\nname", 'quote" and slash\\\n模型'):
+            with self.subTest(model=model):
+                got = parse(render({"engine": {"model": model}}, Latencies().snapshot()))
+                label = "model_name=" + json.dumps(model, ensure_ascii=False)
+                self.assertTrue(got)
+                self.assertTrue(all(labels == label or labels.startswith(label + ",") for _, labels in got))
+
 
 class Endpoint(unittest.TestCase):
     @classmethod
@@ -133,6 +141,24 @@ class Endpoint(unittest.TestCase):
         self.assertGreaterEqual(json.loads(text)["totals"]["requests"], 1)
         ctype, _ = self.get("/metrics?format=prometheus", "*/*")
         self.assertTrue(ctype.startswith("text/plain"))
+
+    def test_configured_model_name_survives_text_and_json_scrapes(self):
+        original = self.svc.model
+        model = 'snapshot\nmodel\\n"模型'
+        self.svc.model = model
+        try:
+            _, text = self.get("/metrics", "application/json")
+            self.assertEqual(json.loads(text)["engine"]["model"], model)
+            label = "model_name=" + json.dumps(model, ensure_ascii=False)
+            for path, accept in (("/metrics", "text/plain"), ("/metrics?format=prometheus", "*/*")):
+                with self.subTest(path=path):
+                    ctype, text = self.get(path, accept)
+                    self.assertTrue(ctype.startswith("text/plain"))
+                    got = parse(text)
+                    self.assertIn(("vllm:num_requests_running", label), got)
+                    self.assertIn(("strata:engine_max_context", label), got)
+        finally:
+            self.svc.model = original
 
 
 class BatchEngine(MockEngine):
