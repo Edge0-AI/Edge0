@@ -160,9 +160,13 @@ void reclaim_model_locked(const ModelReference& model) {
         if(session->model==model && session->state && !session->state->query().released) return;
     model->loaded.reset(); model->rules.reset();
 }
-void reclaim_session_locked(const SessionReference& session) {
+void reclaim_session_locked(SessionReference session) {
     if(session->running||!session->state) return;
     session->state->request_release();
+    if(session->state->query().released) {
+        auto& registered=session->model->registry->sessions;
+        registered.erase(std::remove(registered.begin(),registered.end(),session),registered.end());
+    }
     reclaim_model_locked(session->model);
 }
 }
@@ -185,7 +189,9 @@ exec::Status resolve_prefill_chunk(LoadConfiguration& configuration,std::optiona
 void cleanup_registered(const std::shared_ptr<RuntimeRegistry>& registry) {
     std::lock_guard<std::mutex> lock(registry->mutex);
     for(const auto& model:registry->models) model->unloading=true;
-    for(const auto& session:registry->sessions) { session->releasing=true; reclaim_session_locked(session); }
+    // Retirement removes registry entries; keep stable owners while shutting down.
+    const auto sessions=registry->sessions;
+    for(const auto& session:sessions) { session->releasing=true; reclaim_session_locked(session); }
     for(const auto& model:registry->models) { model->loaded.reset(); model->rules.reset(); }
     registry->sessions.clear(); registry->models.clear();
 }

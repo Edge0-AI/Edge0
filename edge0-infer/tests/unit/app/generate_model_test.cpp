@@ -70,7 +70,12 @@ int main() {
         request.max_tokens=1;
         auto single=take(generate_tokens_check(session,x,config,request));
         CHECK(single.result.e==std::int64_t(x.size())&&single.result.decode_plan_builds==0&&single.result.decode_plan_reuses==0);
-        take(release_session(session));take(release_session(fresh));take(unload_model(model));
+        std::weak_ptr<app::SessionHandle> retired=session, retired_fresh=fresh;
+        take(release_session(session));take(release_session(fresh));
+        CHECK(take(query_session_check(session)).released);
+        session.reset();fresh.reset();
+        CHECK(retired.expired() && retired_fresh.expired());
+        take(unload_model(model));
         load.context=std::int64_t(x.size()+3);load.prefill_chunk=load.context;
         model=take(load_model(runtime,take(resolve_load_configuration(runtime,directory,load))));session=take(create_session(model));
         config=take(resolve_generation_configuration(model,application));request.max_tokens=16;
@@ -80,11 +85,37 @@ int main() {
         take(release_session(session));take(unload_model(model));
     }
     {
+        LoadOverrides load;load.context=64;load.prefill_chunk=64;
+        load.model_options={{"routing","actual"},{"lora","off"},{"prefill_ahead_min_tokens","1"}};
+        auto model=take(load_model(runtime,take(resolve_load_configuration(runtime,directory,load))));
+        auto idle=take(create_session(model));
+        std::weak_ptr<app::SessionHandle> retired_idle=idle;
+        take(release_session(idle));idle.reset();CHECK(retired_idle.expired());
+
+        auto session=take(create_session(model));
+        std::weak_ptr<app::SessionHandle> retired_running=session;
+        GenerationOverrides generation;generation.temperature=0;generation.presence_penalty=0;generation.max_tokens=16;
+        auto config=take(resolve_generation_configuration(model,generation));
+        bool released_in_callback=false;
+        const auto result=take(generate(session,std::vector<TextMessage>{{"user","hello"}},config,{},[&](const OutputEvent&)->exec::Status {
+            take(release_session(session));released_in_callback=true;
+            CHECK(!retired_running.expired() && !session->state->query().released);
+            return {};
+        }));
+        CHECK(released_in_callback && result.stop_reason==StopReason::cancelled);
+        CHECK(take(query_session_check(session)).released);
+        session.reset();CHECK(retired_running.expired());
+        take(unload_model(model));
+    }
+    {
         auto resources=take(RuntimeAccess::acquire(runtime));CHECK(resources.budget.current()==0);
     }
     auto model=take(load_model(runtime,take(resolve_load_configuration(runtime,directory))));auto session=take(create_session(model));
+    auto abandoned=take(create_session(model));
+    std::weak_ptr<app::SessionHandle> unfinished=abandoned;
+    abandoned.reset();CHECK(!unfinished.expired());
     auto budget=take(RuntimeAccess::acquire(runtime)).budget;
-    take(finish_runtime_use(runtime));CHECK(budget.current()==0);
+    take(finish_runtime_use(runtime));CHECK(budget.current()==0 && unfinished.expired());
     CHECK(!create_session(model)&&create_session(model).error().category==ErrorCategory::runtime_ended);
     CHECK(!release_session(session)&&release_session(session).error().category==ErrorCategory::runtime_ended);
     std::cout<<"T6 boundary/KV, T7 cold reset, T8 delivery/capacity, runtime cleanup passed\n";
