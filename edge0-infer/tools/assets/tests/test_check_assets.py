@@ -55,6 +55,32 @@ def test_registered_model_is_reported(asset):
     assert sorted(MODELS) == ['edge0_35b']
 
 
+@pytest.mark.parametrize('metadata_type', [5, 10, 11])
+def test_rejects_non_uint32_alignment(asset, metadata_type):
+    # Keep the value and file layout valid; only the metadata's encoded type is wrong.
+    rewrite(asset, lambda m, t: m.update({'fixture.alignment': Value(metadata_type, 32)}))
+    path = asset / 'base.gguf'
+    path.write_bytes(path.read_bytes().replace(b'fixture.alignment', b'general.alignment'))
+    write_catalog(asset)
+    report = check(asset)
+    assert report['status'] == 'failed' and report['issues'][0]['category'] == 'invalid_asset', report
+    assert 'alignment' in report['issues'][0]['detail']
+
+
+@pytest.mark.parametrize('element_type', [13, 0xFFFFFFFF])
+def test_rejects_unknown_empty_array_type(asset, element_type):
+    key = 'fixture.empty_array'
+    rewrite(asset, lambda m, t: m.update({key: Value(9, [], 4)}))
+    path = asset / 'base.gguf'
+    blob = bytearray(path.read_bytes())
+    struct.pack_into('<I', blob, blob.index(key.encode()) + len(key) + 4, element_type)
+    path.write_bytes(blob)
+    write_catalog(asset)
+    report = check(asset)
+    assert report['status'] == 'failed' and report['issues'][0]['category'] == 'invalid_asset', report
+    assert 'array' in report['issues'][0]['detail']
+
+
 @pytest.mark.parametrize('description', [{'architecture': 'edge0_35b'}, {'format_version': 1}, ['edge0_35b']])
 def test_rejects_malformed_model_description(asset, description):
     write_json(asset / 'model.json', description)
