@@ -3,6 +3,7 @@
 # Copied from https://github.com/Edge0-AI/Edge0/blob/c7ee73d5dfb3729de452bdb1fec7df7aebe42806/windows/tools/repack_r3.py
 # Local modifications (everything else is unchanged; see ORIGIN.json):
 #   (M4) tokenizer.ggml.pre is qwen35, matching the shipped tokenizer.json pre-tokenizer.
+#   (M6) runtime Q4_1 tensors are packed in bounded row chunks.
 """repack_r3.py — 35b → GGUF with llama.cpp canonical naming (the runtime artifact).
 
 Built on the lossless repack core (tools/repack_mlx_to_gguf.py, proven bit-exact),
@@ -238,18 +239,24 @@ def main():
             W = idx.load(src); S = idx.load(base + ".scales"); Bs = idx.load(base + ".biases")
             lead = W.shape[:-1]; rows = int(np.prod(lead)) if lead else 1
             Wf, Sf, Bsf = W.reshape(rows, -1), S.reshape(rows, -1), Bs.reshape(rows, -1)
-            blocks, exm = pack_q41_rows(mlx_q_bytes(Wf), Sf, Bsf, src)
-            w.write(blocks.tobytes()); w.align_pad()
-            # sentinel gate: first row depacked on both sides, sha compared; if that row contains an exempt block, downgrade to record
-            if rows:
-                a_side = deq_mlx_side(mlx_q_bytes(Wf[:1]), Sf[:1], Bsf[:1])
-                b_side = deq_gguf_side(blocks[:1])
-                same = bool(sha16(a_side.tobytes()) == sha16(b_side.tobytes()))
-                row0_ex = any(r == 0 for (r, _b) in exm)
-                st = "OK" if same else ("EXEMPT" if row0_ex else "FAIL")
-                audit["gates"].append(dict(t=r3n, sentinel=st))
-                if st == "FAIL":
-                    audit["errors"].append(f"{r3n}: sentinel row non-exempt mismatch")
+            for i0 in range(0, rows, core.CHUNK):
+                i1 = min(i0 + core.CHUNK, rows)
+                q = mlx_q_bytes(Wf[i0:i1])
+                blocks, exm = pack_q41_rows(q, Sf[i0:i1], Bsf[i0:i1], src)
+                w.write(blocks.tobytes())
+                # Only tensor boundaries are aligned; an intermediate row chunk
+                # can end inside an alignment block.
+                if i0 == 0:
+                    a_side = deq_mlx_side(q[:1], Sf[:1], Bsf[:1])
+                    b_side = deq_gguf_side(blocks[:1])
+                    same = bool(sha16(a_side.tobytes()) == sha16(b_side.tobytes()))
+                    row0_ex = any(r == 0 for (r, _b) in exm)
+                    st = "OK" if same else ("EXEMPT" if row0_ex else "FAIL")
+                    audit["gates"].append(dict(t=r3n, sentinel=st))
+                    if st == "FAIL":
+                        audit["errors"].append(f"{r3n}: sentinel row non-exempt mismatch")
+                del q, blocks, exm
+            w.align_pad()
         elif kind in ("f32i8", "f32i8_1d"):
             base = src[:-7]
             W = idx.load(src); S = idx.load(base + ".scales"); Bs = idx.load(base + ".biases")
