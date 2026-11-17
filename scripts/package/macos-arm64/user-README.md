@@ -29,7 +29,7 @@ Built from commit [`{{COMMIT}}`](https://github.com/Edge0-AI/Edge0/tree/{{COMMIT
    xattr -dr com.apple.quarantine "/Applications/Edge0 Chat.app"
    ```
 
-3. Nothing to set for the engine: the app uses the `edge0-infer` inside it, also after you move the app. A path chosen under **Settings > Engine > Executable** is used instead while that file exists.
+3. Nothing to set for the engine: **Settings > Engine > Executable** is **Built-in**, the `edge0-infer` inside the app, also after you move the app. **Custom** uses an `edge0-infer` you choose instead. Settings written by Edge0 Chat 0.3.0 or earlier are switched to Built-in once, on the first start.
 4. Open **Models**. Choose **Download** on Edge0 145B or Edge0 120B to download its Q3_K folder from Hugging Face or ModelScope into a folder you pick; a paused or interrupted download continues where it stopped. The app does not offer the NVFP4 folders on macOS. Or choose **Add location** and select a model directory you already have (see [Model directories](#model-directories)). Then **Load** it and **Open chat**.
 
 The app keeps its settings (`settings.json`) and conversations under `~/Library/Application Support/dev.edge0.example.desktop`. Set `EDGE0_HOME` to another folder to keep them there instead.
@@ -42,7 +42,7 @@ The app keeps its settings (`settings.json`) and conversations under `~/Library/
 ## Troubleshooting
 
 - **"Edge0 Chat is damaged and can't be opened"**: the quarantine flag is still set on the app. Run the `xattr` command under [First launch](#first-launch).
-- **"No edge0-infer executable is configured"** or **"The edge0-infer executable was not found"**: open **Settings > Engine > Executable** and clear it to use the one inside the app, or choose `Edge0 Chat.app/Contents/Resources/edge0-infer`.
+- **"No edge0-infer executable is configured"** or **"The edge0-infer executable was not found"**: the Custom path is empty or its file is gone. Open **Settings > Engine > Executable** and choose **Built-in** to use the one inside the app, or choose another `edge0-infer` under Custom.
 - **Edge0 145B / 120B: the first load takes longer**: it writes `mtp-q2_0.gguf` into the model folder first, so the folder must be writable.
 - **Check the engine from Terminal:**
 
