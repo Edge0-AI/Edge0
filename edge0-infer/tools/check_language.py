@@ -1,9 +1,7 @@
 """Language check: everything that may be published must be in English.
 
-The repository is split into internal material (written in Chinese, never published)
-and everything else (may be published, must be in English). Classification is
-deny-by-default: any path not listed as internal or exempt is public, so new
-directories are checked automatically.
+Every path not listed as exempt is public, so new directories are checked
+automatically.
 
 Files come from Git: tracked plus untracked, honoring .gitignore.
 
@@ -12,28 +10,16 @@ Checks on public paths:
                not applied to the published translations of the public README
   cjk-path     CJK characters in a file or directory name
   non-utf8     text that is not valid UTF-8 (could hide CJK in another encoding)
-  link         public symlink or Markdown link that points to internal material
+  link         symlink or Markdown link that points outside the repository
 
 Usage: check_language.py <repo_root> [--list]
-  --list  print the class of every file (internal / exempt / public)
+  --list  print the class of every file (exempt / public)
 """
 import json, pathlib, re, subprocess, sys
 
-# Internal, unpublished material. Chinese is allowed. A trailing "/" means a directory.
-INTERNAL = (
-    "docs-internal/",
-    "openspec/",
-    ".agents/",
-    ".claude/",
-    "AGENTS.md",
-    "AGENTS.local.md",
-    "CLAUDE.md",
-    "CONTEXT.md",
-)
-# Third-party code is not ours to translate.
+# Third-party code is not ours to translate. A trailing "/" means a directory.
 EXEMPT = ("third_party/",)
-# Published translations of the public README. They stay public (every other check
-# applies, including links to internal material); only CJK text is allowed.
+# Translations of the README. Every other check applies; only CJK text is allowed.
 TRANSLATIONS = (
     "README_zh.md",
     "README_ja.md",
@@ -60,8 +46,6 @@ def under(path, prefixes):
 
 
 def classify(rel):
-    if under(rel, INTERNAL):
-        return "internal"
     if under(rel, EXEMPT):
         return "exempt"
     if rel.startswith(FIXTURES) and pathlib.PurePosixPath(rel).suffix not in CODE_SUFFIXES:
@@ -83,8 +67,8 @@ def check_public(root, rel, errors):
         errors.append(f"cjk-path {rel}")
     if p.is_symlink():
         dest = points_inside(root, p)
-        if dest is None or classify(dest) == "internal":
-            errors.append(f"link {rel} -> {dest or 'outside repo'}")
+        if dest is None:
+            errors.append(f"link {rel} -> outside repo")
         return
     if not p.is_file():
         return  # submodule gitlink or deleted file
@@ -106,7 +90,7 @@ def check_public(root, rel, errors):
                 if re.match(r"^[a-z]+:", target) or target.startswith("#"):
                     continue
                 dest = points_inside(root, p.parent / target.partition("#")[0])
-                if dest is None or classify(dest) == "internal":
+                if dest is None:
                     errors.append(f"link {rel}:{ln} -> {target}")
 
 
@@ -117,7 +101,7 @@ def main():
         check=True, capture_output=True,
     ).stdout.decode("utf-8")
     paths = sorted({p for p in out.split("\0") if p})
-    counts, errors = {"internal": 0, "exempt": 0, "public": 0}, []
+    counts, errors = {"exempt": 0, "public": 0}, []
     for rel in paths:
         cls = classify(rel)
         counts[cls] += 1

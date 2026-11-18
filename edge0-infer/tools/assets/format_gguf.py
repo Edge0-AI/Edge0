@@ -77,7 +77,7 @@ def _value(f: BinaryIO, type: int) -> Value:
     if type == 9:
         et = _unpack(f, 'I')
         n = _unpack(f, 'Q')
-        if et == 9 or n > 10_000_000:
+        if et not in (*SCALARS, 8) or n > 10_000_000:
             raise ValueError('unsupported or oversized GGUF array')
         return Value(type, [_value(f, et).data for _ in range(n)], et)
     raise ValueError(f'unsupported metadata type {type}')
@@ -119,8 +119,9 @@ class Reader:
                 if k in self.metadata:
                     raise ValueError(f'duplicate metadata key {k}')
                 self.metadata[k] = _value(f, _unpack(f, 'I'))
-            self.alignment = self.metadata.get('general.alignment', Value(4, 32)).data
-            if not isinstance(self.alignment, int) or self.alignment <= 0 or self.alignment & (self.alignment - 1):
+            alignment = self.metadata.get('general.alignment', Value(4, 32))
+            self.alignment = alignment.data
+            if alignment.type != 4 or self.alignment <= 0 or self.alignment & (self.alignment - 1):
                 raise ValueError('invalid GGUF alignment')
             for _ in range(nt):
                 name = _string(f)
@@ -161,9 +162,10 @@ class Reader:
 
 def write(path: str | Path, metadata: dict[str, Value],
           tensors: list[tuple[str, tuple[int, ...], int, bytes]]) -> None:
-    alignment = metadata.get('general.alignment', Value(4, 32)).data
-    if alignment != 32:
-        raise ValueError('writer requires alignment 32')
+    alignment_value = metadata.get('general.alignment', Value(4, 32))
+    alignment = alignment_value.data
+    if alignment_value.type != 4 or alignment != 32:
+        raise ValueError('writer requires uint32 alignment 32')
     names = [t[0] for t in tensors]
     if len(names) != len(set(names)):
         raise ValueError('duplicate tensor names')

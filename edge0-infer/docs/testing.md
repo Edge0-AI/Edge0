@@ -1,6 +1,6 @@
 # Testing
 
-The tests are CTest tests. Each one carries a level label, `L0` to `L4`, ordered from cheapest to most expensive; tests that need a GPU or other device also carry the label `device`. Every property is tested at the cheapest level that can decide it.
+The tests are CTest tests. Each one carries a level label, `L0` to `L4`, ordered from cheapest to most expensive; tests that need a GPU or other device also carry the label `device`, and slow `L2` tests that continuous integration skips carry the label `local-only`. Every property is tested at the cheapest level that can decide it.
 
 ## Levels
 
@@ -11,6 +11,8 @@ The tests are CTest tests. Each one carries a level label, `L0` to `L4`, ordered
 | `L2` integration | Several modules together on a tiny random-weight model with the same structure as the 35B; single-turn computation is compared with the reference answers in [`tests/fixtures/answers/`](../tests/fixtures/answers/README.md) | `$MOE_TINY`; `$MOE_SOURCE_35B` for the asset tools' fixture test |
 | `L3` real assets | The 35B on real assets: logits, routing, expert loads, memory peaks | `$MOE_ASSETS_35B` |
 | `L4` acceptance | Fixed scenarios through the CLI only, per platform | `$MOE_ASSETS_35B`, the target device |
+
+Continuous integration on GitHub runs `L0` and `L1`, and the `L2` tests without the label `local-only`, one at a time on a hosted macOS runner (`ctest -L L2 -LE "device|local-only"`); it also builds the `cpu` preset on Linux and the `windows` preset on Windows without running tests. The `local-only` tests are slow `L2` tests whose behavior other tests mostly cover, tests that check development tools, and the tests of the official OpenAI and Anthropic SDKs, which need those SDKs in the local uv cache; the full level, run locally, includes them. The answer suites (`moe_test_forward_answers`, `moe_test_forward_split`, `moe_test_generate_answers`) are also `local-only`: they compare against answers exported on Apple silicon with i8mm and are enforced only on a build that takes that CPU kernel path; on any other build they print their differences without failing. Mark a new slow `L2` test `LOCAL_ONLY` in `moe_add_test` only when that holds for it.
 
 `L3`, `L4` and `device` tests run one at a time even when CTest runs others in parallel, because they assert memory peaks or share the GPU. A test that cannot run in the current environment, such as a Metal test without a Metal device or a check that needs Git metadata, exits with code 77 and is reported as skipped, not as passed.
 

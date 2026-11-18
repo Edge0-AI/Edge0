@@ -42,8 +42,7 @@ class LanguageTest(unittest.TestCase):
             self.assertTrue(errors and errors[0].startswith('cjk '), (rel, errors))
 
     def test_translation_keeps_link_check(self):
-        (self.root / 'CLAUDE.md').write_text('internal\n', encoding='utf-8')
-        errors = self.check('README_zh.md', CJK_TEXT + '[x](CLAUDE.md)\n')
+        errors = self.check('README_zh.md', CJK_TEXT + '[x](../outside.md)\n')
         self.assertEqual(len(errors), 1)
         self.assertTrue(errors[0].startswith('link README_zh.md:2'), errors)
 

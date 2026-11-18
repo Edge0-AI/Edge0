@@ -207,7 +207,7 @@ int chat(int argc, char** argv, const Match& match) {
             if (fragment_limit && *fragment_limit == 0) std::raise(SIGINT);
             bool thinking_open = false;
             std::size_t fragments = 0;
-            std::string pending;
+            SseDecoder pending;
             httplib::Request request;
             request.method = "POST";
             request.path = "/v1/chat/completions";
@@ -216,22 +216,12 @@ int chat(int argc, char** argv, const Match& match) {
             request.response_handler = [&](const httplib::Response& response) { turn.status = response.status; return !interrupted; };
             request.content_receiver = [&](const char* data, std::size_t size, std::size_t, std::size_t) {
                 if (turn.status != 200) { turn.error.append(data, size); return !interrupted.load(); }
-                pending.append(data, size);
-                std::size_t start = 0;
-                for (;;) {
-                    const auto end = pending.find('\n', start);
-                    if (end == std::string::npos) break;
-                    std::string event = pending.substr(start, end - start);
-                    start = end + 1;
-                    if (!event.empty() && event.back() == '\r') event.pop_back();
-                    if (event.compare(0, 5, "data:") != 0) continue;
-                    auto payload = event.substr(5);
-                    if (!payload.empty() && payload.front() == ' ') payload.erase(0, 1);
-                    if (payload == "[DONE]") continue;
+                pending.push(data, size, [&](const std::string& payload) {
+                    if (payload == "[DONE]") return;
                     const auto value = Json::parse(payload, nullptr, false);
-                    if (value.is_discarded()) continue;
+                    if (value.is_discarded()) return;
                     account(turn.accounting, value);
-                    if (!value.contains("choices") || !value["choices"].is_array() || value["choices"].empty()) continue;
+                    if (!value.contains("choices") || !value["choices"].is_array() || value["choices"].empty()) return;
                     const auto& delta = value["choices"][0].value("delta", Json::object());
                     if (delta.contains("reasoning_content") && delta["reasoning_content"].is_string()) {
                         const auto text = delta["reasoning_content"].get<std::string>();
@@ -251,8 +241,7 @@ int chat(int argc, char** argv, const Match& match) {
                             if (fragment_limit && ++fragments == *fragment_limit) std::raise(SIGINT);
                         }
                     }
-                }
-                pending.erase(0, start);
+                });
                 return !interrupted.load();
             };
             const auto result = client.send(request);

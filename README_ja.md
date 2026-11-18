@@ -422,8 +422,6 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-`edge0-infer/` の変更も通常どおりこのリポジトリに issue や PR を提出してください。このディレクトリは別のリポジトリで開発されているため、採用された変更はメンテナーが先にそちらへ適用し、次回の同期でこちらに反映されます。[CONTRIBUTING](CONTRIBUTING.md) を参照してください。
-
 流れ：fork → 機能ブランチ → `main` 宛てに PR。テストの成功を維持し、新しい動作にはテストを追加してください。
 
 </details>
