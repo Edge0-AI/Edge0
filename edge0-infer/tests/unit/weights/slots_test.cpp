@@ -76,6 +76,23 @@ int main(int argc,char** argv) {
             CHECK(closed.wait_for(std::chrono::milliseconds(20))==std::future_status::timeout);
             CHECK(!w.release_use(held.use)); CHECK(!closed.get());
         }
+        {
+            // Replacement policy on a fresh pool: an empty slot before any valid unprotected one,
+            // then the least recently used of several unprotected candidates.
+            auto separate=description; separate.layer=2;
+            auto fresh=take(ExpertPool::create_pools(w,backend,separate));
+            auto use=[&](std::vector<std::int32_t> ids) {return take(fresh->await_ready(take(fresh->prepare(ids))));};
+            auto two=use({0,1});
+            auto next=use({2}); CHECK(next.activity.loads==1);
+            CHECK(next.mapping.at(2)!=two.mapping.at(0) && next.mapping.at(2)!=two.mapping.at(1));
+            auto last=use({3}); CHECK(last.activity.loads==1);
+            CHECK(use({0,1}).activity.loads==0);
+            // Use order is now 2, 3, 0, 1 (oldest first): 2 and then 3 are replaced.
+            auto four=use({4}); CHECK(four.activity.loads==1 && four.mapping.at(4)==next.mapping.at(2));
+            auto five=use({5}); CHECK(five.activity.loads==1 && five.mapping.at(5)==last.mapping.at(3));
+            auto kept=use({0,1}); CHECK(kept.activity.hits==2 && kept.activity.loads==0);
+            CHECK(!fresh->close());
+        }
         // Failure after a writer starts isolates the pool, even with no reader.
         w.before_read=[](std::size_t) {throw std::runtime_error("injected");};
         pending=take(pool->prepare({2})); CHECK(!pool->await_ready(pending));
