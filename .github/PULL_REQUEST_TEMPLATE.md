@@ -20,7 +20,8 @@ Fixes #
 
 ## Checklist
 
-- [ ] `ctest --preset cpu -L "L0|L1"` passes locally in `edge0-infer/` (engine changes)
+- [ ] `ctest --preset cpu -L "L0|L1"` passes locally in `edge0-infer/` (engine changes); CI also runs these and the `L2` tests not labeled `local-only`
+- [ ] Changes to model computation: ran the `local-only` answer suites (`ctest --preset cpu -L local-only`) on Apple silicon with i8mm (M2 or later), which CI cannot judge
 - [ ] Ran the higher test levels this change affects (see `edge0-infer/docs/testing.md`)
 - [ ] Added/updated tests for new behavior
 - [ ] Updated relevant docs / READMEs (incl. translations if user-facing)

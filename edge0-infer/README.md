@@ -71,4 +71,4 @@ This directory is distributed under the Apache License 2.0 of the repository tha
 
 ## Feedback and contributions
 
-Report problems and propose changes through issues and pull requests on the repository that contains this directory. The directory is developed in a separate repository and synced here: an accepted change is applied there first and arrives here with the next sync.
+Report problems and propose changes through issues and pull requests on the repository that contains this directory.

@@ -17,6 +17,14 @@ The rest of this page describes the native engine.
 
 ## Native engine
 
+### Design principles
+
+- One engine and one native API serve every platform; platforms differ only in the GGML backends they use and in their memory and storage limits.
+- The engine is built on GGML alone and organizes its own modules: the framework (loading, sessions, weights, execution) knows no model, and everything specific to a model lives in its implementation under `src/models/`.
+- Memory is a budget set up front: dense weights stay resident, expert weights are read on demand into a fixed pool of slots, and a model that does not fit the budget is refused when it is loaded, before any weights are read.
+- A faster path computes the same result as the plain one: reusing a cached prefix or restoring a checkpoint gives, on the same backend, the same output bit for bit as computing the same input in the same chunks from scratch.
+- Applications, including `edge0-infer` itself, use the engine only through the public API in `include/edge0/`.
+
 ### The pieces
 
 The native engine is a library that applications call in process. For its models, `edge0-infer` and its `serve` command are applications of the same library; they add no engine logic of their own.
