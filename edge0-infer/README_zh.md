@@ -73,4 +73,4 @@ Edge0 145B 和 Edge0 120B 需先构建 edge0-strata，再运行 `edge0-infer ser
 
 ## 反馈与贡献
 
-请通过本目录所在仓库的 issue 和 pull request 报告问题、提出修改。本目录在独立仓库中开发并同步到这里：接受的改动先应用到那边，随下次同步回到这里。
+请通过本目录所在仓库的 issue 和 pull request 报告问题、提出修改。

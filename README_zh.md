@@ -422,8 +422,6 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-修改 `edge0-infer/` 时，仍在本仓库提交 issue 和 PR；该目录在独立仓库中开发，获接受的修改由维护者先应用到该仓库，再随下一次同步进入此处。详见 [CONTRIBUTING](CONTRIBUTING.md)。
-
 流程：fork → 功能分支 → 向 `main` 提交 PR。请确保测试通过，并为新行为添加测试。
 
 </details>

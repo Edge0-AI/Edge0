@@ -73,4 +73,4 @@ Ce répertoire est distribué sous l'Apache License 2.0 du dépôt qui le contie
 
 ## Retours et contributions
 
-Signalez les problèmes et proposez des modifications via les issues et les pull requests du dépôt qui contient ce répertoire. Le répertoire est développé dans un dépôt séparé et synchronisé ici : une modification acceptée est d'abord appliquée là-bas et arrive ici lors de la synchronisation suivante.
+Signalez les problèmes et proposez des modifications via les issues et les pull requests du dépôt qui contient ce répertoire.

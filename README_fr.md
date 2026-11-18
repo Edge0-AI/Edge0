@@ -418,8 +418,6 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-Pour les changements dans `edge0-infer/`, ouvrez les issues et PR dans ce dépôt comme d’habitude. Ce répertoire est développé dans un dépôt distinct : les mainteneurs y appliquent d’abord les changements acceptés, qui arrivent ici à la synchronisation suivante. Voir [CONTRIBUTING](CONTRIBUTING.md).
-
 Processus : fork → branche de fonctionnalité → PR vers `main`. Veillez à ce que les tests réussissent et ajoutez-en pour les nouveaux comportements.
 
 </details>
