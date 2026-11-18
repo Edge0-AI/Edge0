@@ -266,20 +266,35 @@ if(MOE_BUILD_CLI)
     moe_add_test(NAME moe_test_forward_cli LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/forward_test.py" --cli $<TARGET_FILE:edge0-infer>)
 endif()
-# Answer suites compare this platform's logits against the repository answers
-# (exported on macOS). -X utf8 forces Python UTF-8 Mode so the harnesses decode
-# the CLI's UTF-8 output on a non-UTF-8 OS locale (for example GBK on a Chinese
-# Windows). On Windows the single-backend CPU answers are not bit-reproducible
-# against the macOS-exported answers, so they run in --record-only mode per
-# decision 7 (differences recorded, thresholds not enforced); macOS still
-# enforces. The Metal/device variants run on macOS only and stay enforced.
+# Answer suites compare this build's logits and routing against the repository answers, which
+# were exported on Apple silicon with the CPU's int8 matrix instructions (i8mm). Only a build
+# that takes the same GGML CPU kernel path reproduces them; any other build (an Apple CPU
+# without i8mm, x86, Windows) rounds differently, so its suites run in --record-only mode:
+# differences are printed, not enforced. The Metal/device variants are unaffected. -X utf8
+# forces Python UTF-8 Mode so the harnesses decode the CLI's UTF-8 output on a non-UTF-8 OS
+# locale (for example GBK on a Chinese Windows).
 set(answers_utf8 -X utf8)
+set(answers_path_matches OFF)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+    if(GGML_CPU_ARM_ARCH)
+        if(GGML_CPU_ARM_ARCH MATCHES "i8mm")
+            set(answers_path_matches ON)
+        endif()
+    elseif(GGML_NATIVE)
+        execute_process(COMMAND sysctl -n hw.optional.arm.FEAT_I8MM OUTPUT_VARIABLE answers_i8mm
+                        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+        if(answers_i8mm STREQUAL "1")
+            set(answers_path_matches ON)
+        endif()
+    endif()
+endif()
 set(answers_record_only "")
-if(WIN32)
+if(NOT answers_path_matches)
     set(answers_record_only --record-only)
+    message(STATUS "Answer suites: CPU kernel path differs from the exported answers; running them record-only")
 endif()
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_forward_answers LEVEL L2 COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python -I ${answers_utf8}
+    moe_add_test(NAME moe_test_forward_answers LEVEL L2 LOCAL_ONLY COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python -I ${answers_utf8}
         "${PROJECT_SOURCE_DIR}/tests/integration/forward_answers_test.py" --cli $<TARGET_FILE:edge0-infer> ${answers_record_only})
     moe_add_test(NAME moe_test_forward_answers_metal LEVEL L2 DEVICE COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python -I
         "${PROJECT_SOURCE_DIR}/tests/integration/forward_answers_test.py" --cli $<TARGET_FILE:edge0-infer> --backend metal)
