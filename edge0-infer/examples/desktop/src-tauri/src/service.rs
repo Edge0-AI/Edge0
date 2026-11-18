@@ -978,26 +978,36 @@ impl Manager {
             return Ok(());
         }
         if let Some(mut process) = current.take() {
-            let _ = platform::graceful(process.child.id());
-            let deadline = Instant::now() + Duration::from_secs(15);
-            loop {
-                match process.child.try_wait() {
-                    Ok(Some(_)) => break,
-                    Ok(None) if Instant::now() < deadline => {
-                        thread::sleep(Duration::from_millis(50))
-                    }
-                    _ => {
-                        process.child.kill().map_err(|e| e.to_string())?;
-                        process.child.wait().map_err(|e| e.to_string())?;
-                        break;
-                    }
-                }
-            }
+            end_child(&mut process.child, STOP_GRACE)?;
         }
         if self.record_path().exists() {
             fs::remove_file(self.record_path()).map_err(|e| e.to_string())?;
         }
         Ok(())
+    }
+}
+/// How long `serve` may take to stop after it was asked to before it is killed.
+const STOP_GRACE: Duration = Duration::from_secs(15);
+/// How a child process ended: on the stop request, or killed once `grace` ran out.
+#[derive(Debug, PartialEq)]
+enum Ending {
+    Requested,
+    Killed,
+}
+/// Ask the child to stop, give it `grace` to exit, then kill it; returns once it has exited.
+fn end_child(child: &mut Child, grace: Duration) -> Result<Ending, String> {
+    let _ = platform::graceful(child.id());
+    let deadline = Instant::now() + grace;
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => return Ok(Ending::Requested),
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(50)),
+            _ => {
+                child.kill().map_err(|e| e.to_string())?;
+                child.wait().map_err(|e| e.to_string())?;
+                return Ok(Ending::Killed);
+            }
+        }
     }
 }
 impl Drop for Manager {
@@ -1704,6 +1714,56 @@ mod tests {
         assert_eq!(kept, replacement);
         // Remove the synthetic self-PID record before Fixture's normal shutdown.
         fs::remove_file(fixture.manager.record_path()).unwrap();
+    }
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn stop_asks_first_and_kills_only_after_the_grace_period() {
+        use std::os::unix::process::ExitStatusExt;
+        // Exits on the stop request: never killed, and ended by that request (SIGTERM).
+        let mut obeys = Command::new("sh")
+            .args(["-c", "while :; do sleep 0.05; done"])
+            .spawn()
+            .unwrap();
+        thread::sleep(Duration::from_millis(100));
+        assert_eq!(
+            end_child(&mut obeys, Duration::from_secs(10)).unwrap(),
+            Ending::Requested
+        );
+        assert_eq!(obeys.wait().unwrap().signal(), Some(libc::SIGTERM));
+        // Ignores it: killed, and only after the grace period.
+        let mut ignores = Command::new("sh")
+            .args(["-c", "trap '' TERM; while :; do sleep 0.05; done"])
+            .spawn()
+            .unwrap();
+        thread::sleep(Duration::from_millis(100));
+        let started = Instant::now();
+        let grace = Duration::from_millis(500);
+        assert_eq!(end_child(&mut ignores, grace).unwrap(), Ending::Killed);
+        assert!(started.elapsed() >= grace);
+        assert_eq!(ignores.wait().unwrap().signal(), Some(libc::SIGKILL));
+    }
+    #[cfg(windows)]
+    #[test]
+    fn serve_ends_when_the_app_is_killed() {
+        // Killing the app closes every handle it holds, which is what dropping its Lifetime does here.
+        let fixture = Fixture::new();
+        let mut command = Command::new(&fixture.settings.executable);
+        command.args(["serve", "--model", "ready"]);
+        platform::configure(&mut command).unwrap();
+        let mut child = command.spawn().unwrap();
+        let lifetime = platform::attach(&child).unwrap();
+        assert!(lifetime.in_job(), "the engine was not put into a job");
+        thread::sleep(Duration::from_millis(200));
+        assert!(child.try_wait().unwrap().is_none());
+        drop(lifetime);
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while child.try_wait().unwrap().is_none() {
+            assert!(
+                Instant::now() < deadline,
+                "serve still running after the app's handles closed"
+            );
+            thread::sleep(Duration::from_millis(50));
+        }
     }
     #[test]
     fn shutdown_reaps_the_child_and_rejects_a_previously_queued_start() {
