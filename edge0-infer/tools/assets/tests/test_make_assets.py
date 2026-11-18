@@ -163,6 +163,24 @@ def test_success_removes_partial_and_records_no_local_paths(succeeding, tmp_path
                                        '--out', '<partial>/converted']
 
 
+def test_success_publishes_every_file_listed_and_text_files_unchanged(succeeding, tmp_path):
+    source, _, converter = succeeding
+    # Bytes a re-serialization would change: key order, spacing, CRLF and non-ASCII text.
+    (source / 'generation_config.json').write_bytes(b'{"top_p": 0.95,  "temperature":0.6}\r\n')
+    (source / 'chat_template.jinja').write_bytes('{{ messages }}\u2014\r\n'.encode())
+    lock = {'files': {p.name: sha256(p) for p in source.iterdir()}}
+    out = tmp_path / 'assets'
+    maker.make_assets(source, out, lock, converter)
+    published = {p.name for p in out.iterdir()}
+    assert published == {'assets.tsv', 'base.gguf', 'lora.gguf', 'prerouter.gguf', 'model.json', 'provenance.json', *TEXT}
+    rows = [line.split('\t') for line in (out / 'assets.tsv').read_text().splitlines()[1:]]
+    assert {name for *_, name in rows} == published - {'assets.tsv'}
+    for _, size, digest, name in rows:
+        assert int(size) == (out / name).stat().st_size and digest == sha256(out / name), name
+    for name in TEXT:
+        assert (out / name).read_bytes() == (source / name).read_bytes(), name
+
+
 def test_repository_converter_is_recorded_relative(tmp_path):
     partial = tmp_path / 'out.partial'
     assert maker.recorded_path(maker.CONVERTER, partial) == 'tools/assets/edge0_35b/edge0_convert/convert_mlx_to_gguf.py'
