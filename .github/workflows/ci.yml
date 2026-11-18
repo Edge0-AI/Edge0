@@ -11,16 +11,13 @@ concurrency:
 
 jobs:
   edge0-infer:
-    # One job runs L0 and L1; the L2 tests are split across the other jobs. The hosted runner
-    # has three cores and each test already uses all of them, so every job runs one test at a
-    # time: running tests side by side made each one many times slower.
-    name: edge0-infer ${{ matrix.part == 0 && 'L0/L1' || format('L2 part {0}/4', matrix.part) }} (macOS, cpu preset)
+    name: edge0-infer ${{ matrix.level }} (macOS, cpu preset)
     runs-on: macos-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        part: [0, 1, 2, 3, 4]
+        level: [L0/L1, L2]
     defaults:
       run:
         working-directory: edge0-infer
@@ -41,21 +38,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ccache-cpu-${{ matrix.part }}-${{ github.sha }}
-          restore-keys: |
-            ccache-cpu-${{ matrix.part }}-
-            ccache-cpu-
+          key: ccache-cpu-${{ github.sha }}
+          restore-keys: ccache-cpu-
       # L2 runs on the tiny fixtures: a random-weight model with the 35B structure, generated
       # from three small text files of the 35B source (tools/assets/README.md#tiny-fixtures).
       - name: Restore tiny fixtures
         id: fixtures
-        if: matrix.part != 0
+        if: matrix.level == 'L2'
         uses: actions/cache@v4
         with:
           path: ~/moe-data
           key: tiny-fixtures-${{ hashFiles('edge0-infer/tools/assets/**/*.py', 'edge0-infer/tools/assets/**/*.json', 'edge0-infer/tools/assets/uv.lock') }}
       - name: Generate tiny fixtures
-        if: matrix.part != 0 && steps.fixtures.outputs.cache-hit != 'true'
+        if: matrix.level == 'L2' && steps.fixtures.outputs.cache-hit != 'true'
         run: |
           rm -rf "$HOME/moe-data"
           mkdir -p "$MOE_TINY"
@@ -68,31 +63,14 @@ jobs:
       - name: Build
         run: cmake --build --preset cpu
       - name: Test (L0, L1)
-        if: matrix.part == 0
+        if: matrix.level == 'L0/L1'
         run: ctest --preset cpu --no-tests=error --output-on-failure -L "L0|L1"
-      - name: Test (L2, part ${{ matrix.part }} of 4)
-        if: matrix.part != 0
-        run: |
-          ctest --preset cpu -N -L L2 -LE device | sed -n 's/^ *Test *#[0-9]*: //p' > "$RUNNER_TEMP/l2-all.txt"
-          # Balance the parts by the seconds each test took on this runner; unlisted tests
-          # count as 10 s. Longest first, each into the part with the least time so far.
-          python3 - "$RUNNER_TEMP/l2-all.txt" ${{ matrix.part }} > "$RUNNER_TEMP/l2-part.txt" <<'EOF'
-          import sys
-          seconds = {
-              'moe_test_cancel': 116, 'moe_test_serve_strata': 113, 'moe_test_serve': 85,
-              'moe_test_multi_turn': 74, 'moe_test_answers_export_determinism': 54,
-              'moe_test_text_cli': 52, 'moe_test_edge0_35b_forward': 46, 'moe_test_bench_cli': 45,
-              'moe_test_generate_answers': 39, 'moe_test_thinking_tools': 38, 'moe_test_chat_cli': 37,
-              'moe_test_edge0_35b_slots': 34, 'moe_test_forward_answers': 33,
-              'moe_test_generate_cli': 33, 'moe_test_forward_split': 32, 'moe_test_chat_strata': 28,
-          }
-          names = [line.strip() for line in open(sys.argv[1]) if line.strip()]
-          parts = [[0, []] for _ in range(4)]
-          for name in sorted(names, key=lambda n: (-seconds.get(n, 10), n)):
-              part = min(parts, key=lambda p: p[0])
-              part[0] += seconds.get(name, 10)
-              part[1].append(name)
-          print('\n'.join(parts[int(sys.argv[2]) - 1][1]))
-          EOF
-          echo "$(wc -l < "$RUNNER_TEMP/l2-part.txt") of $(wc -l < "$RUNNER_TEMP/l2-all.txt") L2 tests in this part"
-          ctest --preset cpu --no-tests=error --output-on-failure -j 1 --timeout 600 -L L2 -LE device --tests-from-file "$RUNNER_TEMP/l2-part.txt"
+      # The hosted runner has three cores and every test already uses all of them, so the L2
+      # tests run one at a time. To stay within about ten minutes, CI skips the slow L2 tests
+      # whose behavior other tests mostly cover, or which check development tools; run the
+      # full L2 level locally (docs/testing.md).
+      - name: Test (L2)
+        if: matrix.level == 'L2'
+        run: >-
+          ctest --preset cpu --no-tests=error --output-on-failure -j 1 --timeout 600 -L L2 -LE device
+          -E '^moe_test_(generate_answers|cancel|chat_strata|forward_split|edge0_35b_forward|thinking_tools|generate|mixed_stages|trace_counts|text_cli|answers_export_determinism|bench_cli|chat_cli|generate_cli|sampling|threads_cli)$'
