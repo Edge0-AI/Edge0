@@ -25,10 +25,6 @@ platform/backend work.
 | [`docs/`](docs/) | Model design docs: MoE routing, the prerouter, and the model tiers |
 | [`paper/`](paper/) | The technical report |
 
-`edge0-infer/` is developed in a separate repository and synced here. Open
-issues and pull requests for it in this repository as usual: an accepted change
-is applied there first and arrives here with the next sync.
-
 ## Development setup
 
 Build the engine and get the model assets as described in
@@ -46,6 +42,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"     # no model assets needed
 ```
 
+Continuous integration runs `L0`, `L1` and most of `L2` on every pull request.
 [Testing](edge0-infer/docs/testing.md) describes every level, what each needs
 (the tiny test fixtures, the real assets, a device) and the full regression
 commands.

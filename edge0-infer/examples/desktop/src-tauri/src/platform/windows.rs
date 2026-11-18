@@ -27,6 +27,12 @@ use windows_sys::Win32::{
 /// The job the engine is kept in, when one could be made.  `None` means the app could not put the engine into a job
 /// (see `attach`) and tracks it by pid instead, which is what `serve-pid.json`, `graceful` and `force` already do.
 pub struct Lifetime(Option<HANDLE>);
+impl Lifetime {
+    /// Whether the engine is in a job that ends it when the app exits.
+    pub fn in_job(&self) -> bool {
+        self.0.is_some()
+    }
+}
 // The handle is owned, is never aliased, and is only closed when its owner is dropped.
 unsafe impl Send for Lifetime {}
 impl Drop for Lifetime {

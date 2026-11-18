@@ -73,4 +73,4 @@ Este directorio se distribuye bajo la Apache License 2.0 del repositorio que lo 
 
 ## Comentarios y contribuciones
 
-Informa de problemas y propón cambios mediante issues y pull requests en el repositorio que contiene este directorio. El directorio se desarrolla en un repositorio aparte y se sincroniza aquí: un cambio aceptado se aplica primero allí y llega aquí con la siguiente sincronización.
+Informa de problemas y propón cambios mediante issues y pull requests en el repositorio que contiene este directorio.
