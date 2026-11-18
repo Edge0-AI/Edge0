@@ -93,6 +93,18 @@ def turns(cli, root, engine, model):
     print('PASS turns: history, /regen, /think off, """ block, /file, /new, /quit, no process left')
 
 
+def multiline_events(cli, root, engine, model):
+    for eol in ('lf', 'crlf', 'cr'):
+        record = root / ('multiline-' + eol)
+        result, bodies = chat(cli, model, engine, record, 'hello\nand again\n', sse_format=eol, chunk_delay=0)
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.count(ANSWER) == 2, (eol, result.stdout, result.stderr)
+        assert bodies[1]['messages'][1] == {'role': 'assistant', 'content': ANSWER}, bodies[1]
+        assert all(line.endswith(', end_of_generation') and 'tok/s' in line for line in stats_lines(result.stderr))
+        assert_no_leftovers(record)
+    print('PASS multiline SSE: LF, CRLF and CR retain the answer, usage and conversation history')
+
+
 def cancel(cli, root, engine, model):
     record = root / 'cancel'
     result, bodies = chat(cli, model, engine, record, 'tell me\nand then?\n', ['--sigint-after-fragments', '2'], chunk_delay=0.2)
@@ -221,6 +233,7 @@ def main():
         engine = make_engine(root / 'engine')
         model = make_model(root / 'model')
         turns(args.cli, root, engine, model)
+        multiline_events(args.cli, root, engine, model)
         cancel(args.cli, root, engine, model)
         failures(args.cli, root, engine, model)
         passthrough(args.cli, root, engine, model)

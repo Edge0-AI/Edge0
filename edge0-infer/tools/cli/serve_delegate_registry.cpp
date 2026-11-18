@@ -64,10 +64,21 @@ std::uintmax_t size_of(const fs::path& path, bool directory) {
         return error ? 0 : bytes;
     }
     std::uintmax_t total = 0;
+    const auto root = fs::canonical(path, error);
+    if (error) return 0;
+    std::vector<fs::path> ancestors{root};
     for (fs::recursive_directory_iterator it(path, fs::directory_options::follow_directory_symlink, error), end;
          !error && it != end; it.increment(error)) {
+        ancestors.resize(static_cast<std::size_t>(it.depth()) + 1);
         std::error_code inner;
-        if (it->is_regular_file(inner)) total += it->file_size(inner);
+        if (it->is_directory(inner)) {
+            const auto resolved = fs::canonical(it->path(), inner);
+            // Follow ordinary directory aliases, but never descend into an
+            // ancestor again. Other siblings must still be inspected.
+            if (inner || std::find(ancestors.begin(), ancestors.end(), resolved) != ancestors.end())
+                it.disable_recursion_pending();
+            else ancestors.push_back(resolved);
+        } else if (it->is_regular_file(inner)) total += it->file_size(inner);
     }
     return total;
 }

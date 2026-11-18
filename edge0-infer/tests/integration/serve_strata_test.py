@@ -1,5 +1,6 @@
 """serve, inspect and the other subcommands for a delegated model, against the fake edge0-strata."""
 import argparse
+import hashlib
 import http.client
 import json
 import os
@@ -216,6 +217,29 @@ def failures(cli, root):
     print('PASS failures: engine directory, Python, contract version, start failure, ready timeout; no leftovers')
 
 
+def invalid_ready_ports(cli, root):
+    engine = make_engine(root / 'ready-port-engine')
+    model = make_model(root / 'ready-port-model')
+    for index, port in enumerate(('wrap32', 0, -1, 65536, 2**64 - 1, 1.5, True)):
+        record = root / ('ready-port-' + str(index))
+        process = subprocess.Popen([str(cli), 'serve', '--model', str(model), '--port', '0',
+                                    *strata_args(engine), '--strata-ready-timeout', '1'],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0,
+                                   env=environment(record, ready_port=json.dumps(port)))
+        timed_out = False
+        try:
+            _, text = process.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
+            _, text = process.communicate(timeout=20)
+        assert_no_leftovers(record)
+        assert not timed_out and process.returncode != 0 and 'Listening:' not in text, (port, text)
+        assert 'invalid bound_port' in text, (port, text)
+    print('PASS ready record: invalid port values rejected before health checks; no process left')
+
+
 def proxy(cli, root, snapshots):
     engine = make_engine(root / 'p-engine')
     model = make_model(root / 'p-model')
@@ -337,6 +361,43 @@ def proxy(cli, root, snapshots):
     print('PASS proxy: ready line after readiness, byte-exact forwarding of three endpoints and SSE, disconnect, models, status')
 
 
+def retry_advice(cli, root):
+    engine = make_engine(root / 'retry-engine')
+    model = make_model(root / 'retry-model')
+    record = root / 'retry-record'
+    server = Running(cli, model, engine, record, env=environment(record, metrics_status=503, retry_after='9'))
+    count = 0
+    try:
+        for path in ('/v1/chat/completions', '/v1/responses', '/v1/messages', '/v1/messages/count_tokens'):
+            for status in (429, 503):
+                for advice in (None, '0', '3', 'Tue, 17 Nov 2026 12:00:00 GMT'):
+                    body = {'fake_error': True, 'fake_status': status}
+                    if advice is not None:
+                        body['fake_retry_after'] = advice
+                    connection = http.client.HTTPConnection('127.0.0.1', server.port, timeout=30)
+                    try:
+                        connection.request('POST', path, json.dumps(body), {'Content-Type': 'application/json'})
+                        response = connection.getresponse()
+                        wire = response.read()
+                        count += 1
+                        assert response.status == status and wire == sent(record, count), (path, status, wire)
+                        assert response.getheader('Retry-After') == advice, (path, status, advice, response.getheaders())
+                    finally:
+                        connection.close()
+        connection = http.client.HTTPConnection('127.0.0.1', server.port, timeout=30)
+        try:
+            connection.request('GET', '/metrics')
+            response = connection.getresponse()
+            response.read()
+            assert response.status == 503 and response.getheader('Retry-After') == '9', response.getheaders()
+        finally:
+            connection.close()
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    print('PASS retry advice: 32 generation/count_tokens errors plus delegated metrics preserve Retry-After')
+
+
 def data_events(body):
     return [json.loads(line[5:]) for line in body.decode().splitlines() if line.startswith('data: {')]
 
@@ -349,6 +410,53 @@ def carries_text(event):
     if event.get('type') == 'response.output_text.delta':
         return bool(event['delta'])
     return event.get('type') == 'content_block_delta' and bool(event['delta'].get('text'))
+
+
+def stream_backpressure(cli, root):
+    engine = make_engine(root / 'backpressure-engine')
+    model = make_model(root / 'backpressure-model')
+    for finish in ('drain', 'disconnect'):
+        record = root / ('backpressure-' + finish)
+        server = Running(cli, model, engine, record)
+        connection = http.client.HTTPConnection('127.0.0.1', server.port, timeout=30)
+        response = None
+        try:
+            connection.connect()
+            connection.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+            connection.request('POST', '/v1/chat/completions', json.dumps({'stream': True, 'fake_bulk_stream': True}),
+                               {'Content-Type': 'application/json'})
+            response = connection.getresponse()
+            assert response.status == 200
+            deadline = time.monotonic() + 4
+            while time.monotonic() < deadline:
+                assert not any(e['event'] == 'bulk_finished' for e in events(record)), 'proxy buffered the entire unread stream'
+                time.sleep(0.02)
+            assert any(e['event'] == 'bulk_started' for e in events(record))
+            if finish == 'drain':
+                server.process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
+                actual, expected = hashlib.sha256(), hashlib.sha256()
+                for chunk in iter(lambda: response.read(65536), b''):
+                    actual.update(chunk)
+                for _ in range(1024): expected.update(b':' + b'x' * 65533 + b'\n\n')
+                expected.update(b'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n')
+                assert actual.digest() == expected.digest(), 'stream forwarding changed bytes'
+            else:
+                connection.sock.shutdown(socket.SHUT_RDWR)
+                response.close()
+                connection.close()
+                deadline = time.monotonic() + 5
+                while not any(e['event'] == 'bulk_cancelled' for e in events(record)):
+                    assert time.monotonic() < deadline, 'backpressured producer did not cancel'
+                    time.sleep(0.02)
+                code, _, body = request(server.port, 'POST', '/v1/chat/completions', {'fake_bulk_json': True})
+                assert code == 200 and json.loads(body)['padding'] == 'x' * (2 * 1024 * 1024)
+                assert body == sent(record, 1)
+        finally:
+            if response is not None: response.close()
+            connection.close()
+            assert server.stop() == 0
+        assert_no_leftovers(record)
+    print('PASS stream backpressure: paused consumers bound producer progress, drain/shutdown/cancel, large JSON')
 
 
 def live_progress(cli, root, snapshots):
@@ -420,12 +528,14 @@ def live_progress(cli, root, snapshots):
             elif path == '/v1/responses':
                 usage = events_sent[-1]['response']['usage']
                 assert (last['input_tokens'], last['generated_tokens']) == (usage['input_tokens'], usage['output_tokens']), last
-                assert last['first_token_seconds'] is None and last['reused_tokens'] is None, last
+                assert last['first_token_seconds'] is None, last
+                assert last['reused_tokens'] == usage['input_tokens_details']['cached_tokens'], last
             else:
                 start, delta = events_sent[0], events_sent[-2]
                 assert (last['input_tokens'], last['generated_tokens']) == \
                     (start['message']['usage']['input_tokens'], delta['usage']['output_tokens']), last
                 assert last['first_token_seconds'] is None, last
+                assert last['reused_tokens'] == delta['usage']['cache_read_input_tokens'], last
         # Non-streaming: nothing is forwarded until the answer is complete, so phase and count are unknown.
         for path in ('/v1/chat/completions', '/v1/responses', '/v1/messages'):
             answer = {}
@@ -493,6 +603,10 @@ def dialects(cli, root):
         assert status['totals']['requests'] == 4
         assert status['totals']['input_tokens'] == sum(i for i, _ in expected)
         assert status['totals']['generated_tokens'] == sum(g for _, g in expected)
+        assert records[0]['reused_tokens'] == 3 and records[1]['reused_tokens'] == 4, records
+        assert records[2]['reused_tokens'] == 2 and records[3]['reused_tokens'] == 0, records
+        assert status['last']['reused_tokens'] == 0
+        assert status['totals']['reused_tokens'] == 9
     finally:
         assert server.stop() == 0
     assert_no_leftovers(record)
@@ -917,6 +1031,70 @@ def platform_launch(cli, root):
     assert_no_leftovers(record)
 
 
+def reported_errors(cli, root):
+    engine = make_engine(root / 'reported-errors-engine')
+    model = make_model(root / 'reported-errors-model')
+    record = root / 'reported-errors-record'
+    server = Running(cli, model, engine, record)
+    mismatches = []
+    try:
+        index = 0
+        for stream in (False, True):
+            for path in ('/v1/chat/completions', '/v1/messages', '/v1/responses'):
+                index += 1
+                code, _, wire = request(server.port, 'POST', path, {'stream': stream, 'fake_error': True})
+                assert code == (200 if stream else 429) and wire == sent(record, index), (code, wire)
+                deadline = time.time() + 10
+                while True:
+                    status = json.loads(request(server.port, 'GET', '/status')[2])
+                    if status['current'] is None and len(status['recent_requests']) == index: break
+                    assert time.time() < deadline, status
+                    time.sleep(0.02)
+                recent = status['recent_requests'][0]
+                expected_code = 'api_error' if path == '/v1/messages' else 'fixture_error'
+                expected = {'http_status': 200, 'stop_reason': 'failed', 'code': expected_code} if stream else {
+                    'http_status': 429, 'code': 'fixture_busy', 'message': 'fixture busy'}
+                if stream and path != '/v1/responses': expected['message'] = 'fixture failure'
+                actual = {key: recent.get(key) for key in expected}
+                print('reported error:', path, 'stream=', stream, actual)
+                if actual != expected: mismatches.append((path, stream, actual, expected))
+                if not stream: assert 'stop_reason' not in recent
+                else: assert {key: status['last'].get(key) for key in expected} == actual
+        assert not mismatches, mismatches
+    finally:
+        assert server.stop() == 0
+    assert_no_leftovers(record)
+    print('PASS reported upstream errors: three protocols, byte-exact forwarding and status details')
+
+
+def health_deadline(cli, root):
+    engine = make_engine(root / 'deadline-engine')
+    model = make_model(root / 'deadline-model')
+    command = [str(cli), 'serve', '--model', str(model), '--port', '0', *strata_args(engine), '--strata-ready-timeout', '1']
+    for name, delay in (('delayed', {'health_delay': 3}), ('drip', {'health_drip': 0.3})):
+        record = root / ('deadline-' + name)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                   env=environment(record, **delay),
+                                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
+        started = time.monotonic()
+        try:
+            _, output = process.communicate(timeout=4)
+            assert process.returncode == 1 and 'not ready within 1' in output and 'Listening:' not in output, output
+            assert time.monotonic() - started < 3, output
+        finally:
+            if process.poll() is None:
+                process.send_signal(signal.CTRL_BREAK_EVENT if os.name == 'nt' else signal.SIGTERM)
+                process.communicate(timeout=15)
+        assert_no_leftovers(record)
+    # A slower but in-budget health probe still starts normally.
+    record = root / 'deadline-control'
+    server = Running(cli, model, engine, record, extra=('--strata-ready-timeout', '3'),
+                     env=environment(record, health_delay=0.2))
+    assert server.stop() == 0
+    assert_no_leftovers(record)
+    print('PASS health deadline: late 200/dripping body rejected within budget, timely health accepted, child cleanup')
+
+
 def interrupted_responses(cli, root):
     engine = make_engine(root / 'interrupt-engine')
     model = make_model(root / 'interrupt-model')
@@ -1168,10 +1346,15 @@ def main():
         root = Path(folder)
         mac_prepare(args.cli, root)
         launch_handshake(args.cli, root)
+        reported_errors(args.cli, root)
+        health_deadline(args.cli, root)
         interrupted_responses(args.cli, root)
+        retry_advice(args.cli, root)
+        stream_backpressure(args.cli, root)
         inspect_defaults(args.cli, root)
         refusals(args.cli, root)
         failures(args.cli, root)
+        invalid_ready_ports(args.cli, root)
         snapshots = []
         proxy(args.cli, root, snapshots)
         live_progress(args.cli, root, snapshots)
