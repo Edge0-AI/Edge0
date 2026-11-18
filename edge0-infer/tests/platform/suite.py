@@ -34,10 +34,10 @@ def scenarios(cli, bindir, exe='', backend='cpu', file_stdin=False, skip_observe
     def probe(name):
         return str(bindir / (name + exe))
     return {
-        'tiny-generate': script('generate_answers_test.py', '--record-only', '--cross-kernel', '--backend', backend),
-        'tiny-forward': [script('forward_answers_test.py', '--record-only', '--cross-kernel', '--backend', backend),
-                         script('forward_answers_test.py', '--record-only', '--cross-kernel', '--backend', backend, '--split-last')],
-        '35b-numerical': script('single_turn_35b_test.py', '--backend', backend, '--mode', 'numerical', '--cross-kernel', '--record-only',
+        'tiny-generate': script('generate_answers_test.py', '--record-only', '--backend', backend),
+        'tiny-forward': [script('forward_answers_test.py', '--record-only', '--backend', backend),
+                         script('forward_answers_test.py', '--record-only', '--backend', backend, '--split-last')],
+        '35b-numerical': script('single_turn_35b_test.py', '--backend', backend, '--mode', 'numerical', '--record-only',
                                 *[arg for name in skip_observe for arg in ('--skip-observe', name)]),
         '35b-describe': script('single_turn_35b_test.py', '--backend', backend, '--mode', 'describe'),
         '35b-memory': script('single_turn_35b_test.py', '--backend', backend, '--mode', 'memory'),

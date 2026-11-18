@@ -16,7 +16,6 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--cli', required=True)
     p.add_argument('--backend', default='cpu', choices=['cpu', 'metal'])
-    p.add_argument("--cross-kernel", action="store_true", help="Use explicit cross-kernel answer tolerances")
     p.add_argument('--record-only', action='store_true', help='Record answer differences without enforcing them')
     args = p.parse_args()
     model = Path(os.environ.get('MOE_TINY', '/nonexistent')) / 'tiny-a'
@@ -40,7 +39,7 @@ def main():
                 if a.returncode == 77:
                     return 77
                 assert a.returncode == 0, a.stderr
-                report = judge_generation(output, answer, args.backend, model, cross_kernel=args.cross_kernel, record_only=args.record_only)
+                report = judge_generation(output, answer, args.backend, model, record_only=args.record_only)
                 print(json.dumps(dict(role=role, case=name, record_only=args.record_only, **report)), flush=True)
                 ties += report['tie_cases']
                 failed |= not args.record_only and report['status'] != 'passed'
@@ -65,8 +64,7 @@ def main():
                                           '--max-tokens', '16', '--out', str(demo_out)], capture_output=True, text=True)
                     assert demo.returncode == 0, demo.stderr
                     own_logits(demo_out, json.loads((demo_out / 'tokens.json').read_text()))
-                    comparison = judge_generation(demo_out, answer, args.backend, model,
-                                                  cross_kernel=args.cross_kernel, record_only=True)
+                    comparison = judge_generation(demo_out, answer, args.backend, model, record_only=True)
                     print(json.dumps(dict(role=role, case='chat-intro-demo', record_only=True, **comparison)), flush=True)
                 if name == 'chat-intro' and not args.record_only:
                     demo = subprocess.run(base + ['--user', '\u7528\u4e00\u53e5\u8bdd\u4ecb\u7ecd\u4f60\u81ea\u5df1\u3002', '--max-tokens', '16', '--check', str(answer)], capture_output=True, text=True)

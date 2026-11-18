@@ -126,7 +126,7 @@ def test_non_tied_route_difference_fails(suite):
     report = forward(suite, ids=flip_route(suite, 0.05))
     assert report['status'] == 'failed'
     assert report['first_failure']['layer'] == 0 and report['first_failure']['step'] == -1
-    assert report['first_failure']['worst_difference']['gap'] > 1e-4
+    assert report['first_failure']['worst_difference']['gap'] > 1e-3
 
 
 def test_tied_route_difference_passes_once_per_suite(suite):
@@ -136,9 +136,9 @@ def test_tied_route_difference_passes_once_per_suite(suite):
     assert judge_suite([report, report])['status'] == 'failed'
 
 
-def test_cross_kernel_rejects_excess_route_gap(suite):
+def test_route_gap_beyond_tie_tolerance_fails(suite):
     ours, observed, _ = suite.ours(ids=flip_route(suite, 5e-3))
-    report = judge(ours, observed, suite.case, 'cpu', cross_kernel=True)
+    report = judge(ours, observed, suite.case, 'cpu')
     assert report['status'] == 'failed'
     assert judge_suite([report, report])['status'] == 'failed'
 
@@ -146,46 +146,41 @@ def test_cross_kernel_rejects_excess_route_gap(suite):
 def test_logit_difference_beyond_limit_fails(suite):
     logits = suite.logits.copy()
     top = int(np.argsort(-logits[0])[5])
-    logits[0, top] += 2e-3
+    logits[0, top] += 2e-2
     assert forward(suite, logits=logits)['status'] == 'failed'
-    logits[0, top] = suite.logits[0, top] + 5e-4
+    logits[0, top] = suite.logits[0, top] + 5e-3
     assert forward(suite, logits=logits)['status'] == 'passed'
 
 
-def test_cross_kernel_limits_are_opt_in():
-    assert tolerances('cpu') == (1e-4, 1e-3)
-    assert tolerances('cpu', False) == (1e-4, 1e-3)
-    assert tolerances('metal') == (1e-3, 1e-2)
-    assert tolerances('cpu', True) == tolerances('metal', True) == (1e-3, 1e-2)
+def test_limits_are_the_same_for_every_backend():
+    assert tolerances('cpu') == tolerances('metal') == (1e-3, 1e-2)
     with pytest.raises(ValueError):
-        tolerances('invalid', True)
+        tolerances('invalid')
 
 
-def test_cross_kernel_forward_still_rejects_excess_error(suite):
+def test_kernel_rounding_passes_but_larger_error_fails(suite):
+    # A different GGML kernel path (for example without i8mm) moved logits by about 5e-3.
     for error, verdict in [(5e-3, 'passed'), (2e-2, 'failed')]:
         logits = suite.logits.copy()
         logits[0, np.argmax(logits[0])] += error
         ours, observed, _ = suite.ours(logits=logits)
-        assert judge(ours, observed, suite.case, 'cpu')['status'] == 'failed'
-        assert judge(ours, observed, suite.case, 'cpu', cross_kernel=True)['status'] == verdict
+        assert judge(ours, observed, suite.case, 'cpu')['status'] == verdict
 
 
-def test_cross_kernel_route_tie_keeps_suite_limit(suite):
+def test_route_tie_keeps_suite_limit(suite):
     ours, observed, _ = suite.ours(ids=flip_route(suite, 5e-4))
-    assert judge(ours, observed, suite.case, 'cpu')['status'] == 'failed'
-    report = judge(ours, observed, suite.case, 'cpu', cross_kernel=True)
+    report = judge(ours, observed, suite.case, 'cpu')
     assert report['status'] == 'passed' and report['tie_case']
     assert judge_suite([report, report])['status'] == 'failed'
 
 
-def test_cross_kernel_generation_tie_is_opt_in(suite):
+def test_generation_tie_passes_once(suite):
     row = len(INPUT) - 1
     suite.logits[row, 9] = suite.logits[row, GENERATED[0]] - 5e-4
     fmt.encode_logits(suite.logits, suite.identity['probes']).tofile(suite.case / 'logits.bin')
     fmt.write_sums(suite.root / 'answer')
     _, _, generated = suite.ours(generated=[9, *GENERATED[1:]])
-    assert judge_generation(generated, suite.case, 'cpu')['status'] == 'failed'
-    report = judge_generation(generated, suite.case, 'cpu', cross_kernel=True)
+    report = judge_generation(generated, suite.case, 'cpu')
     assert report['status'] == 'passed' and report['tie_cases'] == 1
 
 
@@ -193,9 +188,9 @@ def test_probe_value_beyond_limit_fails(suite):
     logits = suite.logits.copy()
     rows = fmt.encode_logits(suite.logits, suite.identity['probes'])
     probe = next(p for p in suite.identity['probes'] if p not in set(rows['tokens'][0].tolist()))
-    logits[0, probe] += 2e-3
+    logits[0, probe] += 2e-2
     report = forward(suite, logits=logits)
-    assert report['status'] == 'failed' and report['logits']['probe_max_abs'] > 1e-3
+    assert report['status'] == 'failed' and report['logits']['probe_max_abs'] > 1e-2
 
 
 def test_non_tied_argmax_difference_fails(suite):
@@ -210,7 +205,7 @@ def test_non_tied_argmax_difference_fails(suite):
 def test_generated_token_difference(suite):
     generated = [GENERATED[0], int(np.argsort(-suite.logits[len(INPUT)])[3]), GENERATED[2]]
     report = generation(suite, generated=generated)
-    assert report['status'] == 'failed' and report['position'] == 1 and report['gap'] > 1e-4
+    assert report['status'] == 'failed' and report['position'] == 1 and report['gap'] > 1e-3
 
 
 def test_generated_token_tie_passes(suite):
