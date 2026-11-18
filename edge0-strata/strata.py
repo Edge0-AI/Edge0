@@ -8,7 +8,9 @@ import importlib.util
 import sys
 
 #: What the API server (serve, bench) imports. Everything else in the CLI is standard library.
-SERVER_PACKAGES = ("jinja2", "yaml", "regex", "psutil", "requests", "numpy", "PIL")
+#: jinja2.sandbox is named, not just jinja2: a bundled Python can carry a partial jinja2
+#: without sandbox.py, and serve crashes on it (#217).
+SERVER_PACKAGES = ("jinja2", "jinja2.sandbox", "yaml", "regex", "psutil", "requests", "numpy", "PIL")
 
 
 def _preflight(argv):

@@ -1,4 +1,5 @@
 """CPU-only regression for opt-in reasoning recovery: python -m unittest serve.test_reasoning_loop_recovery."""
+import re
 import threading
 import unittest
 from serve.server import (Service, ByteTokenizer, MockEngine, HIGH_EFFORT,
@@ -35,6 +36,49 @@ class ReasoningLoopRecovery(unittest.TestCase):
     def test_repetition_and_novel_work(self):
         self.assertEqual(reasoning_repeat_coverage(' '.join(str(i) for i in range(4000))), 0)
         self.assertGreater(reasoning_repeat_coverage(self.loop), .9)
+
+    def _hmm_filler(self, words):
+        """#236: the reporter's degenerate filler, irregular 'Hmm, hmm' with punctuation."""
+        block = ('Hmm, hmm \u2014 hmm.\n\nHmm, hmm, hmm, hmm. Hmm, hmm, hmm.\n\n'
+                 'Hmm, hmm. Hmm, hmm, hmm, hmm.\n\n')
+        text = ''
+        while len(re.findall(r"\w+|[^\w\s]", text.lower())) < words:
+            text += block
+        return text
+
+    def test_short_hmm_loop_is_caught_below_2000_words(self):
+        """#236: 71 turns of 512-2,559 tokens read 0.0 because the window was 2,000 words."""
+        self.assertGreaterEqual(reasoning_repeat_coverage(self._hmm_filler(350)), .25)
+        self.assertEqual(reasoning_repeat_coverage(self._hmm_filler(250)), 0)   # below LOOP_MIN_WORDS
+
+    def test_short_normal_reasoning_still_reads_zero(self):
+        """#236: the smaller window must not call ordinary short reasoning a loop."""
+        normal = ('The task is to fix the off-by-one in the pagination helper. Let me look at the current '
+            'implementation first and see how the page boundaries are computed. The function takes a list of items '
+            'and a page size, then returns the slice for the requested page. I need to check whether the last page '
+            'is handled when the item count is an exact multiple of the page size, because that is where the report '
+            'says an empty page appears. Let me read the helper and its tests. The tests cover the first page, a '
+            'middle page, and the last partial page, but nothing covers the exact-multiple case. I will add a test '
+            'for that case, then change the boundary computation so the empty page is not produced. After the fix I '
+            'should run the full helper suite and check the callers that rely on the page count, since changing the '
+            'count could affect the UI that renders the page links. The UI reads the total page count from the same '
+            'helper, so a wrong count there would show a link to a page with no items. Let me also check the API '
+            'layer, which validates the page number against the count before it queries the database. If the count '
+            'changes, the validation stays consistent because both read from the same source. I think the cleanest '
+            'fix is to compute the count with ceiling division and clamp the requested page to that count.')
+        self.assertEqual(reasoning_repeat_coverage(normal), 0)
+
+    def test_stop_mode_ends_a_short_hmm_loop(self):
+        """#236: the same filler, as generated output, ends at the second check instead of running on."""
+        engine = RecordingEngine(self.tok, [self._hmm_filler(9000)])
+        service = Service(engine, self.tok, None)
+        service.answer_room = False      # these cases test the loop guards at the cap itself
+        service.reasoning_loop_recovery = "stop"
+        events = list(service.run(self.ids, True, [], 40000, {}, threading.Event()))
+        self.assertEqual(len(engine.calls), 1)                   # no second pass
+        self.assertEqual(events[-1][1]['finish'], 'length')
+        self.assertLess(events[-1][1]['completion_tokens'], 2000)
+        self.assertEqual(events[-1][1]['reasoning_recoveries'], 0)
 
     def test_a_loop_written_as_one_long_word(self):
         """#1753: a 24k-digit string cycling an 11-digit pattern is one word to the split and never one token twice."""

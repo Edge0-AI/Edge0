@@ -26,7 +26,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import jinja2
-from jinja2.sandbox import ImmutableSandboxedEnvironment
+
+try:
+    from jinja2.sandbox import ImmutableSandboxedEnvironment
+except ImportError as exc:  # #217: a bundled Python can carry a partial jinja2 without sandbox.py
+    raise ImportError(
+        "serve needs jinja2.sandbox, but this Python's jinja2 has no sandbox module. "
+        "Reinstall the Strata app, or install the pinned packages: "
+        "python -m pip install -r requirements.txt"
+    ) from exc
 
 LOGGER = logging.getLogger(__name__)
 

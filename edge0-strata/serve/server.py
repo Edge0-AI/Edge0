@@ -230,6 +230,8 @@ HIGH_EFFORT = EFFORT_TEXT["xhigh"]
 LOW_EFFORT = EFFORT_TEXT["low"]
 LOOP_CHECK_EVERY = 512           # output tokens between two looks at the reasoning (at a clean parser boundary)
 LOOP_COVERAGE = 0.25             # the share of the last 2,000 words inside 12-word passages seen three times
+LOOP_MIN_WORDS = 300             # #236: a shorter reasoning is judged once it holds this many words; below it one
+                                 # repeated passage weighs too much against LOOP_COVERAGE to call it a loop
 LOOP_HISTORY_WORDS = 30000       # how far back the passages are counted (bounds the cost of a look)
 LOOP_TAIL_CHARS = 2048           # chars at the end of the reasoning also checked for a short period (#1753)
 LOOP_TAIL_PERIOD = 64            # a period at most this long in that tail reads as a fully repeated window
@@ -243,15 +245,18 @@ def reasoning_repeat_coverage(text):
     word (a 24k-digit string cycling an 11-digit pattern): the word split makes it a single word and no word count
     grows, and #606's token run never grows either (the tokenizer has no multi-digit tokens), so before the word
     count the last LOOP_TAIL_CHARS chars are checked for a period of at most LOOP_TAIL_PERIOD, and a periodic tail
-    reads as full coverage: it is all of the recent output, repeated.
+    reads as full coverage: it is all of the recent output, repeated.  #236: the window is the whole reasoning once
+    it holds LOOP_MIN_WORDS words, so a short degenerate turn (a few hundred words of one repeated filler) is
+    caught at the first check instead of reading 0.0 until 2,000 words.
     """
     tail = text[-LOOP_TAIL_CHARS:].lower()
     if len(tail) == LOOP_TAIL_CHARS and any(tail[p:] == tail[:-p] for p in range(1, LOOP_TAIL_PERIOD + 1)):
         return 1.0
     words = re.findall(r"\w+|[^\w\s]", text.lower())[-LOOP_HISTORY_WORDS:]
     width, window = 12, 2000
-    if len(words) < window:
+    if len(words) < LOOP_MIN_WORDS:
         return 0.0
+    window = min(window, len(words))
     grams = [tuple(words[i:i + width]) for i in range(len(words) - width + 1)]
     counts = collections.Counter(grams)
     start = max(0, len(words) - window)
