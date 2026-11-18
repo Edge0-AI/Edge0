@@ -51,4 +51,4 @@ jobs:
       - name: Test (L0, L1)
         run: ctest --preset cpu --no-tests=error --output-on-failure -L "L0|L1"
       - name: Test (L2)
-        run: ctest --preset cpu --no-tests=error --output-on-failure -L L2 -LE device
+        run: ctest --preset cpu --no-tests=error --output-on-failure --timeout 300 -L L2 -LE device
