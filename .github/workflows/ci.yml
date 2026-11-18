@@ -1,9 +1,13 @@
 name: CI
 
+# Only changes to edge0-infer, or to this workflow, run it. edge0-infer's tests use a fake
+# edge0-strata and read nothing outside edge0-infer/.
 on:
   push:
     branches: [main]
+    paths: ['edge0-infer/**', '.github/workflows/ci.yml']
   pull_request:
+    paths: ['edge0-infer/**', '.github/workflows/ci.yml']
 
 concurrency:
   group: ci-${{ github.ref }}
