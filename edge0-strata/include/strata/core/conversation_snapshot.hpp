@@ -66,6 +66,10 @@ bool conversation_state_sizes(const ModelGeometry& g, ConversationStateSizes& si
 /// snapshots and their validation all use this: a session saves and restores only the state it owns.
 bool conversation_session_sizes(const ModelGeometry& g, const SessionState& session, ConversationStateSizes& sizes,
                                 std::string& error);
+/// Host payload of a fresh synchronous checkpoint, including token and image metadata. Excludes reusable
+/// pool storage and opt-in asynchronous or gathered-copy staging buffers.
+bool conversation_checkpoint_host_bytes(const SessionState& session, const ModelGeometry& g,
+                                        size_t tokens, size_t images, size_t& bytes, std::string& error);
 bool conversation_checkpoint_validate(const ConversationCheckpoint& checkpoint, const SessionState& session,
                                       const ModelGeometry& g, std::string& error);
 bool conversation_checkpoint_save(ConversationCheckpoint& checkpoint, const SessionState& session,
