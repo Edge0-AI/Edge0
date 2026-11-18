@@ -171,7 +171,7 @@ add_executable(moe_test_text_api integration/text_api_test.cpp)
 target_link_libraries(moe_test_text_api PRIVATE edge0::edge0)
 moe_warnings(moe_test_text_api)
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_text_cli LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_text_cli LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/text_cli_test.py" $<TARGET_FILE:edge0-infer>
         $<TARGET_FILE:moe_test_text_api> "${PROJECT_SOURCE_DIR}/tests/fixtures/text")
 endif()
@@ -261,7 +261,7 @@ target_include_directories(moe_test_edge0_35b_forward PRIVATE "${PROJECT_SOURCE_
 target_link_libraries(moe_test_edge0_35b_forward PRIVATE moe_models_edge0_35b)
 target_compile_definitions(moe_test_edge0_35b_forward PRIVATE MOE_SOURCE_ROOT="${PROJECT_SOURCE_DIR}")
 moe_warnings(moe_test_edge0_35b_forward)
-moe_add_test(NAME moe_test_edge0_35b_forward LEVEL L2 COMMAND moe_test_edge0_35b_forward)
+moe_add_test(NAME moe_test_edge0_35b_forward LEVEL L2 LOCAL_ONLY COMMAND moe_test_edge0_35b_forward)
 if(MOE_BUILD_CLI)
     moe_add_test(NAME moe_test_forward_cli LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/forward_test.py" --cli $<TARGET_FILE:edge0-infer>)
@@ -299,7 +299,7 @@ moe_add_test(NAME moe_test_answers_inventory LEVEL L1 COMMAND uv run
     --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync pytest -p no:cacheprovider
     "${PROJECT_SOURCE_DIR}/tests/answers/test_inventory.py" -q)
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_answers_export_determinism LEVEL L2 COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python -I
+    moe_add_test(NAME moe_test_answers_export_determinism LEVEL L2 LOCAL_ONLY COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python -I
         "${PROJECT_SOURCE_DIR}/tests/answers/export_determinism_test.py" --cli $<TARGET_FILE:edge0-infer>)
     moe_add_test(NAME moe_test_answers_export_determinism_device LEVEL L2 DEVICE COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python -I
         "${PROJECT_SOURCE_DIR}/tests/answers/export_determinism_test.py" --cli $<TARGET_FILE:edge0-infer> --backend metal)
@@ -333,13 +333,13 @@ moe_warnings(moe_test_edge0_35b_reuse)
 moe_add_test(NAME moe_test_edge0_35b_reuse LEVEL L2 COMMAND moe_test_edge0_35b_reuse)
 moe_add_test(NAME moe_test_edge0_35b_reuse_device LEVEL L2 DEVICE COMMAND moe_test_edge0_35b_reuse --backend metal)
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_forward_split LEVEL L2 COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python ${answers_utf8}
+    moe_add_test(NAME moe_test_forward_split LEVEL L2 LOCAL_ONLY COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python ${answers_utf8}
         "${PROJECT_SOURCE_DIR}/tests/integration/forward_answers_test.py" --cli $<TARGET_FILE:edge0-infer> --split-last ${answers_record_only})
     moe_add_test(NAME moe_test_forward_split_device LEVEL L2 DEVICE COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python
         "${PROJECT_SOURCE_DIR}/tests/integration/forward_answers_test.py" --cli $<TARGET_FILE:edge0-infer> --backend metal --split-last)
 endif()
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_generate_answers LEVEL L2 COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python ${answers_utf8}
+    moe_add_test(NAME moe_test_generate_answers LEVEL L2 LOCAL_ONLY COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python ${answers_utf8}
         "${PROJECT_SOURCE_DIR}/tests/integration/generate_answers_test.py" --cli $<TARGET_FILE:edge0-infer> ${answers_record_only})
     moe_add_test(NAME moe_test_generate_answers_device LEVEL L2 DEVICE COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python
         "${PROJECT_SOURCE_DIR}/tests/integration/generate_answers_test.py" --cli $<TARGET_FILE:edge0-infer> --backend metal)
@@ -354,11 +354,11 @@ add_executable(moe_test_generate unit/app/generate_model_test.cpp)
 target_include_directories(moe_test_generate PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/third_party/ggml/include")
 target_link_libraries(moe_test_generate PRIVATE moe_app)
 moe_warnings(moe_test_generate)
-moe_add_test(NAME moe_test_generate LEVEL L2 COMMAND moe_test_generate)
+moe_add_test(NAME moe_test_generate LEVEL L2 LOCAL_ONLY COMMAND moe_test_generate)
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_bench_cli LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_bench_cli LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/bench_cli_test.py" $<TARGET_FILE:edge0-infer>)
-    moe_add_test(NAME moe_test_generate_cli LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_generate_cli LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/generate_cli_test.py" $<TARGET_FILE:edge0-infer>)
 endif()
 
@@ -555,7 +555,7 @@ moe_add_test(NAME moe_test_prerouter_finish_predicted_state_device LEVEL L2 DEVI
 moe_add_test(NAME moe_test_predicted_ledger LEVEL L2 COMMAND moe_test_prerouter_state --ledger)
 moe_add_test(NAME moe_test_route_trace LEVEL L1 COMMAND ${moe_python} "${PROJECT_SOURCE_DIR}/tests/perf/route_trace_test.py")
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_trace_counts LEVEL L2 COMMAND ${moe_python} "${PROJECT_SOURCE_DIR}/tests/integration/route_trace_test.py" $<TARGET_FILE:edge0-infer>)
+    moe_add_test(NAME moe_test_trace_counts LEVEL L2 LOCAL_ONLY COMMAND ${moe_python} "${PROJECT_SOURCE_DIR}/tests/integration/route_trace_test.py" $<TARGET_FILE:edge0-infer>)
     moe_add_test(NAME moe_test_trace_counts_device LEVEL L2 DEVICE COMMAND ${moe_python} "${PROJECT_SOURCE_DIR}/tests/integration/route_trace_test.py" $<TARGET_FILE:edge0-infer> metal)
 endif()
 add_executable(moe_test_prerouter_admission unit/models/edge0_35b/prerouter_admission_test.cpp)
@@ -620,14 +620,14 @@ if(MOE_BUILD_CLI)
     target_include_directories(moe_test_chat_line PRIVATE "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/include")
     moe_warnings(moe_test_chat_line)
     moe_add_test(NAME moe_test_chat_line LEVEL L1 COMMAND moe_test_chat_line)
-    moe_add_test(NAME moe_test_chat_cli LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_chat_cli LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/chat_cli_test.py" --cli $<TARGET_FILE:edge0-infer>)
     moe_add_test(NAME moe_test_chat_cli_device LEVEL L2 DEVICE COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/chat_cli_test.py" --cli $<TARGET_FILE:edge0-infer> --backend metal)
 endif()
 
 if(TARGET edge0-infer)
-    moe_add_test(NAME moe_test_cancel LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_cancel LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/cancel_test.py" --cli $<TARGET_FILE:edge0-infer>)
     moe_add_test(NAME moe_test_cancel_device LEVEL L2 DEVICE COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/cancel_test.py" --cli $<TARGET_FILE:edge0-infer> --backend metal)
@@ -676,7 +676,7 @@ foreach(backend IN ITEMS cpu metal)
         set(thinking_suffix "")
         set(thinking_device "")
     endif()
-    moe_add_test(NAME moe_test_thinking_tools${thinking_suffix} LEVEL L2 ${thinking_device}
+    moe_add_test(NAME moe_test_thinking_tools${thinking_suffix} LEVEL L2 LOCAL_ONLY ${thinking_device}
         COMMAND uv run --project "${PROJECT_SOURCE_DIR}/tools/assets" --offline --no-sync python -I
         "${PROJECT_SOURCE_DIR}/tests/integration/thinking_tools_test.py" --cli $<TARGET_FILE:edge0-infer>
         --backend ${backend} --probe $<TARGET_FILE:moe_thinking_rerender_probe>)
@@ -687,7 +687,7 @@ target_include_directories(moe_test_sampling_rules PRIVATE "${PROJECT_SOURCE_DIR
 target_link_libraries(moe_test_sampling_rules PRIVATE moe_app)
 moe_warnings(moe_test_sampling_rules)
 moe_add_test(NAME moe_test_sampling_rules LEVEL L1 COMMAND moe_test_sampling_rules)
-moe_add_test(NAME moe_test_sampling LEVEL L2 COMMAND ${moe_python}
+moe_add_test(NAME moe_test_sampling LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/integration/sampling_test.py" --cli $<TARGET_FILE:edge0-infer>)
 moe_add_test(NAME moe_test_sampling_device LEVEL L2 DEVICE COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/integration/sampling_test.py" --cli $<TARGET_FILE:edge0-infer> --backend metal)
@@ -755,7 +755,11 @@ moe_add_test(NAME moe_test_multi_turn_counts LEVEL L1 COMMAND ${moe_python}
     "${PROJECT_SOURCE_DIR}/tests/integration/multi_turn_counts_test.py")
 if(MOE_BUILD_CLI)
     foreach(kind threads budget)
-        moe_add_test(NAME moe_test_${kind}_cli LEVEL L2 COMMAND ${moe_python}
+        set(cli_local_only "")
+        if(kind STREQUAL "threads")
+            set(cli_local_only LOCAL_ONLY)
+        endif()
+        moe_add_test(NAME moe_test_${kind}_cli LEVEL L2 ${cli_local_only} COMMAND ${moe_python}
             "${PROJECT_SOURCE_DIR}/tests/integration/${kind}_cli_test.py" --cli $<TARGET_FILE:edge0-infer>)
     endforeach()
 endif()
@@ -818,7 +822,7 @@ add_executable(moe_test_mixed_stages unit/app/mixed_stages_test.cpp)
 target_include_directories(moe_test_mixed_stages PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/third_party/ggml/include")
 target_link_libraries(moe_test_mixed_stages PRIVATE edge0::edge0)
 moe_warnings(moe_test_mixed_stages)
-moe_add_test(NAME moe_test_mixed_stages LEVEL L2 COMMAND moe_test_mixed_stages)
+moe_add_test(NAME moe_test_mixed_stages LEVEL L2 LOCAL_ONLY COMMAND moe_test_mixed_stages)
 
 if(MOE_BUILD_CLI AND GGML_METAL)
     moe_add_test(NAME moe_test_multi_turn_mixed LEVEL L2 DEVICE COMMAND ${moe_python}
@@ -894,6 +898,6 @@ if(MOE_BUILD_CLI)
     moe_add_test(NAME moe_test_strata_registry LEVEL L1 COMMAND moe_test_strata_registry)
     moe_add_test(NAME moe_test_serve_strata LEVEL L2 COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_strata_test.py" --cli $<TARGET_FILE:edge0-infer>)
-    moe_add_test(NAME moe_test_chat_strata LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_chat_strata LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/chat_strata_test.py" --cli $<TARGET_FILE:edge0-infer>)
 endif()

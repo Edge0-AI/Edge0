@@ -66,11 +66,8 @@ jobs:
         if: matrix.level == 'L0/L1'
         run: ctest --preset cpu --no-tests=error --output-on-failure -L "L0|L1"
       # The hosted runner has three cores and every test already uses all of them, so the L2
-      # tests run one at a time. To stay within about ten minutes, CI skips the slow L2 tests
-      # whose behavior other tests mostly cover, or which check development tools; run the
-      # full L2 level locally (docs/testing.md).
+      # tests run one at a time. To stay within about ten minutes, CI skips the tests labeled
+      # local-only (edge0-infer/docs/testing.md).
       - name: Test (L2)
         if: matrix.level == 'L2'
-        run: >-
-          ctest --preset cpu --no-tests=error --output-on-failure -j 1 --timeout 600 -L L2 -LE device
-          -E '^moe_test_(generate_answers|cancel|chat_strata|forward_split|edge0_35b_forward|thinking_tools|generate|mixed_stages|trace_counts|text_cli|answers_export_determinism|bench_cli|chat_cli|generate_cli|sampling|threads_cli)$'
+        run: ctest --preset cpu --no-tests=error --output-on-failure -j 1 --timeout 600 -L L2 -LE "device|local-only"
