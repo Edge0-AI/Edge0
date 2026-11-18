@@ -71,3 +71,41 @@ jobs:
       - name: Test (L2)
         if: matrix.level == 'L2'
         run: ctest --preset cpu --no-tests=error --output-on-failure -j 1 --timeout 600 -L L2 -LE "device|local-only"
+
+  # Linux and Windows only build the engine, its CLI and test programs; the tests run on macOS above.
+  edge0-infer-build:
+    name: edge0-infer build (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: Linux
+            runner: ubuntu-latest
+            preset: cpu
+          - os: Windows
+            runner: windows-latest
+            preset: windows
+    defaults:
+      run:
+        working-directory: edge0-infer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Install tools (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ninja -y --no-progress
+      - name: Configure and build (Linux)
+        if: runner.os == 'Linux'
+        run: cmake --preset ${{ matrix.preset }} && cmake --build --preset ${{ matrix.preset }}
+      # MSVC's environment comes from vcvars64.bat, as in the x64 Native Tools Command Prompt.
+      - name: Configure and build (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+          cmake --preset ${{ matrix.preset }} || exit /b 1
+          cmake --build --preset ${{ matrix.preset }}
