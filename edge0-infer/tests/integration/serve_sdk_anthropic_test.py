@@ -17,7 +17,7 @@ def main():
     assert anthropic.__version__ == '2.8.0'
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
-        key = root / 'key'; key.write_text('sdk-secret')
+        key = root / 'key'; key.write_text('sdk-secret', encoding='utf-8')
         addresses = socket.gethostbyname_ex(socket.gethostname())[2]
         address = next(v for v in addresses if not v.startswith(('127.', '169.254.')))
         with Server(args.cli, tiny(), root / 'server', extra=['--host', '0.0.0.0', '--api-key-file', str(key)]) as server:

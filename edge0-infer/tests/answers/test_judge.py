@@ -53,8 +53,8 @@ class Suite:
 
     def write_answer(self):
         self.case.mkdir(parents=True)
-        (self.root / 'answer/identity.json').write_text(json.dumps(self.identity))
-        (self.case / 'tokens.json').write_text(json.dumps(self.tokens(route_steps=[list(s) for s in STEPS])))
+        (self.root / 'answer/identity.json').write_text(json.dumps(self.identity), encoding='utf-8')
+        (self.case / 'tokens.json').write_text(json.dumps(self.tokens(route_steps=[list(s) for s in STEPS])), encoding='utf-8')
         fmt.encode_logits(self.logits, self.identity['probes']).tofile(self.case / 'logits.bin')
         (self.case / 'routes.bin').write_bytes(fmt.encode_routes(self.ids, STEPS, LAYERS))
         fmt.write_sums(self.root / 'answer')
@@ -74,7 +74,7 @@ class Suite:
             if name == 'generated' and generated is not None:
                 tokens['generated'] = generated
             tokens.update(changes)
-            (root / 'tokens.json').write_text(json.dumps(tokens))
+            (root / 'tokens.json').write_text(json.dumps(tokens), encoding='utf-8')
             logits.astype('<f4').tofile(root / 'logits.f32')
             index = []
             for (step, layer), probs in self.probs.items():
@@ -83,7 +83,7 @@ class Suite:
                     data.tofile(root / 'layers' / file)
                     index.append(dict(name=f'ffn_moe_{kind}-{layer}', file=file, step=step, position=0, type=type_,
                                       shape=[data.shape[1], data.shape[0], 1, 1]))
-            (root / 'layers/index.json').write_text(json.dumps(index))
+            (root / 'layers/index.json').write_text(json.dumps(index), encoding='utf-8')
             result.append(root)
         return result
 
@@ -308,7 +308,7 @@ def write_catalog(model: Path, files: dict) -> None:
     for name, data in files.items():
         (model / name).write_bytes(data)
         lines.append(f'{name.split(".")[0]}\t{len(data)}\t{fmt.sha256(model / name)}\t{name}')
-    (model / 'assets.tsv').write_text('\n'.join(lines) + '\n')
+    (model / 'assets.tsv').write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 
 def test_asset_identity_covers_payload_only(tmp_path):

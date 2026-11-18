@@ -82,7 +82,7 @@ def main():
     p.add_argument('--digest-only', action='store_true')
     p.add_argument('--custom-tool', type=Path)
     args = p.parse_args()
-    manifest = json.loads((args.root / 'tools/assets/edge0_35b/tensor_manifest.json').read_text())
+    manifest = json.loads((args.root / 'tools/assets/edge0_35b/tensor_manifest.json').read_text(encoding='utf-8'))
     if args.profile == 'custom':
         profile = dict(n_layer=5, n_expert=7, full_attention_interval=3, n_embd=96, n_head=5, n_head_kv=3,
                        head_dim=64, rope_dim=48, n_key_head=3, n_value_head=6, state_dim=16, conv_kernel=5,

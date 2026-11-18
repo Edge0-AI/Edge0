@@ -17,9 +17,9 @@ def call(command):
 
 
 def compare(folder, replay):
-    original = json.loads((folder / 'tokens.json').read_text())
-    blocks = json.loads((folder / 'blocks.json').read_text())['blocks']
-    fresh = json.loads((replay / 'tokens.json').read_text())
+    original = json.loads((folder / 'tokens.json').read_text(encoding='utf-8'))
+    blocks = json.loads((folder / 'blocks.json').read_text(encoding='utf-8'))['blocks']
+    fresh = json.loads((replay / 'tokens.json').read_text(encoding='utf-8'))
     count = len(original['generated'])
     selected = [i for i, b in enumerate(blocks) if b['sample']][-count:]
     assert len(selected) == count
@@ -42,8 +42,8 @@ def derive_counts(case, expectations, max_tokens=4):
     previous_e = previous_boundary = None
     for index, (method, _, _, saved) in enumerate(expectations, 1):
         folder = case / str(index)
-        tokens = json.loads((folder / 'tokens.json').read_text())
-        result = json.loads((folder / 'result.json').read_text())
+        tokens = json.loads((folder / 'tokens.json').read_text(encoding='utf-8'))
+        result = json.loads((folder / 'result.json').read_text(encoding='utf-8'))
         n, generated = len(tokens['input']), len(tokens['generated'])
         assert n > 0 and 1 <= generated <= max_tokens
         assert result['input_count'] == n
@@ -79,7 +79,7 @@ def main():
     model = reference/'tiny-a' if args.profile == 'tiny' else Path(os.environ.get('MOE_ASSETS_35B','/nonexistent'))
     if not (model/'assets.tsv').is_file():
         return 77
-    inputs = [[1,2,3,4,5]] if args.profile == 'tiny' else [json.loads((answers / f'35b-lora-cpu-flash-split/{case}/tokens.json').read_text())['input'] for case in ['chat-intro','plain-mixed']]
+    inputs = [[1,2,3,4,5]] if args.profile == 'tiny' else [json.loads((answers / f'35b-lora-cpu-flash-split/{case}/tokens.json').read_text(encoding='utf-8'))['input'] for case in ['chat-intro','plain-mixed']]
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         for input_index, initial in enumerate(inputs):
@@ -106,23 +106,23 @@ def main():
                     base += ['--prefill-device', args.prefill_backend]
                 for name, turns, expected in scenarios:
                     case = root/f'{input_index}-{route}-{name}'
-                    turns_file = root/'turns.json'; turns_file.write_text(json.dumps({'turns':turns}))
+                    turns_file = root/'turns.json'; turns_file.write_text(json.dumps({'turns':turns}), encoding='utf-8')
                     call(base+['--turns',str(turns_file),'--out',str(case)])
                     if args.derive_counts:
                         expected = derive_counts(case, expected)
                         print(json.dumps({'route': route, 'case': name, 'input': input_index,
-                            'expected': expected, 'generated': [json.loads((case/str(i)/'tokens.json').read_text())['generated']
+                            'expected': expected, 'generated': [json.loads((case/str(i)/'tokens.json').read_text(encoding='utf-8'))['generated']
                             for i in range(1, len(expected)+1)]}), flush=True)
                     for index, (method,k,computed,saved) in enumerate(expected,1):
                         folder=case/str(index)
-                        result=json.loads((folder/'result.json').read_text())
+                        result=json.loads((folder/'result.json').read_text(encoding='utf-8'))
                         # This fixed 35B continuation ends immediately with the end-of-text EOG token.
                         # Three suffix tokens are forwarded; the sampled EOG is not forwarded.
                         early_end = args.profile == '35b' and input_index == 1 and route == 'actual' and name == 'continue' and index == 3
                         if early_end and not args.derive_counts:
                             computed = 3
                             end_id = int(call([args.cli,'tokenize','--model',str(model),'--parse-special','<|endoftext|>']).stdout.strip())
-                            generated = json.loads((folder/'tokens.json').read_text())['generated']
+                            generated = json.loads((folder/'tokens.json').read_text(encoding='utf-8'))['generated']
                             assert generated == [end_id] and result['stop_reason'] == 'end_of_generation' and result['tail_is_end']
                         actual=(result['reuse_method'],result['reused_tokens'],result['computed_tokens'],result['checkpoint_saved'])
                         assert actual==(method,k,computed,saved),(name,index,actual,(method,k,computed,saved))
@@ -133,7 +133,7 @@ def main():
                     if name in ['regenerate','reset']:
                         for index in range(2,len(expected)+1):
                             assert (case/'1/logits.f32').read_bytes()==(case/str(index)/'logits.f32').read_bytes()
-                            assert json.loads((case/'1/tokens.json').read_text())['generated']==json.loads((case/str(index)/'tokens.json').read_text())['generated']
+                            assert json.loads((case/'1/tokens.json').read_text(encoding='utf-8'))['generated']==json.loads((case/str(index)/'tokens.json').read_text(encoding='utf-8'))['generated']
                     if name=='checkpoint':
                         mutation=case/'mutation'
                         call(base+['--turns',str(turns_file),'--skip-checkpoint-restore','--out',str(mutation)])

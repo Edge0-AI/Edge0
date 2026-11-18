@@ -31,7 +31,7 @@ def main():
             try:
                 deadline = time.monotonic() + 120
                 while True:
-                    content = console.read_text(errors='replace')
+                    content = console.read_text(errors='replace', encoding='utf-8')
                     if 'chat ui: load failed:' in content:
                         raise RuntimeError('UI model loading failed')
                     if 'App terminated due to signal' in content:

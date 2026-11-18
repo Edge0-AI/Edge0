@@ -19,7 +19,7 @@ def hash_file(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 def hashes():
-    return {row.split('\t')[3]: hash_file(source / row.split('\t')[3]) for row in (source / 'assets.tsv').read_text().splitlines()[1:]}
+    return {row.split('\t')[3]: hash_file(source / row.split('\t')[3]) for row in (source / 'assets.tsv').read_text(encoding='utf-8').splitlines()[1:]}
 
 before = hashes()
 with tempfile.TemporaryDirectory(prefix='moe-variants-') as directory:
@@ -34,9 +34,9 @@ with tempfile.TemporaryDirectory(prefix='moe-variants-') as directory:
         if mode in ('missing', 'extra', 'type', 'metadata'):
             subprocess.run([variant, source / 'base.gguf', dest / 'base.gguf', mode], check=True)
         elif mode == 'architecture':
-            data = json.loads((dest / 'model.json').read_text())
+            data = json.loads((dest / 'model.json').read_text(encoding='utf-8'))
             data['architecture'] = 'edge0_8b'
-            (dest / 'model.json').write_text(json.dumps(data))
+            (dest / 'model.json').write_text(json.dumps(data), encoding='utf-8')
         elif mode == 'payload':
             # Last byte belongs to tensor payload or its final padding. Determine
             # the actual expert payload offset from the valid public report.
@@ -49,13 +49,13 @@ with tempfile.TemporaryDirectory(prefix='moe-variants-') as directory:
                 stream.write(bytes([byte[0] ^ 1]))
         rows = ['role\tbytes\tsha256\tfilename']
         if mode != 'payload':
-            for row in (source / 'assets.tsv').read_text().splitlines()[1:]:
+            for row in (source / 'assets.tsv').read_text(encoding='utf-8').splitlines()[1:]:
                 role, _, _, filename = row.split('\t')
                 if mode == 'role' and role == 'lora':
                     continue
                 path = dest / filename
                 rows.append(f'{role}\t{path.stat().st_size}\t{hash_file(path)}\t{filename}')
-            (dest / 'assets.tsv').write_text('\n'.join(rows) + '\n')
+            (dest / 'assets.tsv').write_text('\n'.join(rows) + '\n', encoding='utf-8')
         command = [cli, 'inspect', '--model', dest]
         if mode == 'payload':
             normal = subprocess.run(command, capture_output=True, text=True)

@@ -33,7 +33,7 @@ with tempfile.TemporaryDirectory(prefix='moe-cli-') as directory:
     subprocess.run([fixture, root, directory], check=True)
     # Removing a required role must be rejected before any partial report.
     catalog = Path(directory) / 'assets.tsv'
-    catalog.write_text(''.join(line for line in catalog.read_text().splitlines(True) if not line.startswith('lora\t')))
+    catalog.write_text(''.join(line for line in catalog.read_text(encoding='utf-8').splitlines(True) if not line.startswith('lora\t')), encoding='utf-8')
     result = run('--model', directory)
     assert result.returncode == 1 and not result.stdout and 'incompatible' in result.stderr and 'lora' in result.stderr
 print('CLI text, JSON, usage and failure atomicity passed')
@@ -47,7 +47,7 @@ if not tiny.is_dir():
 described = subprocess.run([cli, 'describe', '--model', str(tiny), '--device', 'cpu'], text=True, capture_output=True)
 assert described.returncode == 0, described.stderr
 description = json.loads(described.stdout)
-rows = [line.split('\t') for line in (tiny / 'assets.tsv').read_text().splitlines()[1:] if line]
+rows = [line.split('\t') for line in (tiny / 'assets.tsv').read_text(encoding='utf-8').splitlines()[1:] if line]
 expected = sorted(({'role': role, 'filename': name, 'bytes': int(size), 'sha256': digest} for role, size, digest, name in rows),
                   key=lambda item: item['role'])
 assert description['assets'] == expected, description['assets']

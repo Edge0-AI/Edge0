@@ -8,7 +8,7 @@ errors = []
 for module in ('exec', 'weights', 'session'):
     for path in (root / 'src' / module).rglob('*'):
         if path.is_file():
-            for line, text in enumerate(path.read_text().splitlines(), 1):
+            for line, text in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
                 if pattern.search(text):
                     errors.append(f'{path.relative_to(root)}:{line}: concrete backend reference')
 print('\n'.join(errors) if errors else 'runtime backend independence: passed')

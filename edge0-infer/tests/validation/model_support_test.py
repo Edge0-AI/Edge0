@@ -96,10 +96,10 @@ class RunReviewRenderTest(unittest.TestCase):
         self.addCleanup(holder.cleanup)
         self.root = Path(holder.name)
         self.cli = self.root / 'edge0-infer'
-        self.cli.write_text('')
+        self.cli.write_text('', encoding='utf-8')
         self.model = self.root / 'assets'
         self.model.mkdir()
-        (self.model / 'assets.tsv').write_text('role\tbytes\tsha256\tfilename\n')
+        (self.model / 'assets.tsv').write_text('role\tbytes\tsha256\tfilename\n', encoding='utf-8')
         self.out = self.root / 'results'
 
     def run_all(self, **options):
@@ -109,7 +109,7 @@ class RunReviewRenderTest(unittest.TestCase):
 
     def verdicts(self, data):
         path = self.root / 'verdicts.json'
-        path.write_text(json.dumps(data))
+        path.write_text(json.dumps(data), encoding='utf-8')
         return path
 
     def test_run_judges_and_keeps_raw_outputs(self):
@@ -127,7 +127,7 @@ class RunReviewRenderTest(unittest.TestCase):
             self.assertEqual(command[command.index(flag) + 1], value)
         self.assertNotIn('--out', command)
         self.assertEqual({c[c.index('--model-option') + 1] for c in calls if '--model-option' in c}, {'routing=actual', 'routing=predicted'})
-        identity = json.loads((self.out / 'identity.json').read_text())
+        identity = json.loads((self.out / 'identity.json').read_text(encoding='utf-8'))
         self.assertEqual(identity['engine']['source_commit'], 'c' * 40)
         self.assertEqual(identity['assets']['assets'][0]['role'], 'base')
 
@@ -148,7 +148,7 @@ class RunReviewRenderTest(unittest.TestCase):
         _, results = ms.load_results(self.out)
         self.assertEqual({data['status'] for _, data in results.values()}, {'not_run'})
         self.assertIn('CLI', next(iter(results.values()))[1]['reason'])
-        self.cli.write_text('')
+        self.cli.write_text('', encoding='utf-8')
         other = self.root / 'second'
         (self.model / 'assets.tsv').unlink()
         ms.run_all(self.cli, self.model, other, run=fake_executor())

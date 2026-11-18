@@ -105,7 +105,7 @@ def sums(root: Path) -> dict[str, str]:
 
 
 def write_sums(root: Path) -> None:
-    (root / 'SHA256SUMS').write_text(''.join(f'{digest}  {name}\n' for name, digest in sums(root).items()))
+    (root / 'SHA256SUMS').write_text(''.join(f'{digest}  {name}\n' for name, digest in sums(root).items()), encoding='utf-8')
 
 
 def read_sums(root: Path) -> dict[str, str]:
@@ -113,7 +113,7 @@ def read_sums(root: Path) -> dict[str, str]:
     if not path.is_file():
         raise ValueError(f'missing hash list: {path}')
     result = {}
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding='utf-8').splitlines():
         digest, name = line.split('  ', 1)
         if name in result or Path(name).is_absolute() or '..' in Path(name).parts or name in UNHASHED:
             raise ValueError('invalid hash list')

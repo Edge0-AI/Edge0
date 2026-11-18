@@ -17,7 +17,7 @@ def main():
         print('SKIP: missing MOE_TINY tiny-a')
         return 77
     answer = Path(__file__).resolve().parents[2] / f'tests/fixtures/answers/tiny-lora-{args.backend}-flash/plain-mixed'
-    tokens = json.loads((answer / 'tokens.json').read_text())
+    tokens = json.loads((answer / 'tokens.json').read_text(encoding='utf-8'))
     with tempfile.TemporaryDirectory() as directory:
         work = Path(directory)
         for name in ['first', 'second', 'observed']:
@@ -30,19 +30,19 @@ def main():
                 print(result.stderr)
                 return 77
             assert result.returncode == 0, result.stdout + result.stderr
-            report = json.loads((work / name / 'report.json').read_text())
+            report = json.loads((work / name / 'report.json').read_text(encoding='utf-8'))
             assert report['budget_source'] == 'device_default'
             assert 0 < report['budget_peak'] <= report['budget_limit']
             assert report['budget_current'] == 0
             assert report['weight_registrations'] == [255] * (1 + len(tokens['generated']))
-            metadata = json.loads((work / name / 'tokens.json').read_text())
+            metadata = json.loads((work / name / 'tokens.json').read_text(encoding='utf-8'))
             assert metadata['row_semantics'].startswith('prefill positions')
             assert {k: metadata[k] for k in ['input', 'generated', 'logits_shape']} == \
                 {k: tokens[k] for k in ['input', 'generated', 'logits_shape']}
             assert 'chunking' not in metadata
             assert (work / name / 'logits.f32').stat().st_size == 4 * tokens['logits_shape'][0] * tokens['logits_shape'][1]
         assert (work / 'first/logits.f32').read_bytes() == (work / 'second/logits.f32').read_bytes()
-        actual = json.loads((work / 'observed/layers/index.json').read_text())
+        actual = json.loads((work / 'observed/layers/index.json').read_text(encoding='utf-8'))
         assert all(r.keys() == {'name', 'file', 'step', 'position', 'type', 'shape'} for r in actual)
         records = {(r['step'], r['name']): r for r in actual}
         layers = {r['name'].rsplit('-', 1)[1] for r in actual if r['name'].startswith('ffn_moe_topk-')}

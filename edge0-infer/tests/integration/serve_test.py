@@ -111,7 +111,7 @@ def messages_contract(cli, model, root, backend):
             assert all(r['endpoint'] == endpoint for r in status['recent_requests'])
     addresses = socket.gethostbyname_ex(socket.gethostname())[2]
     address = next(v for v in addresses if not v.startswith(('127.', '169.254.')))
-    key = root / 'messages-key';key.write_text('messages-secret')
+    key = root / 'messages-key';key.write_text('messages-secret', encoding='utf-8')
     with Server(cli, model, root / 'messages-auth', backend, ['--host', '0.0.0.0', '--api-key-file', str(key)]) as server:
         for token, expected in ((None, 401), ('wrong', 401), ('messages-secret', 200)):
             conn = http.client.HTTPConnection(address, server.port)
@@ -235,7 +235,7 @@ def main():
                             assert marker not in ''.join(server.lines)
                             assert len(server.evidence()) == before
                     script = root / 'turns.json'
-                    script.write_text(json.dumps({'turns': [{'user': 'hello'}, {'user': 'again'}]}))
+                    script.write_text(json.dumps({'turns': [{'user': 'hello'}, {'user': 'again'}]}), encoding='utf-8')
                     output = root / f'oracle-{protocol}-{stream}'
                     subprocess.run([args.cli, 'run', '--model', str(model), '--device', args.backend,
                         '--context', '4096', '--temperature', '0', '--presence-penalty', '0', '--max-tokens', '4', '--turns', str(script), '--out', str(output)], check=True, capture_output=True)
@@ -352,7 +352,7 @@ def main():
                 assert data[-1][1]['checkpoint_restored']
                 assert data[-1][1]['reused_tokens'] == data[0][1]['checkpoint_boundary'] == len(data[0][0]['input']) - 1
                 script = root / 'stop-turns.json'
-                script.write_text(json.dumps({'turns':[{'user':'hello','stop':[stop]}, {'user':'again'}]}))
+                script.write_text(json.dumps({'turns':[{'user':'hello','stop':[stop]}, {'user':'again'}]}), encoding='utf-8')
                 oracle = root / 'stop-oracle'
                 subprocess.run([*command, '--turns', str(script), '--out', str(oracle)], check=True, capture_output=True)
                 expected = json.loads((oracle / '2/tokens.json').read_text(encoding='utf-8'))

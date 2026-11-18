@@ -17,7 +17,7 @@ spec.loader.exec_module(hosts)
 
 
 def fixture(name):
-    return (FIXTURES / name).read_text()
+    return (FIXTURES / name).read_text(encoding='utf-8')
 
 
 LOAD_QUIET = (' 100  3.0 /Applications/Example.app/Contents/MacOS/Example\n'
@@ -399,7 +399,7 @@ class IOSHostTest(unittest.TestCase):
                             deviceProperties=dict(osVersionNumber='1', name='private'))
         def runner(device, argv, stdin, probe):
             probe.write_text(json.dumps(dict(before=dict(thermal_state='nominal', os_proc_available_memory=123, physical_memory=456),
-                                             after=dict(thermal_state='fair', os_proc_available_memory=100, physical_memory=456))))
+                                             after=dict(thermal_state='fair', os_proc_available_memory=100, physical_memory=456))), encoding='utf-8')
             return 0, b'output', b'error'
         subject=hosts.IOSHost(transport=Transport(),runner=runner)
         subject.preflight(); before=subject.snapshot(Path('model'))

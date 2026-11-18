@@ -86,7 +86,7 @@ class SweepTest(unittest.TestCase):
         self.assertEqual([c['side'] for c in report['cells']], ['predicted'] * 3)
         self.assertEqual(list(report['summary']), ['predicted'])
         self.assertTrue(all(c[-2:] == ['--threads', '4'] for c in host.commands))
-        self.assertEqual(reports.validate(json.loads(self.writer.json_path.read_text())), [])
+        self.assertEqual(reports.validate(json.loads(self.writer.json_path.read_text(encoding='utf-8'))), [])
 
     def test_default_prompt_by_platform_and_backend(self):
         cases = [('macos', 'metal'), ('macos', 'cpu'), ('android', 'cpu'), ('windows', 'cpu'), ('ios', 'metal')]
@@ -149,7 +149,7 @@ class SweepTest(unittest.TestCase):
         names = [c['side'] for c in report['cells']]
         self.assertEqual(names, ['predicted', 'actual', 'ctx16384', 'direct'] * 3)
         self.assertEqual(sum(sleeps), 11 * 30)
-        self.assertEqual(reports.validate(json.loads(self.writer.json_path.read_text())), [])
+        self.assertEqual(reports.validate(json.loads(self.writer.json_path.read_text(encoding='utf-8'))), [])
         self.assertIn(('--model-option', 'routing=actual'), {tuple(c[-2:]) for c in host.commands})
         self.assertIn(('--context', '16384'), {tuple(c[-2:]) for c in host.commands})
         self.assertIn(('--model-option', 'expert_read=direct'), {tuple(c[-2:]) for c in host.commands})
@@ -220,7 +220,7 @@ class SweepTest(unittest.TestCase):
 
 class ProtocolTest(unittest.TestCase):
     def test_default_protocol_equals_the_committed_baseline_protocol(self):
-        baseline = json.loads(BASELINE.read_text())
+        baseline = json.loads(BASELINE.read_text(encoding='utf-8'))
         protocol = sweep.build_protocol(3, 30, prompt=REPO / sweep.PROMPT)
         self.assertEqual(protocol, baseline['protocol'])
         self.assertEqual(protocol['order'], ['predicted', 'actual', 'ctx16384', 'direct'])

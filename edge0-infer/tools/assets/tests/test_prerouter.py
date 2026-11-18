@@ -70,8 +70,8 @@ def assets_dir(tmp_path):
     assets.mkdir()
     safetensors(source / prerouter.SOURCE, [2, 3])
     for name in ['base.gguf', 'assets.tsv']:
-        (assets / name).write_text(name)
-    (assets / 'provenance.json').write_text('{}')
+        (assets / name).write_text(name, encoding='utf-8')
+    (assets / 'provenance.json').write_text('{}', encoding='utf-8')
     lock = {'files': {prerouter.SOURCE: sha256(source / prerouter.SOURCE)}}
     return source, assets, lock
 
@@ -79,7 +79,7 @@ def assets_dir(tmp_path):
 def test_add_failure_restores_directory(tmp_path, monkeypatch):
     source, assets, lock = assets_dir(tmp_path)
     before = {p.name: p.read_bytes() for p in assets.iterdir()}
-    monkeypatch.setattr(prerouter, 'write_catalog', lambda root: (root / 'assets.tsv').write_text('rewritten'))
+    monkeypatch.setattr(prerouter, 'write_catalog', lambda root: (root / 'assets.tsv').write_text('rewritten', encoding='utf-8'))
     monkeypatch.setattr(prerouter, 'check', lambda root: {'status': 'failed'})
     with pytest.raises(ValueError, match='asset check failed'):
         prerouter.add(assets, source, lock)
@@ -91,8 +91,8 @@ def test_add_keeps_other_payloads_and_refuses_twice(tmp_path, monkeypatch):
     monkeypatch.setattr(prerouter, 'write_catalog', lambda root: None)
     monkeypatch.setattr(prerouter, 'check', lambda root: {'status': 'passed'})
     prerouter.add(assets, source, lock)
-    assert (assets / 'base.gguf').read_text() == 'base.gguf'
-    record = json.loads((assets / 'provenance.json').read_text())['prerouter']
+    assert (assets / 'base.gguf').read_text(encoding='utf-8') == 'base.gguf'
+    record = json.loads((assets / 'provenance.json').read_text(encoding='utf-8'))['prerouter']
     assert record['source_sha256'] == lock['files'][prerouter.SOURCE] and record['tensors'] == 6
     with pytest.raises(ValueError, match='already present'):
         prerouter.add(assets, source, lock)

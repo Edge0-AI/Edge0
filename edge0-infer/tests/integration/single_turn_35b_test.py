@@ -29,7 +29,7 @@ def run(command):
 def differences(output, observed, answer):
     """Record (without a threshold) how a run differs from an answer of another backend."""
     identity, expected, rows = load_answer(answer, identity_backend(answer))
-    actual = json.loads((output / 'tokens.json').read_text())
+    actual = json.loads((output / 'tokens.json').read_text(encoding='utf-8'))
     assert actual['input'] == expected['input']
     a = own_logits(output, actual).astype(np.float64)
     start = len(expected['input']) - 1
@@ -69,7 +69,7 @@ def differences(output, observed, answer):
 
 
 def identity_backend(answer):
-    return json.loads((Path(answer).parent / 'identity.json').read_text())['backend']
+    return json.loads((Path(answer).parent / 'identity.json').read_text(encoding='utf-8'))['backend']
 
 
 def main():
@@ -113,12 +113,12 @@ def main():
         names = ['chat-intro'] if args.mode == 'memory' else ['chat-intro', 'plain-mixed', 'long-mixed']
         for name in names:
             answer = reference / name
-            expected = json.loads((answer / 'tokens.json').read_text())
+            expected = json.loads((answer / 'tokens.json').read_text(encoding='utf-8'))
             output = workspace / name
             command = [args.cli, 'run', *common, '--model-option', 'routing=actual', '--tokens', str(answer / 'tokens.json'), '--temperature', '0', '--presence-penalty', '0',
                        '--max-tokens', str(len(expected['generated']))]
             run(command + ['--out', str(output)])
-            summary = json.loads((output / 'result.json').read_text())
+            summary = json.loads((output / 'result.json').read_text(encoding='utf-8'))
             if args.mode == 'memory':
                 memory = summary['memory_snapshot']
                 assert summary['generated_count'] == 16
@@ -139,8 +139,8 @@ def main():
             if args.backend == 'cpu':
                 run(base + ['--out', str(forward)])
                 report = judge(forward, observed, answer, 'cpu', assets, cross_kernel=args.cross_kernel)
-                own_logits(observed, json.loads((observed / 'tokens.json').read_text()))
-                own_logits(output, json.loads((output / 'tokens.json').read_text()))
+                own_logits(observed, json.loads((observed / 'tokens.json').read_text(encoding='utf-8')))
+                own_logits(output, json.loads((output / 'tokens.json').read_text(encoding='utf-8')))
                 generation = judge_generation(output, answer, 'cpu', assets, cross_kernel=args.cross_kernel, record_only=args.record_only)
                 reports.append(report)
                 print(json.dumps(dict(case=name, record_only=args.record_only, forward_status=report['status'], tie_case=report['tie_case'],

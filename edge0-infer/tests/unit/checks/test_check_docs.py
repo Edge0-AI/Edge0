@@ -18,7 +18,7 @@ class DocsTests(unittest.TestCase):
                 (root / name).write_text(text, encoding="utf-8")
             if use_git:
                 subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-                (root / ".gitignore").write_text("\n".join(ignored) + "\n")
+                (root / ".gitignore").write_text("\n".join(ignored) + "\n", encoding='utf-8')
             result = subprocess.run(
                 [sys.executable, "-I", "-X", "utf8", str(SCRIPT), str(root)],
                 text=True, capture_output=True, encoding="utf-8")

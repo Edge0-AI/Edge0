@@ -14,7 +14,7 @@ def children(pid):
     for entry in Path('/proc').iterdir():
         if entry.name.isdigit():
             try:
-                fields = (entry / 'stat').read_text().rsplit(')', 1)[1].split()
+                fields = (entry / 'stat').read_text(encoding='utf-8').rsplit(')', 1)[1].split()
                 if int(fields[1]) == pid:
                     out.append(int(entry.name))
             except OSError:
@@ -33,14 +33,14 @@ def descendants(pid):
 
 def comm(pid):
     try:
-        return Path(f'/proc/{pid}/comm').read_text().strip()
+        return Path(f'/proc/{pid}/comm').read_text(encoding='utf-8').strip()
     except OSError:
         return '?'
 
 
 def status_kb(pid, key):
     try:
-        for line in Path(f'/proc/{pid}/status').read_text().splitlines():
+        for line in Path(f'/proc/{pid}/status').read_text(encoding='utf-8').splitlines():
             if line.startswith(key + ':'):
                 return int(line.split()[1])
     except OSError:
@@ -77,7 +77,7 @@ def engine_evidence(root, model, port):
             entry = os.path.join(folder, name)
             if os.path.isfile(entry):
                 registered[os.path.realpath(entry)] = os.path.relpath(entry, model)
-    maps = sorted({registered[line.split(None, 5)[5]] for line in Path(f'/proc/{pid}/maps').read_text().splitlines()
+    maps = sorted({registered[line.split(None, 5)[5]] for line in Path(f'/proc/{pid}/maps').read_text(encoding='utf-8').splitlines()
                    if len(line.split(None, 5)) == 6 and line.split(None, 5)[5] in registered})
     fds = set()
     for fd in Path(f'/proc/{pid}/fd').iterdir():
@@ -209,7 +209,7 @@ def main():
                 print('NOT READY', flush=True)
                 return 1
             log = err.wait_for(r'\(log: (.+)\)', 1)[1]
-            port = int(re.search(r'ready: http://127\.0\.0\.1:(\d+)/v1', Path(log).read_text())[1])
+            port = int(re.search(r'ready: http://127\.0\.0\.1:(\d+)/v1', Path(log).read_text(encoding='utf-8'))[1])
             alias = None
         else:
             m = err.wait_for(r'^Listening: http://127\.0\.0\.1:(\d+) model=(\S+)$', 900)
@@ -229,7 +229,7 @@ def main():
         report['owned_pids'] = [process.pid, *owned]
         assert report['engine'] is not None
         selected = dict(o.split('=', 1) for o in a.option)
-        model_name = json.loads((model / 'model.json').read_text())['model_name']
+        model_name = json.loads((model / 'model.json').read_text(encoding='utf-8'))['model_name']
         assert model_name in ('edge0-145b-q3k', 'edge0-145b-fp4', 'edge0-120b-q3k', 'edge0-120b-fp4')
         experts = model_name.rsplit('-', 1)[1]
         du = selected.get('du', 'q4' if model_name.startswith('edge0-120b-') else 'q8')
@@ -286,7 +286,7 @@ def main():
         report['gpu_after'] = subprocess.check_output(['nvidia-smi', '-i', str(a.gpu), '--query-gpu=memory.used', '--format=csv,noheader,nounits'], text=True).strip()
         print('descendants left:', left or 'none', flush=True)
         report['stderr_tail'] = [l for l in err.lines[-40:] if l is not None]
-        Path(a.out).write_text(json.dumps(report, indent=1, ensure_ascii=False))
+        Path(a.out).write_text(json.dumps(report, indent=1, ensure_ascii=False), encoding='utf-8')
     ok &= code == 0
     print('RESULT', 'OK' if ok else 'FAILED', flush=True)
     return 0 if ok else 1

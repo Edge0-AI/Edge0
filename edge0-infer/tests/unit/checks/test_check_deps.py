@@ -14,7 +14,7 @@ class DependencyTests(unittest.TestCase):
             root = Path(folder)
             file = root / path
             file.parent.mkdir(parents=True, exist_ok=True)
-            file.write_text(text)
+            file.write_text(text, encoding='utf-8')
             result = subprocess.run([sys.executable, "-I", str(SCRIPT), str(root)], text=True, capture_output=True)
             self.assertEqual(result.returncode, 1 if rule else 0, result.stdout + result.stderr)
             if rule:
@@ -103,20 +103,20 @@ class DependencyTests(unittest.TestCase):
                 (root / 'tools/checks').mkdir(parents=True)
                 library = root / 'third_party/example'
                 library.mkdir(parents=True)
-                (library / 'header.h').write_text('original')
+                (library / 'header.h').write_text('original', encoding='utf-8')
                 digest = hashlib.sha256(b'original').hexdigest()
                 (root / 'tools/checks/third_party.toml').write_text(
                     '[libraries.example]\nheaders=["httplib.h", "nlohmann/json.hpp"]\n'
                     'allowed_prefixes=["tools/cli/serve", "tests/unit/cli/"]\n'
-                    '[libraries.example.files."header.h"]\nsha256="' + digest + '"\n')
+                    '[libraries.example.files."header.h"]\nsha256="' + digest + '"\n', encoding='utf-8')
                 path = {'allowed':'tools/cli/serve.cpp', 'test_allowed':'tests/unit/cli/test.cpp',
                         'src':'src/app/test.cpp', 'include':'include/edge0/test.h', 'other':'tools/cli/chat.cpp'}.get(case)
                 if path:
                     file = root / path
                     file.parent.mkdir(parents=True, exist_ok=True)
-                    file.write_text('#include <httplib.h>\n#include <nlohmann/json.hpp>\n')
-                if case == 'extra': (library / 'extra.h').write_text('')
-                if case == 'hash': (library / 'header.h').write_text('changed')
+                    file.write_text('#include <httplib.h>\n#include <nlohmann/json.hpp>\n', encoding='utf-8')
+                if case == 'extra': (library / 'extra.h').write_text('', encoding='utf-8')
+                if case == 'hash': (library / 'header.h').write_text('changed', encoding='utf-8')
                 if case == 'missing': (library / 'header.h').unlink()
                 result = subprocess.run([sys.executable, '-I', str(SCRIPT), str(root)], capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0 if case in ('allowed', 'test_allowed') else 1, result.stdout + result.stderr)

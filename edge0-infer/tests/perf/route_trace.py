@@ -46,7 +46,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('trace', type=Path)
     args = parser.parse_args()
-    print(json.dumps(summarize([json.loads(line) for line in args.trace.read_text().splitlines() if line.strip()]), indent=2))
+    print(json.dumps(summarize([json.loads(line) for line in args.trace.read_text(encoding='utf-8').splitlines() if line.strip()]), indent=2))
 
 
 if __name__ == '__main__':
