@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--cli', required=True)
     parser.add_argument('--backend', default='cpu', choices=['cpu', 'metal'])
     parser.add_argument('--split-last', action='store_true')
+    parser.add_argument("--cross-kernel", action="store_true", help="Use explicit cross-kernel answer tolerances")
     parser.add_argument('--record-only', action='store_true', help='Record numerical differences without enforcing thresholds')
     args = parser.parse_args()
     root = Path(os.environ.get('MOE_TINY', '/nonexistent'))
@@ -49,14 +50,14 @@ def main():
                         return 77
                     assert result.returncode == 0, result.stdout + result.stderr
                 own_logits(observed, json.loads((observed / 'tokens.json').read_text()))
-                report = judge(output, observed, answer, args.backend, model)
+                report = judge(output, observed, answer, args.backend, model, cross_kernel=args.cross_kernel)
                 print(json.dumps(dict(role=role, case=case, record_only=args.record_only, **report), indent=2), flush=True)
                 if args.split_last and role == 'base' and case == 'chat-intro':
                     own_file = output / 'tokens.json'
                     original = own_file.read_text()
                     own_file.write_text(json.dumps({**json.loads(original), 'chunking': 'whole'}))
                     try:
-                        judge(output, observed, answer, args.backend)
+                        judge(output, observed, answer, args.backend, cross_kernel=args.cross_kernel)
                         raise AssertionError('whole output accepted against split answer')
                     except ValueError as error:
                         assert 'chunking' in str(error)
@@ -64,7 +65,7 @@ def main():
                         own_file.write_text(original)
                     whole = ANSWERS / f'tiny-{role}-{args.backend}-flash' / case
                     try:
-                        judge(output, observed, whole, args.backend)
+                        judge(output, observed, whole, args.backend, cross_kernel=args.cross_kernel)
                         raise AssertionError('split output accepted against whole answer')
                     except ValueError as error:
                         assert 'chunking' in str(error)

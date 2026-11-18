@@ -1,10 +1,8 @@
 """Same-backend judgement of engine output against the repository's own answers.
 
-Every routing choice and every non-tied argmax token must match the answer. Logits must
-lie within 1e-2 of every saved answer value, and routing or token choices whose scores
-differ by at most 1e-3 count as ties. The limits are the same for every backend and CPU,
-so answers exported on one machine also hold on others whose GGML kernels round
-differently. At most one tie case per suite.
+Tolerances and tie rules: logits within 1e-3 (CPU) or 1e-2 (Metal) of every
+saved answer value; routing and token ties within 1e-4 (CPU) or 1e-3 (Metal);
+By default, at most one tie case per suite. Explicit cross-kernel comparisons use Metal limits.
 """
 import json
 from pathlib import Path
@@ -18,11 +16,13 @@ TOPK = re.compile(r'^ffn_moe_topk-(\d+)$')
 PROBS = re.compile(r'^ffn_moe_probs-(\d+)$')
 
 
-def tolerances(backend: str) -> tuple[float, float]:
+def tolerances(backend: str, cross_kernel: bool = False) -> tuple[float, float]:
     """(tie tolerance, logits limit) for a backend."""
-    if backend not in ('cpu', 'metal'):
-        raise ValueError('invalid backend')
-    return 1e-3, 1e-2
+    if backend == 'cpu' and not cross_kernel:
+        return 1e-4, 1e-3
+    if backend == 'metal' or (backend == 'cpu' and cross_kernel):
+        return 1e-3, 1e-2
+    raise ValueError('invalid backend')
 
 
 def load_answer(answer: Path, backend: str, assets: Path | None = None):
@@ -125,9 +125,9 @@ def compare_logits(own: np.ndarray, rows: np.ndarray, identity: dict, tolerance:
                 passed=passed)
 
 
-def judge(ours: Path, observed: Path, answer: Path, backend: str, assets: Path | None = None) -> dict:
+def judge(ours: Path, observed: Path, answer: Path, backend: str, assets: Path | None = None, *, cross_kernel: bool = False) -> dict:
     """Forward judgement: `ours` is a plain forward run, `observed` the same run with --observe."""
-    tolerance, limit = tolerances(backend)
+    tolerance, limit = tolerances(backend, cross_kernel)
     identity, tokens, rows = load_answer(answer, backend, assets)
     for root in (ours, observed):
         actual = read_json(Path(root) / 'tokens.json')
@@ -155,10 +155,10 @@ def judge_suite(results: list[dict]) -> dict:
                 reason='stop: more than one case has ties' if count > 1 else '', cases=results)
 
 
-def judge_generation(ours: Path, answer: Path, backend: str, assets: Path | None = None, *,
+def judge_generation(ours: Path, answer: Path, backend: str, assets: Path | None = None, *, cross_kernel: bool = False,
                      record_only: bool = False) -> dict:
     """Compare an autoregressive continuation only up to its first divergence."""
-    tolerance, _ = tolerances(backend)
+    tolerance, _ = tolerances(backend, cross_kernel)
     identity, expected, rows = load_answer(answer, backend, assets)
     if identity['chunking'] != 'split-last':
         raise ValueError('answer chunking must be split-last')

@@ -77,6 +77,7 @@ def main():
     parser.add_argument('--cli', required=True)
     parser.add_argument('--backend', choices=['cpu', 'metal'], default='cpu')
     parser.add_argument('--mode', choices=['numerical', 'memory', 'describe'], default='numerical')
+    parser.add_argument("--cross-kernel", action="store_true", help="Use explicit cross-kernel answer tolerances")
     parser.add_argument('--record-only', action='store_true', help='Record numerical-mode answer differences')
     parser.add_argument('--skip-observe', action='append', default=[],
                         choices=['chat-intro', 'plain-mixed', 'long-mixed'],
@@ -137,10 +138,10 @@ def main():
                 run(base + ['--observe', '--out', str(observed)])
             if args.backend == 'cpu':
                 run(base + ['--out', str(forward)])
-                report = judge(forward, observed, answer, 'cpu', assets)
+                report = judge(forward, observed, answer, 'cpu', assets, cross_kernel=args.cross_kernel)
                 own_logits(observed, json.loads((observed / 'tokens.json').read_text()))
                 own_logits(output, json.loads((output / 'tokens.json').read_text()))
-                generation = judge_generation(output, answer, 'cpu', assets, record_only=args.record_only)
+                generation = judge_generation(output, answer, 'cpu', assets, cross_kernel=args.cross_kernel, record_only=args.record_only)
                 reports.append(report)
                 print(json.dumps(dict(case=name, record_only=args.record_only, forward_status=report['status'], tie_case=report['tie_case'],
                     logits=report['logits'], route_count=len(report['routes']), route_mismatches=sum(item['mismatches'] for item in report['routes']),

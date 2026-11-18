@@ -25,11 +25,11 @@ uv run --project tools/assets --offline --no-sync python -I tests/platform/suite
 ```
 
 The suite reuses integration scripts and CPU answers. All Android answer comparisons
-explicitly enable `--record-only`: numerical, routing, argmax and generated
+explicitly enable `--cross-kernel --record-only`: numerical, routing, argmax and generated
 token differences are recorded without a pass/fail threshold. Execution failures, invalid
 shapes or input tokens, and non-finite logits still fail. Platform-local repeatability,
-multi-turn and cancellation comparisons remain enforced. Answer comparisons use logits
-1e-2 and ties 1e-3 on every backend.
+multi-turn and cancellation comparisons remain enforced. Default CPU answer comparisons
+retain logits 1e-3 and ties 1e-4; cross-kernel reports use logits 1e-2 and ties 1e-3.
 It reports passed, failed,
 and not-executed cases separately, returning 1 for any failure and 77 for incomplete runs.
 The template probe and text decoder use `build/cpu/bin` on the host. Native tests are
