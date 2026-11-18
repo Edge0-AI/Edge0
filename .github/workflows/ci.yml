@@ -58,11 +58,6 @@ jobs:
           assets_py tools/assets/edge0_35b/fetch_source.py download --out "$MOE_SOURCE_35B" --files tokenizer.json chat_template.jinja generation_config.json
           assets_py tools/assets/edge0_35b/make_tiny.py --source "$MOE_SOURCE_35B" --out "$MOE_TINY/tiny-a"
           assets_py tools/assets/edge0_35b/make_tiny.py --source "$MOE_SOURCE_35B" --out "$MOE_TINY/tiny-b"
-      # The SDK tests run offline against pinned official client versions and skip when the
-      # uv cache lacks them; fetch the versions pinned in edge0-infer/tests/CMakeLists.txt.
-      - name: Cache the pinned SDKs for the serve SDK tests
-        if: matrix.level == 'L2'
-        run: uv run --no-project --with openai==3.26.1 --with anthropic==2.8.0 python -I -c pass
       - name: Configure
         run: cmake --preset cpu
       - name: Build

@@ -730,10 +730,10 @@ if(MOE_BUILD_CLI)
 endif()
 
 if(MOE_BUILD_CLI)
-    moe_add_test(NAME moe_test_serve_sdk_anthropic LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_serve_sdk_anthropic LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py" --with anthropic==2.8.0
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_anthropic_test.py" --cli $<TARGET_FILE:edge0-infer>)
-    moe_add_test(NAME moe_test_serve_sdk LEVEL L2 COMMAND ${moe_python}
+    moe_add_test(NAME moe_test_serve_sdk LEVEL L2 LOCAL_ONLY COMMAND ${moe_python}
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_runner.py"
         "${PROJECT_SOURCE_DIR}/tests/integration/serve_sdk_test.py" --cli $<TARGET_FILE:edge0-infer>)
 endif()
