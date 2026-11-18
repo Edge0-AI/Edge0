@@ -459,7 +459,7 @@ struct GenerationRun {
         const auto& plan = reuse.value();
         if (auto error = session->state->apply_reuse(plan, [&](session::KVCache& kv,session::StateStore& states) {
             return model->compute->reset_session(loaded,kv,states);
-        }, true)) return *error;
+        }, options.skip_checkpoint_restore)) return *error;
         result.common_prefix = prefix;
         result.reused_tokens = static_cast<std::size_t>(plan.k);
         {
