@@ -4,7 +4,8 @@ from pathlib import Path
 import re
 import tomllib
 
-INTERNAL = {"docs-internal", "openspec", ".agents", ".claude", ".git", ".codex"}
+# Version control and local agent settings; never repository sources.
+SKIPPED = {".git", ".agents", ".claude", ".codex"}
 # Tool-generated, Git-ignored directories; never repository sources.
 GENERATED = {".venv", "__pycache__", "node_modules", ".gradle", ".cxx", ".kotlin", ".build", "DerivedData"}
 SOURCE_SUFFIXES = {".h", ".hh", ".hpp", ".hxx", ".c", ".cc", ".cpp", ".cxx", ".c++", ".m", ".mm"}
@@ -38,7 +39,7 @@ def files(root):
         # Prune instead of filtering afterwards: a local virtualenv alone holds ~900 Python files.
         dirs[:] = [
             d for d in dirs
-            if d not in INTERNAL and d not in GENERATED
+            if d not in SKIPPED and d not in GENERATED
             and not (rel_dir == Path(".") and d.startswith("build"))
             and not (rel_dir.parts and rel_dir.parts[0] == "examples" and d in {"build", "target", "dist"})
             and not (rel_dir == Path("third_party") and d in libraries)
