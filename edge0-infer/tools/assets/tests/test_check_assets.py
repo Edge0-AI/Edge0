@@ -34,7 +34,7 @@ def asset(tmp_path, monkeypatch):
     for name in ['tokenizer.json', 'generation_config.json', 'provenance.json']:
         write_json(root / name, {})
     write_json(root / 'model.json', {'format_version': 1, 'architecture': 'edge0_35b'})
-    (root / 'chat_template.jinja').write_text('test')
+    (root / 'chat_template.jinja').write_text('test', encoding='utf-8')
     write_catalog(root)
     return root
 
@@ -103,7 +103,7 @@ def test_format_version_requires_a_json_integer(asset, version):
                                 'plus_bytes', 'spaced_bytes', 'underscored_bytes', 'unicode_bytes'])
 def test_rejects_catalog_spelling_the_native_loader_cannot_read(asset, case):
     path = asset / 'assets.tsv'
-    lines = path.read_text().splitlines()
+    lines = path.read_text(encoding='utf-8').splitlines()
     fields = lines[1].split('\t')
     if case == 'extra':
         fields.append('ignored')
@@ -122,17 +122,17 @@ def test_rejects_catalog_spelling_the_native_loader_cannot_read(asset, case):
     else:
         fields[1] = fields[1].translate(str.maketrans('0123456789', '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'))
     lines[1] = '\t'.join(fields)
-    path.write_text('\n'.join(lines) + '\n')
+    path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     assert check(asset)['status'] == 'failed'
 
 
 def test_catalog_keeps_valid_decimal_leading_zeros(asset):
     path = asset / 'assets.tsv'
-    lines = path.read_text().splitlines()
+    lines = path.read_text(encoding='utf-8').splitlines()
     fields = lines[1].split('\t')
     fields[1] = '000' + fields[1]
     lines[1] = '\t'.join(fields)
-    path.write_text('\n'.join(lines) + '\n')
+    path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     assert check(asset)['status'] == 'passed'
 
 
@@ -199,7 +199,7 @@ def test_compare_still_checks_different_and_corrupt_files(asset, tmp_path, chang
     if change == 'metadata':
         rewrite(other, lambda m, t: m.update({'test.note': Value(8, 'different')}))
     elif change == 'text':
-        (other / 'chat_template.jinja').write_text('different template')
+        (other / 'chat_template.jinja').write_text('different template', encoding='utf-8')
     else:
         with (other / 'base.gguf').open('ab') as file:
             file.write(b'\0' * 32)
@@ -221,11 +221,11 @@ def test_reject(asset, category):
     if category == 'missing_manifest':
         (asset / 'assets.tsv').unlink()
     elif category == 'size_mismatch':
-        (asset / 'chat_template.jinja').write_text('longer text')
+        (asset / 'chat_template.jinja').write_text('longer text', encoding='utf-8')
     elif category == 'digest_mismatch':
-        (asset / 'chat_template.jinja').write_text('xxxx')
+        (asset / 'chat_template.jinja').write_text('xxxx', encoding='utf-8')
     elif category == 'unlisted_file':
-        (asset / 'surprise').write_text('extra')
+        (asset / 'surprise').write_text('extra', encoding='utf-8')
     elif category == 'missing_tensor':
         rewrite(asset, lambda m, t: t.pop())
     elif category == 'extra_tensor':
@@ -330,6 +330,6 @@ def test_reject_prerouter(asset, mutate, category):
 def test_prerouter_is_required(asset):
     (asset / 'prerouter.gguf').unlink()
     assert check(asset)['issues'][0]['category'] == 'missing_file'
-    write_catalog_without = [line for line in (asset / 'assets.tsv').read_text().splitlines() if 'prerouter' not in line]
-    (asset / 'assets.tsv').write_text('\n'.join(write_catalog_without) + '\n')
+    write_catalog_without = [line for line in (asset / 'assets.tsv').read_text(encoding='utf-8').splitlines() if 'prerouter' not in line]
+    (asset / 'assets.tsv').write_text('\n'.join(write_catalog_without) + '\n', encoding='utf-8')
     assert check(asset)['issues'][0]['category'] == 'missing_file'

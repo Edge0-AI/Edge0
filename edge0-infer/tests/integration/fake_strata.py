@@ -447,11 +447,11 @@ def serve(argv):
     if hasattr(signal, 'SIGUSR1'):
         faulthandler.register(signal.SIGUSR1)  # a test that waits too long asks where this process is stuck
     args = parser.parse_args(argv)
-    config = json.loads(Path(args.config).read_text())
+    config = json.loads(Path(args.config).read_text(encoding='utf-8'))
     record = os.environ.get('FAKE_STRATA_RECORD')
     if record:
         Path(record).mkdir(parents=True, exist_ok=True)
-        (Path(record) / 'config.json').write_text(json.dumps(config, indent=1))
+        (Path(record) / 'config.json').write_text(json.dumps(config, indent=1), encoding='utf-8')
     fake = Fake(config, record)
     # The child holds none of this process's pipes: if it outlives an abrupt exit, whoever reads this
     # process's output (CTest, a test) still sees the end of it instead of waiting for the child.
@@ -504,7 +504,7 @@ def self_test():
     with tempfile.TemporaryDirectory() as root:
         root = Path(root)
         config = root / 'config.json'
-        config.write_text(json.dumps({'model_name': 'm', 'args': ['--max-context', '1234']}))
+        config.write_text(json.dumps({'model_name': 'm', 'args': ['--max-context', '1234']}), encoding='utf-8')
         ready = root / 'ready.json'
         env = dict(os.environ, FAKE_STRATA_RECORD=str(root / 'record'), FAKE_STRATA_REASONING='think hard',
                    FAKE_STRATA_CHUNK_DELAY='0')
@@ -513,12 +513,12 @@ def self_test():
                                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0)
         try:
             deadline = time.monotonic() + 30
-            while not (ready.exists() and ready.read_text().endswith('\n')):
+            while not (ready.exists() and ready.read_text(encoding='utf-8').endswith('\n')):
                 assert process.poll() is None, f'fake exited before it was ready (code {process.returncode})'
                 if time.monotonic() >= deadline:
                     stuck(process)
                 time.sleep(0.05)
-            port = json.loads(ready.read_text())['bound_port']
+            port = json.loads(ready.read_text(encoding='utf-8'))['bound_port']
 
             def call(method, path, body=None):
                 connection = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
@@ -556,16 +556,16 @@ def self_test():
                 deltas = [text(e) for e in (json.loads(line[6:]) for line in data.decode().splitlines() if line.startswith('data: {'))
                           if e['type'] == kind]
                 assert code == 200 and len(deltas) == len(ANSWER.split(' ')) and ''.join(deltas) == ANSWER, (path, deltas)
-            requests = [json.loads(line) for line in (root / 'record' / 'requests.jsonl').read_text().splitlines()]
+            requests = [json.loads(line) for line in (root / 'record' / 'requests.jsonl').read_text(encoding='utf-8').splitlines()]
             assert [r['path'] for r in requests] == ['/v1/chat/completions'] * 3 + ['/v1/responses', '/v1/messages'] * 2
             assert call('POST', '/v1/messages/count_tokens', {'x': 7})[2] == b'{"input_tokens": 17}'
-            assert json.loads((root / 'record' / 'requests.jsonl').read_text().splitlines()[-1])['body'] == '{"x": 7}'
+            assert json.loads((root / 'record' / 'requests.jsonl').read_text(encoding='utf-8').splitlines()[-1])['body'] == '{"x": 7}'
             for stream in (False, True):
                 code, kind, data = call('POST', '/v1/chat/completions', {'stream': stream, 'fake_failure': 'disconnect'})
                 assert code == 200 and b'partial' in data and b'[DONE]' not in data
                 assert process.poll() is None
             assert call('POST', '/v1/responses', {'stream': True, 'fake_failure': 'before_event'})[2] == b''
-            process_info = json.loads((root / 'record' / 'process.json').read_text())
+            process_info = json.loads((root / 'record' / 'process.json').read_text(encoding='utf-8'))
             assert process_info['strata_api_key_present'] == ('STRATA_API_KEY' in env)
             child = process_info['child']
         finally:
@@ -595,7 +595,7 @@ def self_test():
     for stream in (False, True):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            (root / 'config.json').write_text('{}')
+            (root / 'config.json').write_text('{}', encoding='utf-8')
             ready = root / 'ready.json'
             process = subprocess.Popen([sys.executable, __file__, '--engine', 'strata', '--config', str(root / 'config.json'),
                                         '--port', '0', '--ready-file', str(ready)],
@@ -603,12 +603,12 @@ def self_test():
                                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
             try:
                 deadline = time.monotonic() + 30
-                while not (ready.exists() and ready.read_text().endswith('\n')):
+                while not (ready.exists() and ready.read_text(encoding='utf-8').endswith('\n')):
                     assert process.poll() is None, f'fake exited before it was ready (code {process.returncode})'
                     if time.monotonic() >= deadline:
                         stuck(process)
                     time.sleep(0.05)
-                port = json.loads(ready.read_text())['bound_port']
+                port = json.loads(ready.read_text(encoding='utf-8'))['bound_port']
                 connection = http.client.HTTPConnection('127.0.0.1', port, timeout=10)
                 try:
                     connection.request('POST', '/v1/chat/completions', json.dumps({'stream': stream, 'fake_failure': 'exit'}))
@@ -627,7 +627,7 @@ def self_test():
     with tempfile.TemporaryDirectory() as folder:
         root = Path(folder)
         script = root / 'mtp_gguf.py'
-        script.write_text(MTP_SCRIPT)
+        script.write_text(MTP_SCRIPT, encoding='utf-8')
         out = root / 'model' / 'mtp-q2_0.gguf'
 
         def run(mode):
@@ -642,7 +642,7 @@ def self_test():
 
         ok = run('')
         assert ok.returncode == 0 and out.read_bytes() == b'mtp-q2_0', (ok.returncode, ok.stderr)
-        recorded = json.loads((out.parent / 'prepare-calls.jsonl').read_text().splitlines()[0])
+        recorded = json.loads((out.parent / 'prepare-calls.jsonl').read_text(encoding='utf-8').splitlines()[0])
         assert Path(recorded['cwd']).resolve() == root.resolve() and recorded['pid'] > 0 and recorded['api_key'] is None
         out.unlink()
         failed = run('fail')

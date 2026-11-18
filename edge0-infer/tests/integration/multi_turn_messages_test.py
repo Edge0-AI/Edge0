@@ -18,7 +18,7 @@ def main():
     with tempfile.TemporaryDirectory() as temporary:
         root=Path(temporary)
         for i,sample in enumerate(samples):
-            turns=root/'turns.json';turns.write_text(json.dumps({'turns':[{'user':message} for message in sample['messages']]}))
+            turns=root/'turns.json';turns.write_text(json.dumps({'turns':[{'user':message} for message in sample['messages']]}), encoding='utf-8')
             output=root/str(i)
             result=subprocess.run([args.cli,'run','--model',str(model),'--device','metal','--temperature','0','--max-tokens','128','--turns',str(turns),'--out',str(output)],capture_output=True,text=True)
             if result.returncode==77:return 77
@@ -26,11 +26,11 @@ def main():
             previous=None;record={'name':sample['name'],'turns':[]}
             for index,message in enumerate(sample['messages'],1):
                 folder=output/str(index)
-                summary=json.loads((folder/'result.json').read_text())
-                record['turns'].append({'user':message,'answer':(folder/'answer.txt').read_text(),'summary':summary})
+                summary=json.loads((folder/'result.json').read_text(encoding='utf-8'))
+                record['turns'].append({'user':message,'answer':(folder/'answer.txt').read_text(encoding='utf-8'),'summary':summary})
                 records_snapshot=records+[record]
                 args.record.parent.mkdir(parents=True,exist_ok=True)
-                args.record.write_text(json.dumps(records_snapshot,ensure_ascii=False,indent=2))
+                args.record.write_text(json.dumps(records_snapshot,ensure_ascii=False,indent=2), encoding='utf-8')
                 assert summary['loading']['model_options']['routing']=='predicted'
                 assert summary['memory_snapshot']['physical']['values']['peak_bytes']<=4*1024**3
                 if previous is not None:

@@ -142,8 +142,8 @@ def run_sweep(host, cli, model, protocol, writer, *, raw_dir, tools, root=Path('
             continue
         before = host.snapshot(model_dir)
         result = host.run(sides[name]['command'])
-        (Path(raw_dir) / f'{index}.stdout').write_text(result.stdout)
-        (Path(raw_dir) / f'{index}.stderr').write_text(result.stderr)
+        (Path(raw_dir) / f'{index}.stdout').write_text(result.stdout, encoding='utf-8')
+        (Path(raw_dir) / f'{index}.stderr').write_text(result.stderr, encoding='utf-8')
         after = host.snapshot(model_dir)
         if result.returncode:
             fail(f'exit code {result.returncode}', snapshot_before=before, snapshot_after=after)

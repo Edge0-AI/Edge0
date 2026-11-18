@@ -77,7 +77,7 @@ def main():
             document = {'turns': turns}
             if system is not None:
                 document['system'] = system
-            script.write_text(json.dumps(document))
+            script.write_text(json.dumps(document), encoding='utf-8')
             folder = root / name
             invoke([args.cli, 'run', *common, *extra, '--turns', str(script), '--out', str(folder)])
             return read_turns(folder)
@@ -178,10 +178,10 @@ def main():
         process = invoke([args.cli, 'chat', '--model', str(root / 'missing'), '--device', args.backend], '', success=False)
         assert process.returncode != 0 and process.stderr.strip(), '(f) missing model'
         # Existing output must never be overwritten, and startup failures produce no answer.
-        marker = root / 'existing'; marker.mkdir(); (marker / 'sentinel').write_text('keep')
+        marker = root / 'existing'; marker.mkdir(); (marker / 'sentinel').write_text('keep', encoding='utf-8')
         process = invoke([args.cli, 'chat', *common, '--out', str(marker)], '', success=False)
         assert process.returncode == 1 and 'already exists' in process.stderr and not process.stdout
-        assert (marker / 'sentinel').read_text() == 'keep'
+        assert (marker / 'sentinel').read_text(encoding='utf-8') == 'keep'
         print('(d,e,f) empty regeneration, EOF, and startup failures passed', flush=True)
     return 0
 

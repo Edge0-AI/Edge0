@@ -28,7 +28,7 @@ class OriginTests(unittest.TestCase):
         tree = self.git("write-tree").strip()
         ggml = self.git("rev-parse", tree + ":third_party/ggml").strip()
         license_hash = self.git("hash-object", "third_party/GGML_LICENSE").strip()
-        (self.root / "third_party/GGML_ORIGIN").write_text(f"tree: {ggml}\nlicense_blob: {license_hash}\n")
+        (self.root / "third_party/GGML_ORIGIN").write_text(f"tree: {ggml}\nlicense_blob: {license_hash}\n", encoding='utf-8')
 
     def git(self, *args):
         return subprocess.check_output(["git", *args], cwd=self.root, text=True)

@@ -49,20 +49,20 @@ def main():
                         print(result.stderr)
                         return 77
                     assert result.returncode == 0, result.stdout + result.stderr
-                own_logits(observed, json.loads((observed / 'tokens.json').read_text()))
+                own_logits(observed, json.loads((observed / 'tokens.json').read_text(encoding='utf-8')))
                 report = judge(output, observed, answer, args.backend, model, cross_kernel=args.cross_kernel)
                 print(json.dumps(dict(role=role, case=case, record_only=args.record_only, **report), indent=2), flush=True)
                 if args.split_last and role == 'base' and case == 'chat-intro':
                     own_file = output / 'tokens.json'
-                    original = own_file.read_text()
-                    own_file.write_text(json.dumps({**json.loads(original), 'chunking': 'whole'}))
+                    original = own_file.read_text(encoding='utf-8')
+                    own_file.write_text(json.dumps({**json.loads(original), 'chunking': 'whole'}), encoding='utf-8')
                     try:
                         judge(output, observed, answer, args.backend, cross_kernel=args.cross_kernel)
                         raise AssertionError('whole output accepted against split answer')
                     except ValueError as error:
                         assert 'chunking' in str(error)
                     finally:
-                        own_file.write_text(original)
+                        own_file.write_text(original, encoding='utf-8')
                     whole = ANSWERS / f'tiny-{role}-{args.backend}-flash' / case
                     try:
                         judge(output, observed, whole, args.backend, cross_kernel=args.cross_kernel)
@@ -80,8 +80,8 @@ def main():
                     return 1
                 if role == 'lora':
                     base = workspace / 'base' / case
-                    base_tokens = json.loads((base / 'tokens.json').read_text())
-                    lora_tokens = json.loads((output / 'tokens.json').read_text())
+                    base_tokens = json.loads((base / 'tokens.json').read_text(encoding='utf-8'))
+                    lora_tokens = json.loads((output / 'tokens.json').read_text(encoding='utf-8'))
                     assert base_tokens['input'] == lora_tokens['input']
                     count = len(base_tokens['input']) * base_tokens['logits_shape'][1]
                     a = np.fromfile(base / 'logits.f32', dtype='<f4', count=count)

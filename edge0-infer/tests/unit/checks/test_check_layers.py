@@ -17,7 +17,7 @@ class LayerTests(unittest.TestCase):
             shutil.copyfile(ROOT / "tools/checks/layers.toml", root / "tools/checks/layers.toml")
             dest = root / path
             dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_text(content)
+            dest.write_text(content, encoding='utf-8')
             result = subprocess.run([sys.executable, "-I", str(ROOT / "tools/checks/check_layers.py"), str(root)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 1 if rule else 0, result.stdout + result.stderr)
             if rule:
@@ -135,12 +135,12 @@ class LayerTests(unittest.TestCase):
                 root = Path(folder)
                 (root / 'tools/checks').mkdir(parents=True)
                 (root / 'tools/cli').mkdir(parents=True)
-                (root / 'tools/cli/serve_protocol.h').write_text('')
+                (root / 'tools/cli/serve_protocol.h').write_text('', encoding='utf-8')
                 shutil.copyfile(ROOT / 'tools/checks/layers.toml', root / 'tools/checks/layers.toml')
                 shutil.copyfile(ROOT / 'tools/checks/third_party.toml', root / 'tools/checks/third_party.toml')
                 file = root / path
                 file.parent.mkdir(parents=True, exist_ok=True)
-                file.write_text(f'#include "{header}"\n')
+                file.write_text(f'#include "{header}"\n', encoding='utf-8')
                 result = subprocess.run([sys.executable, '-I', str(ROOT / 'tools/checks/check_layers.py'), str(root)], capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0 if allowed else 1, result.stdout + result.stderr)
 
@@ -162,19 +162,19 @@ class LayerTests(unittest.TestCase):
             shutil.copyfile(ROOT / 'tools/checks/layers.toml', root / 'tools/checks/layers.toml')
             app = root / 'examples/ios'
             (app / 'nested').mkdir(parents=True)
-            (app / 'Bridge.h').write_text('#import <Foundation/Foundation.h>\n')
+            (app / 'Bridge.h').write_text('#import <Foundation/Foundation.h>\n', encoding='utf-8')
             source = app / 'nested/Bridge.mm'
-            source.write_text('#import "Bridge.h"\n')
+            source.write_text('#import "Bridge.h"\n', encoding='utf-8')
             def run():
                 return subprocess.run([sys.executable, '-I', str(ROOT / 'tools/checks/check_layers.py'), str(root)], capture_output=True, text=True)
             self.assertEqual(run().returncode, 0)
             other = root / 'examples/android'
             other.mkdir()
-            (other / 'Other.h').write_text('')
+            (other / 'Other.h').write_text('', encoding='utf-8')
             for include in ('../../android/Other.h', 'Escape.h'):
                 if include == 'Escape.h':
                     (app / include).symlink_to(other / 'Other.h')
-                source.write_text(f'#import "{include}"\n')
+                source.write_text(f'#import "{include}"\n', encoding='utf-8')
                 result = run()
                 self.assertEqual(result.returncode, 1, result.stdout)
                 self.assertIn('public-include', result.stdout)

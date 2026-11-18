@@ -16,7 +16,7 @@ def validate(document):
 
 
 def main():
-    document = json.loads((Path(sys.argv[1]) / "CMakePresets.json").read_text())
+    document = json.loads((Path(sys.argv[1]) / "CMakePresets.json").read_text(encoding='utf-8'))
     validate(document)
     for name in ("cpu", "mac-metal", "windows"):
         for key in KEYS:

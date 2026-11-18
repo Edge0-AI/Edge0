@@ -28,7 +28,7 @@ class CliTests(unittest.TestCase):
         lines = dict(line.split(": ", 1) for line in result.stdout.splitlines())
         for key in ["engine.version", "ggml.origin", "ggml.version", "backend.cpu", "backend.metal"]:
             self.assertIn(key, lines)
-        commit = dict(line.split(": ", 1) for line in Path(options.origin).read_text().splitlines())["commit"]
+        commit = dict(line.split(": ", 1) for line in Path(options.origin).read_text(encoding='utf-8').splitlines())["commit"]
         self.assertEqual(lines["ggml.origin"], "llama.cpp " + commit + " ggml/")
         self.assertRegex(lines["engine.source_commit"], r"^([0-9a-f]{40})?$")
         modified = lines["engine.source_modified"]
@@ -66,18 +66,18 @@ class CliTests(unittest.TestCase):
             root = Path(directory)
             replay_base = base[:5] + base[7:]
             turns = root / "turns.json"
-            turns.write_text(json.dumps({"turns": [{"input": [1, 2, 3, 4, 5]}]}))
+            turns.write_text(json.dumps({"turns": [{"input": [1, 2, 3, 4, 5]}]}), encoding='utf-8')
             generated = run(*replay_base, "--turns", str(turns), "--out", str(root / "original"))
             self.assertEqual(generated.returncode, 0, generated.stderr)
             blocks_file = root / "original" / "blocks.json"
-            blocks = json.loads(blocks_file.read_text())
+            blocks = json.loads(blocks_file.read_text(encoding='utf-8'))
             self.assertTrue(all(block["device"] == "CPU" for block in blocks["blocks"]))
             recorded = run(*replay_base, "--replay", str(blocks_file), "--out", str(root / "recorded"))
             self.assertEqual(recorded.returncode, 0, recorded.stderr)
             for block in blocks["blocks"]:
                 block.pop("device")
             legacy = root / "legacy.json"
-            legacy.write_text(json.dumps(blocks))
+            legacy.write_text(json.dumps(blocks), encoding='utf-8')
             fallback = run(*replay_base, "--replay", str(legacy), "--out", str(root / "fallback"))
             self.assertEqual(fallback.returncode, 0, fallback.stderr)
             self.assertEqual((root / "recorded" / "logits.f32").read_bytes(),

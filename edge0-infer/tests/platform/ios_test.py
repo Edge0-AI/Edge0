@@ -26,7 +26,7 @@ class TransportTest(unittest.TestCase):
 
     def test_sync(self):
         local=self.root/'local';local.mkdir();(local/'base').write_bytes(b'abc')
-        (local/'assets.tsv').write_text('filename\tbytes\nbase\t3\n')
+        (local/'assets.tsv').write_text('filename\tbytes\nbase\t3\n', encoding='utf-8')
         self.assertTrue(sync_assets(self.device,local,'assets/test',check=True))
         self.assertFalse((self.root/'Documents').exists())
         self.assertTrue(sync_assets(self.device,local,'assets/test'))
@@ -39,7 +39,7 @@ class TransportTest(unittest.TestCase):
     def test_push_selection_and_read_only_check(self):
         local = self.root / 'local'; local.mkdir()
         (local / 'base').write_bytes(b'abc')
-        (local / 'assets.tsv').write_text('filename\tbytes\nbase\t3\n')
+        (local / 'assets.tsv').write_text('filename\tbytes\nbase\t3\n', encoding='utf-8')
         tiny = self.root / 'tiny'
         for name in ('tiny-a', 'tiny-b'):
             shutil.copytree(local, tiny / name)
@@ -49,7 +49,7 @@ class TransportTest(unittest.TestCase):
         result = subprocess.run(command + ['--check'], env=env, capture_output=True, text=True)
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertFalse((self.root / 'Documents').exists())
-        calls = [json.loads(line)['args'] for line in (self.root / 'calls.jsonl').read_text().splitlines()]
+        calls = [json.loads(line)['args'] for line in (self.root / 'calls.jsonl').read_text(encoding='utf-8').splitlines()]
         self.assertFalse(any(c[:3] in (['device', 'install', 'app'], ['device', 'copy', 'to']) for c in calls))
         result = subprocess.run(command, env=env, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

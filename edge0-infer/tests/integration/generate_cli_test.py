@@ -33,8 +33,8 @@ with tempfile.TemporaryDirectory() as temporary:
     output = root / 'out'
     result = subprocess.run(base + ['--temperature', '0', '--presence-penalty', '0', '--out', str(output), '--check', str(case)], capture_output=True, text=True)
     assert result.returncode == 0 and 'check: 16/16 tokens match' in result.stderr, result.stderr
-    tokens = json.loads((output / 'tokens.json').read_text())
-    summary = json.loads((output / 'result.json').read_text())
+    tokens = json.loads((output / 'tokens.json').read_text(encoding='utf-8'))
+    summary = json.loads((output / 'result.json').read_text(encoding='utf-8'))
     assert summary['checkpoint_saved'] is True
     assert json.loads(next(line for line in result.stderr.splitlines() if line.startswith('{')))['checkpoint_saved'] is True
     assert tokens['logits_shape'] == [16, 248320]
@@ -60,18 +60,18 @@ with tempfile.TemporaryDirectory() as temporary:
     resident = root / 'resident'
     control = subprocess.run(base + ['--temperature', '0', '--presence-penalty', '0', '--model-option', 'experts=resident', '--out', str(resident)], capture_output=True, text=True)
     assert control.returncode == 0, control.stderr
-    assert json.loads((resident / 'tokens.json').read_text()) == tokens
-    assert json.loads((resident / 'result.json').read_text())['weight_activity'] is None
+    assert json.loads((resident / 'tokens.json').read_text(encoding='utf-8')) == tokens
+    assert json.loads((resident / 'result.json').read_text(encoding='utf-8'))['weight_activity'] is None
     forward_tokens = root / 'forward-tokens.json'
-    forward_tokens.write_text(json.dumps({'input': tokens['input'], 'generated': tokens['generated'][:-1]}))
+    forward_tokens.write_text(json.dumps({'input': tokens['input'], 'generated': tokens['generated'][:-1]}), encoding='utf-8')
     forward = root / 'forward'
     checked = subprocess.run([cli, 'forward', '--model-option', 'routing=actual', '--device', backend, '--model', str(reference / 'tiny-a'), '--tokens', str(forward_tokens), '--model-option', 'lora=off', '--split-last', '--out', str(forward), '--model-option', 'experts=slots'], capture_output=True, text=True)
     assert checked.returncode == 0, checked.stderr
-    assert json.loads((forward / 'report.json').read_text())['weight_activity'] == activity
+    assert json.loads((forward / 'report.json').read_text(encoding='utf-8'))['weight_activity'] == activity
     resident_forward = root / 'resident-forward'
     checked_resident = subprocess.run([cli, 'forward', '--model-option', 'routing=actual', '--device', backend, '--model', str(reference / 'tiny-a'), '--tokens', str(forward_tokens), '--model-option', 'lora=off', '--split-last', '--out', str(resident_forward), '--model-option', 'experts=resident'], capture_output=True, text=True)
     assert checked_resident.returncode == 0, checked_resident.stderr
-    assert json.loads((resident_forward / 'report.json').read_text())['weight_activity'] is None
+    assert json.loads((resident_forward / 'report.json').read_text(encoding='utf-8'))['weight_activity'] is None
     describe = subprocess.run([cli, 'describe', '--model', str(reference / 'tiny-a'), '--device', backend, '--model-option', 'lora=off', '--model-option', 'routing=actual'], capture_output=True, text=True)
     assert describe.returncode == 0, describe.stderr
     description = json.loads(describe.stdout)
@@ -122,14 +122,14 @@ with tempfile.TemporaryDirectory() as temporary:
     verbose = subprocess.run(base + ['--temperature', '0', '--presence-penalty', '0', '--verbose', '--out', str(verbose_output)], capture_output=True, text=True)
     assert verbose.returncode == 0, verbose.stderr
     assert verbose.stdout == quiet.stdout == result.stdout
-    assert json.loads((verbose_output / 'tokens.json').read_text()) == tokens
+    assert json.loads((verbose_output / 'tokens.json').read_text(encoding='utf-8')) == tokens
     if backend == 'metal':
         assert 'ggml_metal_' in verbose.stderr, verbose.stderr
     tampered = root / 'tampered'
     tampered.mkdir()
-    expected = json.loads((case / 'tokens.json').read_text())
+    expected = json.loads((case / 'tokens.json').read_text(encoding='utf-8'))
     expected['generated'][3] = (expected['generated'][3] + 1) % 248320
-    (tampered / 'tokens.json').write_text(json.dumps(expected))
+    (tampered / 'tokens.json').write_text(json.dumps(expected), encoding='utf-8')
     result = subprocess.run(base + ['--temperature', '0', '--presence-penalty', '0', '--check', str(tampered)], capture_output=True, text=True)
     assert result.returncode == 1 and 'first difference at 3' in result.stderr
     print('checkpoint fields, verbose text/token equality and tampered-token rejection passed', flush=True)
@@ -141,7 +141,7 @@ with tempfile.TemporaryDirectory() as temporary:
     root = Path(temporary)
     for name, turns in [('tokens', [{'input':[1,2,3]},{'continue':[4,5]}]),
                         ('messages', [{'user':'Hello'},{'user':'Next'}])]:
-        turn_file=root/(name+'.json');turn_file.write_text(json.dumps({'turns':turns}))
+        turn_file=root/(name+'.json');turn_file.write_text(json.dumps({'turns':turns}), encoding='utf-8')
         output=root/name
         command=[cli,'run','--model',str(reference/'tiny-a'),'--device',backend,'--temperature','0','--max-tokens','2','--turns',str(turn_file)]
         result=subprocess.run(command+['--out',str(output)],capture_output=True,text=True)
@@ -150,7 +150,7 @@ with tempfile.TemporaryDirectory() as temporary:
             folder=output/str(index)
             for file in ['tokens.json','logits.f32','result.json','blocks.json']:
                 assert (folder/file).is_file()
-            summary=json.loads((folder/'result.json').read_text())
+            summary=json.loads((folder/'result.json').read_text(encoding='utf-8'))
             assert {'reuse_method','common_prefix','checkpoint_restored','checkpoint_boundary','checkpoint_save_seconds'}<=summary.keys()
         assert (output/'blocks.json').is_file()
         for extra in [['--user','x'],['--tokens',str(case/'tokens.json')]]:

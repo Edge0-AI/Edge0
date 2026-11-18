@@ -76,9 +76,9 @@ class TurnsTest(unittest.TestCase):
         self.binary = self.root / 'bin'
         self.binary.write_bytes(b'x')
         self.plain = self.root / 'plain.json'
-        self.plain.write_text(json.dumps({'turns': [{'user': 'a'}, {'user': 'b'}, {'user': 'c'}]}))
+        self.plain.write_text(json.dumps({'turns': [{'user': 'a'}, {'user': 'b'}, {'user': 'c'}]}), encoding='utf-8')
         self.thinking = self.root / 'thinking.json'
-        self.thinking.write_text(json.dumps({'turns': [{'user': 'a', 'thinking': True}, {'user': 'b', 'thinking': True}, {'user': 'c', 'thinking': True}]}))
+        self.thinking.write_text(json.dumps({'turns': [{'user': 'a', 'thinking': True}, {'user': 'b', 'thinking': True}, {'user': 'c', 'thinking': True}]}), encoding='utf-8')
         self.combos = {
             'predicted-off': dict(command=[str(self.binary), 'bench', 'p'], routing='predicted', info=turns.conversation_info(self.plain)),
             'predicted-on': dict(command=[str(self.binary), 'bench', 't'], routing='predicted', info=turns.conversation_info(self.thinking)),
@@ -105,7 +105,7 @@ class TurnsTest(unittest.TestCase):
         self.assertEqual([c['side'] for c in report['cells']], ['predicted-off', 'predicted-on', 'actual-off'] * 2)
         self.assertEqual(sum(sleeps), 5 * 30)
         self.assertEqual(report['protocol']['kind'], 'turns')
-        self.assertEqual(reports.validate(json.loads(self.writer.json_path.read_text())), [])
+        self.assertEqual(reports.validate(json.loads(self.writer.json_path.read_text(encoding='utf-8'))), [])
         self.assertEqual(report['cells'][0]['metrics']['turn2_first_token_seconds'], 0.7)
         self.assertEqual(report['sides']['actual-off']['configuration']['model_options']['routing'], 'actual')
 
@@ -149,7 +149,7 @@ class TurnsTest(unittest.TestCase):
     def test_conversation_digest_mismatch_fails(self):
         def alter(call):
             if call == 0:
-                self.plain.write_text(json.dumps({'turns': [{'user': 'changed'}]}))
+                self.plain.write_text(json.dumps({'turns': [{'user': 'changed'}]}), encoding='utf-8')
         self.stopped_with(FakeHost(self.correct, on_run=alter), 'conversation file changed', 2)
 
     def test_thinking_flag_mismatch_fails(self):
@@ -180,7 +180,7 @@ class TurnsTest(unittest.TestCase):
 
     def test_rendering_turns_report(self):
         report = self.run_with(FakeHost(self.correct), runs=1)
-        text = Path(self.writer.md_path).read_text()
+        text = Path(self.writer.md_path).read_text(encoding='utf-8')
         self.assertIn('Turns summary', text)
         self.assertIn('predicted-on', text)
         self.assertEqual(reports.render(report), text)

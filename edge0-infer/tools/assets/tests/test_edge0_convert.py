@@ -28,7 +28,7 @@ def gguf(path, tensors):
 
 
 def test_origin_lists_the_copied_files():
-    origin = json.loads((CONVERT / 'ORIGIN.json').read_text())
+    origin = json.loads((CONVERT / 'ORIGIN.json').read_text(encoding='utf-8'))
     assert origin['repository'] == 'https://github.com/Edge0-AI/Edge0'
     assert origin['commit'] == 'c7ee73d5dfb3729de452bdb1fec7df7aebe42806'
     assert origin['path'] == 'windows/tools'
@@ -83,7 +83,7 @@ def test_cross_check_does_not_need_gguf_py(tmp_path, monkeypatch):
     # A poisoned 'gguf' module on the path must not be imported by the gate.
     poison = tmp_path / 'poison'
     poison.mkdir()
-    (poison / 'gguf.py').write_text("raise RuntimeError('gguf-py must not be imported')\n")
+    (poison / 'gguf.py').write_text("raise RuntimeError('gguf-py must not be imported')\n", encoding='utf-8')
     monkeypatch.syspath_prepend(str(poison))
     sys.modules.pop('gguf', None)
     base = gguf(tmp_path / 'base.gguf', [('blk.0.attn_q.weight', (64, 128))])

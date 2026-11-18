@@ -13,7 +13,7 @@ env.filters["tojson"] = lambda x: json.dumps(x, ensure_ascii=False)
 def raise_exception(message):
     raise ValueError(message)
 env.globals["raise_exception"] = raise_exception
-template = env.from_string((root / "tests/fixtures/models/edge0_35b/chat_template.jinja").read_text())
+template = env.from_string((root / "tests/fixtures/models/edge0_35b/chat_template.jinja").read_text(encoding='utf-8'))
 values = json.loads(r'{"city":"\u5317\u4eac\n\"\\/\u0001","n":-0,"float":1.0,"half":0.5,"small":1e-05,"large":1e16,"yes":true,"none":null,"obj":{"z":1,"a":2},"arr":[1,"x"]}')
 tool = {"type": "function", "function": {"name": "get_weather",
         "description": values["city"], "parameters": {"type": "object",

@@ -17,7 +17,7 @@ for mode, experts in [('actual', 'slots'), ('predicted', 'slots'), ('actual', 'r
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         tokens = root / 'tokens.json'
-        tokens.write_text(json.dumps(dict(input=[1, 2, 3])))
+        tokens.write_text(json.dumps(dict(input=[1, 2, 3])), encoding='utf-8')
         trace = root / 'trace.jsonl'
         for enabled in [False, True]:
             command = [sys.argv[1], 'run', '--device', backend, '--model', str(reference / 'tiny-a'), '--tokens', str(tokens),
@@ -30,10 +30,10 @@ for mode, experts in [('actual', 'slots'), ('predicted', 'slots'), ('actual', 'r
             assert result.returncode == 0, result.stderr
         for name in ['tokens.json', 'logits.f32']:
             assert (root / 'False' / name).read_bytes() == (root / 'True' / name).read_bytes(), name
-        rows = [json.loads(line) for line in trace.read_text().splitlines()]
+        rows = [json.loads(line) for line in trace.read_text(encoding='utf-8').splitlines()]
         assert len(rows) == 32
         summary = module.summarize(rows)
-        activity = json.loads((root / 'True/result.json').read_text())['weight_activity']
+        activity = json.loads((root / 'True/result.json').read_text(encoding='utf-8'))['weight_activity']
         if experts == 'resident':
             assert activity is None
             counts = dict(initiated=0)

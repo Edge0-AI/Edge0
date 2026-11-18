@@ -44,8 +44,8 @@ def write_templates(engine, body):
     text = json.dumps(body, indent=1)
     metal_text = json.dumps(metal, indent=1)
     for name in ('edge0-145b.json', 'edge0-120b.json'):
-        (models / name).write_text(text)
-        (models / name.replace('.json', '-metal.json')).write_text(metal_text)
+        (models / name).write_text(text, encoding='utf-8')
+        (models / name.replace('.json', '-metal.json')).write_text(metal_text, encoding='utf-8')
 
 
 def make_engine(root, contract='5'):
@@ -54,9 +54,9 @@ def make_engine(root, contract='5'):
     (engine / 'serve').mkdir(parents=True)
     (engine / 'tools').mkdir(parents=True)
     shutil.copy(HERE / 'fake_strata.py', engine / 'serve' / 'server.py')
-    (engine / 'tools' / 'mtp_gguf.py').write_text(MTP_SCRIPT)
+    (engine / 'tools' / 'mtp_gguf.py').write_text(MTP_SCRIPT, encoding='utf-8')
     (engine / 'edge0').mkdir(parents=True)
-    (engine / 'edge0' / 'CONTRACT').write_text(contract + '\n')
+    (engine / 'edge0' / 'CONTRACT').write_text(contract + '\n', encoding='utf-8')
     write_templates(engine, TEMPLATE)
     return engine
 
@@ -66,7 +66,7 @@ def make_model(root, skip=(), model_name='edge0-145b-q3k'):
     model.mkdir(parents=True)
     if 'model.json' not in skip:
         (model / 'model.json').write_text(json.dumps({"model_name": model_name, "exe": "ignored", "args": ["--pack", "wrong"],
-                                                         "env": {"STRATA_LAT_FUSED_Q3K": "wrong"}, "log": "ignored"}))
+                                                         "env": {"STRATA_LAT_FUSED_Q3K": "wrong"}, "log": "ignored"}), encoding='utf-8')
     for name in FILES:
         if name not in skip:
             (model / name).parent.mkdir(parents=True, exist_ok=True)
@@ -105,8 +105,8 @@ def process_record(record, timeout=10):
     path = Path(record) / 'process.json'
     deadline = time.time() + timeout
     while time.time() < deadline:
-        if path.exists() and path.read_text().endswith('\n'):
-            return json.loads(path.read_text().splitlines()[0])
+        if path.exists() and path.read_text(encoding='utf-8').endswith('\n'):
+            return json.loads(path.read_text(encoding='utf-8').splitlines()[0])
         time.sleep(0.05)
     raise AssertionError('fake strata never started')
 
@@ -144,7 +144,7 @@ def gone(pid, timeout=10):
             else:
                 os.kill(pid, 0)
                 status = Path(f'/proc/{pid}/status')
-                if status.exists() and 'State:\tZ' in status.read_text():
+                if status.exists() and 'State:\tZ' in status.read_text(encoding='utf-8'):
                     return True
                 if sys.platform == 'darwin':
                     state = subprocess.run(['ps', '-o', 'stat=', '-p', str(pid)], capture_output=True, text=True).stdout.strip()
