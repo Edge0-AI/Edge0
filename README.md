@@ -485,7 +485,9 @@ ctest --preset cpu -L "L0|L1"
 ```
 
 Workflow: fork → feature branch → PR against `main`. Please keep the
-tests passing and add tests for new behavior.
+tests passing and add tests for new behavior. Agree on a behavior change
+in an issue first, put related fixes in one PR, and keep at most two of
+your PRs open.
 
 </details>
 

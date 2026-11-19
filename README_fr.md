@@ -418,7 +418,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-Processus : fork → branche de fonctionnalité → PR vers `main`. Veillez à ce que les tests réussissent et ajoutez-en pour les nouveaux comportements.
+Processus : fork → branche de fonctionnalité → PR vers `main`. Veillez à ce que les tests réussissent et ajoutez-en pour les nouveaux comportements. Faites valider un changement de comportement dans une issue avant d'écrire le code, regroupez les correctifs liés dans une seule PR, et gardez au plus deux PR ouvertes.
 
 </details>
 

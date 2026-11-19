@@ -422,7 +422,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-流程：fork → 功能分支 → 向 `main` 提交 PR。请确保测试通过，并为新行为添加测试。
+流程：fork → 功能分支 → 向 `main` 提交 PR。请确保测试通过，并为新行为添加测试。行为改动请先在 issue 里和维护者对齐；同一区域的相关修复放进一个 PR；每人最多同时打开两个 PR。
 
 </details>
 

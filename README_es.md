@@ -422,7 +422,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-Flujo: fork → rama de funcionalidad → PR dirigido a `main`. Mantén las pruebas aprobadas y añade pruebas para los comportamientos nuevos.
+Flujo: fork → rama de funcionalidad → PR dirigido a `main`. Mantén las pruebas aprobadas y añade pruebas para los comportamientos nuevos. Acuerda primero en una issue los cambios de comportamiento, agrupa los arreglos relacionados en una sola PR y mantén como máximo dos PR abiertas.
 
 </details>
 
