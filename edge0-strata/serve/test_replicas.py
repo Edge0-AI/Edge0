@@ -144,6 +144,31 @@ class RouteChoice(unittest.TestCase):
         self.assertEqual(e.router.matched(other)[1 - k], len(other))
         self.assertEqual(e.inflight[k], 0)
 
+    def test_the_engine_stream_is_closed_before_the_replica_is_free(self):
+        """A client that stops reading (a stop token, a disconnect) closes the replica's stream: the engine's own
+        stream must be closed (STOP + drain to its DONE) while the replica is still held.  Closed later by garbage
+        collection, the next request on that replica read the stale DONE (0 tokens, "length") and its tokens
+        went to the request after it."""
+        seen = []
+
+        class Solo(FakeEngine):
+            def generate(self, ids, max_new, sampling, cancel, embeddings=None):
+                try:
+                    yield 7
+                    yield 8
+                finally:
+                    seen.append(e.run_locks[0].locked())
+
+        e = ReplicaEngine([Solo(0), Solo(0)])
+        e.inflight[0] += 1
+        with mock.patch.object(e, "route", return_value=0):
+            stream = e.generate([1, 2], 10, {}, threading.Event())
+            self.assertEqual(next(stream), 7)
+            stream.close()
+        self.assertEqual(seen, [True])
+        self.assertFalse(e.run_locks[0].locked())
+        self.assertEqual(e.inflight[0], 0)
+
     def test_batch_is_the_sum(self):
         self.assertEqual(ReplicaEngine([FakeEngine(4), FakeEngine(4)]).batch, 8)
         self.assertEqual(ReplicaEngine([FakeEngine(0), FakeEngine(0)]).batch, 2)
