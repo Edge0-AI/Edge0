@@ -47,6 +47,28 @@ foreach(src ${STRATA_METAL_TESTS})
   target_link_libraries(${t} PRIVATE mtl_rt)
 endforeach()
 
+# Keep the latent decode parity matrix reachable without the full engine's
+# metal-cpp/ggml dependencies. These programs execute on the physical GPU.
+include(CTest)
+if(BUILD_TESTING)
+  foreach(experts q3k fp4)
+    foreach(du q4 q8)
+      foreach(width 1280 1792)
+        foreach(ntok 1 4 8)
+          set(test_name latent_routed_parity_${experts}_${du}_${width}_${ntok})
+          set(width_arg)
+          if(width EQUAL 1792)
+            set(width_arg --latent1792)
+          endif()
+          add_test(NAME ${test_name} COMMAND latent_routed_parity
+            --experts ${experts} --du ${du} ${width_arg} --ntok ${ntok})
+          set_tests_properties(${test_name} PROPERTIES LABELS "metal;parity" RUN_SERIAL TRUE TIMEOUT 120)
+        endforeach()
+      endforeach()
+    endforeach()
+  endforeach()
+endif()
+
 # ---- the device runtime and the engine (mac-design) ---------------------------------------------------------------
 set(METAL_CPP_DIR "" CACHE PATH "metal-cpp headers (https://developer.apple.com/metal/cpp/), e.g. metal-cpp_26")
 if(NOT EXISTS "${METAL_CPP_DIR}/Metal/Metal.hpp")

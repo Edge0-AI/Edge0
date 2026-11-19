@@ -243,12 +243,23 @@ Requirements: an Apple Silicon Mac, the Xcode Command Line Tools, CMake 3.24 or 
    cmake --build build-metal --target moe_mm_parity
    ```
 
-   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; both of
+   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; all of
    these print `PASS`:
 
    ```
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ```
+
+   The decode windows' latent kernels have their own check (`cmake --build build-metal --target
+   latent_routed_parity`). It takes `--experts q3k|fp4`, `--du q4|q8`, `--latent1792` and `--ntok 1..8`,
+   and prints `PASS` for each of the three window tilings:
+
+   ```
+   ./build-metal/latent_routed_parity --experts q3k --du q4 --latent1792
+   ./build-metal/latent_routed_parity --experts fp4 --du q8 --latent1792
    ```
 
 `edge0-infer` on macOS starts `build-metal/strata` through `.venv/bin/python` and `serve/server.py`.
@@ -390,8 +401,9 @@ quality on this build has only been checked by hand.
   `server.py`. The shipped entries run `tools/mtp_gguf.py` to write `mtp-q2_0.gguf` into the model
   directory, so that directory must be writable. An `output` that already exists is left as it is.
 
-  Metal accepts only Q3_K expert folders (`model_name` ending in `-q3k`), `du=q4` and
-  `ple-io=direct`. An NVFP4 folder, `du=q8` or `ple-io=ram` is rejected before any process starts.
+  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. A Q3_K folder
+  (`model_name` ending in `-q3k`) defaults to `du=q4`; an NVFP4 folder keeps the model's own
+  default. `ple-io=ram` is rejected before any process starts.
 
   `edge0-infer` also sets `gpu` from `--device` (`cuda:<n>` on Linux and Windows, `metal` on macOS),
   `model_name` from `--alias`, and the `--max-context` argument from `--context`.

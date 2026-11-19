@@ -483,36 +483,43 @@ int main() {
                 CHECK(launch.model_options.at("du") == "q4" && launch.model_options.at("ple-io") == "direct");
                 write(model / "model.json", R"({"model_name":"edge0-120b-q3k"})");
                 CHECK(resolve(bare, *detect(model), installed_exe, platform, "").model_options.at("du") == "q4");
+                // Both D/U formats run on Metal: a q3k folder keeps q4 as its default and may choose q8.
                 write(model / "model.json", R"({"model_name":"edge0-145b-q3k"})");
-                fs::remove(model / "experts.bin");
-                fs::remove(model / "latent_dense_q4.bin");
-                write(model / "model.json", R"({"model_name":"edge0-145b-fp4"})");
+                CommonArgs chosen = bare;
+                chosen.model_options = {{"du", "q8"}};
+                CHECK(resolve(chosen, *detect(model), installed_exe, platform, "").model_options.at("du") == "q8");
+                auto result = run_inspect(platform, {{"du", "q8"}});
+                CHECK(result.code == 0 && result.report["ok"] == true && result.message.empty());
+                // An fp4 folder runs on Metal with the model's own D/U default (145B: q8, 120B: q4) and has no scales/.
                 fs::remove_all(model / "scales");
-                CHECK(throws_config([&] { resolve(bare, *detect(model), installed_exe, platform, ""); },
-                                    "unsupported on Metal: edge0-145b-fp4 uses fp4 experts; Metal supports q3k"));
+                write(model / "model.json", R"({"model_name":"edge0-120b-fp4"})");
+                CHECK(resolve(bare, *detect(model), installed_exe, platform, "").model_options.at("du") == "q4");
+                write(model / "model.json", R"({"model_name":"edge0-145b-fp4"})");
+                const auto fp4 = resolve(bare, *detect(model), installed_exe, platform, "");
+                CHECK(fp4.experts == "fp4" && fp4.model_options.at("du") == "q8" && fp4.model_options.at("ple-io") == "direct");
+                chosen.model_options = {{"du", "q4"}};
+                CHECK(resolve(chosen, *detect(model), installed_exe, platform, "").model_options.at("du") == "q4");
+                result = run_inspect(platform, {});
+                CHECK(result.code == 0 && result.report["ok"] == true && result.message.empty());
+                // Its default D/U file missing: reported with the installed alternative, as on the other platforms.
+                fs::remove(model / "latent_dense_q8.bin");
+                CHECK(throws_config([&] { resolve(bare, *detect(model), installed_exe, platform, ""); }, "missing: latent_dense_q8.bin"));
+                result = run_inspect(platform, {});
+                CHECK(result.code == 1 && result.report["ok"] == false &&
+                      result.message.find("missing: latent_dense_q8.bin") != std::string::npos &&
+                      result.message.find("--model-option du=q4 instead") != std::string::npos);
                 CommonArgs illegal = bare;
                 illegal.model_options = {{"du", "q5"}};
-                CHECK(throws_config([&] { resolve(illegal, *detect(model), installed_exe, platform, ""); }, "must be"));
+                CHECK(throws_config([&] { resolve(illegal, *detect(model), installed_exe, platform, ""); }, "must be q8|q4"));
                 CHECK(throws_config([&] { run_inspect(platform, {{"du", "q5"}}); }, "must be"));
-                auto result = run_inspect(platform, {});
-                CHECK(result.code == 1 && result.message.find("uses fp4 experts") != std::string::npos &&
-                      result.message.find("Metal supports q3k") != std::string::npos);
-                CHECK(result.report["ok"] == false && result.report["files"].is_array() && !result.report["files"].empty());
                 complete(model);
                 CommonArgs rejected = bare;
-                rejected.model_options = {{"du", "q8"}};
-                fs::remove(model / "latent_dense_q4.bin");
-                CHECK(throws_config([&] { resolve(rejected, *detect(model), installed_exe, platform, ""); },
-                                    "unsupported on Metal: du=q8; Metal only supports du=q4"));
-                result = run_inspect(platform, {{"du", "q8"}});
-                CHECK(result.code == 1 && result.report["ok"] == false && result.message.find("only supports du=q4") != std::string::npos);
                 rejected.model_options = {{"ple-io", "ram"}};
                 CHECK(throws_config([&] { resolve(rejected, *detect(model), installed_exe, platform, ""); },
                                     "Metal only supports ple-io=direct"));
                 result = run_inspect(platform, {{"ple-io", "ram"}});
                 CHECK(result.code == 1 && result.report["ok"] == false && result.message.find("ple-io=direct") != std::string::npos);
                 CHECK(throws_config([&] { run_inspect(platform, {{"experts", "q3k"}}); }, "unknown model option experts"));
-                write(model / "latent_dense_q4.bin", "latent_dense_q4.bin");
                 result = run_inspect(platform, {});
                 CHECK(result.code == 0 && result.report["ok"] == true && result.message.empty());
                 fs::remove(engine / metal_template);
