@@ -353,7 +353,14 @@ cd /path/to/Edge0-145B-q3k
            "model": "./model-skeleton.gguf", "gpu": false}
 ```
 
-再在 `"args"` 里加 `--vision`。`strata-vision` 不在本仓库：用 `setup.py --setup --vision yes` 获取，或在 Strata 源码里编译 `tools/vision`。日志出现 `images on` 后即可发图：聊天里用 `/image`，或走 OpenAI 接口的 `image_url`。
+再在 `"args"` 里加 `--vision`。`strata-vision` 由 `setup.py --setup --vision yes` 下载的引擎归档一并提供。它的源码也在这个仓库里，在 `edge0-strata/tools/vision/`：这是一个独立的 CMake 工程，主构建不编译它，编译时要用引擎钉住的那个 llama.cpp 提交（仓库里没有 `third_party/llama.cpp`；由主 CMake 自动拉取的构建树里，它在 `build/_deps/strata_llamacpp-src`）：
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+日志出现 `images on` 后即可发图：聊天里用 `/image`，或走 OpenAI 接口的 `image_url`。
 
 </details>
 
