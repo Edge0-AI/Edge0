@@ -38,7 +38,7 @@ function buttons(node: ReactNode): { text: string; disabled?: boolean; onClick?:
 it('shows an available model with its catalog size and repository', () => {
   const markup = page(actions());
   expect(markup).toContain('Edge0 145B · Q3_K');
-  expect(markup).toContain('105.4 GB · 93 files');
+  expect(markup).toContain('106.3 GB · 93 files');
   expect(markup).toContain('Edge0/Edge0-145B-q3k');
   expect(markup).toContain('Download</button>');
   expect(markup).toContain('Each model downloads into a folder of its own.');
@@ -51,7 +51,7 @@ it('shows downloading, checking, paused, failed, and on this machine', () => {
     job({ id: q3k.id, phase: 'paused', done_bytes: 12.8e9, total_bytes: q3k.bytes, source: 'Hugging Face' }),
     job({ id: catalog[3].id, phase: 'failed', done_bytes: 1e9, total_bytes: catalog[3].bytes, error: failed }),
   ]));
-  expect(runningMarkup).toContain('41.2 of 105.4 GB · 39% · 48 MB/s · about 23 min left · from ModelScope');
+  expect(runningMarkup).toContain('41.2 of 106.3 GB · 39% · 48 MB/s · about 23 min left · from ModelScope');
   expect(runningMarkup).toContain('Downloading');
   expect(runningMarkup).toContain('Pause</button>');
   expect(runningMarkup).toContain('Downloaded files are kept; Resume continues where it stopped.');
@@ -68,7 +68,7 @@ it('shows downloading, checking, paused, failed, and on this machine', () => {
   expect(checking).toContain('checking the downloaded files and the model folder');
   expect(checking).toContain('Checking');
   const present = page(actions(), [{ path: 'D:\\models\\Edge0-120B-q3k', ok: true, detail: '', model_id: 'edge0_120b', model_name: 'edge0-120b-q3k' }]);
-  expect(present).toContain('92.3 GB · on this machine');
+  expect(present).toContain('93.2 GB · on this machine');
   expect(present).toContain('D:\\models\\Edge0-120B-q3k');
   expect(present).toContain('On this machine');
   expect(present.match(/Download<\/button>/g)).toHaveLength(3);
@@ -133,7 +133,7 @@ it('disables the start button while measuring, when space is short, and when bot
   expect(html(measuring)).toContain('Measuring response time…');
   expect(buttons(measuring).find(button => button.text === 'Download')?.disabled).toBe(true);
   const low = DownloadDialog({ ...common, measuring: false, report: { huggingface_ms: 820, modelscope_ms: 95, chosen: 'modelscope' }, source: 'modelscope', freeBytes: 64e9, drive: 'C:' });
-  expect(html(low)).toContain('64.0 GB free on C: · needs 105.4 GB — not enough space');
+  expect(html(low)).toContain('64.0 GB free on C: · needs 106.3 GB — not enough space');
   expect(buttons(low).find(button => button.text === 'Download')?.disabled).toBe(true);
   const offline = DownloadDialog({ ...common, measuring: false, report: { huggingface_ms: null, modelscope_ms: null, chosen: null }, source: null, freeBytes: 400e9, drive: 'C:' });
   expect(html(offline)).toContain('Both sources are unreachable. Check the network, then measure again.');
@@ -151,7 +151,7 @@ it('marks a model present only from an ok inspection with the same model_name', 
   expect(presentPath(q3k, [{ path: 'bad', ok: false, detail: '', model_id: 'edge0_120b', model_name: 'edge0-120b-q3k' }])).toBeUndefined();
   expect(presentPath(q3k, [{ path: 'other', ok: true, detail: '', model_id: 'edge0_120b', model_name: 'edge0-120b-fp4' }])).toBeUndefined();
   expect(fastestSource(200, 200)).toBe('modelscope');
-  expect(decimalGb(model.bytes)).toBe('105.4');
+  expect(decimalGb(model.bytes)).toBe('106.3');
 });
 
 it('takes a full fit as enough space and the first matching copy, without falling back to the adapter', () => {

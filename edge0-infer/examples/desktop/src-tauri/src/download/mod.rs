@@ -465,7 +465,7 @@ mod tests {
         );
         assert_eq!(models[1].id, "edge0-145b-nvfp4");
         assert_eq!(models[3].id, "edge0-120b-nvfp4");
-        assert_eq!(models[0].bytes, 105_400_000_000);
+        assert_eq!(models[0].bytes, 106_275_760_678);
         assert_eq!(models[0].files, 93);
     }
     #[test]

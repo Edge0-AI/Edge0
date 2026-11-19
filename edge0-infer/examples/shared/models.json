@@ -10,7 +10,7 @@
         "windows",
         "macos"
       ],
-      "bytes": 105400000000,
+      "bytes": 106275760678,
       "files": 93
     },
     {
@@ -22,7 +22,7 @@
       "platforms": [
         "windows"
       ],
-      "bytes": 112900000000,
+      "bytes": 113778573610,
       "files": 45
     },
     {
@@ -35,7 +35,7 @@
         "windows",
         "macos"
       ],
-      "bytes": 92300000000,
+      "bytes": 93189433095,
       "files": 92
     },
     {
@@ -47,7 +47,7 @@
       "platforms": [
         "windows"
       ],
-      "bytes": 97600000000,
+      "bytes": 98537318118,
       "files": 44
     }
   ]
