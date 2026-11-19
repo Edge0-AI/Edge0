@@ -20,7 +20,8 @@
       "folder": "Edge0-145B-NVFP4",
       "model_name": "edge0-145b-fp4",
       "platforms": [
-        "windows"
+        "windows",
+        "macos"
       ],
       "bytes": 112900000000,
       "files": 45
@@ -45,7 +46,8 @@
       "folder": "Edge0-120B-NVFP4",
       "model_name": "edge0-120b-fp4",
       "platforms": [
-        "windows"
+        "windows",
+        "macos"
       ],
       "bytes": 97600000000,
       "files": 44
