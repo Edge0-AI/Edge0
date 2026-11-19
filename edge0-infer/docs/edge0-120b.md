@@ -62,6 +62,22 @@ Starting `serve` or `chat` uses the same defaults and reports missing files with
 
 ## Serve
 
+On machines with limited host RAM, bound the resident expert tier explicitly:
+
+```sh
+build/cpu/bin/edge0-infer serve --model "$EDGE0_120B" \
+  --strata-arg --resident-budget-gib --strata-arg 16
+```
+
+`16` is an example budget, not a fit guarantee: the engine also needs memory for
+the context and serving buffers. The full RAM arena checks its allocation against
+the cgroup limit and the group's remaining capacity before loading. A temporary shortfall can wait up to
+`STRATA_ARENA_RAM_WAIT_S` (default 20 seconds); a shortfall under the cgroup limit
+then refuses the load. If the allocation fits without the recommended 2560 MiB
+serving headroom, loading continues with a warning. This headroom is advisory,
+not a prediction of peak memory. Low physical RAM without a cgroup shortfall
+also remains a warning.
+
 ```sh
 build/cpu/bin/edge0-infer serve --model "$EDGE0_120B"
 ```
