@@ -1,0 +1,58 @@
+name: PR hygiene
+
+# pull_request_target can label pull requests from forks. The job checks out
+# the default branch only and reads the title and body from the event. It does
+# not run code from the pull request.
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Label and comment on open pull requests that fail hygiene
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pr-hygiene-${{ github.event.pull_request.number || 'sweep' }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    name: PR hygiene
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Check title, issue link, and test notes
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/pr_hygiene.py --apply
+
+  sweep:
+    name: Sweep open pull requests
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Report open pull requests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          args=(--sweep)
+          if [ "${{ inputs.apply }}" = "true" ]; then
+            args+=(--apply)
+          fi
+          python3 .github/scripts/pr_hygiene.py "${args[@]}"

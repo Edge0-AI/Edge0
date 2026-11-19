@@ -1,0 +1,30 @@
+name: Close incomplete pull requests
+
+on:
+  schedule:
+    # 00:15 Asia/Shanghai
+    - cron: "15 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          days-before-pr-stale: 7
+          days-before-pr-close: 1
+          only-labels: needs-info
+          stale-pr-label: stale
+          operations-per-run: 50
+          stale-pr-message: |
+            This pull request has had no activity for a week while labeled `needs-info`.
+            Add the missing issue link, test notes, or close the extra pull requests described in CONTRIBUTING.md. It will be closed after another day of inactivity.
+          close-pr-message: |
+            Closing this pull request because the intake items in CONTRIBUTING.md are still missing. Open a new pull request when the issue link, test notes, and open-PR limit are in place. The branch can be reused.
