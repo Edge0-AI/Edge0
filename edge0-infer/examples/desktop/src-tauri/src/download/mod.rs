@@ -458,9 +458,9 @@ mod tests {
                 .collect::<Vec<_>>(),
             [
                 vec!["windows", "macos"],
-                vec!["windows"],
                 vec!["windows", "macos"],
-                vec!["windows"]
+                vec!["windows", "macos"],
+                vec!["windows", "macos"]
             ]
         );
         assert_eq!(models[1].id, "edge0-145b-nvfp4");

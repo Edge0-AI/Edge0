@@ -339,7 +339,7 @@ cd /path/to/Edge0-145B-q3k
 
 ⬇️ **下载：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-在 Windows 或 macOS（Apple Silicon）上打开 **Edge0 Chat**，在 **Models** 中从 Hugging Face 或 ModelScope 下载模型，或添加已有的模型文件夹（如 `Edge0-145B-q3k`），加载后即可本地运行。macOS 上应用只提供并运行 Q3_K 模型。如需从源码构建应用，请参阅 [Edge0 Chat](edge0-infer/examples/desktop/README.md) 指南。
+在 Windows 或 macOS（Apple Silicon）上打开 **Edge0 Chat**，在 **Models** 中从 Hugging Face 或 ModelScope 下载模型，或添加已有的模型文件夹（如 `Edge0-145B-q3k`），加载后即可本地运行。macOS 上应用提供全部四个文件夹，并在 Metal 上运行；NVFP4 文件夹需要把整个专家池放进统一内存。如需从源码构建应用，请参阅 [Edge0 Chat](edge0-infer/examples/desktop/README.md) 指南。
 
 </details>
 

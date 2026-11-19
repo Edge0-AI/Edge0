@@ -332,7 +332,7 @@ the same endpoints as on one card. `--peer-device` cannot be combined with `--la
 
 ⬇️ **Download:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Open **Edge0 Chat** on Windows or macOS (Apple Silicon). Under **Models**, download a model from Hugging Face or ModelScope, or add a model folder you already have, such as `Edge0-145B-q3k`, then load it to run the model locally. On macOS the app offers and runs the Q3_K models only. To build the app from source, follow the [Edge0 Chat](edge0-infer/examples/desktop/README.md) guide.
+Open **Edge0 Chat** on Windows or macOS (Apple Silicon). Under **Models**, download a model from Hugging Face or ModelScope, or add a model folder you already have, such as `Edge0-145B-q3k`, then load it to run the model locally. On macOS the app offers all four folders and runs them on Metal; the NVFP4 folders keep the whole expert pool in unified memory. To build the app from source, follow the [Edge0 Chat](edge0-infer/examples/desktop/README.md) guide.
 
 </details>
 
