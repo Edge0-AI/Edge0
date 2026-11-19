@@ -708,14 +708,23 @@ the engine (v2 `memory.max` and `memory.high`, v1 `memory.limit_in_bytes`, less 
 `--memory-limit-mib` cap. The startup line `strata generate: memory guard: limit X GiB (source: flag|cgroup|meminfo) ...` names
 the source. It covers parking and session files only, not the startup sizing of the arena, the resident budget or the Windows commit check.
 
-**When the arena does not fit in the RAM that is free (#4051).** The engine checks the RAM before it reads the experts into the
-arena. A memory limit below the arena (a container) stops the start with the numbers. Less free RAM than the arena (an engine
-that was still exiting, another program) is waited for up to 20 s, and the log says so (`STRATA_ARENA_RAM_WAIT_S` changes the
-seconds, `0` loads at once); if it is still short the load goes on with a warning that says how much, never a refusal. Below half
-of the arena the warning adds that the whole PC can stall in memory reclaim, and that a systemd `MemoryHigh=` below the RAM keeps
-one program from taking all of it. The server, before it starts an engine, ends one that an earlier run left behind and now waits up
-to 120 s for it to be gone (it used to wait 10 s): an engine with tens of GB of pinned memory needs longer to give it back, and the
-next one started beside it ran the PC out of RAM (#4051).
+**When the arena does not fit in the RAM that is free (#4051, #301, #308).** The engine checks the RAM before it reads the
+experts into the arena, and a container's limit is a refusal while a bare host's pressure is not: the kernel stops a group rather
+than handing its pages back. Three cases refuse the start, with the numbers:
+
+* the limit is below the arena itself (`the expert arena needs 44.30 GiB but this process's memory limit ... is 40.00 GiB`);
+* the remaining capacity under the limit is below the arena, which is what an earlier run in the same group still holds (#308);
+* the arena fits the limit but leaves less than the 2.50 GiB of recommended serving headroom, so the group would be stopped by
+  the OOM killer part-way through a conversation instead of at the start (#301).
+
+On a bare host less free RAM than the arena (an engine that was still exiting, another program) is waited for up to 20 s, and the
+log says so (`STRATA_ARENA_RAM_WAIT_S` changes the seconds, `0` loads at once); if it is still short the load goes on with a
+warning that says how much, never a refusal, and one that falls short of the headroom alone only warns too. Below half of the
+arena the warning adds that the whole PC can stall in memory reclaim, and that a systemd `MemoryHigh=` below the RAM keeps one
+program from taking all of it. `STRATA_ARENA_HEADROOM_MIB` sets the serving headroom in MiB for both the warning and the refusal;
+`0` loads a cgroup-limited start anyway, for a batch job that never opens a conversation. The server, before it starts an engine,
+ends one that an earlier run left behind and now waits up to 120 s for it to be gone (it used to wait 10 s): an engine with tens of
+GB of pinned memory needs longer to give it back, and the next one started beside it ran the PC out of RAM (#4051).
 
 Snapshots hold running state, checkpoints, used K/V pages and draft-layer K/V. They add host RAM, not VRAM. Oldest parked entries
 are evicted first. A new conversation that starts at a checkpoint inside a parked one (sub-agents that share a system prompt)

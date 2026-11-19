@@ -6318,9 +6318,11 @@ bool ArenaExpertSource::open(const std::string& pack_dir, int64_t n_layers, int6
     // #633: THE RAM BEFORE THE ALLOCATION.  On Linux the arena is an anonymous mapping that succeeds whatever the host
     // has; its pages are committed as the load writes them, so a container whose memory limit is below the arena was
     // killed by the OOM killer part-way through the load, without a message.  A hard cgroup limit below it is
-    // refused, with the numbers. Check remaining cgroup capacity too (#301), and warn if the arena fits without
-    // the recommended serving headroom. Less physical RAM available (another program, an
-    // engine still exiting) is only a warning - the OS may make room - per the recommend-not-force rule.
+    // refused, with the numbers. Check remaining cgroup capacity too, and the serving headroom: under a cgroup
+    // limit that is a refusal too (#301) - the kernel stops the group rather than handing its pages back, so a
+    // load that fits but leaves no room for the conversation is a death part-way through, not a warning. Less
+    // physical RAM available on a bare host (another program, an engine still exiting) stays a warning - the OS
+    // may make room - per the recommend-not-force rule.
     ram_warning_.clear();
     // (a shared arena, --shared-expert-arena, may already be in RAM for another engine: not checked)
     if (detail::HostMemory hm; shared_arena_file.empty() && detail::host_available_memory(hm)) {
@@ -6392,14 +6394,30 @@ bool ArenaExpertSource::open(const std::string& pack_dir, int64_t n_layers, int6
                 ram_warning_ = buf;
             }
         }
-        if (hm.available < *advised && ram_warning_.empty()) {
-            std::snprintf(buf, sizeof buf,
-                          "the expert arena needs %.2f GiB and only %.2f GiB is available: it fits without the "
-                          "recommended %.2f GiB serving headroom. Requests may need more RAM than loading; "
-                          "consider --mmap-experts with --resident-budget-gib N",
-                          (double) need / gib, (double) hm.available / gib,
-                          (double) detail::kArenaServingHeadroom / gib);
-            ram_warning_ = buf;
+        if (hm.available < *advised) {
+            if (detail::arena_cgroup_headroom_refusal(hm, *advised)) {
+                std::snprintf(buf, sizeof buf,
+                              "ArenaExpertSource: the expert arena needs %.2f GiB and this process's memory limit "
+                              "leaves %.2f GiB: that is %.2f GiB short of the recommended %.2f GiB serving headroom, "
+                              "and a cgroup limit is not reclaimed the way host RAM is, so the group is stopped by "
+                              "the OOM killer part-way through a conversation instead (#301). Run with a smaller "
+                              "arena (--mmap-experts with --resident-budget-gib N), raise the limit, or set "
+                              "STRATA_ARENA_HEADROOM_MIB=0 to load anyway",
+                              (double) need / gib, (double) hm.available / gib,
+                              (double) (*advised - hm.available) / gib,
+                              (double) detail::arena_serving_headroom() / gib);
+                err = buf;
+                return false;
+            }
+            if (ram_warning_.empty()) {
+                std::snprintf(buf, sizeof buf,
+                              "the expert arena needs %.2f GiB and only %.2f GiB is available: it fits without the "
+                              "recommended %.2f GiB serving headroom. Requests may need more RAM than loading; "
+                              "consider --mmap-experts with --resident-budget-gib N",
+                              (double) need / gib, (double) hm.available / gib,
+                              (double) detail::arena_serving_headroom() / gib);
+                ram_warning_ = buf;
+            }
         }
     }
 

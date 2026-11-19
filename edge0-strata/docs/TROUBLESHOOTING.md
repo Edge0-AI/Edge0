@@ -261,6 +261,13 @@ from 100 to 14 tok/s with only a few hundred slots too many. Use `--expert-cache
 The budget is pinned (locked) in RAM, which leaves the OS and the CPU workers little room. `STRATA_RESIDENT_PIN=0` keeps
 it pageable; a smaller budget works too.
 
+**Linux, in a container: the start is refused for the serving headroom, not for the arena (#301).**
+`ArenaExpertSource: the expert arena needs 44.30 GiB and this process's memory limit leaves 45.06 GiB: that is 1.74 GiB short of
+the recommended 2.50 GiB serving headroom` means the container's `memory.max` holds the arena but nothing else: before 0.3 the
+start went ahead and the group was OOM-killed part-way through an answer, where a cgroup cannot reclaim the pages the rest of the
+engine still needs. Use a smaller arena (`--mmap-experts --resident-budget-gib N`), raise `memory.max`, or load anyway with
+`STRATA_ARENA_HEADROOM_MIB=0`. The arena-only refusals (`needs X GiB ... is Y GiB`) stay whatever the headroom is.
+
 **Decode got slower in 0.1.40 on a 32 GB PC with `--resident-budget-gib N`, and the drive is read hard (#1194, #1116, #1085).**
 The start line "the file tier reads unbuffered" means the experts outside the RAM copy are read straight from the drive.
 0.1.40 chose that whenever the free RAM could not hold all of them; but the same few come back token after token, and
