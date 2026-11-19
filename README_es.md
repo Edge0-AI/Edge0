@@ -353,7 +353,14 @@ Abre **Edge0 Chat** en Windows o macOS (Apple Silicon). En **Models**, descarga 
            "model": "./model-skeleton.gguf", "gpu": false}
 ```
 
-y `--vision` a `"args"`. `strata-vision` no está en este repositorio: `setup.py --setup --vision yes` lo descarga, o compila `tools/vision` en un checkout de Strata. El registro dirá `images on`; envía una imagen con `/image` en el chat o con una parte `image_url` por la API de OpenAI.
+y `--vision` a `"args"`. `strata-vision` viene con el archivo del motor que descarga `setup.py --setup --vision yes`. Su código también está en este repositorio, en `edge0-strata/tools/vision/`: un proyecto CMake aparte que la compilación principal no compila, y se compila con un checkout de llama.cpp en la revisión fijada por el motor (el repositorio no incluye `third_party/llama.cpp`; un árbol donde la CMake principal lo descargó lo tiene en `build/_deps/strata_llamacpp-src`):
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+El registro dirá `images on`; envía una imagen con `/image` en el chat o con una parte `image_url` por la API de OpenAI.
 
 </details>
 

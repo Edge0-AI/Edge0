@@ -353,7 +353,14 @@ Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、**Model
            "model": "./model-skeleton.gguf", "gpu": false}
 ```
 
-さらに `"args"` に `--vision` を追加します。`strata-vision` はこのリポジトリーには含まれません。`setup.py --setup --vision yes` で取得するか、Strata のチェックアウトで `tools/vision` をビルドします。ログに `images on` と出たら、チャットで `/image`、または OpenAI API の `image_url` で画像を送れます。
+さらに `"args"` に `--vision` を追加します。`strata-vision` は `setup.py --setup --vision yes` が取得するエンジンのアーカイブに含まれています。ソースもこのリポジトリーの `edge0-strata/tools/vision/` にあります。メインのビルドがコンパイルしない独立した CMake プロジェクトで、エンジンが固定している llama.cpp のコミットのチェックアウトを使ってビルドします（リポジトリーには `third_party/llama.cpp` は含まれていません。メインの CMake に取得させたビルドツリーなら `build/_deps/strata_llamacpp-src` にあります）:
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+ログに `images on` と出たら、チャットで `/image`、または OpenAI API の `image_url` で画像を送れます。
 
 </details>
 
