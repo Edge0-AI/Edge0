@@ -1,8 +1,11 @@
 #include "edge0/diagnostics.h"
 #include "edge0/engine.h"
 #include "edge0/generation.h"
+#include "generation_json.h"
 #include <iomanip>
+#include <locale>
 #include <ostream>
+#include <sstream>
 namespace cli {
 void json_string(std::ostream& out,const std::string& text) {
     out<<'"';
@@ -21,6 +24,34 @@ const char* configuration_source(edge0::ConfigurationSource source) {
     case edge0::ConfigurationSource::request:return "request";
     }
     return "unknown";
+}
+std::string generation_json(const edge0::GenerationConfiguration& c) {
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::boolalpha << std::setprecision(17)
+        << "{\"temperature\":" << c.temperature << ",\"top_k\":" << c.top_k << ",\"top_p\":" << c.top_p
+        << ",\"repetition_penalty\":" << c.repetition_penalty << ",\"max_tokens\":" << c.max_tokens
+        << ",\"thinking\":" << c.thinking << ",\"presence_penalty\":" << c.presence_penalty
+        << ",\"frequency_penalty\":" << c.frequency_penalty << ",\"seed\":";
+    if (c.seed) out << *c.seed; else out << "null";
+    out << ",\"stop\":[";
+    bool first = true;
+    for (const auto& stop : c.stop) {
+        out << (first ? "" : ","); first = false; json_string(out, stop);
+    }
+    out << "],\"logit_bias\":{"; first = true;
+    for (const auto& item : c.logit_bias) {
+        out << (first ? "" : ","); first = false;
+        json_string(out, std::to_string(item.first)); out << ':' << item.second;
+    }
+    out << "},\"logprobs\":" << c.logprobs << ",\"top_logprobs\":" << c.top_logprobs << ",\"sources\":{";
+    first = true;
+    for (const auto& item : c.sources) {
+        out << (first ? "" : ","); first = false;
+        json_string(out, item.first); out << ':'; json_string(out, configuration_source(item.second));
+    }
+    out << "}}";
+    return out.str();
 }
 void load_configuration(std::ostream& out,const edge0::LoadConfiguration& c) {
     out<<"{\"directory\":";json_string(out,c.directory);
