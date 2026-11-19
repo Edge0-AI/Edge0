@@ -1,5 +1,5 @@
 use super::{
-    accounted_bytes, file_url, hash_file, huggingface_model_url, huggingface_tree_url,
+    accounted_bytes, file_url, hash_file_until, huggingface_model_url, huggingface_tree_url,
     modelscope_list_url, next_action, parse_huggingface_sha, parse_huggingface_tree,
     parse_modelscope_files, part_path, safe_relative, ListedFile, NextAction, Source,
     CHECKSUM_REDOWNLOADS, FILE_CONCURRENCY, NETWORK_RETRIES, PROBE_TIMEOUT, RETRY_DELAYS_SECS,
@@ -11,7 +11,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, Mutex,
     },
     thread,
@@ -142,6 +142,8 @@ pub struct RunSpec {
     pub inspect: Option<Arc<dyn Fn(&Path) -> Result<(), String> + Send + Sync>>,
     pub on_checking: Option<Arc<dyn Fn() + Send + Sync>>,
     pub progress: Option<Arc<dyn Fn(u64) + Send + Sync>>,
+    /// How many files are being checksummed right now (files already on disk, or just transferred).
+    pub hashing: Option<Arc<AtomicUsize>>,
 }
 pub enum Outcome {
     Completed,
@@ -166,7 +168,11 @@ pub fn run(
     }
     let mut verified = restore_verified(spec);
     if spec.recheck {
-        verified = recheck_verified(spec, &verified);
+        verified = match recheck_verified(spec, &verified, cancel) {
+            Ok(verified) => verified,
+            // Paused while checking: the saved state is left as it was, so nothing is lost.
+            Err(_) => return Outcome::Paused,
+        };
     }
     verified.retain(|path| {
         spec.files.iter().any(|file| &file.path == path) && spec.partial_dir.join(path).is_file()
@@ -267,7 +273,7 @@ fn download_one(
         if cancel.load(Ordering::SeqCst) {
             return Err(Stop::Paused);
         }
-        let verified = dest.is_file() && super::checksum_matches(&dest, file);
+        let verified = dest.is_file() && file_matches(spec, &dest, file, cancel)?;
         let part_len = fs::metadata(&part).ok().map(|meta| meta.len());
         let offset = match next_action(verified, part_len, file.size) {
             NextAction::Skip => return Ok(()),
@@ -281,7 +287,7 @@ fn download_one(
                         .and_then(|handle| handle.set_len(file.size))
                         .map_err(|error| Stop::Failed(error.to_string()))?;
                 }
-                if hash_matches(&part, file) {
+                if file_matches(spec, &part, file, cancel)? {
                     promote(&part, &dest)?;
                     return Ok(());
                 }
@@ -299,7 +305,7 @@ fn download_one(
         match transfer(spec, transport, clock, cancel, file, &part, offset) {
             Err(stop) => return Err(stop),
             Ok(()) => {
-                if hash_matches(&part, file) {
+                if file_matches(spec, &part, file, cancel)? {
                     promote(&part, &dest)?;
                     return Ok(());
                 }
@@ -442,9 +448,40 @@ fn write_body(
     }
     Ok(())
 }
-fn hash_matches(path: &Path, file: &ListedFile) -> bool {
-    hash_file(path, file.algorithm).is_ok_and(|sum| sum.eq_ignore_ascii_case(&file.checksum))
-        && fs::metadata(path).is_ok_and(|meta| meta.len() == file.size)
+/// Counts one file in `RunSpec::hashing` while it is checksummed.
+struct Hashing<'a>(Option<&'a AtomicUsize>);
+impl<'a> Hashing<'a> {
+    fn start(count: Option<&'a AtomicUsize>) -> Self {
+        if let Some(count) = count {
+            count.fetch_add(1, Ordering::SeqCst);
+        }
+        Hashing(count)
+    }
+}
+impl Drop for Hashing<'_> {
+    fn drop(&mut self) {
+        if let Some(count) = self.0 {
+            count.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+}
+/// Whether `path` has the listed size and checksum. A pause while it hashes is `Stop::Paused`, never a mismatch,
+/// so the file is kept.
+fn file_matches(
+    spec: &RunSpec,
+    path: &Path,
+    file: &ListedFile,
+    cancel: &AtomicBool,
+) -> Result<bool, Stop> {
+    if !fs::metadata(path).is_ok_and(|meta| meta.len() == file.size) {
+        return Ok(false);
+    }
+    let _hashing = Hashing::start(spec.hashing.as_deref());
+    match hash_file_until(path, file.algorithm, cancel) {
+        Ok(Some(sum)) => Ok(sum.eq_ignore_ascii_case(&file.checksum)),
+        Ok(None) => Err(Stop::Paused),
+        Err(_) => Ok(false),
+    }
 }
 fn promote(part: &Path, dest: &Path) -> Result<(), Stop> {
     if dest.exists() {
@@ -484,21 +521,25 @@ fn restore_verified(spec: &RunSpec) -> Vec<String> {
         vec![]
     }
 }
-fn recheck_verified(spec: &RunSpec, verified: &[String]) -> Vec<String> {
+fn recheck_verified(
+    spec: &RunSpec,
+    verified: &[String],
+    cancel: &AtomicBool,
+) -> Result<Vec<String>, Stop> {
     let mut keep = vec![];
     for path in verified {
         let Some(file) = spec.files.iter().find(|file| &file.path == path) else {
             continue;
         };
         let dest = spec.partial_dir.join(path);
-        if super::checksum_matches(&dest, file) {
+        if file_matches(spec, &dest, file, cancel)? {
             keep.push(path.clone());
         } else {
             let _ = fs::remove_file(&dest);
             let _ = fs::remove_file(part_path(&dest));
         }
     }
-    keep
+    Ok(keep)
 }
 fn write_state(spec: &RunSpec, verified: &[String]) -> Result<(), String> {
     let state = StateFile {
@@ -722,6 +763,7 @@ mod tests {
             inspect: Some(Arc::new(|_| Ok(()))),
             on_checking: None,
             progress: None,
+            hashing: None,
         }
     }
     fn workspace(name: &str) -> PathBuf {
@@ -1448,6 +1490,82 @@ mod tests {
         assert!(job.final_dir.join("a.bin").is_file());
         assert!(!job.final_dir.join(STATE_FILE).exists());
         assert!(!job.partial_dir.exists());
+        cleanup(&root);
+    }
+    #[test]
+    fn a_pause_while_rechecking_keeps_every_file_and_the_saved_state() {
+        let clock = ManualClock {
+            now: Mutex::new(Duration::ZERO),
+            slept: Mutex::new(vec![]),
+        };
+        let root = workspace("recheck-pause");
+        let good = b"good-bytes";
+        let stale = b"stale";
+        let mut job = spec(
+            &root,
+            vec![file_of("good.bin", good), file_of("stale.bin", b"fresh")],
+        );
+        job.recheck = true;
+        job.source = Source::HuggingFace;
+        fs::create_dir_all(&job.partial_dir).unwrap();
+        fs::write(job.partial_dir.join("good.bin"), good).unwrap();
+        // A rechecked mismatch is deleted; paused before its check, it must stay.
+        fs::write(job.partial_dir.join("stale.bin"), stale).unwrap();
+        let previous = serde_json::to_vec(&StateFile {
+            source: Source::ModelScope,
+            version: "master".into(),
+            files: vec![],
+            verified: vec!["good.bin".into(), "stale.bin".into()],
+        })
+        .unwrap();
+        fs::write(job.partial_dir.join(STATE_FILE), &previous).unwrap();
+        let transport = QueueTransport {
+            steps: Mutex::new(Default::default()),
+            opens: Mutex::new(vec![]),
+            timeouts: Mutex::new(vec![]),
+            gets: Mutex::new(vec![]),
+            clock: None,
+            delays: vec![],
+        };
+        assert!(matches!(
+            run(&job, &transport, &clock, &AtomicBool::new(true)),
+            Outcome::Paused
+        ));
+        assert_eq!(fs::read(job.partial_dir.join("good.bin")).unwrap(), good);
+        assert_eq!(fs::read(job.partial_dir.join("stale.bin")).unwrap(), stale);
+        assert_eq!(
+            fs::read(job.partial_dir.join(STATE_FILE)).unwrap(),
+            previous
+        );
+        assert!(transport.opens.lock().unwrap().is_empty());
+        cleanup(&root);
+    }
+    #[test]
+    fn a_pause_while_hashing_is_not_a_mismatch_and_the_hashing_count_returns_to_zero() {
+        let root = workspace("hash-pause");
+        let bytes = b"some-bytes";
+        let mut job = spec(&root, vec![file_of("a.bin", bytes)]);
+        let count = Arc::new(AtomicUsize::new(0));
+        job.hashing = Some(count.clone());
+        fs::create_dir_all(&root).unwrap();
+        let path = root.join("a.bin");
+        fs::write(&path, bytes).unwrap();
+        let file = &job.files[0];
+        assert!(matches!(
+            file_matches(&job, &path, file, &AtomicBool::new(false)),
+            Ok(true)
+        ));
+        assert!(matches!(
+            file_matches(&job, &path, file, &AtomicBool::new(true)),
+            Err(Stop::Paused)
+        ));
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        assert_eq!(count.load(Ordering::SeqCst), 0);
+        {
+            let _hashing = Hashing::start(Some(&count));
+            assert_eq!(count.load(Ordering::SeqCst), 1);
+        }
+        assert_eq!(count.load(Ordering::SeqCst), 0);
         cleanup(&root);
     }
 }

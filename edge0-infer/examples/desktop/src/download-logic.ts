@@ -18,6 +18,8 @@ export interface JobView {
   total_bytes: number;
   speed_bps: number;
   eta_seconds: number | null;
+  /** True while files already on disk (or just transferred) are being checksummed. */
+  checking_files?: boolean;
   source: string;
   error: string;
   directory: string;

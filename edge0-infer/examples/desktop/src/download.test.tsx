@@ -54,6 +54,13 @@ it('shows downloading, checking, paused, failed, and on this machine', () => {
   expect(runningMarkup).toContain('41.2 of 106.3 GB · 39% · 48 MB/s · about 23 min left · from ModelScope');
   expect(runningMarkup).toContain('Downloading');
   expect(runningMarkup).toContain('Pause</button>');
+  expect(runningMarkup).not.toContain('Checking files already on disk');
+  const checkingMarkup = page(actions([
+    job({ id: model.id, phase: 'running', done_bytes: 41.2e9, total_bytes: model.bytes, speed_bps: 0, eta_seconds: null, checking_files: true }),
+  ]));
+  expect(checkingMarkup).toContain('Checking files already on disk… Large files can take a few minutes.');
+  expect(checkingMarkup).not.toContain('41.2 of 106.3 GB');
+  expect(checkingMarkup).toContain('Pause</button>');
   expect(runningMarkup).toContain('Downloaded files are kept; Resume continues where it stopped.');
   expect(runningMarkup).toContain('Paused');
   expect(runningMarkup).toContain(failed);
