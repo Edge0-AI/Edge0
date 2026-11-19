@@ -12,7 +12,8 @@ fn main() {
     if args.get(1).map(String::as_str) == Some("inspect") {
         if model == "missing" { eprintln!("Required asset is missing"); std::process::exit(1); }
         if delegated {
-            println!("{{\"adapter\":\"{architecture}\",\"delegated\":true,\"engine\":\"edge0-strata\",\"ok\":true,\"files\":[{{\"bytes\":52}},{{\"bytes\":7}}]}}");
+            let model_name = found.map(|(name, _)| *name).unwrap_or("");
+            println!("{{\"adapter\":\"{architecture}\",\"model_name\":\"{model_name}\",\"delegated\":true,\"engine\":\"edge0-strata\",\"ok\":true,\"files\":[{{\"bytes\":52}},{{\"bytes\":7}}]}}");
             return;
         }
         println!("{{\"adapter\":\"edge0_fixture\",\"files\":[{{\"bytes\":12}},{{\"bytes\":34}}]}}"); return;

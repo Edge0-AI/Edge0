@@ -22,7 +22,7 @@ namespace delegate {
 using Json = nlohmann::ordered_json;
 
 // The launch contract version this edge0-infer understands (edge0-strata/edge0/CONTRACT).
-constexpr int supported_contract = 4;
+constexpr int supported_contract = 5;
 
 struct RegisteredFile {
     std::string path;       // relative to the model directory
@@ -37,6 +37,8 @@ struct Registration {
     std::vector<std::pair<std::string, std::vector<std::string>>> options;  // name, allowed values (first = default)
     bool thinking = false, thinking_default = false;
     std::map<std::string, std::string> names;  // model_name -> expert format
+    // Allowed values for one device name. A device that is absent uses `options`. The first value is the default.
+    std::map<std::string, std::vector<std::pair<std::string, std::vector<std::string>>>> device_options;
 };
 const std::vector<Registration>& registry();
 
@@ -53,29 +55,47 @@ struct FileState {
 struct Match {
     const Registration* registration = nullptr;
     std::vector<FileState> files;
+    std::string model_name;  // the model.json value that selected this registration
     std::string experts;  // selected by model_name, never a user option
     // Required files (for the given options) that are absent.
     std::vector<std::string> missing(const std::map<std::string, std::string>& options) const;
     // Inspect requires the selected configuration, using the same defaults as serve for omitted options.
-    bool complete(const std::map<std::string, std::string>& selected = {}) const;
+    // `device` is "metal" or "cuda:<n>"; the default is the CUDA device, so a caller that has not chosen a platform
+    // keeps the CUDA rules. inspect passes the host's default device.
+    bool complete(const std::map<std::string, std::string>& selected = {}, const std::string& device = "cuda:0") const;
     // Option choices ("<option>=<value>") that together make an incomplete configuration complete:
     // for each option whose selected value has missing files, the first other value whose files
     // are all present. Empty when any missing file is required by every configuration or an
     // involved option has no complete value, since no option choice can supply it.
-    std::vector<std::string> alternatives(const std::map<std::string, std::string>& options) const;
+    std::vector<std::string> alternatives(const std::map<std::string, std::string>& options, const std::string& device = "cuda:0") const;
 };
+// Why `device` rejects this match, or empty when it does not. Only "metal" rejects a configuration;
+// the text is the configuration error serve and chat throw before starting a process.
+std::string metal_rejection(const Match&, const std::string& device, const std::map<std::string, std::string>& given);
 // A match when model.json has no format_version (not an asset manifest) and names a registered model; otherwise the native library decides.
 std::optional<Match> detect(const std::filesystem::path& directory);
 // The directory named by --model, if any.
 std::optional<std::string> model_argument(int argc, char** argv);
 Json inspect_json(const Match&, const std::filesystem::path& directory,
-                  const std::map<std::string, std::string>& selected = {});
+                  const std::map<std::string, std::string>& selected = {}, const std::string& device = "cuda:0");
+// The decision inspect prints. A configuration error (unknown option, illegal value) is thrown,
+// so the command can exit 2 without JSON. An unsupported Metal configuration and a missing file
+// are code 1 with a complete report and the stderr text in message.
+struct InspectResult {
+    Json report;
+    std::string message;
+    int code = 0;
+};
+InspectResult inspect_report(const Match&, const std::filesystem::path& directory,
+                             const std::map<std::string, std::string>& given, const std::string& device);
 
 // Options shared by serve and chat in delegate mode.
-enum class Platform { posix, windows };
+enum class Platform { posix, windows, macos };
 constexpr Platform host_platform() {
-#ifdef _WIN32
+#if defined(_WIN32)
     return Platform::windows;
+#elif defined(__APPLE__)
+    return Platform::macos;
 #else
     return Platform::posix;
 #endif
@@ -88,28 +108,47 @@ struct LaunchOptions {
     Platform platform = host_platform();
     std::vector<std::filesystem::path> lib_dirs;
     std::vector<std::string> warnings;
+    std::string device = "cuda:0";  // "metal" or "cuda:<n>", the name /status and the launch log use
     int gpu = 0;
     std::optional<std::int64_t> context;
     std::map<std::string, std::string> model_options;  // validated and completed with defaults
     std::vector<std::string> strata_args;  // engine command-line words appended after the template's args
     double ready_timeout = 1800;
 };
-int parse_device(const std::string& value);  // "cuda" or "cuda:<n>" -> n; otherwise ConfigError
-// Validates names and values against the registration and fills defaults.
-std::map<std::string, std::string> resolve_options(const Registration&, const std::map<std::string, std::string>& given);
+struct ParsedDevice {
+    std::string name;  // "metal" or "cuda:<n>"
+    int gpu = 0;
+};
+// macOS accepts only "metal". Every other platform accepts "cuda" and "cuda:<n>".
+ParsedDevice parse_device(const std::string& value, Platform platform = Platform::posix);
+std::string default_device(Platform platform);  // macos: metal; otherwise cuda:0
+// Validates names and values against the registration (or that device's list) and fills defaults.
+std::map<std::string, std::string> resolve_options(const Registration&, const std::map<std::string, std::string>& given,
+                                                   const std::string& device = "cuda:0");
 // The engine directory: --strata-dir, then EDGE0_STRATA_DIR, then an edge0-strata/ beside an ancestor of the executable.
 std::filesystem::path locate_engine(const std::optional<std::string>& given, const std::filesystem::path& executable);
 std::filesystem::path executable_path(const std::string& argv0);
 // Reads <engine>/edge0/CONTRACT; throws ConfigError naming both versions on a mismatch.
 void check_contract(const std::filesystem::path& engine);
+// One template prepare step after placeholder expansion. A relative `script` is resolved under the engine directory.
+struct PrepareStep {
+    std::filesystem::path output;
+    std::filesystem::path script;
+    std::vector<std::string> args;
+};
 // Expands the registration's template into the external engine's config. options.strata_args are appended to
 // its args last; one equal to --max-context, or an option ("--...") the expanded template already sets, is a ConfigError.
-Json expand_template(const Json& config_template, const Registration&, const LaunchOptions&, Platform);
-Json load_template(const std::filesystem::path& engine, const Registration&);
+// A `prepare` array is expanded the same way. When `prepare` is set, it receives one step per entry; either way
+// the field is removed from the returned config, which is what server.py receives.
+Json expand_template(const Json& config_template, const Registration&, const LaunchOptions&, Platform,
+                     std::vector<PrepareStep>* prepare = nullptr);
+// `device` "metal" loads <template stem>-metal.json beside the registered template.
+Json load_template(const std::filesystem::path& engine, const Registration&, const std::string& device = "cuda:0");
 
 // Command-line arguments shared by serve and chat in delegate mode.
 struct CommonArgs {
-    std::string model, device = "cuda:0", alias;
+    std::string model, alias;
+    std::optional<std::string> device;  // unset: the platform default (metal on macOS, cuda:0 elsewhere)
     std::optional<std::string> prefill_device, strata_dir, python;
     std::map<std::string, std::string> model_options;
     std::optional<std::int64_t> context;
@@ -186,7 +225,7 @@ std::unique_ptr<Launch> launch(const Registration&, const LaunchOptions&, const 
 int refuse(const std::string& command, const Match&);
 int serve(int argc, char** argv, const Match&);
 int chat(int argc, char** argv, const Match&);
-int inspect(int argc, char** argv, const Match&);
+int inspect(int argc, char** argv, const Match&, Platform platform = host_platform());
 // Dispatches a delegated directory; returns nothing when the directory is not delegated.
 std::optional<int> dispatch(const std::string& command, int argc, char** argv);
 }

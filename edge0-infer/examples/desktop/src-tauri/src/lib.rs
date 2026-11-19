@@ -1,3 +1,4 @@
+mod download;
 mod platform;
 mod service;
 mod storage;
@@ -86,6 +87,59 @@ async fn choose_path(_app: tauri::AppHandle, directory: bool) -> Result<Option<S
         }
     }).await.map_err(|e| e.to_string())?
 }
+// The download commands can wait on the network or on removing a large folder. Run them off the main thread
+// (where a synchronous command runs on macOS) so the window stays responsive and can show "Measuring".
+async fn blocking<T: Send + 'static>(
+    work: impl FnOnce() -> T + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|e| e.to_string())
+}
+#[tauri::command]
+async fn measure_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+) -> Result<download::MeasureReport, String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.measure(&id)).await?
+}
+#[tauri::command]
+async fn start_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+    source: String,
+    directory: String,
+) -> Result<(), String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.start(&id, &source, &directory)).await?
+}
+#[tauri::command]
+async fn pause_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+) -> Result<(), String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.pause(&id)).await?
+}
+#[tauri::command]
+async fn delete_download(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+    id: String,
+) -> Result<(), String> {
+    let hub = hub.inner().clone();
+    blocking(move || hub.delete(&id)).await?
+}
+#[tauri::command]
+fn download_snapshot(
+    hub: tauri::State<'_, Arc<download::DownloadHub>>,
+) -> Result<download::Snapshot, String> {
+    hub.snapshot()
+}
+#[tauri::command]
+async fn disk_free(path: String) -> Result<download::DiskReport, String> {
+    blocking(move || download::DownloadHub::disk(&path)).await
+}
 #[tauri::command]
 async fn load_settings(state: tauri::State<'_, Arc<Manager>>) -> Result<Settings, String> {
     let manager = state.inner().clone();
@@ -164,6 +218,7 @@ pub fn run() {
             std::fs::create_dir_all(&home)?;
             std::fs::create_dir_all(&config)?;
             let manager = Arc::new(Manager::new(config.clone())?);
+            let downloads = Arc::new(download::DownloadHub::new(manager.clone()));
             // EDGE0_AUTOLOAD=1 loads the first configured asset directory shortly after start-up, without the UI,
             // so a load can be run unattended; with EDGE0_DEBUG_LOG set, each step of it is written to that file.
             if std::env::var("EDGE0_AUTOLOAD").as_deref() == Ok("1") {
@@ -183,6 +238,7 @@ pub fn run() {
                 });
             }
             app.manage(manager);
+            app.manage(downloads);
             app.manage(storage::Store::new(config, home));
             Ok(())
         })
@@ -201,7 +257,13 @@ pub fn run() {
             read_api_token,
             write_api_token,
             engine_info,
-            choose_path
+            choose_path,
+            measure_download,
+            start_download,
+            pause_download,
+            delete_download,
+            download_snapshot,
+            disk_free
         ])
         .build(tauri::generate_context!())
         .expect("Failed to initialize Edge0 Chat");
@@ -211,6 +273,9 @@ pub fn run() {
         // The event loop is already closing, so this fallback must join cleanup
         // synchronously instead of dispatching another event-loop exit request.
         if matches!(event, tauri::RunEvent::Exit) {
+            if let Some(downloads) = handle.try_state::<Arc<download::DownloadHub>>() {
+                downloads.pause_all();
+            }
             let _ = handle.state::<Arc<Manager>>().shutdown();
             shutdown.store(2, Ordering::SeqCst);
             return;
@@ -227,9 +292,11 @@ pub fn run() {
             api.prevent_exit();
             let shutdown = shutdown.clone();
             let manager = handle.state::<Arc<Manager>>().inner().clone();
+            let downloads = handle.state::<Arc<download::DownloadHub>>().inner().clone();
             manager.begin_shutdown();
             let handle = handle.clone();
             std::thread::spawn(move || {
+                downloads.pause_all();
                 let _ = manager.stop();
                 shutdown.store(2, Ordering::SeqCst);
                 handle.exit(0);

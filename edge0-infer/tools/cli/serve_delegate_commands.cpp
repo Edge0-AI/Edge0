@@ -9,7 +9,7 @@ int refuse(const std::string& command, const Match& match) {
     return 2;
 }
 
-int inspect(int argc, char** argv, const Match& match) try {
+int inspect(int argc, char** argv, const Match& match, Platform platform) try {
     bool as_json = false;
     std::string directory;
     CommonArgs options;
@@ -26,30 +26,18 @@ int inspect(int argc, char** argv, const Match& match) try {
             return 2;
         }
     }
-    options.model_options = resolve_options(*match.registration, options.model_options);
-    const auto report = inspect_json(match, directory, options.model_options);
-    if (as_json) std::cout << report.dump() << '\n';
+    const auto result = inspect_report(match, directory, options.model_options, default_device(platform));
+    if (as_json) std::cout << result.report.dump() << '\n';
     else {
         std::cout << "adapter: " << match.registration->id << "\ndelegated: " << match.registration->engine << "\nok: "
-                  << (report["ok"].get<bool>() ? "true" : "false") << '\n';
-        for (const auto& file : report["files"])
+                  << (result.report["ok"].get<bool>() ? "true" : "false") << '\n';
+        for (const auto& file : result.report["files"])
             std::cout << "file." << file["filename"].get<std::string>() << ": " << (file["exists"].get<bool>() ? "present" : "missing")
                       << " bytes=" << file["bytes"].get<std::uintmax_t>() << " required=" << file["required"].get<std::string>() << '\n';
     }
-    if (!report["ok"].get<bool>()) {
-        std::cerr << "asset_invalid: " << match.registration->id << " directory is incomplete; missing: ";
-        const auto missing = match.missing(options.model_options);
-        for (std::size_t i = 0; i < missing.size(); ++i) std::cerr << (i ? ", " : "") << missing[i];
-        std::cerr << '.';
-        const auto alternatives = match.alternatives(options.model_options);
-        if (!alternatives.empty()) {
-            // "instead": the user may already have given these options explicitly, and repeating one is an error.
-            std::cerr << " To use another installed format, use";
-            for (const auto& choice : alternatives) std::cerr << " --model-option " << choice;
-            std::cerr << " instead.";
-        }
-        std::cerr << '\n';
-        return 1;
+    if (result.code != 0) {
+        std::cerr << result.message << '\n';
+        return result.code;
     }
     return 0;
 } catch (const ConfigError& error) {

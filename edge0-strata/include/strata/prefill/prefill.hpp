@@ -190,6 +190,9 @@ public:
     /// A session-level shared latent D/U pair (allocated and uploaded elsewhere, e.g. the engine): the init
     /// keeps no copy of its own and skips its upload; the prompt path only reads the pair.  Set before the first `run`.
     void set_shared_latent(uint8_t* d, uint8_t* u) { strata::core::latent_shared_d() = d; strata::core::latent_shared_u() = u; }
+    /// A layer split: this stage's OWN D/U pair, on this stage's device.  Like set_shared_latent but per-instance, so
+    /// stage k never dereferences stage 0's device pointers.  Set before init; the pair stays owned by the caller.
+    void set_latent_dev(uint8_t* d, uint8_t* u);
 
     /// Plan v0.3 P6: called after every chunk with the chunk's final multi-stream residual rows (device,
     /// T x hc*n_embd, valid until the next chunk) and the chunk's first position; the MTP draft layer builds its

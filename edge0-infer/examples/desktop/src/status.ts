@@ -13,7 +13,7 @@ export interface EngineStatus {
   memory: { ledger: { limit_bytes: number; current_bytes: number; peak_bytes: number; by_purpose: { resident_weights: number; experts: number; session_state: number; workspace: number; transfer: number; staging: number; metadata: number }; by_device: Record<string, DeviceMemory> }; physical: Measurement; resident: Measurement };
   system: { memory: { total: { bytes: number | null }; available: { bytes: number | null } }; thermal: { state: string | null; source: string; reason: string } };
 }
-export interface Inspection { path: string; location?: string; ok: boolean; detail: string; model_id: string | null; total_bytes?: number | null; file_count?: number | null; }
+export interface Inspection { path: string; location?: string; ok: boolean; detail: string; model_id: string | null; total_bytes?: number | null; file_count?: number | null; model_name?: string | null; }
 export interface Info { version?: string; commit?: string; devices: { backend: string; name: string; description: string }[]; }
 export function parseInfo(text: string): Info {
   const read = (key: string) => text.split('\n').find(line => line.startsWith(key + ': '))?.slice(key.length + 2);

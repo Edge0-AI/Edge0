@@ -10,10 +10,12 @@ _common = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_common)
 cmake_commands, files = _common.cmake_commands, _common.files
 
-# Windows console/stdio setup and delegated process management outside src/platform/.
-# Only these files, and only these headers.
+# Platform headers used by delegated process management, outside src/platform/.
+# tools/cli/serve_delegate_process.cpp: Windows process APIs, and on macOS the
+# header that locates this executable so a sibling edge0-strata/ can be found
+# when the program is started through PATH. Only these files, and only these headers.
 CONSOLE_SETUP = {
-    "tools/cli/serve_delegate_process.cpp": {"windows.h"},
+    "tools/cli/serve_delegate_process.cpp": {"windows.h", "mach-o/dyld.h", "spawn.h", "unistd.h", "fcntl.h", "sys/wait.h"},
     "tools/cli/main.cpp": {"windows.h", "io.h", "fcntl.h"},
     "tests/unit/app/template_tools_probe.cpp": {"io.h", "fcntl.h"},
 }

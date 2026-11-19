@@ -27,16 +27,37 @@ TEMPLATE = {
 }
 # The desktop App's readiness rule (examples/desktop/src-tauri/src/service.rs, ready_url).
 APP_READY = re.compile(r'^Listening: http://(?:127\.0\.0\.1|0\.0\.0\.0):(\d+) model=(\S.*)$')
+# Only the Metal template declares this. The fake tools/mtp_gguf.py writes the output unless FAKE_MTP_MODE says otherwise.
+PREPARE = [{
+    'output': '${MODEL_DIR}/mtp-q2_0.gguf',
+    'script': 'tools/mtp_gguf.py',
+    'args': ['--rt', '${MODEL_DIR}/mtp', '--out', '${MODEL_DIR}/mtp-q2_0.gguf'],
+}]
 
 
-def make_engine(root, contract='4'):
+def write_templates(engine, body):
+    """CUDA templates as given; Metal templates are the same body plus the prepare step."""
+    models = Path(engine) / 'edge0' / 'models'
+    models.mkdir(parents=True, exist_ok=True)
+    metal = dict(body)
+    metal['prepare'] = PREPARE
+    text = json.dumps(body, indent=1)
+    metal_text = json.dumps(metal, indent=1)
+    for name in ('edge0-145b.json', 'edge0-120b.json'):
+        (models / name).write_text(text)
+        (models / name.replace('.json', '-metal.json')).write_text(metal_text)
+
+
+def make_engine(root, contract='5'):
+    from fake_strata import MTP_SCRIPT
     engine = Path(root) / 'edge0-strata'
     (engine / 'serve').mkdir(parents=True)
-    (engine / 'edge0' / 'models').mkdir(parents=True)
+    (engine / 'tools').mkdir(parents=True)
     shutil.copy(HERE / 'fake_strata.py', engine / 'serve' / 'server.py')
+    (engine / 'tools' / 'mtp_gguf.py').write_text(MTP_SCRIPT)
+    (engine / 'edge0').mkdir(parents=True)
     (engine / 'edge0' / 'CONTRACT').write_text(contract + '\n')
-    (engine / 'edge0' / 'models' / 'edge0-145b.json').write_text(json.dumps(TEMPLATE, indent=1))
-    (engine / 'edge0' / 'models' / 'edge0-120b.json').write_text(json.dumps(TEMPLATE, indent=1))
+    write_templates(engine, TEMPLATE)
     return engine
 
 

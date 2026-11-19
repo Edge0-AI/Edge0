@@ -1268,17 +1268,16 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
     if (h_plan_err_ != nullptr) *(volatile uint32_t*) h_plan_err_ = 0;
     if (hits.h_res != nullptr && hits.d_res != nullptr && hits.cache_base != nullptr) {
         const char* v_ar = std::getenv("STRATA_VERIFY_ALL_RESIDENT");
-#if defined(STRATA_CPU_ARM64)
-        // Windows on ARM64: this all-resident (zero-doorbell) path hangs the first decode window - measured here
-        // with the q3k l1280 pack, every expert resident: "verify window: 6 tokens at position 0, host at layer
-        // step 1, the GPU rang 0", no progress for 85 s, then the watchdog's 0xC0000409.  Layer 1 was reached and
-        // never returned; with STRATA_VERIFY_ALL_RESIDENT=0 the same request answers in 0.8 s.  A 24 GB card never
-        // reaches this path (its experts do not all fit), which is why the Linux validation passed.  Opt-in here
-        // until the path is fixed, so the default cannot take it.
+        // This all-resident (zero-doorbell) path hangs the first decode window wherever every expert fits:
+        //  - Windows on ARM64 (RTX Spark N1X), q3k l1280 pack: "verify window: 6 tokens at position 0, host at
+        //    layer step 1, the GPU rang 0", no progress for 85 s, then the watchdog's 0xC0000409.  Layer 1 was
+        //    reached and never returned; with STRATA_VERIFY_ALL_RESIDENT=0 the same request answers in 0.8 s.
+        //  - Linux x86-64, RTX PRO 6000 Blackwell 96 GB (sm_120), 145B NVFP4 with --expert-cache auto (24576 of
+        //    24576 experts): the same stall report on the first request, then exit -6 (#200).  With 24000 slots
+        //    the path is not taken and the request answers normally.
+        // A 24 GB card never reaches this path (its experts do not all fit), which is why the validation passed.
+        // Opt-in on every platform until the path is fixed, so the default cannot take it.
         const bool ar_enabled = v_ar != nullptr && std::atoi(v_ar) != 0;
-#else
-        const bool ar_enabled = v_ar == nullptr || std::atoi(v_ar) != 0;
-#endif
         if (ar_enabled) {
             bool all_ok = true;
             for (int64_t l = lb_; l < le_ && all_ok; ++l) {
@@ -2883,6 +2882,7 @@ bool Verifier::capture(int T, std::string& err) {
         err = std::string("verify: end capture: ") + cudaGetErrorString(ce);
         return false;
     }
+#if !defined(STRATA_GPU_METAL)
     if (graph) {   // K0: dump node order (unconditional — env was not reaching the engine) (D2H / wait_flag / H2D / kernel)
         size_t nn = 0;
         if (cudaGraphGetNodes(graph, nullptr, &nn) == cudaSuccess && nn > 0) {
@@ -2909,6 +2909,7 @@ bool Verifier::capture(int T, std::string& err) {
             }
         }
     }
+#endif
 #if defined(STRATA_USE_HIP)   // 143-amdk: the same listing on HIP (kernel names by hipKernelNameRefByPtr); STRATA_VERIFY_NODES=2 also lists the first nodes in graph order
     if (std::getenv("STRATA_VERIFY_NODES") != nullptr) {
         size_t nn = 0;
@@ -3551,7 +3552,9 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         set_plan_slot(grp);
         const int tb = gtb[grp], n = gte[grp] - gtb[grp];
         progress_at("verify window: the CPU experts of layer", l);
-        if (remote_opt_) remote_opt_->begin(h_w_ + (size_t) tb * ss.k, tb, n);
+        // #233: not on a latent pack - its helpers return q8_1 hq rows scattered by the host, and the
+        // opt's accumulate-only finish would swallow them (the window then read another pass's rows)
+        if (remote_opt_ && !latent_) remote_opt_->begin(h_w_ + (size_t) tb * ss.k, tb, n);
         if (pool != nullptr) {
             strata::core::latent_xl_current() = h_latxlq_;
             strata::core::latent_xlseq_current() = h_xlseq_;
@@ -4785,7 +4788,7 @@ bool Verifier::run_slot_rows(const int* rows, int S, const int32_t* tokens, cons
         progress_at("verify batch: the CPU experts of layer", l);
         // The recorded graph consumes the helper mask and weighted sum just as
         // the solo graph does. Reset both and supply this layer's routing weights.
-        if (remote_opt_) remote_opt_->begin(h_w_, 0, S);
+        if (remote_opt_ && !latent_) remote_opt_->begin(h_w_, 0, S);
         strata::core::latent_xl_current() = h_latxlq_;
         strata::core::latent_xlseq_current() = h_xlseq_;
         strata::core::latent_act0_current() = m_latact0_;
@@ -4938,7 +4941,7 @@ int Verifier::batch_serve(PoolMultiFn pool, void* user) {
         const Clock::time_point b = Clock::now();
         cur_layer_ = want - 1;
         set_plan_slot(0);
-        if (remote_opt_) remote_opt_->begin(h_w_, 0, S);
+        if (remote_opt_ && !latent_) remote_opt_->begin(h_w_, 0, S);
         if (pool != nullptr) {
             strata::core::latent_xl_current() = h_latxlq_;
             strata::core::latent_xlseq_current() = h_xlseq_;

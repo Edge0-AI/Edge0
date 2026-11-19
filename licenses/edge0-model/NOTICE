@@ -1,0 +1,49 @@
+Edge0 Community Model License — third-party and scope notice
+Release notice, 12 November 2026.
+
+Edge0-specific rights
+  Licensor: Edge0, only for rights it owns or is authorized to license.
+  Commercial contact: info@edge0.ai
+  Only the Edge0-specific contributions described in release-scope.json,
+  insofar as Edge0 owns or is authorized to license them, are designated
+  under the accompanying LICENSE. No claim is made here that the
+  entire model, every weight, or a mechanical conversion belongs to Edge0.
+
+Qwen base model
+  Reported base: Qwen/Qwen3.8-Flash-Next
+  Copyright (c) 2026 Qwen
+  Applicable upstream license: Qwen Community License 1.0
+  Exact unmodified text: third-party/Qwen-LICENSE.txt
+  Reference revision: 812d96e10a0dd82b69d749e68693698cf6c36daa
+  Reference verified: 12 November 2026
+  License reference metadata: release-scope.json
+
+  The model publisher has identified the Qwen license above as applicable.
+  The reference revision fixes that license text; it is not a representation
+  of the training or conversion revision used to create the Edge0 models.
+  No verified training-source commit is asserted in this release record.
+
+  Qwen's copyright, permission notice, commercial conditions, definitions,
+  disclaimers, and applicable-law requirement remain unchanged. The Edge0
+  license does not replace them. Required Qwen commercial permission must
+  come from Qwen or a party authorized by Qwen. The contact in Qwen's text
+  remains Qwen's contact and must not be replaced with Edge0's address.
+
+Separately licensed code
+  The existing Edge0 framework is identified as Apache-2.0 in the project
+  snapshot. The bundled edge0-strata fork retains the MIT license of
+  Niko1221 and the Strata contributors. Other bundled components retain
+  their own licenses and notices. This MODEL license does not change them.
+  These model license files do not distribute that code or replace its NOTICE.
+
+Attribution and relationship
+  Edge0 acknowledges the work of the Qwen team and the Strata contributors.
+  Identifying their work describes technical origin only. It does not assert
+  partnership, endorsement, sponsorship, or authorization beyond their
+  applicable licenses or a separately verified agreement.
+
+Existing grants
+  This model license does not revoke prior valid licenses, create exclusive rights
+  in upstream material, or retrospectively change the conditions of copies
+  already released under another valid grant. An erroneous metadata label
+  also cannot grant upstream rights that the publisher did not possess.

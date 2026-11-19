@@ -1,0 +1,54 @@
+{
+  "models": [
+    {
+      "id": "edge0-145b-q3k",
+      "name": "Edge0 145B \u00b7 Q3_K",
+      "repo": "Edge0/Edge0-145B-q3k",
+      "folder": "Edge0-145B-q3k",
+      "model_name": "edge0-145b-q3k",
+      "platforms": [
+        "windows",
+        "macos"
+      ],
+      "bytes": 105400000000,
+      "files": 93
+    },
+    {
+      "id": "edge0-145b-nvfp4",
+      "name": "Edge0 145B \u00b7 NVFP4",
+      "repo": "Edge0/Edge0-145B-NVFP4",
+      "folder": "Edge0-145B-NVFP4",
+      "model_name": "edge0-145b-fp4",
+      "platforms": [
+        "windows"
+      ],
+      "bytes": 112900000000,
+      "files": 45
+    },
+    {
+      "id": "edge0-120b-q3k",
+      "name": "Edge0 120B \u00b7 Q3_K",
+      "repo": "Edge0/Edge0-120B-q3k",
+      "folder": "Edge0-120B-q3k",
+      "model_name": "edge0-120b-q3k",
+      "platforms": [
+        "windows",
+        "macos"
+      ],
+      "bytes": 92300000000,
+      "files": 92
+    },
+    {
+      "id": "edge0-120b-nvfp4",
+      "name": "Edge0 120B \u00b7 NVFP4",
+      "repo": "Edge0/Edge0-120B-NVFP4",
+      "folder": "Edge0-120B-NVFP4",
+      "model_name": "edge0-120b-fp4",
+      "platforms": [
+        "windows"
+      ],
+      "bytes": 97600000000,
+      "files": 44
+    }
+  ]
+}

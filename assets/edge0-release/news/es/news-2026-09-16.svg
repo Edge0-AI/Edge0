@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="73" viewBox="0 0 620 73" role="img" aria-labelledby="title desc" lang="es">
+<title id="title">Informe técnico de 35B</title><desc id="desc">16 septiembre 2026 · Informe técnico de 35B · Ejecución de MoE de 35B desde SSD con predicción de enrutamiento entrenada.</desc>
+<rect width="620" height="73" fill="#FFFFFF"/>
+<g font-family="Helvetica Neue,Helvetica,Arial,PingFang SC,Hiragino Sans,Noto Sans CJK SC,Noto Sans CJK JP,sans-serif" font-weight="400">
+<rect x="16" y="19" width="16" height="2" rx="1" fill="#1D3557"/>
+<text x="16" y="37" font-size="9" fill="#1D3557">16 septiembre 2026</text>
+<text x="132" y="28" font-size="15" font-weight="500" letter-spacing="-.15" fill="#1D3557">Informe técnico de 35B</text>
+<text x="132" y="47" font-size="11.5" fill="#45789D">Ejecución de MoE de 35B desde SSD con predicción de enrutamiento entrenada.</text></g><path d="M16 72 H604" stroke="#A8DADC" stroke-opacity=".5"/></svg>

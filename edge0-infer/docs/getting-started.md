@@ -9,11 +9,11 @@ From a fresh clone to a chat and a local OpenAI- and Anthropic-compatible server
 | Model | Engine | Hardware | Where the engine is |
 | --- | --- | --- | --- |
 | Edge0 35B | Native engine | Metal, CPU or Vulkan on macOS, iOS, Android, Linux and Windows | this directory, also usable in process through the [native API](native-api.md) |
-| Edge0 145B, Edge0 120B | edge0-strata | NVIDIA GPU (CUDA 13) on Linux and Windows | `edge0-strata/` in the Edge0 repository; `edge0-infer` starts it as a separate process |
+| Edge0 145B, Edge0 120B | edge0-strata | NVIDIA GPU (CUDA 13) on Linux and Windows, or Metal on macOS (Apple Silicon) | `edge0-strata/` in the Edge0 repository; `edge0-infer` starts it as a separate process |
 
 [Architecture](architecture.md) describes how the two layers work together.
 
-Edge0 35B is verified on macOS on Apple silicon (Metal and CPU), on Android (CPU, PKR110), on Windows (CPU on an Intel Core i5-12400; Vulkan on an NVIDIA GeForce RTX 4070 SUPER) and on iOS (Metal, iPhone 17 Pro Max); measured speed and memory are under [Benchmarking](benchmarking.md#reference-figures). The measured speed of Edge0 145B and Edge0 120B is on their model page, `docs/models/edge0-145b.md` in the Edge0 repository.
+Edge0 35B is verified on macOS on Apple silicon (Metal and CPU), on Android (CPU, PKR110), on Windows (CPU on an Intel Core i5-12400; Vulkan on an NVIDIA GeForce RTX 4070 SUPER) and on iOS (Metal, iPhone 17 Pro Max); measured speed and memory are under [Benchmarking](benchmarking.md#reference-figures). The measured speed of Edge0 145B and Edge0 120B is on their model page, `docs/models/edge0-145b.md` in the Edge0 repository. The macOS measurements were taken on an Apple M2 Ultra.
 
 ## Requirements
 
@@ -86,9 +86,9 @@ The [asset tools guide](../tools/assets/README.md) describes the asset directory
 
 ### Edge0 145B and Edge0 120B (edge0-strata)
 
-These models come as released model folders, one model and one expert format per folder (for example `Edge0-145B-q3k`); the asset tools above do not make them. They need an NVIDIA GPU with CUDA 13 on Linux or Windows.
+These models come as released model folders, one model and one expert format per folder (for example `Edge0-145B-q3k`); the asset tools above do not make them. They need an NVIDIA GPU with CUDA 13 on Linux or Windows, or Apple Silicon with Metal on macOS. On macOS only the `q3k` folder is accepted, with `du=q4` and `ple-io=direct`. The first start writes `mtp-q2_0.gguf` into the model folder, so that folder must be writable.
 
-1. **Build edge0-strata**, the `edge0-strata/` directory beside `edge0-infer/` in the Edge0 repository, as its `EDGE0.md` describes (sections "Build (Linux, NVIDIA)" and "Build (Windows, NVIDIA)"). `edge0-infer` finds it there and uses the engine and the Python environment that the build produces.
+1. **Build edge0-strata**, the `edge0-strata/` directory beside `edge0-infer/` in the Edge0 repository, as its `EDGE0.md` describes (sections "Build (Linux, NVIDIA)", "Build (Windows, NVIDIA)" and "Build (macOS, Apple Silicon)"). `edge0-infer` finds it there and uses the engine and the Python environment that the build produces. On macOS the engine is `build-metal/strata`.
 
 2. **Check the model folder**, the one that contains `model.json`:
 

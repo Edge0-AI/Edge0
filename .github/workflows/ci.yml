@@ -1,9 +1,13 @@
 name: CI
 
+# Only changes to edge0-infer, or to this workflow, run it. edge0-infer's tests use a fake
+# edge0-strata and read nothing outside edge0-infer/.
 on:
   push:
     branches: [main]
+    paths: ['edge0-infer/**', '.github/workflows/ci.yml']
   pull_request:
+    paths: ['edge0-infer/**', '.github/workflows/ci.yml']
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -11,23 +15,101 @@ concurrency:
 
 jobs:
   edge0-infer:
-    name: edge0-infer L0/L1 (macOS, cpu preset)
+    name: edge0-infer ${{ matrix.level }} (macOS, cpu preset)
     runs-on: macos-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        level: [L0/L1, L2]
     defaults:
       run:
         working-directory: edge0-infer
     steps:
       - uses: actions/checkout@v4
       - name: Install tools
-        run: brew install ninja uv
+        run: brew install ninja uv ccache
       - name: Python environment for the tests
         run: uv sync --project tools/assets
+      - name: Environment
+        run: |
+          echo "MOE_SOURCE_35B=$HOME/moe-data/source" >> "$GITHUB_ENV"
+          echo "MOE_TINY=$HOME/moe-data/tiny" >> "$GITHUB_ENV"
+          echo "CCACHE_DIR=$HOME/.ccache" >> "$GITHUB_ENV"
+          echo "CMAKE_C_COMPILER_LAUNCHER=ccache" >> "$GITHUB_ENV"
+          echo "CMAKE_CXX_COMPILER_LAUNCHER=ccache" >> "$GITHUB_ENV"
+      - name: Restore compiler cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-cpu-${{ github.sha }}
+          restore-keys: ccache-cpu-
+      # L2 runs on the tiny fixtures: a random-weight model with the 35B structure, generated
+      # from three small text files of the 35B source (tools/assets/README.md#tiny-fixtures).
+      - name: Restore tiny fixtures
+        id: fixtures
+        if: matrix.level == 'L2'
+        uses: actions/cache@v4
+        with:
+          path: ~/moe-data
+          key: tiny-fixtures-${{ hashFiles('edge0-infer/tools/assets/**/*.py', 'edge0-infer/tools/assets/**/*.json', 'edge0-infer/tools/assets/uv.lock') }}
+      - name: Generate tiny fixtures
+        if: matrix.level == 'L2' && steps.fixtures.outputs.cache-hit != 'true'
+        run: |
+          rm -rf "$HOME/moe-data"
+          mkdir -p "$MOE_TINY"
+          assets_py() { uv run --project tools/assets --offline --no-sync python -I "$@"; }
+          assets_py tools/assets/edge0_35b/fetch_source.py download --out "$MOE_SOURCE_35B" --files tokenizer.json chat_template.jinja generation_config.json
+          assets_py tools/assets/edge0_35b/make_tiny.py --source "$MOE_SOURCE_35B" --out "$MOE_TINY/tiny-a"
+          assets_py tools/assets/edge0_35b/make_tiny.py --source "$MOE_SOURCE_35B" --out "$MOE_TINY/tiny-b"
       - name: Configure
         run: cmake --preset cpu
       - name: Build
         run: cmake --build --preset cpu
       - name: Test (L0, L1)
+        if: matrix.level == 'L0/L1'
         run: ctest --preset cpu --no-tests=error --output-on-failure -L "L0|L1"
-      - name: Test (L2, delegated engine)
-        run: ctest --preset cpu --no-tests=error --output-on-failure -L L2 -R strata
+      # The hosted runner has three cores and every test already uses all of them, so the L2
+      # tests run one at a time. To stay within about ten minutes, CI skips the tests labeled
+      # local-only (edge0-infer/docs/testing.md).
+      - name: Test (L2)
+        if: matrix.level == 'L2'
+        run: ctest --preset cpu --no-tests=error --output-on-failure -j 1 --timeout 600 -L L2 -LE "device|local-only"
+
+  # Linux and Windows only build the engine, its CLI and test programs; the tests run on macOS above.
+  edge0-infer-build:
+    name: edge0-infer build (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: Linux
+            runner: ubuntu-latest
+            preset: cpu
+          - os: Windows
+            runner: windows-latest
+            preset: windows
+    defaults:
+      run:
+        working-directory: edge0-infer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Install tools (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ninja -y --no-progress
+      - name: Configure and build (Linux)
+        if: runner.os == 'Linux'
+        run: cmake --preset ${{ matrix.preset }} && cmake --build --preset ${{ matrix.preset }}
+      # MSVC's environment comes from vcvars64.bat, as in the x64 Native Tools Command Prompt.
+      - name: Configure and build (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+          cmake --preset ${{ matrix.preset }} || exit /b 1
+          cmake --build --preset ${{ matrix.preset }}

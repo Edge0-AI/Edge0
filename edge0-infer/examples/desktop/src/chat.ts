@@ -164,6 +164,13 @@ export class SseAccumulator {
     }
   }
 }
+/** A generation that failed because the engine process ended (edge0-strata: "the engine stopped unexpectedly (exit
+ * code ...)"), with the load's low-memory warning, if there was one: the likely reason, and what to do about it. */
+export function explainFailure(failure: unknown, memoryWarning = ''): string {
+  const text = String(failure);
+  const engineEnded = /engine (stopped|ended|exited|is unavailable)|service connection closed/i.test(text);
+  return engineEnded && memoryWarning ? `${text}\nThe engine most likely ran out of memory. ${memoryWarning}` : text;
+}
 export type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 const pause = (ms: number, signal: AbortSignal) => new Promise<void>((resolve, reject) => {
   signal.throwIfAborted();

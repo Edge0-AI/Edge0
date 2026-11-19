@@ -12,6 +12,8 @@ Behaviour is controlled with environment variables:
                            requests.jsonl, sent-<n>.bin, events.jsonl
   FAKE_STRATA_FAIL_START   exit with this code before becoming ready
   FAKE_STRATA_READY_DELAY  seconds to wait before listening
+  FAKE_STRATA_SSE_FORMAT   pretty-print chat data fields with lf, crlf, or cr line endings
+  FAKE_STRATA_READY_PORT   JSON override for bound_port; "wrap32" adds 2**32 to the actual port
   FAKE_STRATA_EXIT_AFTER   exit after this many generation requests (code 3)
   FAKE_STRATA_CHUNK_DELAY  seconds between streamed chunks (default 0.02); every
                            stream sends the answer one word per text event
@@ -32,6 +34,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import socket
 import socketserver
 import subprocess
 import sys
@@ -40,6 +43,54 @@ import threading
 import time
 
 ANSWER = 'Hello from fake Strata, answering in several pieces.'
+
+# Stand-in for edge0-strata's tools/mtp_gguf.py. The delegate launcher runs it with the engine Python
+# when a Metal template's prepare output is missing. FAKE_MTP_MODE selects a failure:
+#   fail   exit 1 with an error on stderr and no output file
+#   exit0  exit 0 with no output file
+#   sleep  record the call, then sleep (Ctrl-C must kill this process)
+MTP_SCRIPT = '''"""Fake MTP conversion used by delegate-mode tests."""
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+
+def main():
+    args = sys.argv[1:]
+    out = None
+    if "--out" in args:
+        out = Path(args[args.index("--out") + 1])
+    if out is not None:
+        log = out.parent / "prepare-calls.jsonl"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({
+                "argv": args,
+                "cwd": os.getcwd(),
+                "api_key": os.environ.get("STRATA_API_KEY"),
+                "pid": os.getpid(),
+            }) + "\\n")
+    mode = os.environ.get("FAKE_MTP_MODE", "")
+    if mode == "fail":
+        sys.stderr.write("mtp conversion failed\\n")
+        return 1
+    if mode == "exit0":
+        return 0
+    if mode == "sleep":
+        time.sleep(30)
+        return 0
+    if out is None:
+        sys.stderr.write("missing --out\\n")
+        return 2
+    out.write_bytes(b"mtp-q2_0")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
 
 
 class Fake:
@@ -107,7 +158,7 @@ def dialect_body(path, request, answer):
     if path == '/v1/responses':
         body = {'id': 'resp_fake', 'object': 'response', 'status': 'completed', 'model': request.get('model'),
                 'output': [{'type': 'message', 'status': 'completed', 'content': [{'type': 'output_text', 'text': answer}]}],
-                'usage': {'input_tokens': prompt, 'output_tokens': generated}}
+                'usage': {'input_tokens': prompt, 'input_tokens_details': {'cached_tokens': 3}, 'output_tokens': generated}}
     else:
         # Anthropic semantics: input_tokens counts only the uncached part of the input.
         body = {'id': 'msg_fake', 'type': 'message', 'role': 'assistant', 'model': request.get('model'),
@@ -138,7 +189,8 @@ def dialect_events(path, request, answer):
         values = [('response.created', {'response': dict(response, status='in_progress'), 'echo': request, 'path': path}),
                   *[('response.output_text.delta', {'delta': piece}) for piece in pieces_of(answer)],
                   ('response.completed', {'response': dict(response, status='completed',
-                                                           usage={'input_tokens': prompt, 'output_tokens': generated})})]
+                                                           usage={'input_tokens': prompt, 'input_tokens_details': {'cached_tokens': 4},
+                                                                  'output_tokens': generated})})]
     else:
         message = {'id': 'msg_fake', 'type': 'message', 'role': 'assistant', 'model': request.get('model'), 'content': [],
                    'stop_reason': None, 'stop_sequence': None, 'usage': {'input_tokens': prompt, 'output_tokens': 0}}
@@ -172,11 +224,13 @@ def handler_for(fake):
         def log_message(self, *args):
             pass
 
-        def send_json(self, status, value):
+        def send_json(self, status, value, headers=None):
             data = json.dumps(value).encode()
             self.send_response(status)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Content-Length', str(len(data)))
+            for name, value in (headers or {}).items():
+                self.send_header(name, value)
             self.end_headers()
             self.wfile.write(data)
             return data
@@ -184,6 +238,19 @@ def handler_for(fake):
         def do_GET(self):
             path = self.path.split('?')[0]
             if path == '/health':
+                time.sleep(float(os.environ.get('FAKE_STRATA_HEALTH_DELAY', '0')))
+                drip = float(os.environ.get('FAKE_STRATA_HEALTH_DRIP', '0'))
+                if drip:
+                    data = b'{"ok":true}'
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Content-Length', str(len(data)))
+                    self.end_headers()
+                    for byte in data:
+                        self.wfile.write(bytes([byte]))
+                        self.wfile.flush()
+                        time.sleep(drip)
+                    return
                 self.send_json(200, {'status': 'ok', 'service': 'strata', 'loaded': True, 'model': fake.config.get('model_name')})
             elif path in ('/v1/status', '/metrics', '/props'):
                 # The description endpoints a benchmark reads; what was sent is recorded for byte comparisons.
@@ -205,6 +272,8 @@ def handler_for(fake):
                 self.send_response(status)
                 self.send_header('Content-Type', kind)
                 self.send_header('Content-Length', str(len(data)))
+                if path == '/metrics' and os.environ.get('FAKE_STRATA_RETRY_AFTER'):
+                    self.send_header('rEtRy-AfTeR', os.environ['FAKE_STRATA_RETRY_AFTER'])
                 self.end_headers()
                 self.wfile.write(data)
             elif path == '/v1/models':
@@ -228,12 +297,20 @@ def handler_for(fake):
             except ValueError:
                 self.send_json(400, {'error': {'message': 'invalid JSON', 'type': 'invalid_request_error'}})
                 return
+            advice = {'rEtRy-AfTeR': request['fake_retry_after']} if 'fake_retry_after' in request else {}
+            if request.get('fake_bulk_stream'):
+                self.bulk_stream()
+                return
+            if request.get('fake_bulk_json'):
+                fake.save_sent(self.send_json(200, {'padding': 'x' * (2 * 1024 * 1024)}))
+                return
             if path == '/v1/messages/count_tokens':
-                fake.save_sent(self.send_json(int(request.get('fake_status', 200)), {'input_tokens': 17}))
+                fake.save_sent(self.send_json(int(request.get('fake_status', 200)), {'input_tokens': 17}, advice))
                 return
             if request.get('fake_error'):
                 if not request.get('stream'):
-                    fake.save_sent(self.send_json(429, {'error': {'message': 'fixture busy', 'code': 'fixture_busy'}}))
+                    fake.save_sent(self.send_json(int(request.get('fake_status', 429)),
+                                                 {'error': {'message': 'fixture busy', 'code': 'fixture_busy'}}, advice))
                 elif path == '/v1/chat/completions':
                     self.stream([b'data: {"error":{"message":"fixture failure","code":"fixture_error"}}\n\n'])
                 else:
@@ -292,16 +369,19 @@ def handler_for(fake):
             timings = fake.timings(prompt, len(pieces) + len(reasoning))
             model = request.get('model')
             if request.get('stream'):
+                sse_format = os.environ.get('FAKE_STRATA_SSE_FORMAT')
+                eol = {'lf': '\n', 'crlf': '\r\n', 'cr': '\r'}.get(sse_format, '\n')
                 def event(delta, finish=None, extra=None):
                     chunk = {'id': 'chatcmpl-fake', 'object': 'chat.completion.chunk', 'created': 1, 'model': model,
                              'choices': [{'index': 0, 'delta': delta, 'finish_reason': finish}]}
                     chunk.update(extra or {})
-                    return ('data: ' + json.dumps(chunk) + '\n\n').encode()
+                    lines = json.dumps(chunk, indent=2 if sse_format else None).splitlines()
+                    return (eol.join('data: ' + line for line in lines) + eol + eol).encode()
                 events = [event({'role': 'assistant', 'content': ''})]
                 events += [event({'reasoning_content': r + ' '}) for r in reasoning]
                 events += [event({'content': p}) for p in pieces]
                 events.append(event({}, 'stop', {'usage': usage, 'timings': timings}))
-                events.append(b'data: [DONE]\n\n')
+                events.append(('data: [DONE]' + eol + eol).encode())
                 self.stream(events)
             else:
                 time.sleep(fake.body_delay)
@@ -310,6 +390,27 @@ def handler_for(fake):
                     'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': ''.join(pieces)}, 'finish_reason': 'stop'}],
                     'usage': usage, 'timings': timings}))
             fake.finished_generation()
+
+        def bulk_stream(self):
+            # A fast producer and a paused consumer exercise real TCP backpressure.
+            self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 32768)
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/event-stream')
+            self.send_header('Transfer-Encoding', 'chunked')
+            self.end_headers()
+            block = b':' + b'x' * 65533 + b'\n\n'
+            terminal = b'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'
+            try:
+                for index in range(1024):
+                    self.wfile.write(b'%x\r\n%s\r\n' % (len(block), block))
+                    if index == 0:
+                        fake.log('events.jsonl', {'event': 'bulk_started'})
+                self.wfile.write(b'%x\r\n%s\r\n0\r\n\r\n' % (len(terminal), terminal))
+                self.wfile.flush()
+                fake.log('events.jsonl', {'event': 'bulk_finished'})
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                fake.log('events.jsonl', {'event': 'bulk_cancelled'})
+                self.close_connection = True
 
         def stream(self, events):
             self.send_response(200)
@@ -374,10 +475,13 @@ def serve(argv):
         signal.signal(signal.SIGBREAK, terminate)
     if args.ready_file:
         port = server.server_address[1]
+        bound_port = json.loads(os.environ['FAKE_STRATA_READY_PORT']) if 'FAKE_STRATA_READY_PORT' in os.environ else port
+        if bound_port == 'wrap32':
+            bound_port = port + 2**32
         descriptor = os.open(args.ready_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(descriptor, 'w') as out:
             out.write(json.dumps({'schema_version': 1, 'pid': os.getpid(), 'api_url': f'http://127.0.0.1:{port}',
-                                  'bound_host': args.host, 'bound_port': port, 'model_state': 'ready'}) + '\n')
+                                  'bound_host': args.host, 'bound_port': bound_port, 'model_state': 'ready'}) + '\n')
     print(f'ready: http://127.0.0.1:{server.server_address[1]}/v1', flush=True)
     try:
         server.serve_forever()
@@ -520,6 +624,31 @@ def self_test():
                 if process.poll() is None:
                     process.kill()
                     process.wait(10)
+    with tempfile.TemporaryDirectory() as folder:
+        root = Path(folder)
+        script = root / 'mtp_gguf.py'
+        script.write_text(MTP_SCRIPT)
+        out = root / 'model' / 'mtp-q2_0.gguf'
+
+        def run(mode):
+            env = dict(os.environ)
+            env.pop('STRATA_API_KEY', None)
+            if mode:
+                env['FAKE_MTP_MODE'] = mode
+            else:
+                env.pop('FAKE_MTP_MODE', None)
+            return subprocess.run([sys.executable, str(script), '--rt', str(root / 'mtp'), '--out', str(out)],
+                                  cwd=root, env=env, capture_output=True, text=True)
+
+        ok = run('')
+        assert ok.returncode == 0 and out.read_bytes() == b'mtp-q2_0', (ok.returncode, ok.stderr)
+        recorded = json.loads((out.parent / 'prepare-calls.jsonl').read_text().splitlines()[0])
+        assert Path(recorded['cwd']).resolve() == root.resolve() and recorded['pid'] > 0 and recorded['api_key'] is None
+        out.unlink()
+        failed = run('fail')
+        assert failed.returncode == 1 and 'mtp conversion failed' in failed.stderr and not out.exists()
+        silent = run('exit0')
+        assert silent.returncode == 0 and not out.exists() and silent.stderr == ''
     print('PASS fake strata: command line, ready file, status, streaming with timings, echo, records, failure, child cleanup')
 
 

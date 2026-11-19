@@ -176,6 +176,32 @@ bool window_slot_copy_main(bool into_slot, int slot, int64_t upto, bool kv_only,
 #include <set>
 #include <vector>
 
+// STRATA_MTP_CALL_SYNC=1: sync the current device and say whether it was already dirty.  A CUDA failure is sticky,
+// so one that happened earlier in the chunk reads as the drafter's; these probes tell the two apart.
+static bool mtp_probe_fails(const char* where, int dev2, std::string& err) {
+    static const bool on = [] { const char* v = std::getenv("STRATA_MTP_CALL_SYNC"); return v != nullptr && v[0] == '1'; }();
+    if (!on) return false;
+    auto one = [&](int dev) -> cudaError_t {
+        int cur = -1;
+        (void) cudaGetDevice(&cur);
+        if (cur != dev) (void) cudaSetDevice(dev);
+        const cudaError_t q = cudaDeviceSynchronize();
+        if (cur != dev) (void) cudaSetDevice(cur);
+        std::fprintf(stderr, "strata probe %s: device %d, %s\n", where, dev,
+                     q == cudaSuccess ? "clean" : cudaGetErrorString(q));
+        return q;
+    };
+    int cur = -1;
+    (void) cudaGetDevice(&cur);
+    const cudaError_t q0 = one(cur);
+    const cudaError_t q1 = (dev2 >= 0 && dev2 != cur) ? one(dev2) : cudaSuccess;
+    const cudaError_t q = q0 != cudaSuccess ? q0 : q1;
+    if (q == cudaSuccess) return false;
+    (void) cudaGetLastError();
+    err = std::string("the device was already dirty ") + where + " (" + cudaGetErrorString(q) + ")";
+    return true;
+}
+
 // logprobs=K / allowed=...: one `LP` line for the token just emitted, from `ver`'s head
 // logits for the window row it came from (before sampling, penalties and temperature).
 // Format matches the SYCL port's LP line so one server-side reader serves both.
@@ -236,6 +262,14 @@ struct LatentTab {
         if (d != nullptr) { strata::core::latent_shared_d() = d; strata::core::latent_shared_u() = u; return true; }
         const auto& lay0 = strata::kernels::cpu::expert_layout();
         if (!(lay0.native && !lay0.fmt.empty() && lay0.fmt[0].n_embd != (int64_t) g.n_embd)) return true;
+#if defined(STRATA_GPU_METAL)
+        const char* enabled = std::getenv("STRATA_METAL_LATENT");
+        if (!enabled || std::strcmp(enabled, "1")) {
+            err = "enable the Metal latent path with STRATA_METAL_LATENT=1";
+            return false;
+        }
+        return true;   // The Metal window owns the latent files and GPU buffers.
+#else
         latent = true;
         lat_H = (int64_t) g.n_embd;
         lat_ELL = lay0.fmt[0].n_embd;
@@ -274,8 +308,40 @@ struct LatentTab {
         strata::core::latent_shared_d() = d;
         strata::core::latent_shared_u() = u;
         return true;
+#endif
     }
 } lat_tab;
+
+// Layer split: upload this stage's OWN latent D/U (all layers, layer-major) to `device` and hand back the pair.
+// The session pair (LatentTab::load) lives on device 0; a later stage dereferencing it without P2P is the IMA the
+// layer split hit ('layer N never rang').  The pair stays the caller's to free; d/u are null on failure (err set).
+bool upload_stage_latent_du(int device, const strata::core::ModelGeometry& g, uint8_t*& d, uint8_t*& u, std::string& err) {
+    d = u = nullptr;
+    if (!lat_tab.latent) return true;
+    const uint64_t db = (uint64_t) g.n_layers * lat_tab.dense.d_bytes();
+    const uint64_t ub = (uint64_t) g.n_layers * lat_tab.dense.u_bytes();
+    if (cudaMalloc((void**) &d, db) != cudaSuccess || cudaMalloc((void**) &u, ub) != cudaSuccess) {
+        const cudaError_t ce = cudaGetLastError();
+        if (d) { cudaFree(d); d = nullptr; }
+        if (u) { cudaFree(u); u = nullptr; }
+        err = "CUDA" + std::to_string(device) + " latent D/U (" + std::to_string((db + ub) >> 20) + " MiB): " +
+              cudaGetErrorString(ce);
+        return false;
+    }
+    for (int64_t l = 0; l < g.n_layers; ++l)
+        if (cudaMemcpy(d + (size_t) l * lat_tab.dense.d_bytes(), lat_tab.dense.d(l), lat_tab.dense.d_bytes(),
+                       cudaMemcpyHostToDevice) != cudaSuccess ||
+            cudaMemcpy(u + (size_t) l * lat_tab.dense.u_bytes(), lat_tab.dense.u(l), lat_tab.dense.u_bytes(),
+                       cudaMemcpyHostToDevice) != cudaSuccess) {
+            const cudaError_t ce = cudaGetLastError();
+            cudaFree(d); cudaFree(u); d = u = nullptr;
+            err = "CUDA" + std::to_string(device) + " latent D/U upload failed at layer " + std::to_string(l) + ": " +
+                  cudaGetErrorString(ce);
+            return false;
+        }
+    return true;
+}
+
 // Windows' WDDM driver model: native Windows, or WSL2 (its GPU goes through /dev/dxg to the Windows driver).  There,
 // pinning a large arena into two CUDA contexts leaves WDDM refusing every later allocation (the 5080 + 3090 rig);
 // a Linux driver has no such limit (#253: the 8 GiB cap cost a 4090 + 3060 split 3x of its prompt speed).
@@ -1188,6 +1254,8 @@ void usage() {
                  "  --peer-device N      a second GPU as an adaptive expert-cache tier (rows over P2P; it also\n"
                  "                       computes its experts' prompt rows).  Not with --layer-split or\n"
                  "                       --expert-cache-device1..3.  Default output unchanged without it.\n"
+                 "  --vram-reserve-mib N  VRAM left free for the graphs, hit scratch and head (default 700)\n"
+                 "  --vram-reserve-later-mib N  the same reserve on a layer split's later cards (default: as the first)\n"
                  "  --peer-reserve-mib N  VRAM the peer tier leaves free on its card (default 600)\n"
                  "  --peer-slots N       expert slots on the peer (default: what fits)\n"
                  "  --peer-adapt-swaps N  peer cache swaps per adaptation step (default: --adapt-swaps)\n"
@@ -1419,6 +1487,7 @@ struct GpuStage {
     strata::core::Verifier ver;
     strata::core::Verifier ver_b;                        ///< --pipeline-windows: the odd windows' verifier
     strata::prefill::Prefill sp;
+    uint8_t *lat_d = nullptr, *lat_u = nullptr;          ///< latent: this stage's OWN D/U on its device (layer split)
     cudaStream_t adapt_stream = nullptr;
     cudaEvent_t adapt_ev = nullptr;
     bool adapt_live = false;                             ///< swaps of this request are in flight on it
@@ -4151,6 +4220,11 @@ int main(int argc, char** argv) {
         const auto& lay = strata::kernels::cpu::expert_layout();
         for (int64_t l = 0; lay.native && l < (int64_t) lay.fmt.size(); ++l) {
             const auto& f = lay.fmt[(size_t) l];
+#if defined(STRATA_GPU_METAL)
+            const char* latent = std::getenv("STRATA_METAL_LATENT");
+            if (latent && !std::strcmp(latent, "1") && (f.n_embd == 1280 || f.n_embd == 1792) && f.n_ff == 640 &&
+                f.gu_type == 11 && f.d_type == 20 && f.gu_colscale) continue;
+#endif
             if (!strata::kernels::native_expert_supported(f.gu_type, f.d_type, f.n_embd, f.n_ff)) {
                 std::fprintf(stderr, "strata generate: layer %lld's experts are %s/%s (ggml types %d/%d), which this "
                                      "engine has no GPU kernels for\n", (long long) l,
@@ -4485,8 +4559,9 @@ int main(int argc, char** argv) {
             return 2;
         }
         const auto embed_t0 = std::chrono::steady_clock::now();
+        // a layer split's draft layer runs on a later card and gathers from this table too: mapped host memory then
         if (!native_embed.load(o.embd_gguf.empty() ? o.native_shards : std::vector<std::string>{o.embd_gguf}, g.n_embd,
-                               g.n_vocab, err)) {
+                               g.n_vocab, err, !o.layer_split.empty())) {
             std::fprintf(stderr, "strata generate: %s\n", err.c_str());
             return 1;
         }
@@ -6922,9 +6997,13 @@ int main(int argc, char** argv) {
                      (long long) o.prefill_chunk, (long long) mib, (long long) (160 + (o.prefill_chunk * 680) / 1024));
         return mib + 64;   // a margin for the allocator
     };
+    // latent MoE: the session D/U pair is loaded BEFORE anything sizes a cache, and not only for --expert-cache
+    // auto: a layer split needs a numeric --expert-cache, and the pair must still be up by then, because every
+    // later stage uploads its own copy from it (the stage loop below) and its verifier then stops allocating a
+    // copy of its own inside its arena.  Without this the split allocates one pair per stage out of that stage's
+    // arena, which is what refused to fit on a 10 GB card ("the device arena ... does not fit").
+    { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata generate: %s\n", le.c_str()); return 1; } }
     if (o.expert_cache < 0) {
-        // latent MoE: the session D/U pair is loaded before the free-VRAM read, so auto leaves room for it
-        { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata generate: %s\n", le.c_str()); return 1; } }
         size_t free_b = 0, total_b = 0;
         free_b = strata::core::device_free_bytes(); (void) total_b;
         if (free_b == 0 && o.prefill_head_alias) {
@@ -7474,8 +7553,21 @@ int main(int argc, char** argv) {
         const auto& lay = strata::kernels::cpu::expert_layout();
         // the drafter and the head are already allocated by now (they load above, before this), so what is left
         // to hold back is the windows - and `free_b` has already lost the drafter.
-        const int64_t room = stage_room(st.dev, true, false);
         const strata::core::OnDevice on(st.dev);
+        // latent MoE: this stage's own D/U on its own card, uploaded BEFORE the cache is sized, so that
+        // stage_room() and the cache open after it see the memory the pair takes.  Uploaded after the cache it
+        // does not fit (the card is full of slots by then).
+        if (lat_tab.latent) {
+            if (st.dev == 0) {   // --split-device 0: both stages on the first card, so they share the session pair
+                st.lat_d = lat_tab.d;
+                st.lat_u = lat_tab.u;
+            } else if (!upload_stage_latent_du(st.dev, g, st.lat_d, st.lat_u, err)) {
+                std::fprintf(stderr, "strata generate: layer split, CUDA%d latent D/U: %s\n", st.dev, err.c_str());
+                return 1;
+            }
+            if (st.lat_d != nullptr) st.sp.set_latent_dev(st.lat_d, st.lat_u);
+        }
+        const int64_t room = stage_room(st.dev, true, false);
         {
             size_t fb = 0, tb = 0;
             cudaMemGetInfo(&fb, &tb);
@@ -7745,6 +7837,11 @@ int main(int argc, char** argv) {
                                  "results return through pinned host rows\n", remote_dev[r],
                          (long long) remote_experts[(size_t) r].resident(), remote_experts[(size_t) r].gib());
         }
+        if (lat_tab.latent) {   // latent MoE: each helper computes A-only and packs q8_1 hq rows, like the peer
+            for (int r = 0; r < 3; ++r) if (o.expert_cache_remote[(size_t) r] > 0)
+                remote_experts[(size_t) r].bind_latent(&lat_tab.dense, lat_tab.labels.data(), g.n_layers, g.n_expert,
+                                                       lat_tab.lat_ELL, lat_tab.lat_I, lat_tab.lat_H, lat_tab.lat_G);
+        }
     }
 
     // ---- Multi-GPU: the second GPU's expert tier, filled with the ranked pairs the primary does not hold
@@ -7764,6 +7861,20 @@ int main(int argc, char** argv) {
                              "%lld that is %lld of %lld on the GPUs\n", o.peer_device, (long long) peer.resident(), peer.gib(),
                      std::chrono::duration<double>(Clock::now() - tp0).count(), (long long) xcache.slots(),
                      (long long) (peer.resident() + xcache.slots()), (long long) (g.n_layers * g.n_expert));
+    }
+    if (peer.valid() && lat_tab.latent) {   // latent MoE: the peer computes A-only and packs q8_1 hq rows for the primary's U
+        peer.bind_latent(&lat_tab.dense, lat_tab.labels.data(), g.n_layers, g.n_expert, lat_tab.lat_ELL, lat_tab.lat_I,
+                         lat_tab.lat_H, lat_tab.lat_G);
+        // knife-0 (STRATA_LATENT_U_GPU) is what runs U from the peer's q8_1 hq rows (latent_u_matvec), so it must stay
+        // on when a peer serves latent experts.
+        if (const char* v = std::getenv("STRATA_LATENT_U_GPU"); v == nullptr || std::atoi(v) == 0) {
+#if defined(_WIN32)
+            _putenv_s("STRATA_LATENT_U_GPU", "1");
+#else
+            setenv("STRATA_LATENT_U_GPU", "1", 1);
+#endif
+            std::fprintf(stderr, "strata serve: STRATA_LATENT_U_GPU is on with --peer-device (U runs from the peer's hq rows)\n");
+        }
     }
 
     if (remote_opt && !remote_opt->init(err)) { std::fprintf(stderr, "strata generate: %s\n", err.c_str()); return 1; }
@@ -10168,6 +10279,8 @@ int main(int argc, char** argv) {
                     vs.slot_off = gs.cache.slot_offsets();
                     vs.n_slots = gs.cache.slots();
                     gs.ver.set_remote_expert_opt(remote_opt.get());
+                    // latent: this stage's OWN D/U (uploaded by init_prompt_paths), not device 0's session pair
+                    if (lat_tab.latent && gs.dev != 0) gs.ver.set_shared_latent(gs.lat_d, gs.lat_u);
                     // --batch-mtp: every stage runs the same 2-rows-per-slot windows as the first (up to kVerifyMaxT
                     // rows, the hand-off's size) and bounds its captured batch layouts like the first (below)
                     if (batch_mtp) gs.ver.set_batch_graph_limit(64);
@@ -10221,6 +10334,7 @@ int main(int argc, char** argv) {
                 vs.blob = thits.blob;
                 vs.slot_off = gs.cache.slot_offsets();
                 vs.n_slots = gs.cache.slots();
+                if (lat_tab.latent && gs.dev != 0) gs.ver_b.set_shared_latent(gs.lat_d, gs.lat_u);
                 if (!gs.ver_b.init(gs.wt, g, gs.ss, vs, gs.head.loaded() ? &gs.head : nullptr, o.spec, err)) {
                     std::fprintf(stderr, "strata serve: --pipeline-windows: the second verifier on CUDA%d (stage %d): %s "
                                          "(raise --vram-reserve-mib by ~200, or --pipeline-windows 0)\n",
@@ -14983,6 +15097,7 @@ int main(int argc, char** argv) {
                     drive.d.layers = 0;
                     drive.d.experts = 0;
                     drive.d.failed = false;
+                    if (use_mtp && mtp_probe_fails("before the chunk's verify", mtp.device(), e)) return false;
                     if (!ver.run(T, win.data(), q, win_pool_fn, win_pool_user, outw.data(), e) || drive.d.failed) {
                         if (drive.d.failed && drive.d.fail) e = drive.d.fail;
                         return false;
@@ -15005,7 +15120,11 @@ int main(int argc, char** argv) {
                     }();
                     if (logpos != nullptr && !ver.window_logprobs(nxt.data(), T, q, logpos_extra, logpos, e))
                         return false;
-                    if (!ver.commit(T, e) || (use_mtp && !mtp.prefill(ver.final_R_all(), nxt.data(), T, q, e))) return false;
+                    if (!ver.commit(T, e)) return false;
+                    if (use_mtp) {
+                        if (mtp_probe_fails("before the drafter's prompt pass", mtp.device(), e)) return false;
+                        if (!mtp.prefill(ver.final_R_all(), nxt.data(), T, q, e)) return false;
+                    }
                     q += T;
                     pp_reached = q;   // #471
                     pp_exact = true;

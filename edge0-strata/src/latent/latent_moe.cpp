@@ -1,6 +1,7 @@
 #include "strata/latent/latent_moe.hpp"
 
 #include "strata/kernels/iq_kernels.hpp"
+#include "strata/kernels/latent.hpp"
 
 #include <cuda_runtime.h>
 
@@ -69,6 +70,21 @@ bool run_layer(const Geometry& g, const Inputs& in, const DevicePlan& plan, cons
             cudaMemcpyAsync(b.y + (size_t) routes[i] * g.H, b.uout + (size_t) i * g.H, (size_t) g.H * 4,
                             cudaMemcpyDeviceToDevice, (cudaStream_t) stream);
     }
+    return true;
+}
+
+bool a_u(const AUBuffers& a, void* stream) {
+    using namespace strata::kernels;
+    if (!a.xlq || !a.ptr || !a.start || !a.n || !a.dst || !a.tok || !a.ids || !a.labels || !a.u ||
+        !a.yl || !a.scratch || !a.uq || !a.out)
+        return false;
+    if (!native_expert_supported((int) a.gu_type, (int) a.d_type, a.ELL, a.I)) return false;
+    const NativeExpertLayout La = native_expert_layout((int) a.gu_type, (int) a.d_type, a.ELL, a.I);
+    native_expert_grouped(La, a.ptr, a.start, a.n, a.dst, a.tok, a.cap_groups, a.cap_entries, a.xlq, a.scratch,
+                          a.yl, stream, 0);
+    quantize_q8_1_rows(a.yl, a.cap_entries, a.ELL, a.uq, stream);
+    latent_u_grouped(a.u, (const uint8_t*) a.uq, a.ids, a.labels, a.E, a.cap_entries, a.ELL, a.H, a.out, stream,
+                     a.fmt);
     return true;
 }
 

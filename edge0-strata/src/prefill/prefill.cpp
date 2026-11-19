@@ -2410,6 +2410,12 @@ bool Prefill::bind_stage_helper(int64_t T) {
     return true;
 }
 
+void Prefill::set_latent_dev(uint8_t* d, uint8_t* u) {
+    Impl& m = *impl_;
+    m.lat_d_dev = d;
+    m.lat_u_dev = u;
+}
+
 bool Prefill::set_peer(core::PeerExperts* peer, int64_t cap_rows, std::string& err) {
     Impl& m = *impl_;
     if (peer == nullptr || !peer->valid()) { m.pp.reset(); return true; }
@@ -2418,8 +2424,12 @@ bool Prefill::set_peer(core::PeerExperts* peer, int64_t cap_rows, std::string& e
     const bool host_route_ok = [] { const char* v = std::getenv("STRATA_PF_PEER_HOST"); return v == nullptr || std::atoi(v) != 0; }();
     if (!peer->p2p() && !host_route_ok) { err = "prefill peer: the two GPUs cannot access each other (no P2P)"; return false; }
     if (!mmq_plan().any) { err = "prefill peer: needs the MMQ prompt path"; return false; }
-    {   // NVFP4: the peer's MMQ products have no per-expert scales (grp_tail, row_sd); its decode rows do
+    {   // Latent packs keep the prompt on the primary: the latent A walk has no peer-ring consumer yet, and the
+        // peer's MMQ products have no per-expert scales for NVFP4. NVFP4 was already declined by its tail; q3k's
+        // shared colscale (tail_off == 0) slipped past that guard, so make the latent check explicit.
         const auto& lay = strata::kernels::cpu::expert_layout();
+        const bool latent = lay.native && !lay.fmt.empty() && lay.fmt[0].n_embd != strata::kernels::cpu::H;
+        if (latent) { err = "prefill peer: a latent pack reads the prompt on the primary GPU"; return false; }
         for (const auto& f : lay.fmt)
             if (lay.native && f.tail_off) { err = "prefill peer: not for NVFP4 experts yet"; return false; }
     }
@@ -5338,6 +5348,7 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
     for (size_t q = 0; q <= nb2 && q < 17; ++q)
                                         std::fprintf(stderr, "latmmq-bh[%zu]=%d\n", q, bh[q]);
                                 }
+#if !defined(STRATA_GPU_METAL)
                                 {   // latmmq-dev: which device each buffer lives on, and the current one
                                     static bool devsaid = false;
                                     if (!devsaid && std::getenv("STRATA_LATENT_MMQ_TRACE") != nullptr) {
@@ -5366,6 +5377,7 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
                                                      devof(m.lat_gdst));
                                     }
                                 }
+#endif
                                 auto run_p = [&](const mmq::Product& pr) {
                                     static const bool alt = std::getenv("STRATA_LATENT_MMQ_ALTCTX") != nullptr;
                                     static std::unique_ptr<mmq::Context> altctx;
@@ -5629,6 +5641,13 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
                                     // the staged walk: the same lookahead keeps the copies coming; a batch waits
                                     // only for its last staged blob (one copy stream, in order)
                                     size_t nb = 0, nst = 0;
+                                    // Ring slots that hold a blob no launch has consumed yet: the open batch's staged
+                                    // blobs plus the ones staged ahead.  stage_one() reuses slot (n mod stage_n) and
+                                    // waits only for the launch that used it LAST, so staging a blob while stage_n
+                                    // slots are held overwrites one the open batch has not computed with yet (a
+                                    // batch of up to MMQ_GROUP experts can hold more than stage_n staged ones when
+                                    // few experts are resident: the 16 GB cards).
+                                    size_t held = 0;
                                     int fb_stage[MMQ_GROUP];
                                     fused::WideBatch fb;
                                     int32_t bfirst = 0, blast = 0;
@@ -5646,13 +5665,21 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
                                             cudaEventRecord(m.used[fb_stage[i]], m.cs);
                                             m.used_of[fb_stage[i]] = fb_stage[i];
                                         }
+                                        held -= nst;
                                         nb = nst = 0;
                                         return true;
                                     };
                                     for (size_t j = 0; j < n_order; ++j) {
                                         const int32_t e = order[j];
                                         while (staged < n_order && staged <= j + lookahead) {
+                                            if (held >= (size_t) stage_n) {
+                                                // every slot is held: wait with the lookahead, or - when this very
+                                                // expert still has to be staged - launch the open batch first
+                                                if (staged > j) break;
+                                                if (!lat_flush()) return false;
+                                            }
                                             if (!stage_one(staged)) return false;
+                                            if (stage_of[staged] >= 0) ++held;
                                             ++staged;
                                         }
                                         if (nb == 0) bfirst = e;

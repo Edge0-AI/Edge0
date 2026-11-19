@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <thread>
 
 namespace strata::core {
 namespace {
@@ -110,6 +111,10 @@ void RemoteExperts::close() {
         if (d_scales_) cudaFree(d_scales_);
         if (d_xr_) cudaFree(d_xr_);
         if (d_scratch_) cudaFree(d_scratch_);
+        if (d_xl_) cudaFree(d_xl_);
+        if (d_xlq_) cudaFree(d_xlq_);
+        if (d_yl_) cudaFree(d_yl_);
+        if (d_uq_) cudaFree(d_uq_);
         if (d_meta_) cudaFree(d_meta_);
         if (h_x_) cudaFreeHost(h_x_);
         if (h_out_) cudaFreeHost(h_out_);
@@ -127,8 +132,12 @@ void RemoteExperts::close() {
     d_xr_ = nullptr;
     d_sx_ = d_sh_ = nullptr;
     d_scratch_ = nullptr;
+    d_xl_ = d_yl_ = nullptr;
+    d_xlq_ = d_uq_ = nullptr;
     d_start_ = d_dst_ = d_tok_ = d_count_ = nullptr;
     d_ptr_ = nullptr;
+    host_labels_ = nullptr;
+    latent_ = false;
     original_row_.clear();
     layers_present_.clear();
 }
@@ -358,6 +367,119 @@ bool RemoteExperts::begin(int64_t layer, const float* x, const int32_t* ids, int
     return true;
 }
 
+void RemoteExperts::bind_latent(strata::core::LatentDense* dense, const int32_t* host_labels, int64_t n_layers,
+                                int64_t E, int64_t ELL, int64_t I, int64_t Hh, int G) {
+    (void) dense;   // the helper runs A-only, so it never needs the U table (mirrors PeerExperts)
+    latent_ = true;
+    lat_ELL_ = ELL;
+    lat_I_ = I;
+    lat_H_ = Hh;
+    lat_E_ = E;
+    lat_G_ = G;
+    host_labels_ = host_labels;
+    DeviceScope scope(device_);
+    if (!scope.ok) return;
+    const int64_t M = strata::kernels::kWindowMaxT;
+    auto alloc = [&](void** p, size_t bytes) {
+        if (*p) cudaFree(*p);
+        if (cudaMalloc(p, bytes) != cudaSuccess) *p = nullptr;
+    };
+    alloc((void**) &d_xl_, (size_t) M * G * ELL * 4);
+    alloc((void**) &d_xlq_, (size_t) M * G * (ELL / 32) * 36);
+    alloc((void**) &d_yl_, (size_t) CAP * ELL * 4);
+    alloc((void**) &d_uq_, (size_t) CAP * (ELL / 32) * 36);
+}
+
+bool RemoteExperts::begin_latent(int64_t layer, const float* xl, const uint32_t* xlseq, const int32_t* ids,
+                                 int64_t n_tok, int64_t k, const int32_t* kind, const int32_t* primary_res,
+                                 std::string& err) {
+    struct Timer { double& acc; std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+        ~Timer() { acc += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count(); } } timer{ms_begin_};
+    const int64_t n = n_tok * k;
+    if (n <= 0 || n > CAP || n_tok > strata::kernels::kWindowMaxT || k != 10 || layer < 0 ||
+        (size_t) layer >= layers_present_.size() || device_ < 0) {
+        err = "CUDA" + std::to_string(device_) + " experts: invalid layer, routing width or window size";
+        return false;
+    }
+    std::fill(owned_.begin(), owned_.begin() + n, 0);
+    group_id_.clear(); ptr_.clear(); start_.clear(); dst_.clear(); tok_.clear(); original_row_.clear();
+    launched_hq_ = false;
+    if (!layers_present_[(size_t) layer]) return true;
+    if (d_xl_ == nullptr || d_xlq_ == nullptr || d_yl_ == nullptr || d_uq_ == nullptr) {
+        err = "CUDA" + std::to_string(device_) + " experts: latent not bound"; return false;
+    }
+    // The primary's D stage puts xl into mapped host memory then raises the doorbell; wait for this layer.
+    if (xlseq != nullptr) {
+        const uint32_t want = (uint32_t) (layer + 1);
+        const auto t0 = std::chrono::steady_clock::now();
+        while (*(volatile const uint32_t*) xlseq < want) {
+            if (std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count() > 20000.0) {
+                err = "CUDA" + std::to_string(device_) + " experts: the D rows never arrived for this layer";
+                return false;
+            }
+            std::this_thread::yield();
+        }
+    }
+    std::fill(group_of_.begin(), group_of_.begin() + n, -1);
+    for (int64_t i = 0; i < n; ++i) {
+        const int32_t e = ids[i];
+        if ((kind && kind[i] != -1) || e < 0 || e >= n_expert_ ||
+            (primary_res && primary_res[(size_t) layer * (size_t) n_expert_ + (size_t) e] >= 0)) continue;
+        const int32_t slot = cache_.slot_of(layer, e);
+        if (slot < 0) continue;
+        owned_[(size_t) i] = 1;
+        int32_t group = -1;
+        for (size_t g = 0; g < group_id_.size(); ++g)
+            if (group_id_[g] == e) { group = (int32_t) g; break; }
+        if (group < 0) {
+            group = (int32_t) group_id_.size();
+            group_id_.push_back(e);
+            ptr_.push_back((unsigned long long) cache_.device_slot(slot));
+        }
+        group_of_[(size_t) i] = group;
+        ++computed_;
+    }
+    if (group_id_.empty()) return true;
+    for (size_t g = 0; g < group_id_.size(); ++g) {
+        start_.push_back((int32_t) dst_.size());
+        for (int64_t i = 0; i < n; ++i) if (group_of_[(size_t) i] == (int32_t) g) {
+            original_row_.push_back((int32_t) i);
+            dst_.push_back((int32_t) dst_.size());
+            tok_.push_back((int32_t) ((i / k) * lat_G_ + host_labels_[(size_t) layer * lat_E_ + ids[i]]));   // xl row
+        }
+    }
+    start_.push_back((int32_t) dst_.size());
+    auto* meta = (RemoteMeta*) h_meta_;
+    std::memcpy(meta->ptr, ptr_.data(), ptr_.size() * sizeof(ptr_[0]));
+    std::memcpy(meta->start, start_.data(), start_.size() * sizeof(start_[0]));
+    std::memcpy(meta->dst, dst_.data(), dst_.size() * sizeof(dst_[0]));
+    std::memcpy(meta->tok, tok_.data(), tok_.size() * sizeof(tok_[0]));
+    meta->count = (int32_t) group_id_.size();
+    DeviceScope scope(device_);
+    if (!scope.ok) { err = scope.error(device_); return false; }
+    groups_ = (int32_t) group_id_.size();
+    const cudaStream_t s = stream_;
+    const size_t xlq_row = (size_t) ((lat_ELL_ / 32) * 36);
+    const bool staged =
+        check(cudaMemcpyAsync(d_xl_, xl, (size_t) n_tok * lat_G_ * lat_ELL_ * 4, cudaMemcpyHostToDevice, s), "copy xl", err, device_) &&
+        check(cudaMemcpyAsync(d_meta_, h_meta_, sizeof(RemoteMeta), cudaMemcpyHostToDevice, s), "copy metadata", err, device_);
+    if (!staged) return false;
+    const auto& lay = strata::kernels::cpu::expert_layout();
+    const auto& fmt = lay.fmt[(size_t) layer];
+    strata::kernels::quantize_q8_1_rows(d_xl_, n_tok * lat_G_, (int) lat_ELL_, d_xlq_, s);
+    const strata::kernels::NativeExpertLayout La =
+        strata::kernels::native_expert_layout(fmt.gu_type, fmt.d_type, lat_ELL_, lat_I_);
+    strata::kernels::native_expert_grouped(La, d_ptr_, d_start_, d_count_, d_dst_, d_tok_, groups_,
+                                           (int64_t) dst_.size(), d_xlq_, d_scratch_, d_yl_, s);
+    strata::kernels::quantize_q8_1_rows(d_yl_, (int64_t) dst_.size(), (int) lat_ELL_, d_uq_, s);
+    if (!check(cudaMemcpyAsync(h_out_, d_uq_, (size_t) dst_.size() * xlq_row, cudaMemcpyDeviceToHost, s),
+               "copy hq", err, device_)) return false;
+    launched_hq_ = true;
+    ++launched_layers_;
+    returned_bytes_ += (uint64_t) dst_.size() * xlq_row;
+    return true;
+}
+
 bool RemoteExperts::finish(float* out, std::string& err) {
     if (group_id_.empty()) return true;
     DeviceScope scope(device_);
@@ -386,8 +508,14 @@ bool RemoteExperts::finish(float* out, std::string& err) {
 #endif
     ms_wait_ += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - w0).count();
     if (remote_opt_ && remote_opt_->active()) { remote_opt_->accumulate(*this); return true; }
-    for (size_t i = 0; i < original_row_.size(); ++i)
-        std::memcpy(out + (size_t) original_row_[i] * H, h_out_ + i * H, (size_t) H * sizeof(float));
+    if (launched_hq_) {   // latent A-only: q8_1 hq rows, one xlq_row byte-block per entry
+        const size_t xlq_row = (size_t) ((lat_ELL_ / 32) * 36);
+        for (size_t i = 0; i < original_row_.size(); ++i)
+            std::memcpy((uint8_t*) out + (size_t) original_row_[i] * xlq_row, (uint8_t*) h_out_ + i * xlq_row, xlq_row);
+    } else {
+        for (size_t i = 0; i < original_row_.size(); ++i)
+            std::memcpy(out + (size_t) original_row_[i] * H, h_out_ + i * H, (size_t) H * sizeof(float));
+    }
     return true;
 }
 

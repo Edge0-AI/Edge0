@@ -2418,6 +2418,12 @@ if(STRATA_NATIVE_EXPERTS)
     add_executable(lat_fused_q3k_test src/prefill/lat_fused_q3k_test.cpp)
     target_link_libraries(lat_fused_q3k_test PRIVATE strata_mmq strata_kernels strata_kernels_cpu ggml-base CUDA::cudart)
     target_include_directories(lat_fused_q3k_test PRIVATE include)
+    # the latent D kernels (fused and q3k) on a partly filled last tile: every M against two full tiles, a hang fails
+    add_executable(lat_dense_d_tail_test src/prefill/lat_dense_d_tail_test.cpp)
+    target_link_libraries(lat_dense_d_tail_test PRIVATE strata_mmq strata_kernels strata_kernels_cpu ggml-base CUDA::cudart)
+    target_include_directories(lat_dense_d_tail_test PRIVATE include)
+    add_test(NAME lat_dense_d_tail_test COMMAND lat_dense_d_tail_test)
+    set_tests_properties(lat_dense_d_tail_test PROPERTIES TIMEOUT 300)
     # M1 of the q3k latent A stage: the down half against native_expert_grouped's own down (one unit test)
     add_executable(lat_q3k_down_test src/prefill/lat_q3k_down_test.cpp)
     target_link_libraries(lat_q3k_down_test PRIVATE strata_mmq strata_kernels strata_kernels_cpu ggml-base CUDA::cudart)
@@ -2577,7 +2583,7 @@ if(STRATA_NATIVE_EXPERTS)
     add_executable(nvfp4_decode_bench src/kernels/nvfp4_decode_bench.cpp)
     target_link_libraries(nvfp4_decode_bench PRIVATE strata_kernels CUDA::cudart)
 
-    target_sources(strata_engine PRIVATE src/core/latent_dense.cpp src/latent/latent_moe.cpp)
+    target_sources(strata_engine PRIVATE src/core/latent_dense.cpp src/core/latent_tables.cpp src/latent/latent_moe.cpp)
 
     # latent MoE layer0: D(Q8) -> A(native NVFP4) -> U(Q8) -> combine
     add_executable(latent_layer0_verify src/kernels/latent_layer0_verify.cpp)
@@ -2607,6 +2613,14 @@ if(STRATA_NATIVE_EXPERTS)
     add_executable(latent_u_check src/kernels/latent_u_check.cpp src/core/latent_dense.cpp)
     target_include_directories(latent_u_check PRIVATE ${CMAKE_SOURCE_DIR}/include)
     target_link_libraries(latent_u_check PRIVATE strata_engine strata_kernels CUDA::cudart)
+
+    add_executable(latent_tables_check src/kernels/latent_tables_check.cpp src/core/latent_tables.cpp src/core/latent_dense.cpp)
+    target_include_directories(latent_tables_check PRIVATE ${CMAKE_SOURCE_DIR}/include)
+    target_link_libraries(latent_tables_check PRIVATE strata_engine strata_kernels CUDA::cudart)
+
+    add_executable(latent_a_u_check src/kernels/latent_a_u_check.cpp src/latent/latent_moe.cpp src/core/latent_dense.cpp)
+    target_include_directories(latent_a_u_check PRIVATE ${CMAKE_SOURCE_DIR}/include)
+    target_link_libraries(latent_a_u_check PRIVATE strata_engine strata_kernels CUDA::cudart)
 
     add_executable(latent_cpu_verify src/kernels/latent_cpu_verify.cpp src/core/latent_dense.cpp)
     target_include_directories(latent_cpu_verify PRIVATE ${CMAKE_SOURCE_DIR}/include)
