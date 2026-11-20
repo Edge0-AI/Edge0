@@ -667,6 +667,13 @@ Buffer Context::wrap(void* p, size_t bytes) {
 #endif
 }
 
+bool Context::set_idle(Buffer& b, bool idle) {
+    if (!b.handle || b.chunks || b.bias) return true;   // only a whole buffer from alloc(): never a wrap or a view
+    id<MTLBuffer> x = (__bridge id<MTLBuffer>)b.handle;
+    const MTLPurgeableState was = [x setPurgeableState:(idle ? MTLPurgeableStateVolatile : MTLPurgeableStateNonVolatile)];
+    return was != MTLPurgeableStateEmpty;
+}
+
 void Context::free(Buffer& b) {
 #if defined(STRATA_DS4_RUNTIME)
     // The deferred command buffer is made WITHOUT retained references: a buffer released here while a dispatch that names it
