@@ -11019,7 +11019,20 @@ int main(int argc, char** argv) {
             return false;
         };
         StageThreads ckpt_threads;   // STRATA_CKPT_THREADS: the later stages' parts of a checkpoint (started on first use)
-        auto checkpoint_at = [&](int64_t L, std::vector<ConvCheckpoint>* parts = nullptr, bool as_tail = false) -> bool {
+        // Only the ordinary single-session save has a fresh synchronous host payload. Layer splits, the
+        // pool and the opt-in copy modes need to account for their own overlapping buffers.
+        const bool check_checkpoint_host_memory = [&] {
+#if defined(__linux__) && !defined(STRATA_USE_HIP) && !defined(STRATA_HIP_GFX906)
+            const char* async = std::getenv("STRATA_CKPT_ASYNC");
+            const char* gather = std::getenv("STRATA_CKPT_GATHER");
+            return !multi_gpu && o.batch == 0 && !ckpt_pool.on() &&
+                   !(async && async[0] == '1') && !(gather && gather[0] == '1');
+#else
+            return false;
+#endif
+        }();
+        auto checkpoint_at = [&](int64_t L, std::vector<ConvCheckpoint>* parts = nullptr, bool as_tail = false,
+                                 bool explicit_pin = false) -> bool {
             ckpt_why.clear();
             if (o.prompt_cache <= 0 || L < 1) return true;
             for (ConvCheckpoint& c : checks)
@@ -11028,6 +11041,27 @@ int main(int argc, char** argv) {
                     if (!as_tail && L == tail_ckpt_len) tail_ckpt_len = -1;   // a periodic one lands here: a normal item now
                     return true;
                 }
+            if (check_checkpoint_host_memory && !explicit_pin && parts == nullptr) {
+                const auto memory = strata::core::sample_host_memory();
+                if (memory && memory->source != strata::core::MemorySource::meminfo) {
+                    size_t bytes = 0;
+                    std::string estimate_error;
+                    const auto images = std::count_if(req_imgs.begin(), req_imgs.end(),
+                                                      [&](const ImgKey& key) { return key.start < L; });
+                    if (strata::core::conversation_checkpoint_host_bytes(ss, g, (size_t) L, (size_t) images,
+                                                                         bytes, estimate_error)) {
+                        if (!strata::core::conversation_memory_admit(memory->available, bytes, 0)) {
+                            std::fprintf(stderr, "strata serve: checkpoint at %lld skipped: its host payload needs %zu bytes, "
+                                                 "%llu available under the %s memory limit\n", (long long) L, bytes,
+                                         (unsigned long long) memory->available, strata::core::memory_source_name(memory->source));
+                            return true;
+                        }
+                        if (ckpt_trace)
+                            std::fprintf(stderr, "strata trace: checkpoint at %lld host payload %zu bytes, %llu available\n",
+                                         (long long) L, bytes, (unsigned long long) memory->available);
+                    }
+                }
+            }
             ConvCheckpoint c = parts == nullptr ? ckpt_pool.take() : ConvCheckpoint{};   // (STRATA_CKPT_POOL)
             if (parts == nullptr) pool_topup();   // the next save finds one ready
             c.ids.assign(cur.begin(), cur.begin() + L);
@@ -16167,7 +16201,8 @@ int main(int argc, char** argv) {
                 }
                 at = to;
                 if ((to == turn_at || to == root_at || to == message_at || to == pin_at) &&
-                    !checkpoint_at(to, nullptr, to == message_at && to != turn_at && to != root_at && to != pin_at)) {   // the tail kind leaves first
+                    !checkpoint_at(to, nullptr, to == message_at && to != turn_at && to != root_at && to != pin_at,
+                                   to == pin_at)) {   // the tail kind leaves first
                     if (!ckpt_why.empty() || !checkpoint_failure_is_survivable()) {   // #3350: only an unwell GPU ends the request
                         std::printf("ERR saving a conversation checkpoint failed%s\n", ckpt_why.c_str());
                         return 1;
