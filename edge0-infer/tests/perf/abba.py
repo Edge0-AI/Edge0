@@ -132,6 +132,10 @@ def parse_output(stdout, short_prompt=None, input_count=None, *, ntok=100):
     summaries = [row for row in (json.loads(line) for line in stdout.splitlines() if line.strip()) if row.get('type') == 'summary']
     if len(summaries) != 1 or 'engine' not in summaries[0] or 'model' not in summaries[0]:
         raise ValueError('Expected one summary row with engine and model identity')
+    if any('generation' in row for row in (runs[0], summaries[0])):
+        if (not all(isinstance(row.get('generation'), dict) for row in (runs[0], summaries[0])) or
+                runs[0]['generation'] != summaries[0]['generation']):
+            raise ValueError('Run and summary effective generation configurations differ or are invalid')
     return runs[0], summaries[0]
 
 
@@ -190,7 +194,7 @@ def run_measurement(host, commands, protocol, writer, *, model, raw_dir, tools, 
             writer.update_identity(engine=identity['engine'], model=model_identity, build_consistency=consistency)
         elif summary['engine'] != identity['engine'] or model_identity != identity['model']:
             stop('engine or model identity changed between processes', snapshot_before=before, snapshot_after=after)
-        configuration = summary['model']['loading']
+        configuration = reports.effective_configuration(summary)
         if side in configuration_of and configuration_of[side] != configuration:
             stop('effective configuration changed between processes of one side', snapshot_before=before, snapshot_after=after)
         configuration_of[side] = configuration

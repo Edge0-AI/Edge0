@@ -248,7 +248,8 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
     auto latent_project = [&](size_t offset, uint32_t in, uint32_t out, uint32_t row_bytes,
                               const mtl::Buffer& input, bool group_inputs) {
         const PcDqArgs args{in, la.groups * out, row_bytes, 0};
-        D(P_(b.lib, "dq_f16_2"), {mtl::Arg::B(latent_du_, offset), mtl::Arg::B(b.lat_w), mtl::Arg::V(args)},
+        D(P_(b.lib, "dq_f16_" + std::to_string(latent_du_type_)),
+          {mtl::Arg::B(latent_du_, offset), mtl::Arg::B(b.lat_w), mtl::Arg::V(args)},
           (in / 32 + 63) / 64, args.n_out, 64);
         for (uint32_t group = 0; group < la.groups; ++group)
             gemm(input, b.lat_w, b.lat_proj, nT, out, in, group_inputs ? 2ull * group * nT * in : 0,
@@ -405,8 +406,8 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
         if (latent_on_) {
             const auto& a = latent_args_;
             ma = {0, a.up_off, a.down_off, a.expert_bytes, a.expert_bytes, a.gu_row, a.down_row, a.latent, NFF};
-            gu_type = ref::Q3_K;
-            down_type = ref::IQ4_NL;
+            gu_type = latent_nv_ ? ref::NVFP4 : ref::Q3_K;
+            down_type = latent_nv_ ? ref::NVFP4 : ref::IQ4_NL;
             expert_weights = stream_ ? &st_->chunk(0) : &latent_a_;   // streaming: the arena (its slots hold the blobs)
             ebase = stream_ ? 0 : (size_t) l * NEXP * a.expert_bytes;
             du_offset = (size_t) l * (latent_dense_.d_bytes() + latent_dense_.u_bytes());
@@ -454,8 +455,9 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
         const bool staged = b.lat_gu16.handle && nT >= PC_STAGE_GU_MIN;
         if (staged) {
             const uint32_t q3[4] = {ma.n_embd, ma.n_ff, ma.gu_row, uint32_t(ma.gu_stride)};
+            const std::string stage = latent_nv_ ? "latent_prompt_nv_stage" : "latent_prompt_q3_stage";
             mtl::Dispatch st;
-            st.p = arena ? P_(b.lib, "latent_prompt_q3_stage", on20, "latent_prompt_q3_stage#arena") : P_(b.lib, "latent_prompt_q3_stage");
+            st.p = arena ? P_(b.lib, stage, on20, stage + "#arena") : P_(b.lib, stage);
             st.args = {mtl::Arg::B(*expert_weights, ebase), mtl::Arg::B(b.lat_gu16), mtl::Arg::V(q3)};
             arena_args(st);
             st.grid[0] = (2 * ma.n_ff * (ma.n_embd / 32) + 127) / 128;
@@ -463,7 +465,9 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
             st.tg[0] = 128;
             mtl::require_fit(st, "prompt-chain dispatch");
             ds.push_back(std::move(st));
-            gu.p = P_(b.lib, "latent_prompt_gu_f16");
+            // NVFP4 reads the experts' output scales (their blobs' tails) after the GEMM: from the arena when streaming
+            const std::string gu16 = latent_nv_ ? "latent_prompt_gu_f16_nv" : "latent_prompt_gu_f16";
+            gu.p = arena && latent_nv_ ? P_(b.lib, gu16, on20, gu16 + "#arena") : P_(b.lib, gu16);
         } else if (b.v3e) {
             const std::string fn = "mm_gu3_" + std::to_string(gu_type) + "_" + tl3(b.gu3);
             gu.p = P_(b.lib, fn, mtl::Constants().b(7, true), fn + "#k4");
@@ -474,7 +478,8 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
                          : P_(b.lib, fn, mtl::Constants().i(5, 0), fn + "#p0");
         }
         gu.args = {staged ? mtl::Arg::B(b.lat_gu16) : mtl::Arg::B(*expert_weights, ebase), mtl::Arg::B(b.XS), mtl::Arg::B(b.HS), mtl::Arg::B(b.tiles), mtl::Arg::V(ma)};
-        if (!staged) arena_args(gu);
+        if (staged && latent_nv_) gu.args.push_back(mtl::Arg::B(*expert_weights, ebase));   // the experts' output scales
+        if (!staged || latent_nv_) arena_args(gu);
         gu.tg[0] = b.v3e ? 32 * b.gu3[3] : 64;
         gu.indirect = &b.meta;
         gu.ind_off = 2 * 4;

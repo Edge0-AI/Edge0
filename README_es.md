@@ -114,8 +114,8 @@ Se ejecuta en edge0-strata mediante `edge0-infer serve` y `edge0-infer chat`, en
 
 | Tamaño | Checkpoint publicado | Perfil de inferencia | Motor |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA; macOS Apple Silicon, Metal, Q3_K) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA; macOS Apple Silicon, Metal, Q3_K) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1792), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA; macOS Apple Silicon, Metal) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Expertos latentes Q3_K o NVFP4 (1280), 48 capas, 512 expertos, K=10 | edge0-strata ✅ (Linux o Windows, GPU NVIDIA; macOS Apple Silicon, Metal) |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -339,7 +339,7 @@ El registro de arranque muestra la capa de la segunda tarjeta (`peer GPU 1: … 
 
 ⬇️ **Descargar:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Abre **Edge0 Chat** en Windows o macOS (Apple Silicon). En **Models**, descarga un modelo desde Hugging Face o ModelScope, o añade una carpeta de modelo que ya tengas, como `Edge0-145B-q3k`, y cárgalo para ejecutarlo localmente. En macOS la aplicación solo ofrece y ejecuta los modelos Q3_K. Para compilar la aplicación desde el código fuente, sigue la guía de [Edge0 Chat](edge0-infer/examples/desktop/README.md).
+Abre **Edge0 Chat** en Windows o macOS (Apple Silicon). En **Models**, descarga un modelo desde Hugging Face o ModelScope, o añade una carpeta de modelo que ya tengas, como `Edge0-145B-q3k`, y cárgalo para ejecutarlo localmente. En macOS la aplicación ofrece las cuatro carpetas y las ejecuta en Metal; las carpetas NVFP4 mantienen todo el conjunto de expertos en memoria unificada. Para compilar la aplicación desde el código fuente, sigue la guía de [Edge0 Chat](edge0-infer/examples/desktop/README.md).
 
 </details>
 
@@ -353,7 +353,14 @@ Abre **Edge0 Chat** en Windows o macOS (Apple Silicon). En **Models**, descarga 
            "model": "./model-skeleton.gguf", "gpu": false}
 ```
 
-y `--vision` a `"args"`. `strata-vision` no está en este repositorio: `setup.py --setup --vision yes` lo descarga, o compila `tools/vision` en un checkout de Strata. El registro dirá `images on`; envía una imagen con `/image` en el chat o con una parte `image_url` por la API de OpenAI.
+y `--vision` a `"args"`. `strata-vision` viene con el archivo del motor que descarga `setup.py --setup --vision yes`. Su código también está en este repositorio, en `edge0-strata/tools/vision/`: un proyecto CMake aparte que la compilación principal no compila, y se compila con un checkout de llama.cpp en la revisión fijada por el motor (el repositorio no incluye `third_party/llama.cpp`; un árbol donde la CMake principal lo descargó lo tiene en `build/_deps/strata_llamacpp-src`):
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+El registro dirá `images on`; envía una imagen con `/image` en el chat o con una parte `image_url` por la API de OpenAI.
 
 </details>
 
@@ -422,7 +429,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-Flujo: fork → rama de funcionalidad → PR dirigido a `main`. Mantén las pruebas aprobadas y añade pruebas para los comportamientos nuevos.
+Flujo: fork → rama de funcionalidad → PR dirigido a `main`. Mantén las pruebas aprobadas y añade pruebas para los comportamientos nuevos. Acuerda primero en una issue los cambios de comportamiento, agrupa los arreglos relacionados en una sola PR y mantén como máximo dos PR abiertas.
 
 </details>
 

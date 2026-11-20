@@ -1,0 +1,54 @@
+name: Label pull requests
+
+# Checks out the default branch so a pull request cannot change the label
+# rules. Matches paths in .github/labeler.yml.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  labeler:
+    name: Area labels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Ensure area labels exist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              ["engine", "1d76db", "edge0-infer engine, CLI, or server"],
+              ["assets", "0e8a16", "Model asset tools"],
+              ["examples", "c5def5", "Chat app examples"],
+              ["desktop", "fbca04", "Desktop chat app"],
+              ["strata", "5319e7", "edge0-strata"],
+              ["docs", "0075ca", "Documentation"],
+              ["ci", "bfdadc", "GitHub workflows and templates"],
+            ];
+            for (const [name, color, description] of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                  color,
+                  description,
+                });
+              } catch (error) {
+                const status = error.status || (error.response && error.response.status);
+                if (status !== 422) throw error;
+              }
+            }
+      - uses: actions/labeler@v5
+        with:
+          sync-labels: true
+          dot: true

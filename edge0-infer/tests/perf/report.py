@@ -89,6 +89,16 @@ def build_consistency(engine, workspace):
 
 # ---------------------------------------------------------------- cells
 
+def effective_configuration(summary):
+    """Preserve observed configuration, without reconstructing absent legacy metadata."""
+    configuration = copy.deepcopy(summary['model']['loading'])
+    if 'runtime' in summary:
+        configuration['runtime'] = copy.deepcopy(summary['runtime'])
+    if 'generation' in summary:
+        configuration['generation'] = copy.deepcopy(summary['generation'])
+    return configuration
+
+
 def memory_from_snapshot(snapshot):
     def peak(group):
         values = snapshot[group].get('values')

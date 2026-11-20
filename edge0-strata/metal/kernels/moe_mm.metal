@@ -127,6 +127,12 @@ struct MmArgs {
     uint n_ff;
 };
 
+// NVFP4 latent experts: {s_gate, s_up, s_down} (float32) follow an expert's down rows; they scale the projections'
+// outputs.  E is the expert's blob; the pointer is not read for other formats.
+static inline device const float* expert_tail(device const uchar* E, constant MmArgs& a) {
+    return (device const float*)(E + a.down_off + ulong(a.d_row) * a.n_embd);
+}
+
 // TN x TK weights of `nrow`-strided rows into threadgroup half: thread-strided units of the format
 template <int F, int TN, int TK>
 static inline void stage_w(device const uchar* w0, uint row_bytes, int k0, threadgroup half* dst,
@@ -303,6 +309,7 @@ kernel void mm_gu2(device const uchar* W [[buffer(0)]], device const half* XS [[
     device const uchar* E = kArena ? arena_slot(smap[e], W, W1, W2, W3) : W + ulong(e) * a.gu_stride;
     device const uchar* g0 = E + a.gate_off + ulong(f0) * a.gu_row;
     device const uchar* u0 = E + a.up_off + ulong(f0) * a.gu_row;
+    device const float* tail = expert_tail(E, a);
     constexpr auto desc = matmul2d_descriptor(TM, TN, TK, false, true, false, matmul2d_descriptor::mode::multiply_accumulate);
     matmul2d<desc, execution_simdgroups<SG>> op;
     tensor<device half, dextents<int32_t, 2>, tensor_inline> tX((device half*)XS, dextents<int32_t, 2>(a.n_embd, 1 << 30));
@@ -331,8 +338,9 @@ kernel void mm_gu2(device const uchar* W [[buffer(0)]], device const half* XS [[
     }
     for (uint16_t i = 0; i < accg.get_capacity(); ++i)
         if (accg.is_valid_element(i)) {
-            const float g = accg[i];
-            accg[i] = g / (1.0f + exp(-g)) * accu[i];
+            float g = accg[i], u = accu[i];
+            if (F == T_NVFP4) { g *= tail[0]; u *= tail[1]; }
+            accg[i] = g / (1.0f + exp(-g)) * u;
         }
     tensor<threadgroup float, dextents<int32_t, 2>, tensor_inline> tO(ot, dextents<int32_t, 2>(TN, TM));
     accg.store(tO);
@@ -355,7 +363,8 @@ kernel void mm_down2(device const uchar* W [[buffer(0)]], device const half* HS 
     load_tab<F>(tab, tid, NTH);
     const int2 tl = tiles[tg.y];
     const int e = tl.x, row0 = tl.y, d0 = int(tg.x) * TN;
-    device const uchar* w0 = (kArena ? arena_slot(smap[e], W, W1, W2, W3) : W + ulong(e) * a.d_stride) + a.down_off + ulong(d0) * a.d_row;
+    device const uchar* E = kArena ? arena_slot(smap[e], W, W1, W2, W3) : W + ulong(e) * a.d_stride;
+    device const uchar* w0 = E + a.down_off + ulong(d0) * a.d_row;
     constexpr auto desc = matmul2d_descriptor(TM, TN, TK, false, true, false, matmul2d_descriptor::mode::multiply_accumulate);
     matmul2d<desc, execution_simdgroups<SG>> op;
     tensor<device half, dextents<int32_t, 2>, tensor_inline> tH((device half*)HS, dextents<int32_t, 2>(a.n_ff, 1 << 30));
@@ -371,6 +380,11 @@ kernel void mm_down2(device const uchar* W [[buffer(0)]], device const half* HS 
         tA = tH.template slice<TK, TM>(k0, row0);
         op.run(tA, tW, acc);
         threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    if (F == T_NVFP4) {
+        const float s = expert_tail(E, a)[2];
+        for (uint16_t i = 0; i < acc.get_capacity(); ++i)
+            if (acc.is_valid_element(i)) acc[i] *= s;
     }
     tensor<device float, dextents<int32_t, 2>, tensor_inline> tY(YE, dextents<int32_t, 2>(a.n_embd, 1 << 30));
     acc.store(tY.slice(d0, row0));
@@ -396,6 +410,7 @@ MM_GU2_SET(T_Q2_0) MM_GU2_SET(T_IQ3_XXS) MM_GU2_SET(T_IQ2_XXS) MM_GU2_SET(T_IQ2_
 MMGU2(T_Q3_K, 16, 64, 64, 2)
 MMGU2(T_Q3_K, 32, 64, 32, 2)
 MMDN2(T_IQ4_NL, 32, 64, 32, 2)
+MMGU2(T_NVFP4, 16, 64, 64, 2) MMGU2(T_NVFP4, 32, 64, 32, 2) MMDN2(T_NVFP4, 16, 64, 32, 2) MMDN2(T_NVFP4, 32, 64, 32, 2)
 MM_GU2_SET(T_TQK6) MM_GU2_SET(T_TQ2T)   // Gyro: the trellis gate/up (units of 16 weights: TK 16 or a multiple)
 MM_DN2_SET(T_Q2_0)
 MM_DN2_SET(T_TQK7) MM_DN2_SET(T_TQ2T)

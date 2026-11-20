@@ -108,7 +108,7 @@ struct QsaArgs { uint32_t pos0, pos_base, max_cells, n_tok; float eps; };
 struct GlueArgs { uint32_t n, n_tok, n_embd, topk; };
 struct LatentRoutedArgs {
     uint32_t n_tok, groups, hidden, latent, ff, topk, plan_token_entry;
-    uint32_t u_row, gu_row, down_row, up_off, down_off, expert_bytes;
+    uint32_t u_row, gu_row, down_row, up_off, down_off, expert_bytes, tail_off;
 };
 struct ArgArgs { uint32_t n_vocab, parts; };
 // the routed gate/up's i-quant grids from constant memory (QUANT_CTAB, function constant 23 of quant.metal): bitwise
@@ -284,6 +284,8 @@ private:
     bool latent_on_ = false;
     bool latent_grouped_u_ = false;
     bool latent_fast_verify_ = false;
+    bool latent_nv_ = false;    // NVFP4 experts: no column scale, a scalar tail per expert
+    int latent_du_type_ = 0;    // the D/U files' ggml type (Q4_0 or Q8_0)
     bool fast_verify(int ntok) const {
         return latent_fast_verify_ && win_head_ && !rows_ && ntok > 1;
     }
@@ -835,22 +837,32 @@ bool Window::latent_init(std::string& err) {
         err = "metal latent: expected 48 layers and 512 experts";
         return false;
     }
-    const size_t gu_row = ref::row_bytes(ref::Q3_K, width);
-    const size_t down_row = ref::row_bytes(ref::IQ4_NL, NFF);
+    // Two expert layouts: column-scaled Q3_K gate/up with IQ4_NL down, or NVFP4 (ggml type 40) for all three with the
+    // per-expert scalars {s_gate, s_up, s_down, 0} in a 16-byte tail and no column scale.
+    const auto& first = layout.fmt.front();
+    const bool nv = first.gu_type == ref::NVFP4;
+    const size_t gu_row = nv ? first.gu_row : ref::row_bytes(ref::Q3_K, width);
+    const size_t down_row = nv ? first.d_row : ref::row_bytes(ref::IQ4_NL, NFF);
     const size_t up_off = gu_row * NFF, down_off = 2 * up_off;
-    const size_t blob = down_off + down_row * width;
+    const size_t tail_off = nv ? down_off + down_row * width : 0;
+    const size_t blob = down_off + down_row * width + (nv ? 4 * sizeof(float) : 0);
+    if (nv && (gu_row != size_t(width) / 64 * 36 || down_row != size_t(NFF) / 64 * 36)) {
+        err = "metal latent: unexpected NVFP4 row size";
+        return false;
+    }
     std::vector<float> inverse;
     inverse.reserve(layers * width);
     for (const auto& fmt : layout.fmt) {
-        if (fmt.n_embd != width || fmt.n_ff != NFF || fmt.gu_type != ref::Q3_K ||
-            fmt.d_type != ref::IQ4_NL || fmt.gu_row != gu_row || fmt.d_row != down_row ||
-            fmt.up_off != up_off || fmt.down_off != down_off || fmt.bytes != blob ||
-            !fmt.gu_colscale || fmt.had_gu || fmt.had_d) {
-            err = "metal latent: expected a uniform colscaled Q3_K/IQ4_NL expert layout";
+        const bool shape = fmt.n_embd == width && fmt.n_ff == NFF && fmt.gu_row == gu_row && fmt.d_row == down_row &&
+                           fmt.up_off == up_off && fmt.down_off == down_off && fmt.bytes == blob && !fmt.had_gu && !fmt.had_d;
+        const bool q3k = !nv && fmt.gu_type == ref::Q3_K && fmt.d_type == ref::IQ4_NL && fmt.gu_colscale;
+        const bool fp4 = nv && fmt.gu_type == ref::NVFP4 && fmt.d_type == ref::NVFP4 && !fmt.gu_colscale && fmt.tail_off == tail_off;
+        if (!shape || !(q3k || fp4)) {
+            err = "metal latent: expected a uniform colscaled Q3_K/IQ4_NL or NVFP4 expert layout";
             return false;
         }
         for (uint32_t i = 0; i < width; ++i) {
-            const float v = fmt.gu_colscale[i];
+            const float v = nv ? 1.0f : fmt.gu_colscale[i];
             if (!std::isfinite(v) || v <= 0.0f) {
                 err = "metal latent: invalid inverse scale";
                 return false;
@@ -859,10 +871,12 @@ bool Window::latent_init(std::string& err) {
         }
     }
     if (!latent_dense_.open(dense, layers, groups, N, width, err)) return false;
-    if (latent_dense_.fmt() != 4) {
-        err = "metal latent: D/U must be Q4_0 (STRATA_LATENT_DENSE_FMT=4)";
+    if (latent_dense_.fmt() != 4 && latent_dense_.fmt() != 8) {
+        err = "metal latent: D/U must be Q4_0 or Q8_0 (STRATA_LATENT_DENSE_FMT=4 or 8)";
         return false;
     }
+    latent_nv_ = nv;
+    latent_du_type_ = latent_dense_.fmt() == 8 ? ref::Q8_0 : ref::Q4_0;
     if (!latent_experts_.open(experts, layers, NEXP, blob, err)) return false;
     const char* labels = std::getenv("STRATA_LATENT_LABELS");
     const auto label_path = labels && *labels ? std::filesystem::path(labels)
@@ -895,12 +909,14 @@ bool Window::latent_init(std::string& err) {
     latent_grouped_u_ = grouped && !std::strcmp(grouped, "1");
     if (latent_grouped_u_) latent_group_active_ = cx_->alloc(sizeof(uint32_t) * MAXT * groups);
     latent_args_ = {0, groups, N, width, NFF, TOPK, P_TOKENT, uint32_t(latent_dense_.u_row_bytes()),
-                    uint32_t(gu_row), uint32_t(down_row), uint32_t(up_off), uint32_t(down_off), uint32_t(blob)};
+                    uint32_t(gu_row), uint32_t(down_row), uint32_t(up_off), uint32_t(down_off), uint32_t(blob),
+                    uint32_t(tail_off)};
     const char* verify_fast = std::getenv("STRATA_METAL_LATENT_VERIFY_FAST");
     latent_fast_verify_ = latent_grouped_u_ && verify_fast && std::strcmp(verify_fast, "1") == 0;
     latent_lib_ = cx_->compile({"quant.metal", "units.metal", "latent_routed.metal"});
     latent_on_ = true;
-    std::fprintf(stderr, "strata metal: l%u Q3_K/IQ4_NL experts and Q4_0 D/U ready\n", width);
+    std::fprintf(stderr, "strata metal: l%u %s experts and %s D/U ready\n", width, nv ? "NVFP4" : "Q3_K/IQ4_NL",
+                 latent_du_type_ == ref::Q8_0 ? "Q8_0" : "Q4_0");
     if (latent_grouped_u_) std::fprintf(stderr, "strata metal: pool routed rows by group before U\n");
     return true;
 }
@@ -918,7 +934,7 @@ void Window::latent_routed(std::vector<mtl::Dispatch>& ds, int layer, int ntok) 
     const bool narrow = ntok == 1 && decode_tiles && std::strcmp(decode_tiles, "1") == 0;
     const bool verify = fast_verify(ntok);
     const uint32_t gate_rows = verify ? 32 : narrow ? 16 : 4;
-    const gguf::Tensor d_weight{"", {N, args.groups * args.latent}, ref::Q4_0,
+    const gguf::Tensor d_weight{"", {N, args.groups * args.latent}, latent_du_type_,
                                 du_offset, latent_dense_.d_bytes()};
     gemv(ds, d_weight, XF_, latent_d_, args.groups * args.latent, ntok, 0, &latent_du_);
     // SSD streaming: the routed experts' kernels read their slots in the arena (function constant 20; smap and the
@@ -938,20 +954,26 @@ void Window::latent_routed(std::vector<mtl::Dispatch>& ds, int layer, int ntok) 
         d.tg[0] = 128;
         push(ds, d);
     };
-    run("latent_colscale", {mtl::Arg::B(latent_d_), mtl::Arg::B(latent_inv_, scale_offset)},
-        (ntok * args.groups * args.latent + 127) / 128, 1);
-    const char* gate_kernel = verify ? "latent_gate_up_4"
-                                    : narrow ? "latent_gate_up_8" : "latent_gate_up";
+    if (!latent_nv_)
+        run("latent_colscale", {mtl::Arg::B(latent_d_), mtl::Arg::B(latent_inv_, scale_offset)},
+            (ntok * args.groups * args.latent + 127) / 128, 1);
+    const bool du8 = latent_du_type_ == ref::Q8_0;
+    // NVFP4's gate/up is fastest on 8 lanes (16 rows a threadgroup) in the verify windows as well: 87 us a dispatch
+    // against 100 on 4 lanes and 98 on 16 (M5 Max).
+    const bool nv8 = latent_nv_ && (verify || narrow);
+    const char* gate_kernel = latent_nv_ ? (nv8 ? "latent_gate_up_nv_8" : "latent_gate_up_nv")
+                                         : (verify ? "latent_gate_up_4" : narrow ? "latent_gate_up_8" : "latent_gate_up");
     const mtl::Arg expert_arg = stream_ ? mtl::Arg::B(st_->chunk(0)) : mtl::Arg::B(latent_a_, a_offset);
     // the host's turn (SSD streaming): ids_ is written (moe_route above), no kernel has read this layer's experts yet
     if (cuts_) cuts_->push_back((int) ds.size());
     run(gate_kernel,
         {expert_arg,
          mtl::Arg::B(latent_labels_, label_offset), mtl::Arg::B(ids_), mtl::Arg::B(latent_d_), mtl::Arg::B(h_)},
-        args.ff / gate_rows, entries, true);
+        args.ff / (nv8 ? 16 : gate_rows), entries, true);
     const bool down_narrow = verify || narrow;
-    run(down_narrow ? "latent_down_4" : "latent_down", {expert_arg, mtl::Arg::B(ids_),
-                         mtl::Arg::B(h_), mtl::Arg::B(latent_down_)}, args.latent / (down_narrow ? 32 : 4), entries, true);
+    run(latent_nv_ ? (down_narrow ? "latent_down_nv_4" : "latent_down_nv") : (down_narrow ? "latent_down_4" : "latent_down"),
+        {expert_arg, mtl::Arg::B(ids_), mtl::Arg::B(h_), mtl::Arg::B(latent_down_)}, args.latent / (down_narrow ? 32 : 4),
+        entries, true);
     const auto u_weights = mtl::Arg::B(latent_du_, du_offset + latent_dense_.d_bytes());
     if (latent_grouped_u_) {
         const uint32_t group_rows = ntok * args.groups;
@@ -959,11 +981,12 @@ void Window::latent_routed(std::vector<mtl::Dispatch>& ds, int layer, int ntok) 
         run("latent_group_reduce", {mtl::Arg::B(latent_labels_, label_offset), mtl::Arg::B(ids_),
              mtl::Arg::B(wts_), mtl::Arg::B(latent_down_), mtl::Arg::B(latent_d_),
              mtl::Arg::B(latent_group_active_)}, (group_rows * args.latent + 127) / 128, 1);
-        const char* u_kernel = verify ? "latent_group_u_4" : narrow ? "latent_group_u_8" : "latent_group_u";
+        const char* u_kernel = du8 ? (verify ? "latent_group_u_q8_4" : narrow ? "latent_group_u_q8_8" : "latent_group_u_q8")
+                                   : (verify ? "latent_group_u_4" : narrow ? "latent_group_u_8" : "latent_group_u");
         run(u_kernel, {u_weights, mtl::Arg::B(latent_d_),
              mtl::Arg::B(latent_group_active_), mtl::Arg::B(ye_)}, args.hidden / gate_rows, group_rows);
     } else {
-        run("latent_u", {u_weights, mtl::Arg::B(latent_labels_, label_offset),
+        run(du8 ? "latent_u_q8" : "latent_u", {u_weights, mtl::Arg::B(latent_labels_, label_offset),
              mtl::Arg::B(ids_), mtl::Arg::B(wts_), mtl::Arg::B(plan_), mtl::Arg::B(latent_down_),
              mtl::Arg::B(ye_)}, (args.hidden + 3) / 4, entries);
     }
@@ -2725,7 +2748,9 @@ std::string gu2_tile(int t) {
     if (t == ref::Q8_0 || t == ref::IQ4_XS) return "_16_64_32_2";
     return "_16_64_16_2";
 }
-std::string dn2_tile(int t) { return t == ref::IQ4_NL || t == ref::Q5_1 || t == ref::Q8_0 ? "_16_64_32_2" : "_16_64_16_2"; }
+std::string dn2_tile(int t) {
+    return t == ref::IQ4_NL || t == ref::Q5_1 || t == ref::Q8_0 || t == ref::NVFP4 ? "_16_64_32_2" : "_16_64_16_2";
+}
 }  // namespace
 
 struct Window::PromptGemm {

@@ -81,16 +81,14 @@ it('shows downloading, checking, paused, failed, and on this machine', () => {
   expect(present.match(/Download<\/button>/g)).toHaveLength(3);
 });
 
-it('lists only the Q3_K models on macOS and all four on Windows', () => {
+it('lists all four models on macOS and on Windows', () => {
   const names = ['Edge0 145B · Q3_K', 'Edge0 145B · NVFP4', 'Edge0 120B · Q3_K', 'Edge0 120B · NVFP4'];
-  expect(catalogFor('macos').map(entry => entry.name)).toEqual([names[0], names[2]]);
+  expect(catalogFor('macos').map(entry => entry.name)).toEqual(names);
   expect(catalogFor('windows').map(entry => entry.name)).toEqual(names);
   const macos = page(actions([], 'macos'));
   expect(macos).toContain('Each model downloads into a folder of its own.');
-  expect(macos).toContain(names[0]);
-  expect(macos).toContain(names[2]);
-  expect(macos).not.toContain('NVFP4');
-  expect(macos.match(/Download<\/button>/g)).toHaveLength(2);
+  for (const name of names) expect(macos).toContain(name);
+  expect(macos.match(/Download<\/button>/g)).toHaveLength(4);
   const windows = page(actions([], 'windows'));
   for (const name of names) expect(windows).toContain(name);
   expect(windows.match(/Download<\/button>/g)).toHaveLength(4);

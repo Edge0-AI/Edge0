@@ -30,7 +30,9 @@ const std::vector<Registration>& registry() {
          true,
          true,
          {{"edge0-145b-q3k", "q3k"}, {"edge0-145b-fp4", "fp4"}},
-         {{"metal", {{"du", {"q4"}}, {"ple-io", {"direct"}}}}}},
+         // Metal: a q3k folder defaults to q4, an fp4 folder to the model's own default.
+         {{"metal", {{"du", {"q4", "q8"}}, {"ple-io", {"direct"}}}},
+          {"metal/fp4", {{"du", {"q8", "q4"}}, {"ple-io", {"direct"}}}}}},
         {"edge0_120b", "edge0-strata", "edge0/models/edge0-120b.json",
          {{"model.json", false, ""},  // release identifier
           {"experts.bin", false, ""},  // latent experts, 48 layers x 512
@@ -50,7 +52,7 @@ const std::vector<Registration>& registry() {
          true,
          true,
          {{"edge0-120b-q3k", "q3k"}, {"edge0-120b-fp4", "fp4"}},
-         {{"metal", {{"du", {"q4"}}, {"ple-io", {"direct"}}}}}},
+         {{"metal", {{"du", {"q4", "q8"}}, {"ple-io", {"direct"}}}}}},
     };
     return entries;
 }
@@ -82,8 +84,10 @@ std::uintmax_t size_of(const fs::path& path, bool directory) {
     }
     return total;
 }
-const std::vector<std::pair<std::string, std::vector<std::string>>>& options_for(const Registration& registration, const std::string& device) {
-    const auto found = registration.device_options.find(device);
+const std::vector<std::pair<std::string, std::vector<std::string>>>& options_for(const Registration& registration, const std::string& device,
+                                                                                const std::string& experts) {
+    auto found = registration.device_options.find(device + "/" + experts);
+    if (found == registration.device_options.end()) found = registration.device_options.find(device);
     return found == registration.device_options.end() ? registration.options : found->second;
 }
 bool condition_holds(const std::string& condition, const std::map<std::string, std::string>& options) {
@@ -111,7 +115,7 @@ std::vector<std::string> Match::missing(const std::map<std::string, std::string>
 
 bool Match::complete(const std::map<std::string, std::string>& selected, const std::string& device) const {
     if (!metal_rejection(*this, device, selected).empty()) return false;
-    return missing(resolve_options(*registration, selected, device)).empty();
+    return missing(resolve_options(*registration, selected, device, experts)).empty();
 }
 
 std::vector<std::string> Match::alternatives(const std::map<std::string, std::string>& options, const std::string& device) const {
@@ -125,7 +129,7 @@ std::vector<std::string> Match::alternatives(const std::map<std::string, std::st
         if (std::find(involved.begin(), involved.end(), name) == involved.end()) involved.push_back(name);
     }
     std::vector<std::string> result;
-    for (const auto& option : options_for(*registration, device)) {
+    for (const auto& option : options_for(*registration, device, experts)) {
         if (std::find(involved.begin(), involved.end(), option.first) == involved.end()) continue;
         const auto value = std::find_if(option.second.begin(), option.second.end(), [&](const std::string& value) {
             const auto condition = option.first + "=" + value;
@@ -201,13 +205,13 @@ Json inspect_json(const Match& match, const fs::path& directory, const std::map<
 }
 
 void reject_options_illegal_everywhere(const Registration& registration, const std::map<std::string, std::string>& given,
-                                       const std::string& device);
+                                       const std::string& device, const std::string& experts);
 
 InspectResult inspect_report(const Match& match, const fs::path& directory, const std::map<std::string, std::string>& given,
                              const std::string& device) {
-    reject_options_illegal_everywhere(*match.registration, given, device);
+    reject_options_illegal_everywhere(*match.registration, given, device, match.experts);
     const auto reason = metal_rejection(match, device, given);
-    const auto selected = reason.empty() ? resolve_options(*match.registration, given, device) : given;
+    const auto selected = reason.empty() ? resolve_options(*match.registration, given, device, match.experts) : given;
     auto report = inspect_json(match, directory, selected, device);
     if (report["ok"].get<bool>()) return {std::move(report), {}, 0};
     if (!reason.empty()) return {std::move(report), reason, 1};
@@ -225,18 +229,13 @@ InspectResult inspect_report(const Match& match, const fs::path& directory, cons
     return {std::move(report), message, 1};
 }
 
-std::string metal_rejection(const Match& match, const std::string& device, const std::map<std::string, std::string>& given) {
+std::string metal_rejection(const Match&, const std::string& device, const std::map<std::string, std::string>& given) {
     if (device != "metal") return {};
-    if (match.experts != "q3k")
-        return "unsupported on Metal: " + match.model_name + " uses fp4 experts; Metal supports q3k";
-    const auto rejected = [](const std::map<std::string, std::string>& given, const char* name, const char* only) -> std::string {
-        const auto found = given.find(name);
-        if (found == given.end() || found->second == only) return {};
-        // A value that is not allowed on any device keeps the generic "must be" error from resolve_options.
-        return "unsupported on Metal: " + std::string(name) + "=" + found->second + "; Metal only supports " + name + "=" + only;
-    };
-    if (const auto du = rejected(given, "du", "q4"); !du.empty() && given.at("du") == "q8") return du;
-    if (const auto ple = rejected(given, "ple-io", "direct"); !ple.empty() && given.at("ple-io") == "ram") return ple;
+    // Both expert formats and both D/U formats run on Metal. A value that is not allowed on any device keeps the
+    // generic "must be" error from resolve_options.
+    const auto ple = given.find("ple-io");
+    if (ple != given.end() && ple->second == "ram")
+        return "unsupported on Metal: ple-io=ram; Metal only supports ple-io=direct";
     return {};
 }
 
@@ -261,8 +260,8 @@ std::string default_device(Platform platform) {
 }
 
 std::map<std::string, std::string> resolve_options(const Registration& registration, const std::map<std::string, std::string>& given,
-                                                   const std::string& device) {
-    const auto& options = options_for(registration, device);
+                                                   const std::string& device, const std::string& experts) {
+    const auto& options = options_for(registration, device, experts);
     std::map<std::string, std::string> result;
     for (const auto& item : given) {
         const auto option = std::find_if(options.begin(), options.end(),
@@ -284,8 +283,8 @@ std::map<std::string, std::string> resolve_options(const Registration& registrat
 }
 
 void reject_options_illegal_everywhere(const Registration& registration, const std::map<std::string, std::string>& given,
-                                       const std::string& device) {
-    // A name or value no device accepts is a configuration error, ahead of the Metal fp4 report.
+                                       const std::string& device, const std::string& experts) {
+    // A name or value no device accepts is a configuration error, ahead of the Metal report.
     auto accepted = [](const std::vector<std::pair<std::string, std::vector<std::string>>>& options, const std::string& name,
                        const std::string& value) {
         for (const auto& option : options)
@@ -297,7 +296,7 @@ void reject_options_illegal_everywhere(const Registration& registration, const s
         bool any = accepted(registration.options, item.first, item.second);
         for (const auto& entry : registration.device_options)
             any = any || accepted(entry.second, item.first, item.second);
-        if (!any) resolve_options(registration, {{item.first, item.second}}, device);
+        if (!any) resolve_options(registration, {{item.first, item.second}}, device, experts);
     }
 }
 
@@ -509,9 +508,9 @@ LaunchOptions resolve(const CommonArgs& args, const Match& match, const fs::path
             throw ConfigError("invalid_argument: --prefill-device must equal --device for a delegated model (edge0-strata uses one GPU)");
         }
     }
-    reject_options_illegal_everywhere(*match.registration, args.model_options, parsed.name);
+    reject_options_illegal_everywhere(*match.registration, args.model_options, parsed.name, match.experts);
     if (const auto reason = metal_rejection(match, parsed.name, args.model_options); !reason.empty()) throw ConfigError(reason);
-    options.model_options = resolve_options(*match.registration, args.model_options, parsed.name);
+    options.model_options = resolve_options(*match.registration, args.model_options, parsed.name, match.experts);
     const auto missing = match.missing(options.model_options);
     if (!missing.empty()) {
         std::string list;

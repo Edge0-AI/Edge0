@@ -3,7 +3,7 @@
 // against the same kernels reading one whole experts buffer (experts.bin as it is).  The arena only moves the bytes, so
 // every output must be the same, byte for byte.  Random weights and inputs, no model.
 //
-//   latent_arena_parity [--width 1280|1792] [--window-only] [--misplace]
+//   latent_arena_parity [--width 1280|1792] [--experts q3k|fp4] [--window-only] [--misplace]
 //
 // The window path (latent_routed.metal): latent_gate_up, latent_gate_up_8, latent_gate_up_4, latent_down, latent_down_4
 // for windows of 1, 5 and 8 tokens.  The prompt chain (moe_mm.metal, latent_prompt_q3_stage.metal) with tm 32: below 2048
@@ -12,6 +12,9 @@
 // mm_down2 IQ4_NL 32_64_32_2 reads the down rows in both.  The prompt's routed experts are drawn from 400 of the 512, so
 // 112 are not in the arena (smap ~0).  --misplace points one routed expert's smap at another slot: every case that reads
 // that expert must then differ (the check of the check).  Both widths when --width is not given.  Exit 0 = all identical.
+// --experts fp4: the NVFP4 experts (main's #246): latent_gate_up_nv, latent_gate_up_nv_8, latent_down_nv, latent_down_nv_4,
+// mm_gu2 / mm_down2 NVFP4, latent_prompt_nv_stage + latent_prompt_gu_f16_nv; each expert's blob ends in its output scales
+// {s_gate, s_up, s_down, 0}, which the kernels read from the same slot.  Both formats when --experts is not given.
 #include "mtl_rt.h"
 #include "ref_quant.h"
 
@@ -28,7 +31,7 @@ namespace {
 constexpr int NE = 512, NFF = 640, TOPK = 10, GROUPS = 8, HIDDEN = 2560, TM = 32, PAGE = 16384, CHUNKS = 4;
 struct LatentRoutedArgs {
     uint32_t n_tok, groups, hidden, latent, ff, topk, plan_token_entry;
-    uint32_t u_row, gu_row, down_row, up_off, down_off, expert_bytes;
+    uint32_t u_row, gu_row, down_row, up_off, down_off, expert_bytes, tail_off;
 };
 struct MmPlanArgs { uint32_t n_ent, topk, n_expert, tm, n_blocks; };
 struct MmArgs { uint64_t gate_off, up_off, down_off, gu_stride, d_stride; uint32_t gu_row, d_row, n_embd, n_ff; };
@@ -55,17 +58,25 @@ struct Arena {
     uint32_t* map() const { return smap.as<uint32_t>() + NE; }
 };
 
-int run_width(mtl::Context& cx, int W, bool window_only, bool misplace) {
-    const size_t gu_row = ref::row_bytes(ref::Q3_K, W), d_row = ref::row_bytes(ref::IQ4_NL, NFF);
-    const size_t up_off = gu_row * NFF, down_off = 2 * up_off, blob = down_off + d_row * W;
+int run_width(mtl::Context& cx, int W, bool nv, bool window_only, bool misplace) {
+    const int gu_t = nv ? ref::NVFP4 : ref::Q3_K, d_t = nv ? ref::NVFP4 : ref::IQ4_NL;
+    const size_t gu_row = ref::row_bytes(gu_t, W), d_row = ref::row_bytes(d_t, NFF);
+    const size_t up_off = gu_row * NFF, down_off = 2 * up_off, tail_off = nv ? down_off + d_row * W : 0;
+    const size_t blob = down_off + d_row * W + (nv ? 16 : 0);
     const size_t pages = (blob + PAGE - 1) / PAGE, slots = 4 * 136;
-    std::printf("width %d: expert blob %zu bytes (%zu pages); %d experts, %zu arena slots in %d chunks\n", W, blob, pages, NE,
-                slots, CHUNKS);
+    std::printf("%s width %d: expert blob %zu bytes (%zu pages); %d experts, %zu arena slots in %d chunks\n", nv ? "NVFP4" : "Q3_K",
+                W, blob, pages, NE, slots, CHUNKS);
     // the whole buffer: expert e at e * blob, every expert different
     mtl::Buffer whole = cx.alloc(blob * NE);
     for (int e = 0; e < NE; ++e) {
-        ref::random_blocks(ref::Q3_K, whole.as<uint8_t>() + e * blob, 2 * NFF, W, 1000 + e, 0.02f);
-        ref::random_blocks(ref::IQ4_NL, whole.as<uint8_t>() + e * blob + down_off, W, NFF, 5000 + e, 0.02f);
+        ref::random_blocks(gu_t, whole.as<uint8_t>() + e * blob, 2 * NFF, W, 1000 + e, 0.02f);
+        ref::random_blocks(d_t, whole.as<uint8_t>() + e * blob + down_off, W, NFF, 5000 + e, 0.02f);
+        if (nv) {   // the output scales: different for every expert, so a tail read from the wrong slot shows
+            float* tail = (float*) (whole.as<uint8_t>() + e * blob + tail_off);
+            ref::Rng ts(9000 + e);
+            for (int i = 0; i < 3; ++i) tail[i] = 0.5f + (float) (ts.next() % 1000) / 1000.0f;
+            tail[3] = 0.0f;
+        }
     }
     // the arena: the experts in shuffled slots across the four chunks; the unused slots hold noise
     Arena ar;
@@ -119,11 +130,13 @@ int run_width(mtl::Context& cx, int W, bool window_only, bool misplace) {
             if (misplace) ar.map()[ids.as<int32_t>()[0]] = code(order[(size_t) ids.as<int32_t>()[1]]);
             for (size_t i = 0; i < (size_t) T * GROUPS * W; ++i) proj.as<float>()[i] = r.sym();
             LatentRoutedArgs la{(uint32_t) T, GROUPS, HIDDEN, (uint32_t) W, NFF, TOPK, 0, 0, (uint32_t) gu_row, (uint32_t) d_row,
-                                (uint32_t) up_off, (uint32_t) down_off, (uint32_t) blob};
+                                (uint32_t) up_off, (uint32_t) down_off, (uint32_t) blob, (uint32_t) tail_off};
             mtl::Buffer mid[2] = {cx.alloc(4 * (size_t) entries * NFF), cx.alloc(4 * (size_t) entries * NFF)};
             mtl::Buffer out[2] = {cx.alloc(4 * (size_t) entries * W), cx.alloc(4 * (size_t) entries * W)};
-            for (const auto& [name, rows] : std::vector<std::pair<std::string, int>>{{"latent_gate_up", 4}, {"latent_gate_up_8", 16},
-                                                                                     {"latent_gate_up_4", 32}}) {
+            const auto gate_kernels = nv ? std::vector<std::pair<std::string, int>>{{"latent_gate_up_nv", 4}, {"latent_gate_up_nv_8", 16}}
+                                         : std::vector<std::pair<std::string, int>>{{"latent_gate_up", 4}, {"latent_gate_up_8", 16},
+                                                                                    {"latent_gate_up_4", 32}};
+            for (const auto& [name, rows] : gate_kernels) {
                 mtl::Pipeline p[2] = {cx.pipeline(lib, name), cx.pipeline(lib, name, on)};
                 for (int k = 0; k < 2; ++k) {
                     std::memset(mid[k].ptr, 0, mid[k].bytes);
@@ -139,7 +152,9 @@ int run_width(mtl::Context& cx, int W, bool window_only, bool misplace) {
                 }
                 report("window T=" + std::to_string(T) + " " + name, mid[0], mid[1], mid[0].bytes);
             }
-            for (const auto& [name, rows] : std::vector<std::pair<std::string, int>>{{"latent_down", 4}, {"latent_down_4", 32}}) {
+            const auto down_kernels = nv ? std::vector<std::pair<std::string, int>>{{"latent_down_nv", 4}, {"latent_down_nv_4", 32}}
+                                         : std::vector<std::pair<std::string, int>>{{"latent_down", 4}, {"latent_down_4", 32}};
+            for (const auto& [name, rows] : down_kernels) {
                 mtl::Pipeline p[2] = {cx.pipeline(lib, name), cx.pipeline(lib, name, on)};
                 for (int k = 0; k < 2; ++k) {
                     std::memset(out[k].ptr, 0, out[k].bytes);
@@ -168,13 +183,16 @@ int run_width(mtl::Context& cx, int W, bool window_only, bool misplace) {
         place(in);
         mtl::Pipeline pclear = cx.pipeline(lib, "mm_clear"), phist = cx.pipeline(lib, "mm_hist"), pscan = cx.pipeline(lib, "mm_scan"),
                       pplace = cx.pipeline(lib, "mm_place");
-        const std::string gun = "mm_gu2_" + std::to_string(ref::Q3_K) + "_32_64_32_2",
-                          dnn = "mm_down2_" + std::to_string(ref::IQ4_NL) + "_32_64_32_2";
+        const std::string gun = "mm_gu2_" + std::to_string(gu_t) + "_32_64_32_2",
+                          dnn = "mm_down2_" + std::to_string(d_t) + "_32_64_32_2";
+        const std::string stn = nv ? "latent_prompt_nv_stage" : "latent_prompt_q3_stage",
+                          g16 = nv ? "latent_prompt_gu_f16_nv" : "latent_prompt_gu_f16";
         const mtl::Constants p0 = mtl::Constants().i(5, 0), p0a = mtl::Constants().i(5, 0).b(20, true);
         mtl::Pipeline pgu[2] = {cx.pipeline(lib, gun, p0), cx.pipeline(lib, gun, p0a)};
         mtl::Pipeline pdn[2] = {cx.pipeline(lib, dnn), cx.pipeline(lib, dnn, on)};
-        mtl::Pipeline pst[2] = {cx.pipeline(lib, "latent_prompt_q3_stage"), cx.pipeline(lib, "latent_prompt_q3_stage", on)};
-        mtl::Pipeline pgu16 = cx.pipeline(lib, "latent_prompt_gu_f16");
+        mtl::Pipeline pst[2] = {cx.pipeline(lib, stn), cx.pipeline(lib, stn, on)};
+        // the Q3_K GEMM reads only the staged fp16 rows; NVFP4's also reads the experts' output scales (from the slot)
+        mtl::Pipeline pgu16[2] = {cx.pipeline(lib, g16), nv ? cx.pipeline(lib, g16, on) : cx.pipeline(lib, g16)};
         mtl::Buffer w16 = cx.alloc(2ull * NE * 2 * NFF * W);
         for (const int T : {256, 2048}) {
             const bool staged = T >= 2048;
@@ -226,8 +244,12 @@ int run_width(mtl::Context& cx, int W, bool window_only, bool misplace) {
                     s.tg[0] = 128;
                     ds.push_back(s);
                     mtl::Dispatch g;
-                    g.p = &pgu16;
+                    g.p = &pgu16[k];
                     g.args = {mtl::Arg::B(w16), mtl::Arg::B(XS), mtl::Arg::B(HS[k]), mtl::Arg::B(tiles), mtl::Arg::V(ma)};
+                    if (nv) {
+                        g.args.push_back(mtl::Arg::B(k ? ar.chunk[0] : whole));
+                        if (k) arena_args(g.args);
+                    }
                     g.grid[0] = NFF / 64;
                     g.grid[1] = ntiles;
                     g.tg[0] = 64;
@@ -253,7 +275,7 @@ int run_width(mtl::Context& cx, int W, bool window_only, bool misplace) {
                 cx.run({dd});
             }
             const std::string rows = "prompt " + std::to_string(T) + " rows ";
-            report(rows + (staged ? "latent_prompt_q3_stage + latent_prompt_gu_f16" : gun), HS[0], HS[1], HS[0].bytes);
+            report(rows + (staged ? stn + " + " + g16 : gun), HS[0], HS[1], HS[0].bytes);
             report(rows + dnn, YE[0], YE[1], YE[0].bytes);
             if (misplace) ar.map()[ids.as<int32_t>()[0]] = code(order[(size_t) ids.as<int32_t>()[0]]);
         }
@@ -264,20 +286,26 @@ int run_width(mtl::Context& cx, int W, bool window_only, bool misplace) {
 
 int main(int argc, char** argv) {
     std::vector<int> widths;
+    std::vector<bool> formats;   // nv
     bool window_only = false, misplace = false;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a == "--width" && i + 1 < argc) widths.push_back(std::atoi(argv[++i]));
-        else if (a == "--window-only") window_only = true;
+        else if (a == "--experts" && i + 1 < argc) {
+            const std::string f = argv[++i];
+            if (f != "q3k" && f != "fp4") { std::fprintf(stderr, "--experts q3k|fp4\n"); return 2; }
+            formats.push_back(f == "fp4");
+        } else if (a == "--window-only") window_only = true;
         else if (a == "--misplace") misplace = true;
-        else { std::fprintf(stderr, "usage: latent_arena_parity [--width 1280|1792] [--window-only] [--misplace]\n"); return 2; }
+        else { std::fprintf(stderr, "usage: latent_arena_parity [--width 1280|1792] [--experts q3k|fp4] [--window-only] [--misplace]\n"); return 2; }
     }
     if (widths.empty()) widths = {1280, 1792};
+    if (formats.empty()) formats = {false, true};
     mtl::Context cx;
     std::printf("device %s%s\n", cx.device_name().c_str(), misplace ? "; --misplace: one routed expert's smap points at another slot" : "");
     for (int w : widths) {
         if (w != 1280 && w != 1792) { std::fprintf(stderr, "width %d: 1280 or 1792\n", w); return 2; }
-        run_width(cx, w, window_only, misplace);
+        for (const bool nv : formats) run_width(cx, w, nv, window_only, misplace);
     }
     std::printf("%d cases, %d different: %s\n", cases, failures, failures ? "FAIL" : "PASS");
     return failures ? 1 : 0;

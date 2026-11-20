@@ -243,12 +243,23 @@ Requirements: an Apple Silicon Mac, the Xcode Command Line Tools, CMake 3.24 or 
    cmake --build build-metal --target moe_mm_parity
    ```
 
-   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; both of
+   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; all of
    these print `PASS`:
 
    ```
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ```
+
+   The decode windows' latent kernels have their own check (`cmake --build build-metal --target
+   latent_routed_parity`). It takes `--experts q3k|fp4`, `--du q4|q8`, `--latent1792` and `--ntok 1..8`,
+   and prints `PASS` for each of the three window tilings:
+
+   ```
+   ./build-metal/latent_routed_parity --experts q3k --du q4 --latent1792
+   ./build-metal/latent_routed_parity --experts fp4 --du q8 --latent1792
    ```
 
 `edge0-infer` on macOS starts `build-metal/strata` through `.venv/bin/python` and `serve/server.py`.
@@ -305,6 +316,53 @@ Notes:
   `--expert-cache-device1 N` (a helper cache; it runs the same `A`-only share) and `--layer-split K`
   (each stage uploads its own `D`/`U` to its own card).
 
+## Build (Windows, AMD, experimental)
+
+Edge0 145B (Q3_K) has been run on one AMD card with the HIP backend this fork inherits from Strata: a Radeon RX 7900
+XTX (gfx1100, 24 GB) under Windows 11, ROCm 10.2.0a20260930. Other Radeon cards, Linux, Edge0 120B and the NVFP4
+folders have not been tried. `edge0-infer` does not start this build on Windows (it expects CUDA there), so the server is
+started by hand; on Linux it was reported to start it when `--strata-dir` points at this build and the ROCm libraries are
+on `LD_LIBRARY_PATH` (#196).
+
+Requirements: Visual Studio 2022 Build Tools with the C++ workload, Python 3.10 or newer, Git, and a current AMD
+display driver. No ROCm or HIP SDK installation: the build script installs ROCm from AMD's wheels into `.rocm-win`
+(about 7 GB).
+
+1. Build and package the engine for the card's architecture, in this directory:
+
+   ```bat
+   set STRATA_HIP_ARCHS=gfx1100
+   set STRATA_NO_VISION=1
+   tools\hip\build_windows.bat
+   ```
+
+   The result is `dist\strata-windows-x64-hip.zip` (`strata.exe`, the ROCm DLLs in `rocm\bin`, the hipBLASLt tuning
+   table in `tuning\`). Unpack it into a folder, for example `engine-hip\`.
+2. Create the server's Python environment as in step 3 of [Build (Windows, NVIDIA)](#build-windows-nvidia).
+3. Write a server configuration from `edge0/models/edge0-145b.json`: replace the placeholders by hand, set `exe` to
+   the unpacked `strata.exe`, add `"backend": "hip"`, and set `lib_dirs` to the unpacked `rocm\bin`. In `env`:
+
+   | Variable | Value | Why |
+   | --- | --- | --- |
+   | `STRATA_LATENT_FUSED`, `STRATA_LATENT_FUSED_DU`, `STRATA_LAT_FUSED_Q3K` | `0` | the fused latent kernels are CUDA-only; the engine exits if they are selected on HIP |
+   | `STRATA_LATENT_MMQ` | `1` (optional) | the latent A stage of the prompt on MMQ; about a third faster than the default path on this card |
+   | `STRATA_LATENT_DENSE_FMT` | `8` or `4` | the engine reads the number, not `q8` / `q4` |
+   | `STRATA_LATENT_A`, `STRATA_LATENT_DENSE` | paths with `/` | `labels.bin` is looked up beside `STRATA_LATENT_A` by its last `/`, so a path with only `\` is not found |
+   | `STRATA_HIPBLASLT_TUNING` | the table in `tuning\` | as in upstream Strata's AMD configurations |
+
+4. Start it: `.venv\Scripts\python.exe serve\server.py --engine strata --config <file> --port 8000`.
+
+Measured with `tools\strata_bench.py` on the card above (Ryzen 7 5800X3D, 64 GB RAM, `--vram-reserve-mib 3072`, about
+4100 experts resident; medians):
+
+| A stage of the prompt | Chat decode tok/s | 4K prompt tok/s | 16K prompt tok/s | Agent decode tok/s |
+| --- | ---: | ---: | ---: | ---: |
+| default (`native_expert_grouped`) | 37.9 | 243.6 | 241.3 | 43.6 |
+| `STRATA_LATENT_MMQ=1` | 40.4 | 335.0 | 319.3 | 47.2 |
+
+The prompt speed is far below the NVIDIA figures because the fused latent kernels have no HIP version yet. Answer
+quality on this build has only been checked by hand.
+
 ## Launch contract with edge0-infer
 
 - `edge0/CONTRACT` holds one integer, the contract version (currently 5). `edge0-infer` refuses to start an
@@ -359,8 +417,9 @@ Notes:
   `server.py`. The shipped entries run `tools/mtp_gguf.py` to write `mtp-q2_0.gguf` into the model
   directory, so that directory must be writable. An `output` that already exists is left as it is.
 
-  Metal accepts only Q3_K expert folders (`model_name` ending in `-q3k`), `du=q4` and
-  `ple-io=direct`. An NVFP4 folder, `du=q8` or `ple-io=ram` is rejected before any process starts.
+  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. A Q3_K folder
+  (`model_name` ending in `-q3k`) defaults to `du=q4`; an NVFP4 folder keeps the model's own
+  default. `ple-io=ram` is rejected before any process starts.
 
   `edge0-infer` also sets `gpu` from `--device` (`cuda:<n>` on Linux and Windows, `metal` on macOS),
   `model_name` from `--alias`, and the `--max-context` argument from `--context`.

@@ -114,8 +114,8 @@ NVIDIA GPU と CUDA 13 を備えた Linux または Windows、あるいは Apple
 
 | モデル規模 | 公開チェックポイント | 推論構成 | エンジン |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1792）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal、Q3_K） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1280）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal、Q3_K） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1792）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1280）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal） |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -339,7 +339,7 @@ cd /path/to/Edge0-145B-q3k
 
 ⬇️ **ダウンロード：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、**Models** で Hugging Face または ModelScope からモデルをダウンロードするか、`Edge0-145B-q3k` などの手元のモデルフォルダーを追加して読み込むと、ローカルで実行できます。macOS ではアプリは Q3_K モデルのみを提供・実行します。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
+Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、**Models** で Hugging Face または ModelScope からモデルをダウンロードするか、`Edge0-145B-q3k` などの手元のモデルフォルダーを追加して読み込むと、ローカルで実行できます。macOS ではアプリは 4 つのフォルダーすべてを提供し、Metal で実行します。NVFP4 フォルダーはエキスパートプール全体をユニファイドメモリに置きます。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
 
 </details>
 
@@ -353,7 +353,14 @@ Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、**Model
            "model": "./model-skeleton.gguf", "gpu": false}
 ```
 
-さらに `"args"` に `--vision` を追加します。`strata-vision` はこのリポジトリーには含まれません。`setup.py --setup --vision yes` で取得するか、Strata のチェックアウトで `tools/vision` をビルドします。ログに `images on` と出たら、チャットで `/image`、または OpenAI API の `image_url` で画像を送れます。
+さらに `"args"` に `--vision` を追加します。`strata-vision` は `setup.py --setup --vision yes` が取得するエンジンのアーカイブに含まれています。ソースもこのリポジトリーの `edge0-strata/tools/vision/` にあります。メインのビルドがコンパイルしない独立した CMake プロジェクトで、エンジンが固定している llama.cpp のコミットのチェックアウトを使ってビルドします（リポジトリーには `third_party/llama.cpp` は含まれていません。メインの CMake に取得させたビルドツリーなら `build/_deps/strata_llamacpp-src` にあります）:
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+ログに `images on` と出たら、チャットで `/image`、または OpenAI API の `image_url` で画像を送れます。
 
 </details>
 
@@ -422,7 +429,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-流れ：fork → 機能ブランチ → `main` 宛てに PR。テストの成功を維持し、新しい動作にはテストを追加してください。
+流れ：fork → 機能ブランチ → `main` 宛てに PR。テストの成功を維持し、新しい動作にはテストを追加してください。動作の変更は先に issue でメンテナーの合意を得てください。同じ領域の関連する修正は 1 つの PR にまとめ、同時に開いている PR は 2 つまでにしてください。
 
 </details>
 

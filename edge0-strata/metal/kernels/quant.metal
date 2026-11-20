@@ -34,6 +34,7 @@
 #define T_TQ2T 144    // agentionai's trellis types (Gyro): 128 values a block, 34 / 26 / 30 bytes, Hadamard-folded experts
 #define T_TQK6 145
 #define T_TQK7 146
+#define T_NVFP4 40   // the Edge0 NVFP4 latent experts
 
 template <int F> struct fmt;
 // QK block elements, BB block bytes, UNIT weights per unit, TAB words of threadgroup table
@@ -62,12 +63,25 @@ template <> struct fmt<T_Q5_1>    { enum { QK = 32,  BB = 24,  UNIT = 32, TAB = 
 template <> struct fmt<T_TQ2T>    { enum { QK = 128, BB = 34,  UNIT = 16, TAB = 2048 }; };
 template <> struct fmt<T_TQK6>    { enum { QK = 128, BB = 26,  UNIT = 16, TAB = 2048 }; };
 template <> struct fmt<T_TQK7>    { enum { QK = 128, BB = 30,  UNIT = 16, TAB = 2048 }; };
+template <> struct fmt<T_NVFP4>   { enum { QK = 64,  BB = 36,  UNIT = 32, TAB = 1 }; };
 
 static inline uint rd32(device const uchar* p) {
     device const ushort* s = (device const ushort*)p;
     return uint(s[0]) | (uint(s[1]) << 16);
 }
 static inline float rdh(device const uchar* p) { return float(*(device const half*)p); }
+
+// NVFP4: a block is 64 values in 36 bytes: 4 scale bytes (unsigned e4m3, one per 16 values), then 32 code bytes.
+// Sub-block s uses code bytes 8s..8s+7; byte j holds value j in its low nibble and value j + 8 in its high nibble.
+// A value is kvalues_fp4[code] * (ue4m3(scale) / 2) (ggml-common.h; ggml-impl.h ggml_ue4m3_to_fp32): at most 6
+// significant bits between 2^-10 and 2880, so it is exact in fp16.
+constant float NV_K[16] = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 12.0f,
+                           -0.0f, -1.0f, -2.0f, -3.0f, -4.0f, -6.0f, -8.0f, -12.0f};
+static inline float nv_scale(uint x) {      // bit 7 unused, 0 and 0x7F give 0, the value halved
+    const uint e = (x >> 3) & 15u, m = x & 7u;
+    const float v = e == 0u ? float(m) * 0.0009765625f : as_type<float>(((e + 119u) << 23) | (m << 20));
+    return (x == 0u || x == 0x7Fu) ? 0.0f : v;
+}
 
 // ---- threadgroup tables -------------------------------------------------------------------------------------------
 // layout in `tab` (uint words): [0, G) the grid, [G, G + 32) ksigns_iq2xs as bytes; IQ4_NL/XS: 16 floats.
@@ -368,6 +382,7 @@ template <> inline void load_tab<T_Q5_K>(threadgroup uint*, ushort, ushort) {}
 template <> inline void load_tab<T_Q6_K>(threadgroup uint*, ushort, ushort) {}
 template <> inline void load_tab<T_BF16>(threadgroup uint*, ushort, ushort) {}
 template <> inline void load_tab<T_F32>(threadgroup uint*, ushort, ushort) {}
+template <> inline void load_tab<T_NVFP4>(threadgroup uint*, ushort, ushort) {}
 
 static inline void load_signs(threadgroup uint* tab, int at, ushort tid, ushort nth) {
     threadgroup uchar* s = (threadgroup uchar*)(tab + at);

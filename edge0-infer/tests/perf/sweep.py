@@ -165,9 +165,10 @@ def run_sweep(host, cli, model, protocol, writer, *, raw_dir, tools, root=Path('
         elif summary['engine'] != identity['engine'] or model_identity != identity['model']:
             fail('engine or model identity changed between processes', snapshot_before=before, snapshot_after=after)
             continue
-        configuration = dict(summary['model']['loading'])
-        if 'runtime' in summary:
-            configuration['runtime'] = summary['runtime']
+        configuration = reports.effective_configuration(summary)
+        if name in configuration_of and configuration_of[name] != configuration:
+            fail('effective configuration changed between processes of one side', snapshot_before=before, snapshot_after=after)
+            continue
         configuration_of.setdefault(name, configuration)
         cell = reports.ok_cell(index, name, metrics, memory, before, after, configuration=configuration)
         writer.add_cell(cell)

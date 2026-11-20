@@ -114,8 +114,8 @@ Ces modèles fonctionnent sur edge0-strata via `edge0-infer serve` et `edge0-inf
 
 | Taille | Checkpoint publié | Profil d’inférence | Moteur |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Experts latents Q3_K ou NVFP4 (1792), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA ; macOS Apple Silicon, Metal, Q3_K) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Experts latents Q3_K ou NVFP4 (1280), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA ; macOS Apple Silicon, Metal, Q3_K) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Experts latents Q3_K ou NVFP4 (1792), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA ; macOS Apple Silicon, Metal) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Experts latents Q3_K ou NVFP4 (1280), 48 couches, 512 experts, K=10 | edge0-strata ✅ (Linux ou Windows, GPU NVIDIA ; macOS Apple Silicon, Metal) |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -337,7 +337,7 @@ Le journal de démarrage affiche la couche de la seconde carte (`peer GPU 1: …
 
 ⬇️ **Télécharger :** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Ouvrez **Edge0 Chat** sous Windows ou macOS (Apple Silicon). Dans **Models**, téléchargez un modèle depuis Hugging Face ou ModelScope, ou ajoutez un dossier de modèle que vous avez déjà, tel que `Edge0-145B-q3k`, puis chargez-le pour l’exécuter localement. Sous macOS, l’application ne propose et n’exécute que les modèles Q3_K. Pour compiler l’application depuis les sources, suivez le guide [Edge0 Chat](edge0-infer/examples/desktop/README.md).
+Ouvrez **Edge0 Chat** sous Windows ou macOS (Apple Silicon). Dans **Models**, téléchargez un modèle depuis Hugging Face ou ModelScope, ou ajoutez un dossier de modèle que vous avez déjà, tel que `Edge0-145B-q3k`, puis chargez-le pour l’exécuter localement. Sous macOS, l’application propose les quatre dossiers et les exécute sur Metal ; les dossiers NVFP4 gardent tout le pool d’experts en mémoire unifiée. Pour compiler l’application depuis les sources, suivez le guide [Edge0 Chat](edge0-infer/examples/desktop/README.md).
 
 </details>
 
@@ -351,7 +351,14 @@ Ouvrez **Edge0 Chat** sous Windows ou macOS (Apple Silicon). Dans **Models**, t�
            "model": "./model-skeleton.gguf", "gpu": false}
 ```
 
-et `--vision` à `"args"`. `strata-vision` n’est pas dans ce dépôt : `setup.py --setup --vision yes` le télécharge, ou compilez `tools/vision` dans un checkout Strata. Le journal affiche alors `images on` ; envoyez une image avec `/image` dans le chat ou une partie `image_url` via l’API OpenAI.
+et `--vision` à `"args"`. `strata-vision` est fourni avec l’archive du moteur que `setup.py --setup --vision yes` télécharge. Son code est aussi dans ce dépôt, dans `edge0-strata/tools/vision/` : un projet CMake à part que la compilation principale ne compile pas, et qui se compile avec un checkout de llama.cpp à la révision épinglée du moteur (le dépôt ne contient pas `third_party/llama.cpp` ; un arbre où la CMake principale l’a récupéré l’a dans `build/_deps/strata_llamacpp-src`) :
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+Le journal affiche alors `images on` ; envoyez une image avec `/image` dans le chat ou une partie `image_url` via l’API OpenAI.
 
 </details>
 
@@ -418,7 +425,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-Processus : fork → branche de fonctionnalité → PR vers `main`. Veillez à ce que les tests réussissent et ajoutez-en pour les nouveaux comportements.
+Processus : fork → branche de fonctionnalité → PR vers `main`. Veillez à ce que les tests réussissent et ajoutez-en pour les nouveaux comportements. Faites valider un changement de comportement dans une issue avant d'écrire le code, regroupez les correctifs liés dans une seule PR, et gardez au plus deux PR ouvertes.
 
 </details>
 
