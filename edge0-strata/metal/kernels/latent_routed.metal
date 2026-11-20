@@ -4,6 +4,22 @@ struct LatentRoutedArgs {
     uint u_row, gu_row, down_row, up_off, down_off, expert_bytes, tail_off;
 };
 
+// The SSD-streaming arena (metal/src/engine/stream.cpp; the same block is in moe.metal and moe_mm.metal): with function
+// constant 20 set, expert e of the layer lies in an arena slot, smap[e] = (chunk << 28) | its 16 KiB page in that chunk;
+// the chunks are the experts buffer and W1..W3.  The slot holds the expert's blob as experts.bin does (gate rows, up rows
+// at up_off, down rows at down_off), so only the expert's base address changes.
+#ifndef STRATA_ARENA_METAL
+#define STRATA_ARENA_METAL
+constant bool kArenaFc [[function_constant(20)]];
+constant bool kArena = is_function_constant_defined(kArenaFc) && kArenaFc;
+static inline device const uchar* arena_slot(uint v, device const uchar* W, device const uchar* W1, device const uchar* W2,
+                                             device const uchar* W3) {
+    const uint c = v >> 28;
+    device const uchar* b = c == 0 ? W : (c == 1 ? W1 : (c == 2 ? W2 : W3));
+    return b + (ulong)(v & 0x0FFFFFFFu) * 16384ul;
+}
+#endif
+
 kernel void latent_colscale(device float* projected [[buffer(0)]],
                             device const float* inverse [[buffer(1)]],
                             constant LatentRoutedArgs& a [[buffer(2)]],
@@ -52,6 +68,8 @@ kernel void latent_gate_up(device const uchar* experts [[buffer(0)]],
                            device const float* projected [[buffer(3)]],
                            device float* middle [[buffer(4)]],
                            constant LatentRoutedArgs& a [[buffer(5)]],
+                           device const uint* smap [[buffer(6)]], device const uchar* W1 [[buffer(7)]],
+                           device const uchar* W2 [[buffer(8)]], device const uchar* W3 [[buffer(9)]],
                            uint2 tg [[threadgroup_position_in_grid]],
                            ushort sg [[simdgroup_index_in_threadgroup]],
                            ushort lane [[thread_index_in_simdgroup]]) {
@@ -61,7 +79,8 @@ kernel void latent_gate_up(device const uchar* experts [[buffer(0)]],
     const uint expert = ids[entry], group = labels[expert];
     const uint token = entry / a.topk;
     device const float* x = projected + (token * a.groups + group) * a.latent;
-    device const uchar* gate = experts + ulong(expert) * a.expert_bytes + row * a.gu_row;
+    device const uchar* base = kArena ? arena_slot(smap[expert], experts, W1, W2, W3) : experts + ulong(expert) * a.expert_bytes;
+    device const uchar* gate = base + row * a.gu_row;
     const float g = latent_q3k_dot<Lanes>(gate, x, a.latent, lane % Lanes, table);
     const float u = latent_q3k_dot<Lanes>(gate + a.up_off, x, a.latent, lane % Lanes, table);
     if (lane % Lanes == 0) middle[entry * a.ff + row] = (g / (1.0f + exp(-g))) * u;
@@ -73,6 +92,8 @@ kernel void latent_down(device const uchar* experts [[buffer(0)]],
                         device const float* middle [[buffer(2)]],
                         device float* output [[buffer(3)]],
                         constant LatentRoutedArgs& a [[buffer(4)]],
+                        device const uint* smap [[buffer(5)]], device const uchar* W1 [[buffer(6)]],
+                        device const uchar* W2 [[buffer(7)]], device const uchar* W3 [[buffer(8)]],
                         uint2 tg [[threadgroup_position_in_grid]],
                         ushort sg [[simdgroup_index_in_threadgroup]],
                         ushort lane [[thread_index_in_simdgroup]],
@@ -82,7 +103,9 @@ kernel void latent_down(device const uchar* experts [[buffer(0)]],
     threadgroup_barrier(mem_flags::mem_threadgroup);
     const uint entry = tg.y, row = (4 * tg.x + sg) * (32 / Lanes) + lane / Lanes;
     if (row >= a.latent) return;
-    device const uchar* w = experts + ulong(ids[entry]) * a.expert_bytes + a.down_off + row * a.down_row;
+    const uint expert = ids[entry];
+    device const uchar* base = kArena ? arena_slot(smap[expert], experts, W1, W2, W3) : experts + ulong(expert) * a.expert_bytes;
+    device const uchar* w = base + a.down_off + row * a.down_row;
     const float v = latent_32_dot<T_IQ4_NL, Lanes>(w, middle + entry * a.ff, a.ff, lane % Lanes, table);
     if (lane % Lanes == 0) output[entry * a.latent + row] = v;
 }
@@ -219,6 +242,8 @@ kernel void latent_gate_up_nv(device const uchar* experts [[buffer(0)]],
                               device const float* projected [[buffer(3)]],
                               device float* middle [[buffer(4)]],
                               constant LatentRoutedArgs& a [[buffer(5)]],
+                              device const uint* smap [[buffer(6)]], device const uchar* W1 [[buffer(7)]],
+                              device const uchar* W2 [[buffer(8)]], device const uchar* W3 [[buffer(9)]],
                               uint2 tg [[threadgroup_position_in_grid]],
                               ushort sg [[simdgroup_index_in_threadgroup]],
                               ushort lane [[thread_index_in_simdgroup]],
@@ -231,7 +256,7 @@ kernel void latent_gate_up_nv(device const uchar* experts [[buffer(0)]],
     const uint expert = ids[entry], group = labels[expert];
     const uint token = entry / a.topk;
     device const float* x = projected + (token * a.groups + group) * a.latent;
-    device const uchar* blob = experts + ulong(expert) * a.expert_bytes;
+    device const uchar* blob = kArena ? arena_slot(smap[expert], experts, W1, W2, W3) : experts + ulong(expert) * a.expert_bytes;
     device const float* tail = (device const float*)(blob + a.tail_off);
     device const uchar* gate = blob + row * a.gu_row;
     const float g = latent_nv_dot<Lanes>(gate, x, a.latent, lane % Lanes, table) * tail[0];
@@ -245,6 +270,8 @@ kernel void latent_down_nv(device const uchar* experts [[buffer(0)]],
                            device const float* middle [[buffer(2)]],
                            device float* output [[buffer(3)]],
                            constant LatentRoutedArgs& a [[buffer(4)]],
+                           device const uint* smap [[buffer(5)]], device const uchar* W1 [[buffer(6)]],
+                           device const uchar* W2 [[buffer(7)]], device const uchar* W3 [[buffer(8)]],
                            uint2 tg [[threadgroup_position_in_grid]],
                            ushort sg [[simdgroup_index_in_threadgroup]],
                            ushort lane [[thread_index_in_simdgroup]],
@@ -254,7 +281,8 @@ kernel void latent_down_nv(device const uchar* experts [[buffer(0)]],
     threadgroup_barrier(mem_flags::mem_threadgroup);
     const uint entry = tg.y, row = (4 * tg.x + sg) * (32 / Lanes) + lane / Lanes;
     if (row >= a.latent) return;
-    device const uchar* blob = experts + ulong(ids[entry]) * a.expert_bytes;
+    const uint expert = ids[entry];
+    device const uchar* blob = kArena ? arena_slot(smap[expert], experts, W1, W2, W3) : experts + ulong(expert) * a.expert_bytes;
     device const float* tail = (device const float*)(blob + a.tail_off);
     const float v = latent_nv_dot<Lanes>(blob + a.down_off + row * a.down_row, middle + entry * a.ff, a.ff, lane % Lanes, table);
     if (lane % Lanes == 0) output[entry * a.latent + row] = v * tail[2];

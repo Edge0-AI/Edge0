@@ -173,8 +173,8 @@ def run_measurement(host, commands, protocol, writer, *, model, raw_dir, tools, 
             stop(str(error))
         before = host.snapshot(model)
         result = host.run(commands[side])
-        (Path(raw_dir) / f'{n}.stdout').write_text(result.stdout)
-        (Path(raw_dir) / f'{n}.stderr').write_text(result.stderr)
+        (Path(raw_dir) / f'{n}.stdout').write_text(result.stdout, encoding='utf-8')
+        (Path(raw_dir) / f'{n}.stderr').write_text(result.stderr, encoding='utf-8')
         after = host.snapshot(model)
         if result.returncode:
             stop(f'exit code {result.returncode}', snapshot_before=before, snapshot_after=after)

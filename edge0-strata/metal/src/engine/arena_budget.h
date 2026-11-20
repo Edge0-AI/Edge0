@@ -141,6 +141,25 @@ inline bool resident_fits(double phys, double working_set, double model_bytes, d
     return model_bytes + overhead <= resident_cap(m);
 }
 
+/// What a pack needs beside its mapped bytes to stay resident: the prompt buffers, KV, the draft layer's work memory.
+constexpr double kResidentOverhead = 12.0 * 1073741824.0;
+
+/// The latent layout (experts.bin beside a skeleton GGUF): everything the Metal window keeps resident when the experts
+/// are not streamed - the skeleton's tensors, experts.bin, the D/U file and the draft layer's GGUF - plus the overhead
+/// must fit under the resident cap.  (window.cpp: Window::init; ExpertStream::wanted is the same rule for a GGUF that
+/// holds its experts.)
+inline bool latent_resident_fits(double phys, double working_set, double skeleton_bytes, double experts_bytes,
+                                 double du_bytes, double mtp_bytes) {
+    return resident_fits(phys, working_set, skeleton_bytes + experts_bytes + du_bytes + mtp_bytes, kResidentOverhead);
+}
+
+/// STRATA_METAL_STREAM: "1" streams, "0" never does, anything else (unset, "auto") streams when the pack does not fit.
+inline bool stream_choice(const char* env, bool fits) {
+    if (env && env[0] == '1' && env[1] == 0) return true;
+    if (env && env[0] == '0' && env[1] == 0) return false;
+    return !fits;
+}
+
 /// Just before the arena is filled: the bytes it may still have when macOS can now give `available_now` (it shrinks,
 /// never grows; the explicit STRATA_METAL_ARENA_GB is kept as it is).
 inline double arena_shrink(const ArenaMem& m, double planned, double available_now) {

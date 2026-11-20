@@ -15,7 +15,7 @@ class ResultsTests(unittest.TestCase):
     def parse(self, xml):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "report.xml"
-            path.write_text(xml)
+            path.write_text(xml, encoding='utf-8')
             return RUNNER.parse_results(path)
 
     def test_mixed(self):

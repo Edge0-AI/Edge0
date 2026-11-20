@@ -50,7 +50,8 @@
     "STRATA_METAL_DRAFT_VOCAB": "${MODEL_DIR}/mtp/draft_vocab.bin",
     "STRATA_DECODE_TIMING": "1",
     "STRATA_METAL_LATENT_VERIFY_FAST": "1",
-    "STRATA_METAL_LATENT_PROMPT_TUNE": "1"
+    "STRATA_METAL_LATENT_PROMPT_TUNE": "1",
+    "STRATA_METAL_EXPERT_PROFILE": "${MODEL_DIR}/profile.bin"
   },
   "tokenizer": "${MODEL_DIR}/tokenizer",
   "model_name": "edge0-145b",

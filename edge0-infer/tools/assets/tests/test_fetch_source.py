@@ -148,7 +148,7 @@ def test_download_selected_files(remote, tmp_path):
 def test_download_refuses_existing_output(remote, tmp_path):
     out = tmp_path / 'source'
     out.mkdir()
-    (out / 'keep').write_text('preserve')
+    (out / 'keep').write_text('preserve', encoding='utf-8')
     with pytest.raises(fetch.FetchError, match='output already exists'):
         fetch.download(lock_for(remote), remote.endpoint, 5, out)
     assert sorted(p.name for p in out.iterdir()) == ['keep']
@@ -309,7 +309,7 @@ SMALL_FILES = ['chat_template.jinja', 'config.json', 'generation_config.json', '
 @pytest.mark.l3
 def test_real_source_probe_and_small_downloads(tmp_path):
     """Needs network access to Hugging Face; a failure here is a failure, not a skip."""
-    lock = json.loads(fetch.LOCK.read_text())
+    lock = json.loads(fetch.LOCK.read_text(encoding='utf-8'))
     report = fetch.probe(lock, 'https://huggingface.co', 120)
     assert report['status'] == 'passed', report['errors']
     assert len(report['files']) == len(lock['files']) == 11

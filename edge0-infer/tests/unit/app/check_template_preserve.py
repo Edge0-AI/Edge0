@@ -5,7 +5,7 @@ import subprocess
 import sys
 import jinja2
 root=Path(__file__).resolve().parents[3]
-template=jinja2.Environment().from_string((root/'tests/fixtures/models/edge0_35b/chat_template.jinja').read_text())
+template=jinja2.Environment().from_string((root/'tests/fixtures/models/edge0_35b/chat_template.jinja').read_text(encoding='utf-8'))
 samples=[
  [('user','Hello'),('assistant','Answer'),('user','Next')],
  [('user','Hello'),('assistant','<think>\nReason\n</think>\n\nAnswer'),('user','Next')],

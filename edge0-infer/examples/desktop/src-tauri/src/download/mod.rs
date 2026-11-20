@@ -175,7 +175,17 @@ pub fn git_blob_sha1(content: &[u8]) -> String {
 pub fn sha256_hex(content: &[u8]) -> String {
     hex::encode(<Sha256 as Digest>::digest(content))
 }
+#[cfg(test)]
 pub fn hash_file(path: &Path, algorithm: Algorithm) -> Result<String, String> {
+    hash_file_until(path, algorithm, &std::sync::atomic::AtomicBool::new(false))
+        .map(|sum| sum.expect("never cancelled"))
+}
+/// `hash_file` that checks `cancel` between reads: `Ok(None)` once it is set, so a large file does not hold up a pause.
+pub fn hash_file_until(
+    path: &Path,
+    algorithm: Algorithm,
+    cancel: &std::sync::atomic::AtomicBool,
+) -> Result<Option<String>, String> {
     let mut file = std::fs::File::open(path).map_err(|error| error.to_string())?;
     let len = file.metadata().map_err(|error| error.to_string())?.len();
     let mut hasher_git = Sha1::new();
@@ -185,6 +195,9 @@ pub fn hash_file(path: &Path, algorithm: Algorithm) -> Result<String, String> {
     }
     let mut buffer = [0_u8; 64 * 1024];
     loop {
+        if cancel.load(std::sync::atomic::Ordering::SeqCst) {
+            return Ok(None);
+        }
         let read =
             std::io::Read::read(&mut file, &mut buffer).map_err(|error| error.to_string())?;
         if read == 0 {
@@ -195,11 +208,12 @@ pub fn hash_file(path: &Path, algorithm: Algorithm) -> Result<String, String> {
             Algorithm::Sha256 => hasher_sha.update(&buffer[..read]),
         }
     }
-    Ok(match algorithm {
+    Ok(Some(match algorithm {
         Algorithm::Git => hex::encode(hasher_git.finalize()),
         Algorithm::Sha256 => hex::encode(hasher_sha.finalize()),
-    })
+    }))
 }
+#[cfg(test)]
 pub fn checksum_matches(path: &Path, file: &ListedFile) -> bool {
     std::fs::metadata(path).is_ok_and(|meta| meta.len() == file.size)
         && hash_file(path, file.algorithm).is_ok_and(|sum| sum.eq_ignore_ascii_case(&file.checksum))
@@ -465,7 +479,7 @@ mod tests {
         );
         assert_eq!(models[1].id, "edge0-145b-nvfp4");
         assert_eq!(models[3].id, "edge0-120b-nvfp4");
-        assert_eq!(models[0].bytes, 105_400_000_000);
+        assert_eq!(models[0].bytes, 106_275_760_678);
         assert_eq!(models[0].files, 93);
     }
     #[test]

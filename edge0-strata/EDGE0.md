@@ -383,8 +383,7 @@ quality on this build has only been checked by hand.
   | `${PLE_IO}` | `direct` or `ram`, chosen with `--model-option ple-io=...` |
 
   The templates are `edge0-145b.json` (Edge0 145B, 1792 latent dimensions) and `edge0-120b.json`
-  (Edge0 120B, 1280 latent dimensions). `edge0-infer` chooses the D/U default (Q8 for Edge0 145B,
-  Q4 for Edge0 120B) and the expert format, which it reads from `model_name` in the folder's `model.json`.
+  (Edge0 120B, 1280 latent dimensions). `edge0-infer` chooses the D/U default (Q8) and the expert format, which it reads from `model_name` in the folder's `model.json`.
 
   On macOS the device is `metal`. `edge0-infer` then loads `edge0-145b-metal.json` or
   `edge0-120b-metal.json` instead of the CUDA template. Those files use the same placeholders. Their
@@ -392,6 +391,22 @@ quality on this build has only been checked by hand.
   `--spec` to `4`, and they keep `STRATA_DECODE_TIMING=1`. They do not set `STRATA_METAL_MTP_GGUF`:
   the engine reads `<model>/mtp-q2_0.gguf`. `STRATA_METAL_DRAFT_VOCAB` points at
   `${MODEL_DIR}/mtp/draft_vocab.bin`.
+
+  On Metal the routed experts (`experts.bin`) stay in memory when the Mac has room for them, and are
+  read from the SSD as they are needed when it does not. The engine decides at start and logs
+  `strata metal: latent experts resident` or `strata metal: latent experts streamed from the SSD`
+  with the sizes and the limit it compared. When streaming, the experts live in a slot arena that
+  is filled first from `STRATA_METAL_EXPERT_PROFILE` (the templates set it to
+  `${MODEL_DIR}/profile.bin`); the decode window and the prompt chain both read from that arena, and
+  a prompt's buffers are placed in it while the prompt runs. If the configured prompt chunk
+  (`STRATA_METAL_PROMPT_CHUNK`) does not fit, the chunk is halved, down to 1024 rows, and the engine
+  logs the chunk size it uses. These variables change the choice:
+
+  | Variable | Effect |
+  | --- | --- |
+  | `STRATA_METAL_STREAM` | `1` always streams the experts, `0` always keeps them in memory |
+  | `STRATA_METAL_ARENA_GB` | the arena size in GB instead of the size the engine computes |
+  | `STRATA_METAL_KEEP_FREE_GB` | memory in GB the engine leaves free when it sizes the arena |
 
   A Metal template may contain `prepare`, an array of files to create before the server starts. Each
   entry has `output`, `script` (a path relative to this directory) and `args`, and those strings use
@@ -401,9 +416,7 @@ quality on this build has only been checked by hand.
   `server.py`. The shipped entries run `tools/mtp_gguf.py` to write `mtp-q2_0.gguf` into the model
   directory, so that directory must be writable. An `output` that already exists is left as it is.
 
-  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. A Q3_K folder
-  (`model_name` ending in `-q3k`) defaults to `du=q4`; an NVFP4 folder keeps the model's own
-  default. `ple-io=ram` is rejected before any process starts.
+  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. `ple-io=ram` is rejected before any process starts.
 
   `edge0-infer` also sets `gpu` from `--device` (`cuda:<n>` on Linux and Windows, `metal` on macOS),
   `model_name` from `--alias`, and the `--max-context` argument from `--context`.

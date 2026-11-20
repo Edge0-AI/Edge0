@@ -19,7 +19,7 @@ def main():
     parser.add_argument('--cli',required=True)
     args=parser.parse_args()
     model=os.environ['MOE_ASSETS_35B']
-    prompt=(Path(__file__).resolve().parents[1]/'fixtures/bench/library-report-prompt.txt').read_text()
+    prompt=(Path(__file__).resolve().parents[1]/'fixtures/bench/library-report-prompt.txt').read_text(encoding='utf-8')
     common=['--context','4096','--presence-penalty','0','--model',model,'--device','metal','--max-tokens','32']
     report={}
     with tempfile.TemporaryDirectory() as temporary:
@@ -29,7 +29,7 @@ def main():
             # The interactive command accepts a single line; preserve every word.
             text=prompt.replace('\n',' ')+'\n/quit\n'
             result=call([args.cli,'chat',*common,option,value,'--out',str(folder)],text)
-            summary=json.loads((folder/'1/result.json').read_text())
+            summary=json.loads((folder/'1/result.json').read_text(encoding='utf-8'))
             assert summary['stop_reason']=='cancelled'
             latency=re.search(r'Cancellation latency: ([0-9.e+-]+) s',result.stderr)
             assert latency,result.stderr
@@ -42,10 +42,10 @@ def main():
             turn={'input':tokens}
             if enabled:
                 turn['cancel']={'after_fragments':1000}
-            script=root/'turns.json';script.write_text(json.dumps({'turns':[turn]}))
+            script=root/'turns.json';script.write_text(json.dumps({'turns':[turn]}), encoding='utf-8')
             folder=root/str(enabled)
             call([args.cli,'run',*common,'--temperature','0','--turns',str(script),'--out',str(folder)])
-            summary=json.loads((folder/'1/result.json').read_text())
+            summary=json.loads((folder/'1/result.json').read_text(encoding='utf-8'))
             report['with_token' if enabled else 'without_token']={
                 'first_token_seconds':summary['request_summary']['first_token_seconds'],
                 'block_snapshot_seconds':summary['block_snapshot_seconds']}

@@ -55,10 +55,10 @@ def test_asset_tooling_has_no_foreign_code_references():
 
 def test_scanner_catches_seeded_references(tmp_path):
     (tmp_path / 'edge0_35b').mkdir()
-    (tmp_path / 'a.py').write_text('import gguf\nfrom gguf.reader import X\n')
-    (tmp_path / 'b.py').write_text('import os\nPATH = os.path.join("llama", "gguf-py")\nE = "MOE_EDGE0"\n')
-    (tmp_path / 'edge0_35b/make_assets.py').write_text('ARGS = ["--edge0", "--llama"]\n')
-    (tmp_path / 'comment.py').write_text('"""Docs may mention gguf-py."""\n# gguf-py is mentioned in a comment only\n')
+    (tmp_path / 'a.py').write_text('import gguf\nfrom gguf.reader import X\n', encoding='utf-8')
+    (tmp_path / 'b.py').write_text('import os\nPATH = os.path.join("llama", "gguf-py")\nE = "MOE_EDGE0"\n', encoding='utf-8')
+    (tmp_path / 'edge0_35b/make_assets.py').write_text('ARGS = ["--edge0", "--llama"]\n', encoding='utf-8')
+    (tmp_path / 'comment.py').write_text('"""Docs may mention gguf-py."""\n# gguf-py is mentioned in a comment only\n', encoding='utf-8')
     found = foreign_references(tmp_path)
     assert len(found) == 6
     assert not any(f.startswith('comment.py') for f in found)

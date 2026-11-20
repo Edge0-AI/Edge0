@@ -130,6 +130,41 @@ int main() {
           "inactive file cache counts", arena_avail(6.3 * kGB, 0.07 * kGB, 10.4 * kGB, 0.1 * kGB, 14.1 * kGB));
     check(std::fabs(arena_avail(6.3 * kGB, 0.07 * kGB, 10.4 * kGB, 0.1 * kGB, 2.0 * kGB) - 8.37 * kGB) < 1e6,
           "inactive anonymous memory does not (only 2 GB file-backed)", arena_avail(6.3 * kGB, 0.07 * kGB, 10.4 * kGB, 0.1 * kGB, 2.0 * kGB));
+    // The latent layout (Edge0 145B / 120B, Q3_K experts.bin beside a skeleton GGUF, Q4 D/U, the MTP draft GGUF): what
+    // Window::init keeps resident when nothing streams, in bytes as on disk.
+    struct LatentPack { const char* name; double skeleton, experts, du, mtp; };
+    const LatentPack l145{"145B", 5991569248.0, 40076574720.0, 1981808640.0, 823890688.0};
+    const LatentPack l120{"120B", 5991569248.0, 28626124800.0, 1415577600.0, 823890688.0};
+    const double ram64 = 68719476736.0, ws64 = 0.75 * ram64;          // a 64 GiB Mac: working set 0.75 x RAM
+    const double ram192 = 206158430208.0, ws192 = 173173080064.0;   // the M2 Ultra 192 GB (recommendedMaxWorkingSetSize)
+    for (const LatentPack& p : {l145, l120}) {
+        char what[160];
+        std::snprintf(what, sizeof what, "64 GiB Mac: %s latent streams (resident %.1f GB + 12 GiB > cap %.1f GB)", p.name,
+                      (p.skeleton + p.experts + p.du + p.mtp) / kGB, resident_cap(ArenaMem{ram64, ws64}) / kGB);
+        check(!latent_resident_fits(ram64, ws64, p.skeleton, p.experts, p.du, p.mtp), what, p.skeleton + p.experts + p.du + p.mtp);
+        std::snprintf(what, sizeof what, "192 GB Mac: %s latent stays resident (cap %.1f GB)", p.name,
+                      resident_cap(ArenaMem{ram192, ws192}) / kGB);
+        check(latent_resident_fits(ram192, ws192, p.skeleton, p.experts, p.du, p.mtp), what, p.skeleton + p.experts + p.du + p.mtp);
+        // STRATA_METAL_STREAM overrides the rule either way; unset or "auto" follows it
+        const bool fits64 = latent_resident_fits(ram64, ws64, p.skeleton, p.experts, p.du, p.mtp);
+        const bool fits192 = latent_resident_fits(ram192, ws192, p.skeleton, p.experts, p.du, p.mtp);
+        std::snprintf(what, sizeof what, "%s: STRATA_METAL_STREAM=0 keeps it resident on 64 GiB, =1 streams it on 192 GB", p.name);
+        check(!stream_choice("0", fits64) && stream_choice("1", fits192), what, 0);
+        std::snprintf(what, sizeof what, "%s: unset or auto follows the rule (64 GiB streams, 192 GB does not)", p.name);
+        check(stream_choice(nullptr, fits64) && !stream_choice(nullptr, fits192) && stream_choice("auto", fits64) &&
+              !stream_choice("auto", fits192), what, 0);
+    }
+    // the 64 GiB Mac streaming 145B: what is held before the arena (the skeleton read into memory, D/U, the draft GGUF, the
+    // window's buffers ~1.7 GB; the process ~1.5 GB more), 50 GB that macOS can give; the arena is positive (more than the
+    // 576 slots of 100 pages a prompt chunk needs) and the whole plan stays under the footprint cap
+    ArenaMem s64{ram64, ws64, l145.skeleton + l145.du + l145.mtp + 1.7e9, 50.0 * kGB};
+    s64.proc_footprint = s64.allocated + 1.5e9;
+    const double a64 = arena_budget(s64);
+    const FootprintPlan p64 = footprint_plan(s64, a64);
+    check(a64 > 576.0 * 100 * 16384, "64 GiB Mac, 145B streaming: the arena is positive and holds more than 576 slots", a64);
+    check(!p64.over() && p64.total <= footprint_cap(s64), "64 GiB Mac, 145B streaming: arena + held + reserve <= the footprint cap",
+          p64.total);
+    check(std::fabs(footprint_cap(s64) - 0.60 * ram64) < 1e6, "64 GiB Mac: the footprint cap is 60% of the RAM (41.2 GB)", footprint_cap(s64));
     std::printf("%s\n", failures ? "FAILED" : "all passed");
     return failures ? 1 : 0;
 }

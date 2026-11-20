@@ -30,9 +30,7 @@ const std::vector<Registration>& registry() {
          true,
          true,
          {{"edge0-145b-q3k", "q3k"}, {"edge0-145b-fp4", "fp4"}},
-         // Metal: a q3k folder defaults to q4, an fp4 folder to the model's own default.
-         {{"metal", {{"du", {"q4", "q8"}}, {"ple-io", {"direct"}}}},
-          {"metal/fp4", {{"du", {"q8", "q4"}}, {"ple-io", {"direct"}}}}}},
+         {{"metal", {{"du", {"q8", "q4"}}, {"ple-io", {"direct"}}}}}},
         {"edge0_120b", "edge0-strata", "edge0/models/edge0-120b.json",
          {{"model.json", false, ""},  // release identifier
           {"experts.bin", false, ""},  // latent experts, 48 layers x 512
@@ -48,11 +46,11 @@ const std::vector<Registration>& registry() {
           {"profile.bin", false, ""},  // expert ranking that decides which experts are cached up front
           {"mtp", true, ""},  // original MTP draft layer (speculative decoding)
           {"tokenizer", true, ""}},  // tokenizer
-         {{"du", {"q4", "q8"}}, {"ple-io", {"direct", "ram"}}},
+         {{"du", {"q8", "q4"}}, {"ple-io", {"direct", "ram"}}},
          true,
          true,
          {{"edge0-120b-q3k", "q3k"}, {"edge0-120b-fp4", "fp4"}},
-         {{"metal", {{"du", {"q4", "q8"}}, {"ple-io", {"direct"}}}}}},
+         {{"metal", {{"du", {"q8", "q4"}}, {"ple-io", {"direct"}}}}}},
     };
     return entries;
 }

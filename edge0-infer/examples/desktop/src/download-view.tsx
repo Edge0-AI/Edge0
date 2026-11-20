@@ -29,8 +29,8 @@ export function DownloadCard({ model, job, present, blocked, disabled, onDownloa
     body = <><p>{decimalGb(model.bytes)} GB · on this machine</p><p className="mono" title={present}>{present}</p></>;
   } else if (phase === 'running') {
     cls = 'active';
-    tag = <span className="tag busy"><span className="dot busy"/>Downloading</span>;
-    body = <>{bar(percent)}<p className="dl-meta">{job && runningMeta(job)}</p></>;
+    tag = job?.checking_files ? <span className="tag busy"><span className="spin"/>Checking</span> : <span className="tag busy"><span className="dot busy"/>Downloading</span>;
+    body = <>{bar(percent)}<p className="dl-meta">{job?.checking_files ? 'Checking files already on disk… Large files can take a few minutes.' : job && runningMeta(job)}</p></>;
     actions = <button className="btn" disabled={disabled} onClick={onPause}>Pause</button>;
   } else if (phase === 'checking') {
     cls = 'active';

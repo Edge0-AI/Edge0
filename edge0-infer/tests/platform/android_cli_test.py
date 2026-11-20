@@ -45,7 +45,7 @@ class WrapperTest(AndroidTest):
     def setUp(self):
         super().setUp()
         cli = self.remote / 'edge0-infer'
-        cli.write_text(FAKE_CLI); cli.chmod(0o755)
+        cli.write_text(FAKE_CLI, encoding='utf-8'); cli.chmod(0o755)
 
     def test_stdin_exit_and_failed_outputs(self):
         for mode, code in (('run', 0), ('fail', 9)):
@@ -61,7 +61,7 @@ class WrapperTest(AndroidTest):
     def test_auxiliary_commands_do_not_consume_stdin(self):
         self.env['FAKE_ADB_READ_CONTROL_STDIN'] = '1'
         prompt = self.root / 'prompt.txt'
-        prompt.write_text('Input asset')
+        prompt.write_text('Input asset', encoding='utf-8')
         output = self.root / 'isolated-stdin'
         data = b'Hello\nOne more turn\n/quit\n'
         result = subprocess.run([str(HERE/'android-cli'), 'chat', '--user-file', str(prompt),
@@ -74,7 +74,7 @@ class WrapperTest(AndroidTest):
 
     def test_chat_file_mapping_preserves_other_bytes(self):
         prompt = self.root / 'prompt with spaces.txt'
-        prompt.write_text('File contents before forwarding')
+        prompt.write_text('File contents before forwarding', encoding='utf-8')
         path = os.fsencode(prompt)
         missing = os.fsencode(self.root / 'missing.txt')
         data = (b'raw\x00\xff text\r\n  /file\t' + path + b' \t\r\n'
@@ -85,10 +85,10 @@ class WrapperTest(AndroidTest):
         result = subprocess.run([str(HERE/'android-cli'), 'chat', '--out', str(output)],
                                 input=data, capture_output=True, env=self.env, timeout=20)
         self.assertEqual(result.returncode, 0, result.stderr)
-        uploads = json.loads((output/'uploaded.json').read_text())
+        uploads = json.loads((output/'uploaded.json').read_text(encoding='utf-8'))
         self.assertEqual(len(uploads), 1)
         mapped, contents = next(iter(uploads.items()))
-        self.assertEqual(contents, prompt.read_text())
+        self.assertEqual(contents, prompt.read_text(encoding='utf-8'))
         expected = data.replace(b'  /file\t' + path, b'  /file\t' + os.fsencode(mapped), 1)
         expected = expected[:-len(path)] + os.fsencode(mapped)
         self.assertEqual(result.stdout, expected)
@@ -99,7 +99,7 @@ class WrapperTest(AndroidTest):
 
     def test_non_chat_file_text_is_not_mapped(self):
         prompt = self.root / 'prompt.txt'
-        prompt.write_text('Local input')
+        prompt.write_text('Local input', encoding='utf-8')
         data = b'/file ' + os.fsencode(prompt) + b'\n'
         result = subprocess.run([str(HERE/'android-cli'), 'run'], input=data,
                                 capture_output=True, env=self.env, timeout=20)
@@ -145,7 +145,7 @@ class WrapperTest(AndroidTest):
         try:
             self.assertIn(b':43210 ', process.stderr.readline())
             self.assertIn(b'stop_reason', process.stderr.readline())
-            self.assertEqual(json.loads((output/'1/result.json').read_text()), {})
+            self.assertEqual(json.loads((output/'1/result.json').read_text(encoding='utf-8')), {})
             self.assertIsNone(process.poll())
             process.terminate()
             _, stderr = process.communicate(timeout=20)

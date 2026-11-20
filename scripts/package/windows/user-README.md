@@ -41,7 +41,7 @@ Built from commit [`{{COMMIT}}`](https://github.com/Edge0-AI/Edge0/tree/{{COMMIT
 
 1. Extract the zip to a short path, for example `C:\Edge0\`.
 2. Start `Edge0 Chat.exe`.
-3. Nothing to set for the engine: the app uses the `edge0-infer.exe` in its own folder, also after you move the folder. A path chosen under **Settings > Engine > Executable** is used instead while that file exists.
+3. Nothing to set for the engine: **Settings > Engine > Executable** is **Built-in**, the `edge0-infer.exe` in the app's own folder, also after you move the folder. **Custom** uses an `edge0-infer.exe` you choose instead. Settings written by Edge0 Chat 0.3.0 or earlier are switched to Built-in once, on the first start. **Settings > Engine > Context length** is the number of tokens a conversation can hold: **Model default** keeps the length the model is set up for, and 16K to 128K or **Custom** (a whole number of K) set another; a new length applies when the model loads again.
 4. Open **Models**. Choose **Download** on Edge0 145B or Edge0 120B (Q3_K or NVFP4) to download it from Hugging Face or ModelScope into a folder you pick; a paused or interrupted download continues where it stopped. Or choose **Add location** and select a model directory you already have (see [Model directories](#model-directories)). Then **Load** it and **Open chat**.
 
 The app keeps its settings (`settings.json`) and conversations under `%APPDATA%\dev.edge0.example.desktop`. Set `EDGE0_HOME` to another folder to keep them there instead.
@@ -63,7 +63,7 @@ The app keeps its settings (`settings.json`) and conversations under `%APPDATA%\
   ```
 
 - **`edge0-infer.exe` does not start, or exits with `0xC0000135`**: `vulkan-1.dll` is missing. Update the GPU driver or install the Vulkan Runtime (see [Requirements](#requirements)).
-- **"No edge0-infer executable is configured"** or **"The edge0-infer executable was not found"**: set **Settings > Engine > Executable** to `edge0-infer.exe` again (for example after moving the folder), or clear it to use the one beside the app.
+- **"No edge0-infer executable is configured"** or **"The edge0-infer executable was not found"**: the Custom path is empty or its file is gone. Open **Settings > Engine > Executable** and choose **Built-in** to use the `edge0-infer.exe` beside the app, or choose another `edge0-infer.exe` under Custom.
 - **Edge0 145B / 120B: the first load takes about twice as long**, or a **"Low memory"** warning appears after loading. When less than 10 GiB of the Windows commit limit (the RAM Windows sees plus the page file) is left after loading, the app loads the model again with part of the GPU memory kept out of the expert cache, so that generating does not run out of memory. It remembers that reserve per model in `%APPDATA%\dev.edge0.example.desktop\memory-reserve.json`, so later loads take the normal time; delete the file to measure again. If less than 8 GiB is still free, the warning stays: close other programs or make the page file larger.
 - **Edge0 145B / 120B: the engine exits with `0xC0000135`** or the log warns `cublas64_{{CUDA_MAJOR}}.dll not found`: install the CUDA Toolkit {{CUDA_MAJOR}} and check that `%CUDA_PATH%\bin\cublas64_{{CUDA_MAJOR}}.dll` (or `%CUDA_PATH%\bin\x64\cublas64_{{CUDA_MAJOR}}.dll`) exists.
 - **Check the engine from a terminal:**

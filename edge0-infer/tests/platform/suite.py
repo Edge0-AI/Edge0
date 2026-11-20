@@ -85,7 +85,7 @@ def main():
                 continue
             code = subprocess.run(command, cwd=ROOT).returncode
             if termination is not None and termination.exists():
-                print(termination.read_text(), flush=True)
+                print(termination.read_text(encoding='utf-8'), flush=True)
                 return 1
             if code:
                 break

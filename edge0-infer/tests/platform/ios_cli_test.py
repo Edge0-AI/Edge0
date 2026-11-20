@@ -54,7 +54,7 @@ class CLITest(TransportTest):
         self.assertEqual(calls, (self.root / 'calls.jsonl').read_bytes())
         self.assertTrue(remote.exists())
         def stopped(command, **kwargs):
-            Path(os.environ['MOE_IOS_TERMINATION_REPORT']).write_text(marker.read_text())
+            Path(os.environ['MOE_IOS_TERMINATION_REPORT']).write_text(marker.read_text(encoding='utf-8'), encoding='utf-8')
             return subprocess.CompletedProcess(command, 1)
         with patch.object(sys, 'argv', ['suite', '--platform', 'ios', '--only', '35b-numerical,35b-describe']), \
              patch.dict(os.environ), patch.object(suite.subprocess, 'run', side_effect=stopped) as run, \
@@ -81,13 +81,13 @@ class CLITest(TransportTest):
                 self.assertEqual(command[command.index('--skip-observe') + 1], 'long-mixed')
 
     def test_mapping(self):
-        model=self.root/'model';model.mkdir();(model/'assets.tsv').write_text('manifest')
+        model=self.root/'model';model.mkdir();(model/'assets.tsv').write_text('manifest', encoding='utf-8')
         self.device.env['MOE_ASSETS_35B']=str(model)
-        remote=self.root/'Documents/assets/35b';remote.mkdir(parents=True);(remote/'assets.tsv').write_text('wrong')
+        remote=self.root/'Documents/assets/35b';remote.mkdir(parents=True);(remote/'assets.tsv').write_text('wrong', encoding='utf-8')
         with self.assertRaises(RuntimeError):Invocation(self.device).path(str(model))
-        (remote/'assets.tsv').write_text('manifest')
+        (remote/'assets.tsv').write_text('manifest', encoding='utf-8')
         self.assertEqual(Invocation(self.device).path(str(model)),'assets/35b')
-        file=self.root/'text';file.write_text('input')
+        file=self.root/'text';file.write_text('input', encoding='utf-8')
         inv=Invocation(self.device);chat=ChatInput(inv)
         self.assertIn(b'inv/',chat.line(('/file '+str(file)+'\n').encode()))
         chat.line(b'"""\n');line=('/file '+str(file)+'\n').encode()
@@ -100,9 +100,9 @@ class CLITest(TransportTest):
             output=self.root/f'out-{code}'
             got,stdout,stderr=execute(self.device,['run','--out',str(output)],b'hello\n')
             self.assertEqual(got,code);self.assertEqual(stdout,b'example output\n');self.assertEqual(stderr,b'example stderr\n')
-            self.assertEqual((output/'result.txt').read_text(),'result')
+            self.assertEqual((output/'result.txt').read_text(encoding='utf-8'),'result')
             self.assertEqual((output/'nested/bytes.bin').read_bytes(),bytes(range(256)))
-            calls=[json.loads(line) for line in (self.root/'calls.jsonl').read_text().splitlines()]
+            calls=[json.loads(line) for line in (self.root/'calls.jsonl').read_text(encoding='utf-8').splitlines()]
             launch=next(c for c in reversed(calls) if c['args'][:3]==['device','process','launch'])
             env=launch['env'];self.assertIn('DEVICECTL_CHILD_MOE_INVOCATION_DIR',env)
             self.assertEqual((self.root/'Documents'/env['DEVICECTL_CHILD_MOE_STDIN_FILE']).read_bytes(),b'hello\n')
@@ -135,7 +135,7 @@ class CLITest(TransportTest):
     def test_forbidden_option(self):
         forbidden='--remove-'+'existing-content'
         for name in ('ios.py','ios_cli.py','ios_push.py','ios-cli'):
-            self.assertNotIn(forbidden,Path(__file__).with_name(name).read_text())
+            self.assertNotIn(forbidden,Path(__file__).with_name(name).read_text(encoding='utf-8'))
 
 
 if __name__=='__main__':unittest.main()

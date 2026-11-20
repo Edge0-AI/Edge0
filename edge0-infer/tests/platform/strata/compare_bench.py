@@ -27,7 +27,7 @@ def load(path):
         if len(found) != 1:
             sys.exit(f'{path}: expected exactly one results.json, found {len(found)}')
         path = found[0]
-    return json.loads(path.read_text())
+    return json.loads(path.read_text(encoding='utf-8'))
 
 
 def median(values, name):

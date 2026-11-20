@@ -26,8 +26,8 @@ class SyncTest(unittest.TestCase):
                 server.evidence(1, timeout=0)
             def complete():
                 folder = server.out/'1'; folder.mkdir()
-                (folder/'tokens.json').write_text('{"input":[1]}')
-                (folder/'result.json').write_text('{"stop_reason":"length"}')
+                (folder/'tokens.json').write_text('{"input":[1]}', encoding='utf-8')
+                (folder/'result.json').write_text('{"stop_reason":"length"}', encoding='utf-8')
                 with server.changed:
                     server.lines.append('{"stop_reason":"length"}')
                     server.changed.notify_all()

@@ -34,7 +34,7 @@ def main():
             if export:
                 extra += ['--out', str(root / name)]
             result, rows = call(extra)
-            tokens = json.loads((root / name / 'tokens.json').read_text())['generated'] if export else None
+            tokens = json.loads((root / name / 'tokens.json').read_text(encoding='utf-8'))['generated'] if export else None
             return result, rows[0], tokens
 
         accounting_errors = []
@@ -62,7 +62,7 @@ def main():
         a, exported, tokens = run('greedy', ['--temperature', '0', '--presence-penalty', '0', '--check', str(answer)])
         b, measured, _ = run('greedy-plain', ['--temperature', '0', '--presence-penalty', '0', '--check', str(answer)], False)
         assert a.stdout == b.stdout
-        assert tokens == json.loads((answer / 'tokens.json').read_text())['generated']
+        assert tokens == json.loads((answer / 'tokens.json').read_text(encoding='utf-8'))['generated']
         n = len(tokens)
         assert measured['random_draws'] == measured['host_sampled_steps'] == 0
         account(measured['sampling_readback_bytes'], 8 * n, 'greedy')
@@ -74,15 +74,15 @@ def main():
         account(measured['sampling_readback_bytes'], 4 * v * len(tokens), 'penalized greedy')
         assert penalty['configuration']['seed'] is None
         turns = root / 'turns.json'
-        turns.write_text(json.dumps({'turns': [{'input': [1, 2, 3, 4, 5]}, {'continue': [6, 7]}, {'continue': [8, 9]}]}))
+        turns.write_text(json.dumps({'turns': [{'input': [1, 2, 3, 4, 5]}, {'continue': [6, 7]}, {'continue': [8, 9]}]}), encoding='utf-8')
         _, reports = call(['--turns', str(turns), '--out', str(root / 'turns'), *options])
         assert len(reports) == 3 and reports[1]['reuse_method'] == reports[2]['reuse_method'] == 'keep'
         for index in range(1, 4):
             folder = root / 'turns' / str(index)
             replay = root / f'replay-{index}'
             call(['--replay', str(folder / 'blocks.json'), '--out', str(replay)])
-            original = json.loads((folder / 'tokens.json').read_text())
-            blocks = json.loads((folder / 'blocks.json').read_text())['blocks']
+            original = json.loads((folder / 'tokens.json').read_text(encoding='utf-8'))
+            blocks = json.loads((folder / 'blocks.json').read_text(encoding='utf-8'))['blocks']
             selected = [i for i, block in enumerate(blocks) if block['sample']][-len(original['generated']):]
             width = v * 4
             all_rows = (replay / 'logits.f32').read_bytes()

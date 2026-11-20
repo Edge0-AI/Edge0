@@ -30,9 +30,9 @@ def call(command):
 
 
 def compare(folder, replay):
-    original = json.loads((folder/'tokens.json').read_text())
-    blocks = json.loads((folder/'blocks.json').read_text())['blocks']
-    fresh = json.loads((replay/'tokens.json').read_text())
+    original = json.loads((folder/'tokens.json').read_text(encoding='utf-8'))
+    blocks = json.loads((folder/'blocks.json').read_text(encoding='utf-8'))['blocks']
+    fresh = json.loads((replay/'tokens.json').read_text(encoding='utf-8'))
     count = len(original['generated'])
     selected = [i for i, block in enumerate(blocks) if block['sample']][-count:] if count else []
     assert len(selected) == count
@@ -93,7 +93,7 @@ def main():
         if args.profile=='35b':
             prompt=args.prompt_file
             # Use the same chat rendering as the benchmark input.
-            tokens=call([args.cli,'prompt','--model',str(model),'--user',prompt.read_text(),'--tokens']).stdout
+            tokens=call([args.cli,'prompt','--model',str(model),'--user',prompt.read_text(encoding='utf-8'),'--tokens']).stdout
             x=[int(value) for value in tokens.splitlines()[-1].split()]
             rendered=tokens.rsplit('\n', 2)[0]
             encoded=call([args.cli,'tokenize','--model',str(model),'--parse-special',rendered]).stdout
@@ -115,15 +115,15 @@ def main():
             for name,turns,expectations in scenarios:
                 def run(suffix, extra=(), mutation=False):
                     folder=root/f'{route}-{name}-{suffix}'
-                    script=root/'turns.json';script.write_text(json.dumps({'turns':turns}))
+                    script=root/'turns.json';script.write_text(json.dumps({'turns':turns}), encoding='utf-8')
                     call(configured+list(extra)+['--turns',str(script),'--out',str(folder)])
                     for index,wanted in enumerate(expectations,1):
                         turn=folder/str(index)
-                        result=json.loads((turn/'result.json').read_text())
+                        result=json.loads((turn/'result.json').read_text(encoding='utf-8'))
                         actual={key:result[key] for key in wanted}
                         assert actual==wanted,(name,index,actual,wanted)
                         assert result['state_valid'] and result['cancel_requested']==(wanted['stop_reason']=='cancelled')
-                        blocks=json.loads((turn/'blocks.json').read_text())['blocks']
+                        blocks=json.loads((turn/'blocks.json').read_text(encoding='utf-8'))['blocks']
                         assert sum(b['length'] for b in blocks)==wanted['e']
                         if turns[index-1].get('cancel'):
                             point=turns[index-1]['cancel']
@@ -149,10 +149,10 @@ def main():
                         ahead=run('ahead',ahead_options)
                         before=root/f'{route}-ahead-before'
                         script=root/'before.json'
-                        script.write_text(json.dumps({'turns':[{'input':x,'cancel':{'at':'before_block','block':1}}]}))
+                        script.write_text(json.dumps({'turns':[{'input':x,'cancel':{'at':'before_block','block':1}}]}), encoding='utf-8')
                         call(configured+ahead_options+['--turns',str(script),'--out',str(before)])
-                        a=json.loads((ahead/'1/result.json').read_text())
-                        b=json.loads((before/'1/result.json').read_text())
+                        a=json.loads((ahead/'1/result.json').read_text(encoding='utf-8'))
+                        b=json.loads((before/'1/result.json').read_text(encoding='utf-8'))
                         assert a['budget_current']==b['budget_current'],('ahead ledger',a['budget_current'],b['budget_current'])
                         print(json.dumps({'route':route,'ahead_ledger_restored':a['budget_current']}),flush=True)
                 except AssertionError as error:

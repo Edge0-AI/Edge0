@@ -58,7 +58,7 @@ for source in [['--tokens', str(case)], ['--user-file', str(fixture)]]:
     output = call(['bench', '--model', model, *source, '--warmup', '2', '--ntok', '5', '--runs', '2'])
     rows = json_lines(output.stdout)
     assert len(rows) == 3 and rows[-1]['type'] == 'summary'
-    run_input = source if source[0] == '--tokens' else ['--user', fixture.read_text()]
+    run_input = source if source[0] == '--tokens' else ['--user', fixture.read_text(encoding='utf-8')]
     run = json.loads(call(['run', '--model', model, *run_input, '--temperature', '0', '--max-tokens', '1']).stderr)
     for index, row in enumerate(rows[:2], 1):
         assert row['type'] == 'run' and row['run'] == index
@@ -116,7 +116,7 @@ print('sampling timing present only for host sampling and nonnegative passed')
 conversation = {'turns': [{'user': 'Hello there, tell me about the sea.'}, {'user': 'And the sky?'}]}
 with tempfile.TemporaryDirectory(prefix='moe-bench-turns-') as directory:
     turns_file = Path(directory) / 'turns.json'
-    turns_file.write_text(json.dumps(conversation))
+    turns_file.write_text(json.dumps(conversation), encoding='utf-8')
     out = Path(directory) / 'run-out'
     run = call(['run', '--model', model, '--turns', str(turns_file), '--max-tokens', '6', '--temperature', '0',
                 '--presence-penalty', '0', '--out', str(out)])
@@ -125,7 +125,7 @@ with tempfile.TemporaryDirectory(prefix='moe-bench-turns-') as directory:
     turns, summary = rows[:-1], rows[-1]
     assert [row['type'] for row in turns] == ['turn', 'turn'] and summary['type'] == 'summary' and summary['turns'] == 2
     for index, row in enumerate(turns, 1):
-        expected = json.loads((out / str(index) / 'tokens.json').read_text())
+        expected = json.loads((out / str(index) / 'tokens.json').read_text(encoding='utf-8'))
         assert row['turn'] == index and row['thinking'] is False
         assert row['input'] == expected['input'] and row['generated'] == expected['generated'], index
         assert row['input_count'] == len(row['input']) and row['generated_count'] == len(row['generated']) == 6
@@ -141,7 +141,7 @@ with tempfile.TemporaryDirectory(prefix='moe-bench-turns-') as directory:
     assert turns[1]['input'][:turns[1]['reused_tokens']] == turns[0]['input'][:turns[1]['reused_tokens']]
     assert summary['engine']['version'] and summary['model']['assets'] and summary['model']['assets_verified'] is False
     thinking_file = Path(directory) / 'thinking.json'
-    thinking_file.write_text(json.dumps({'turns': [{'user': 'Hello.', 'thinking': True}]}))
+    thinking_file.write_text(json.dumps({'turns': [{'user': 'Hello.', 'thinking': True}]}), encoding='utf-8')
     thinking = json_lines(call(['bench', '--model', model, '--turns', str(thinking_file), '--max-tokens', '2']).stdout)
     assert thinking[0]['thinking'] is True
     for bad in [['--turns', str(turns_file), '--user-file', str(fixture)], ['--turns', str(turns_file), '--tokens', str(case)],
@@ -151,7 +151,7 @@ with tempfile.TemporaryDirectory(prefix='moe-bench-turns-') as directory:
         assert result.returncode == 1 and not result.stdout, bad
     for invalid in [{'turns': []}, {'turns': [{'user': 'x', 'extra': 1}]}, {'turns': [{'thinking': True}]}, {'turns': [{'user': 'x'}], 'other': 1}]:
         broken = Path(directory) / 'broken.json'
-        broken.write_text(json.dumps(invalid))
+        broken.write_text(json.dumps(invalid), encoding='utf-8')
         result = subprocess.run([cli, 'bench', '--model', model, '--turns', str(broken), '--device', backend], capture_output=True, text=True)
         assert result.returncode == 1, invalid
 print('bench --turns tokens match run --turns, reuse accounting, cold reference on a fresh session, and invalid arguments passed')

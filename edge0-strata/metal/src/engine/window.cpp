@@ -52,6 +52,8 @@ namespace strata::gpu { uint64_t purge_device_allocations(size_t min_bytes); }  
 
 namespace strata::metal_engine {
 
+extern std::string g_mtp_path;   // the draft layer's GGUF (mtp_load, below): known before the window starts
+
 // The prompt GDN scan kernel, chosen by chip and prompt length (gdn_prompt.metal, gdn_scan_r<IB, TB>; every choice is
 // bit-identical to gdn_scanr_4: the token order and the arithmetic are the same, only the staged block size TB changes, which
 // changes the threadgroup memory a core can hold at once).  Measured by metal/tests/gdn_chunk_bench:
@@ -276,6 +278,7 @@ private:
     gguf::File f_;
     strata::core::LatentDense latent_dense_;
     strata::core::LatentA latent_experts_;
+    std::string latent_experts_path_;   // experts.bin (STRATA_LATENT_A): wrapped whole when resident, else the arena's source
     std::unique_ptr<mtl::Context> cx_;
     mtl::Buffer W_;
     bool latent_on_ = false;
@@ -567,11 +570,49 @@ bool Window::init(const strata::core::ModelGeometry& g, strata::core::SessionSta
     if (!f_.open(shard1, err)) return false;
     cx_ = std::make_unique<mtl::Context>();
     if (!latent_init(err)) return false;
-    stream_ = !latent_on_ && ExpertStream::wanted(f_, *cx_);
+    if (latent_on_) {
+        // the latent layout keeps the skeleton GGUF, experts.bin, the D/U file and the draft GGUF resident; when they do not
+        // fit (arena_budget.h: latent_resident_fits) the experts stream from the SSD into the arena instead
+        double skeleton = 0;
+        for (const auto& kv : f_.tensors)
+            if (kv.first != "per_layer_token_embd.weight") skeleton += (double) kv.second.bytes;
+        const double experts = 48.0 * NEXP * latent_args_.expert_bytes, du = (double) latent_dense_.bytes();
+        double mtp = 0;
+        std::error_code ec;
+        if (!g_mtp_path.empty()) {
+            const auto n = std::filesystem::file_size(g_mtp_path, ec);
+            if (!ec) mtp = (double) n;
+        }
+        uint64_t phys = 0;
+        size_t plen = sizeof phys;
+        sysctlbyname("hw.memsize", &phys, &plen, nullptr, 0);
+        const double ws = (double) cx_->recommended_working_set();
+        const bool fits = latent_resident_fits((double) phys, ws, skeleton, experts, du, mtp);
+        const char* se = std::getenv("STRATA_METAL_STREAM");
+        stream_ = stream_choice(se, fits);
+        ArenaMem am;
+        am.phys = (double) phys;
+        am.working_set = ws;
+        std::fprintf(stderr, "strata metal: latent experts %s: resident they need %.2f GB (skeleton %.2f + experts %.2f + D/U %.2f + "
+                             "draft %.2f) + 12 GiB, the resident cap is %.2f GB (RAM %.2f GB, GPU working set %.2f GB)%s\n",
+                     stream_ ? "streamed from the SSD" : "resident", (skeleton + experts + du + mtp) / 1e9, skeleton / 1e9,
+                     experts / 1e9, du / 1e9, mtp / 1e9, resident_cap(am) / 1e9, phys / 1e9, ws / 1e9,
+                     se && *se ? (std::string("; STRATA_METAL_STREAM=") + se).c_str() : "");
+        if (!stream_) {
+            latent_a_ = cx_->wrap(const_cast<uint8_t*>(latent_experts_.blob(0, 0)), 48 * NEXP * (size_t) latent_args_.expert_bytes,
+                                  NEXP * (size_t) latent_args_.expert_bytes);
+            if (!latent_a_.handle) { err = "metal latent: cannot wrap the expert file"; return false; }
+        }
+    } else {
+        stream_ = ExpertStream::wanted(f_, *cx_);
+    }
     if (stream_) {
         // the model does not fit: the dense weights are read into memory below, the experts stream from the SSD
         st_ = std::make_unique<ExpertStream>();
-        if (!st_->open(f_, err)) return false;
+        if (!(latent_on_ ? st_->open_latent(f_, latent_experts_path_, latent_args_.expert_bytes, latent_args_.up_off,
+                                            latent_args_.down_off, err)
+                         : st_->open(f_, err)))
+            return false;
     } else {
         {   // read ahead the weights, not the n-gram table: in a Gyro file it is 28.8 GB in the middle of the one file, read by the host from
             // the SSD a few rows at a time (src/ngram/ple_reader.cpp), and must not fill the page cache
@@ -851,13 +892,13 @@ bool Window::latent_init(std::string& err) {
         return false;
     }
     const size_t layer_du = latent_dense_.d_bytes() + latent_dense_.u_bytes();
-    const size_t layer_a = NEXP * blob;
     latent_du_ = cx_->wrap(const_cast<uint8_t*>(latent_dense_.d(0)), latent_dense_.bytes(), layer_du);
-    latent_a_ = cx_->wrap(const_cast<uint8_t*>(latent_experts_.blob(0, 0)), layers * layer_a, layer_a);
-    if (!latent_du_.handle || !latent_a_.handle) {
-        err = "metal latent: cannot wrap the D/U or expert file";
+    if (!latent_du_.handle) {
+        err = "metal latent: cannot wrap the D/U file";
         return false;
     }
+    // experts.bin is wrapped whole by init when it stays resident, else streamed into the arena
+    latent_experts_path_ = experts;
     latent_labels_ = cx_->alloc(label_bytes);
     std::memcpy(latent_labels_.ptr, groups_by_expert.data(), label_bytes);
     latent_inv_ = cx_->alloc(inverse.size() * sizeof(float));
@@ -896,11 +937,18 @@ void Window::latent_routed(std::vector<mtl::Dispatch>& ds, int layer, int ntok) 
     const gguf::Tensor d_weight{"", {N, args.groups * args.latent}, latent_du_type_,
                                 du_offset, latent_dense_.d_bytes()};
     gemv(ds, d_weight, XF_, latent_d_, args.groups * args.latent, ntok, 0, &latent_du_);
-    auto run = [&](const char* name, std::vector<mtl::Arg> buffers, uint32_t grid, uint32_t rows) {
+    // SSD streaming: the routed experts' kernels read their slots in the arena (function constant 20; smap and the
+    // arena's other chunks after the arguments), the experts buffer is the arena's first chunk
+    auto run = [&](const char* name, std::vector<mtl::Arg> buffers, uint32_t grid, uint32_t rows, bool experts = false) {
         mtl::Dispatch d;
-        d.p = P(latent_lib_, name, {}, name);
+        const bool arena = experts && stream_;
+        d.p = arena ? P(latent_lib_, name, mtl::Constants().b(20, true), std::string(name) + "#arena") : P(latent_lib_, name, {}, name);
         d.args = std::move(buffers);
         d.args.push_back(mtl::Arg::V(args));
+        if (arena) {
+            d.args.push_back(mtl::Arg::B(st_->smap(), (size_t) layer * NEXP * 4));
+            for (int c = 1; c < 4; ++c) d.args.push_back(mtl::Arg::B(st_->chunk(c)));
+        }
         d.grid[0] = grid;
         d.grid[1] = rows;
         d.tg[0] = 128;
@@ -915,14 +963,17 @@ void Window::latent_routed(std::vector<mtl::Dispatch>& ds, int layer, int ntok) 
     const bool nv8 = latent_nv_ && (verify || narrow);
     const char* gate_kernel = latent_nv_ ? (nv8 ? "latent_gate_up_nv_8" : "latent_gate_up_nv")
                                          : (verify ? "latent_gate_up_4" : narrow ? "latent_gate_up_8" : "latent_gate_up");
+    const mtl::Arg expert_arg = stream_ ? mtl::Arg::B(st_->chunk(0)) : mtl::Arg::B(latent_a_, a_offset);
+    // the host's turn (SSD streaming): ids_ is written (moe_route above), no kernel has read this layer's experts yet
+    if (cuts_) cuts_->push_back((int) ds.size());
     run(gate_kernel,
-        {mtl::Arg::B(latent_a_, a_offset),
+        {expert_arg,
          mtl::Arg::B(latent_labels_, label_offset), mtl::Arg::B(ids_), mtl::Arg::B(latent_d_), mtl::Arg::B(h_)},
-        args.ff / (nv8 ? 16 : gate_rows), entries);
+        args.ff / (nv8 ? 16 : gate_rows), entries, true);
     const bool down_narrow = verify || narrow;
     run(latent_nv_ ? (down_narrow ? "latent_down_nv_4" : "latent_down_nv") : (down_narrow ? "latent_down_4" : "latent_down"),
-        {mtl::Arg::B(latent_a_, a_offset), mtl::Arg::B(ids_),
-                         mtl::Arg::B(h_), mtl::Arg::B(latent_down_)}, args.latent / (down_narrow ? 32 : 4), entries);
+        {expert_arg, mtl::Arg::B(ids_), mtl::Arg::B(h_), mtl::Arg::B(latent_down_)}, args.latent / (down_narrow ? 32 : 4),
+        entries, true);
     const auto u_weights = mtl::Arg::B(latent_du_, du_offset + latent_dense_.d_bytes());
     if (latent_grouped_u_) {
         const uint32_t group_rows = ntok * args.groups;
@@ -1745,12 +1796,14 @@ bool Window::stream_arena(std::string& err) {
                                                      "resident of 128)" : "");
     }
     const char* epg = std::getenv("STRATA_METAL_PROMPT_GEMM");
-    const bool pg_on = !(epg && std::string(epg) == "0");
+    // (the latent layout's prompts run the prompt chain, Window::prompt, which places its own buffers in the arena)
+    const bool pg_on = !(epg && std::string(epg) == "0") && !latent_on_;
+    const int min_slots = pg_on || latent_on_ ? 576 : 64;   // a prompt chunk's layer needs up to 512 experts at once
     bool minimal = false;   // the arena's least layout (the min slots) is not shrunk further: it goes ahead, filled in steps
     for (int tries = 0;; ++tries) {
         const double planned = budget;
         std::function<uint64_t()> recheck = [&]() -> uint64_t { return (uint64_t) arena_shrink(am, planned, avail_now()); };
-        if (st_->make_arena(*cx_, (uint64_t) budget, prof, pg_on ? 576 : 64, err, minimal ? std::function<uint64_t()>() : recheck,
+        if (st_->make_arena(*cx_, (uint64_t) budget, prof, min_slots, err, minimal ? std::function<uint64_t()>() : recheck,
                             [&](uint64_t step) { return arena_grow(am, avail_now(), (double) step); }))
             break;
         if (st_->shrink_to() == 0 || tries == 4) return false;

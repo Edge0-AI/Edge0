@@ -188,7 +188,7 @@ class MeasurementTest(unittest.TestCase):
         self.binary = self.root / 'bin'
         self.binary.write_bytes(b'binary')
         self.prompt = self.root / 'prompt.txt'
-        self.prompt.write_text('prompt')
+        self.prompt.write_text('prompt', encoding='utf-8')
         command = [str(self.binary), 'bench', '--model', 'model']
         self.commands = dict(A=command, B=command)
 
@@ -218,7 +218,7 @@ class MeasurementTest(unittest.TestCase):
         self.assertEqual(report['identity']['model']['assets'], ASSETS)
         self.assertTrue(writer.json_path.exists() and writer.md_path.exists())
         self.assertFalse(writer.partial_path.exists())
-        self.assertEqual(reports.validate(json.loads(writer.json_path.read_text())), [])
+        self.assertEqual(reports.validate(json.loads(writer.json_path.read_text(encoding='utf-8'))), [])
 
     def test_failed_process_keeps_measured_cells_in_partial_file(self):
         outputs = [bench_stdout()] * 4 + [hosts.CommandResult(3, '', 'boom')]

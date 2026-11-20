@@ -12,7 +12,7 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         Arc, Mutex,
     },
     thread,
@@ -38,6 +38,8 @@ pub struct JobView {
     pub total_bytes: u64,
     pub speed_bps: f64,
     pub eta_seconds: Option<f64>,
+    /// True while files already on disk (or just transferred) are being checksummed.
+    pub checking_files: bool,
     pub source: String,
     pub error: String,
     pub directory: String,
@@ -78,6 +80,7 @@ struct JobSlot {
     done: Arc<AtomicU64>,
     total: u64,
     samples: Arc<Mutex<Vec<(Duration, u64)>>>,
+    hashing: Arc<AtomicUsize>,
     origin: Instant,
     source: Source,
     error: String,
@@ -177,6 +180,7 @@ impl DownloadHub {
         let cancel = Arc::new(AtomicBool::new(false));
         let done = Arc::new(AtomicU64::new(0));
         let samples = Arc::new(Mutex::new(Vec::new()));
+        let hashing = Arc::new(AtomicUsize::new(0));
         let origin = Instant::now();
         let (partial, previous, resuming) = {
             let mut inner = self.lock()?;
@@ -213,6 +217,7 @@ impl DownloadHub {
                     done: done.clone(),
                     total: 0,
                     samples: samples.clone(),
+                    hashing: hashing.clone(),
                     origin,
                     source,
                     error: String::new(),
@@ -295,6 +300,7 @@ impl DownloadHub {
                         samples.push((origin.elapsed(), bytes));
                     }
                 })),
+                hashing: Some(hashing),
             };
             let outcome = match connect() {
                 Ok(transport) => run(&spec, transport.as_ref(), &SystemClock::new(), &cancel),
@@ -536,6 +542,7 @@ fn view(id: &str, job: &JobSlot) -> JobView {
         total_bytes: job.total,
         speed_bps: speed,
         eta_seconds: (speed > 0.0).then_some(remaining as f64 / speed),
+        checking_files: job.hashing.load(Ordering::SeqCst) > 0,
         source: job.source.label().into(),
         error: job.error.clone(),
         directory: job.directory.clone(),
@@ -552,6 +559,7 @@ fn paused_from_disk(id: &str, directory: &str) -> Option<JobView> {
         total_bytes: total,
         speed_bps: 0.0,
         eta_seconds: None,
+        checking_files: false,
         source: saved.source.label().into(),
         error: String::new(),
         directory: directory.to_owned(),

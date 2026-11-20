@@ -67,11 +67,11 @@ def execute(device, argv, data, probe_target=None):
         if terminated:
             # Persist the stop condition before any fallible output retrieval.
             if marker:
-                Path(marker).write_text(f'iOS App terminated by signal {code - 128}; stop and report.\n')
+                Path(marker).write_text(f'iOS App terminated by signal {code - 128}; stop and report.\n', encoding='utf-8')
             failure = Path(device.env.get('MOE_IOS_FAILURE_DIR',
                 str(Path(__file__).resolve().parents[2] / 'build/ios-failures'))) / invocation.name
             failure.mkdir(parents=True, exist_ok=True)
-            (failure / 'termination.txt').write_text(f'signal={code - 128}\ninvocation={invocation.name}\n')
+            (failure / 'termination.txt').write_text(f'signal={code - 128}\ninvocation={invocation.name}\n', encoding='utf-8')
             try:
                 device.pull(invocation.remote + '/probe.json', failure / 'probe.json')
             except (OSError, RuntimeError, ValueError):

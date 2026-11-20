@@ -168,6 +168,7 @@ mod tests {
                 inspect: None,
                 on_checking: None,
                 progress: None,
+                hashing: None,
             };
             let cancel = Arc::new(AtomicBool::new(false));
             let pause_at = cancel.clone();

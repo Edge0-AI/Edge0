@@ -32,8 +32,7 @@ int env_int(const char* n, int d) {
 
 bool ExpertStream::wanted(const gguf::File& f, const mtl::Context& cx) {
     const char* e = std::getenv("STRATA_METAL_STREAM");
-    if (e && std::string(e) == "1") return true;
-    if (e && std::string(e) == "0") return false;
+    if (e && (std::string(e) == "1" || std::string(e) == "0")) return stream_choice(e, true);
     // auto: stream when the mapped weights (experts and dense) and ~12 GiB beside them (the prompt buffers, KV, the
     // draft layer, macOS) do not fit the resident footprint cap: the GPU working set, or on a big Mac the RAM less the
     // 30% macOS and its file cache keep (arena_budget.h: footprint_cap).  M5 Max (115.4 GB working set, 96.2 GB cap):
@@ -119,6 +118,41 @@ bool ExpertStream::open(const gguf::File& f, std::string& err) {
                          cp.c_str());
         }
     }
+    return finish_open(err);
+}
+
+bool ExpertStream::open_latent(const gguf::File& f, const std::string& experts, uint64_t blob, uint64_t up_off,
+                               uint64_t down_off, std::string& err) {
+    fd_ = ::open(f.path.c_str(), O_RDONLY);   // the skeleton's dense tensors (read, load_dense)
+    if (fd_ < 0) { err = "metal stream: cannot open " + f.path; return false; }
+    fcntl(fd_, F_NOCACHE, 1);
+    fcntl(fd_, F_RDAHEAD, 0);
+    if (!(up_off < down_off && down_off < blob)) { err = "metal stream: the latent expert layout is inconsistent"; return false; }
+    const int cfd = ::open(experts.c_str(), O_RDONLY);
+    if (cfd < 0) { err = "metal stream: cannot open " + experts; return false; }
+    struct stat st {};
+    if (::fstat(cfd, &st) != 0 || (uint64_t) st.st_size != (uint64_t) NL * NE * blob) {
+        ::close(cfd);
+        err = "metal stream: " + experts + " is not 48 x 512 experts of " + std::to_string(blob) + " bytes";
+        return false;
+    }
+    fcntl(cfd, F_NOCACHE, 1);
+    fcntl(cfd, F_RDAHEAD, 0);
+    cfd_ = cfd;
+    lay_.resize(NL);
+    coff_.assign(NL, 0);
+    for (int l = 0; l < NL; ++l) {   // the slot keeps the blob as it is: gate | up | down at the same offsets
+        const uint64_t g = (uint64_t) l * NE * blob;
+        lay_[(size_t) l] = {g, up_off, g + up_off, down_off - up_off, g + down_off, blob - down_off, -1};
+        coff_[(size_t) l] = g;
+    }
+    std::fprintf(stderr, "strata metal stream: latent experts read from %s (one request per expert, %llu bytes)\n",
+                 experts.c_str(), (unsigned long long) blob);
+    return finish_open(err);
+}
+
+bool ExpertStream::finish_open(std::string& err) {
+    (void) err;
     // size classes: one LRU pool per class.  The layers' slot sizes (9 in the IQ3_XXS mix) are merged into a few
     // classes, each as big as its largest member, so that no member wastes more than STRATA_METAL_CLASS_WASTE (default
     // 0.15) of its slot: every class must hold a whole layer's experts for a prompt chunk, so fewer classes = less
@@ -745,6 +779,26 @@ uint8_t* ExpertStream::region(uint64_t bytes) {
     // no chunk is big enough for the prompt's buffers (an arena that shrank at the start, a 24 GB Mac): the fallback
     // inside the loop above is only reached when a chunk fits, so the buffers get their own allocation here too
     return standalone_region(bytes);
+}
+
+// region()'s test without its effects: some arena buffer has room for `bytes` (+ 64 MiB) at its end, and taking that
+// end leaves every size class at least a layer's experts (NE slots).
+bool ExpertStream::region_fits(uint64_t bytes) const {
+    for (int c = (int) chunks_.size() - 1; c >= 0; --c) {
+        if (chunks_[(size_t) c].bytes < bytes + (64ull << 20)) continue;
+        uint8_t* end = chunks_[(size_t) c].as<uint8_t>() + chunks_[(size_t) c].bytes;
+        uint8_t* lo = end - (bytes + PAGE - 1) / PAGE * PAGE;
+        std::vector<int> stolen(cls_.size(), 0);
+        for (int s = 0; s < (int) slots_.size(); ++s) {
+            const uint8_t* h = host_[(size_t) s];
+            const uint64_t sz = cls_[(size_t) cls_of(s)].pages * PAGE;
+            if (h + sz > lo && h < end) ++stolen[(size_t) cls_of(s)];
+        }
+        for (size_t i = 0; i < cls_.size(); ++i)
+            if (cls_[i].n > 0 && cls_[i].n - stolen[i] < NE) return false;
+        return true;
+    }
+    return false;
 }
 
 // The prompt's buffers as their own anonymous allocation (fresh zero pages), when no region of the arena's slots

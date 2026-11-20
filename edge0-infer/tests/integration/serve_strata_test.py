@@ -34,7 +34,7 @@ def request(port, method, path, body=None, headers=None, host='127.0.0.1'):
 
 def requests_seen(record):
     path = Path(record) / 'requests.jsonl'
-    return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+    return [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()] if path.exists() else []
 
 
 def sent(record, index, timeout=10):
@@ -48,11 +48,11 @@ def sent(record, index, timeout=10):
 
 def events(record):
     path = Path(record) / 'events.jsonl'
-    return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+    return [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()] if path.exists() else []
 
 
 def status_table():
-    document = (ROOT / 'docs/local-server.md').read_text()
+    document = (ROOT / 'docs/local-server.md').read_text(encoding='utf-8')
     table = document.split('<!-- status-fields-begin -->')[1].split('<!-- status-fields-end -->')[0]
     fields = {}
     for line in table.splitlines():
@@ -114,7 +114,7 @@ def check_status_schema(snapshots):
 
 def strata_options():
     # The delegate options as the argument parser accepts them, so a new one cannot be left out of the help.
-    source = (Path(__file__).resolve().parents[2] / 'tools' / 'cli' / 'serve_delegate_registry.cpp').read_text()
+    source = (Path(__file__).resolve().parents[2] / 'tools' / 'cli' / 'serve_delegate_registry.cpp').read_text(encoding='utf-8')
     options = sorted(set(re.findall(r'key == "(--strata-[a-z-]+)"', source)))
     assert options, 'no --strata-* options found in the parser'
     return options
@@ -152,7 +152,7 @@ def refusals(cli, root):
     # model.json alone makes the directory delegated: inspect lists every other file as missing, serve starts nothing.
     bare = root / 'r-bare'
     bare.mkdir()
-    (bare / 'model.json').write_text(MODEL_JSON)
+    (bare / 'model.json').write_text(MODEL_JSON, encoding='utf-8')
     inspected = subprocess.run([str(cli), 'inspect', '--model', str(bare), '--json'], capture_output=True, text=True)
     report = json.loads(inspected.stdout)
     assert inspected.returncode == 1 and report['delegated'] is True and report['ok'] is False
@@ -168,7 +168,7 @@ def refusals(cli, root):
         if text is None:
             (directory / 'model.json').unlink()
         else:
-            (directory / 'model.json').write_text(text)
+            (directory / 'model.json').write_text(text, encoding='utf-8')
         native = subprocess.run([str(cli), 'inspect', '--model', str(directory), '--json'], capture_output=True, text=True)
         assert native.returncode != 0 and 'delegated' not in native.stdout, (name, native.stdout)
         assert category in native.stderr and message in native.stderr, (name, native.stderr)
@@ -257,7 +257,7 @@ def proxy(cli, root, snapshots):
         # edge0-strata's description endpoints pass through: status, content type and body as the fake sent them.
         for path in ('/v1/status', '/metrics', '/props'):
             code, kind, body = request(port, 'GET', path)
-            last = json.loads((record / ('get' + path.replace('/', '-') + '.json')).read_text().splitlines()[-1])
+            last = json.loads((record / ('get' + path.replace('/', '-') + '.json')).read_text(encoding='utf-8').splitlines()[-1])
             assert (code, kind, body) == (last['status'], last['content_type'], last['body'].encode()), (path, code, kind, body)
         assert request(port, 'GET', '/metrics')[0] == 500 and 'charset=utf-8' in request(port, 'GET', '/metrics')[1]
         for path in ('/v1/models', '/v1/models/edge0_145b'):
@@ -651,7 +651,7 @@ def authentication(cli, root):
     model = make_model(root / 'a-model')
     record = root / 'a-record'
     key = root / 'key'
-    key.write_text(' SECRET_KEY_731 \n')
+    key.write_text(' SECRET_KEY_731 \n', encoding='utf-8')
     address = non_loopback_address()
     server = Running(cli, model, engine, record, ['--host', '0.0.0.0', '--api-key-file', str(key)])
     try:
@@ -664,7 +664,7 @@ def authentication(cli, root):
             assert request(server.port, 'GET', path, host=address)[0] == 401, path
         assert not requests_seen(record), 'an unauthorized request was forwarded'
         # Only the proxy's own start-up read of /v1/status reached edge0-strata; no unauthorized GET was passed through.
-        assert len((record / 'get-v1-status.json').read_text().splitlines()) == 1
+        assert len((record / 'get-v1-status.json').read_text(encoding='utf-8').splitlines()) == 1
         assert not (record / 'get-metrics.json').exists() and not (record / 'get-props.json').exists()
         assert request(server.port, 'POST', '/v1/chat/completions', body, {'Authorization': 'Bearer SECRET_KEY_731'}, host=address)[0] == 200
         assert request(server.port, 'POST', '/v1/chat/completions', body)[0] == 200  # loopback needs no token
@@ -780,7 +780,7 @@ def lifecycle(cli, root):
             pid = process_record(record)['pid']
             status = Path(f'/proc/{pid}/status')
             raise AssertionError(('edge0-strata outlived a killed edge0-infer', events(record), server.text(),
-                                  status.read_text() if status.exists() else None))
+                                  status.read_text(encoding='utf-8') if status.exists() else None))
         if os.name != 'nt':
             assert any(e['event'] == 'sigterm' for e in events(record)), 'edge0-strata was not asked to stop'
     print('PASS lifecycle: 503 after edge0-strata exits, stream drains before stop, SIGTERM/SIGINT/kill -9 leave no process')
@@ -795,13 +795,13 @@ def parameters(cli, root):
         record = root / f'o-run-{time.time_ns()}'
         server = Running(cli, model, engine, record, extra)
         try:
-            return json.loads((record / 'config.json').read_text())
+            return json.loads((record / 'config.json').read_text(encoding='utf-8'))
         finally:
             assert server.stop() == 0
     mac = sys.platform == 'darwin'
     config = config_of([])
     assert config['gpu'] == 0 and config['model_name'] == ALIAS and 'prepare' not in config
-    default_du = 'q4' if mac else 'q8'
+    default_du = 'q8'
     assert config['env']['STRATA_LATENT_DENSE'] == str(model / f'latent_dense_{default_du}.bin')
     assert config['env']['STRATA_LATENT_DENSE_FMT'] == default_du[1:]
     assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '131072']
@@ -810,12 +810,12 @@ def parameters(cli, root):
         config = config_of(['--device', 'metal', '--context', '8192', '--alias', 'big'])
         assert config['gpu'] == 0 and config['model_name'] == 'big' and 'prepare' not in config
         assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '8192']
-        config = config_of(['--model-option', 'du=q8'])
-        assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q8.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '8'
+        config = config_of(['--model-option', 'du=q4'])
+        assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q4.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '4'
         rejected = ((['--device', 'cpu'], 'must be metal'), (['--device', 'cuda'], 'must be metal'),
                     (['--device', 'cuda:0'], 'must be metal'), (['--device', 'cuda:1'], 'must be metal'),
                     (['--device', 'vulkan'], 'must be metal'), (['--prefill-device', 'cuda:0'], 'must be metal'),
-                    (['--model-option', 'du=q5'], 'must be q4|q8'),
+                    (['--model-option', 'du=q5'], 'must be q8|q4'),
                     (['--model-option', 'ple-io=ram'], 'only supports ple-io=direct'),
                     (['--model-option', 'ple-io=mmap'], 'must be direct'))
     else:
@@ -855,7 +855,7 @@ def passthrough(cli, root):
     record = root / 'p-run'
     server = Running(cli, model, engine, record, ['--context', '8192', *tuning_args(TUNING)])
     try:
-        config = json.loads((record / 'config.json').read_text())
+        config = json.loads((record / 'config.json').read_text(encoding='utf-8'))
     finally:
         assert server.stop() == 0
     assert_no_leftovers(record)
@@ -894,17 +894,15 @@ def model_formats(cli, root):
                        '--native-dense-gguf', '${MODEL_DIR}/model-skeleton.gguf',
                        '--expert-profile', '${MODEL_DIR}/profile.bin']
     write_templates(engine, release)
-    mac = sys.platform == 'darwin'
-    for identifier, default_du in (('edge0_145b', 'q8'), ('edge0_120b', 'q4')):
+    for identifier in ('edge0_145b', 'edge0_120b'):
         for experts in ('q3k', 'fp4'):
-            # Metal: a q3k folder defaults to q4; an fp4 folder keeps the model's own default.
-            du = 'q4' if mac and experts == 'q3k' else default_du
+            du = 'q8'   # every model, expert format and platform
             name = identifier.replace('_', '-') + '-' + experts
             model = make_model(root / name, model_name=name)
             record = root / (name + '-record')
             server = Running(cli, model, engine, record)
             try:
-                config = json.loads((record / 'config.json').read_text())
+                config = json.loads((record / 'config.json').read_text(encoding='utf-8'))
                 assert config['model_name'] == identifier
                 argv = config['args']
                 for flag, filename in (('--pack', ''), ('--native', 'model-skeleton.gguf'),
@@ -946,12 +944,9 @@ def model_formats(cli, root):
 
 def inspect_defaults(cli, root):
     import shutil
-    mac = sys.platform == 'darwin'
     keys = {'adapter', 'delegated', 'engine', 'directory', 'ok', 'files', 'model_name'}
     file_keys = {'filename', 'required', 'exists', 'bytes'}
-    for identifier, default_du, other_du in (('edge0_145b', 'q8', 'q4'), ('edge0_120b', 'q4', 'q8')):
-        if mac:
-            default_du, other_du = 'q4', 'q8'
+    for identifier, default_du, other_du in (('edge0_145b', 'q8', 'q4'), ('edge0_120b', 'q8', 'q4')):
         model_name = identifier.replace('_', '-') + '-q3k'
         model = make_model(root / ('inspect-' + identifier), model_name=model_name)
         base = [str(cli), 'inspect', '--model', str(model), '--json']
@@ -959,7 +954,7 @@ def inspect_defaults(cli, root):
         def inspect(extra, ok, model=model, model_name=model_name):
             result = subprocess.run([*base, *extra], capture_output=True, text=True)
             report = json.loads(result.stdout)
-            written = json.loads((model / 'model.json').read_text())['model_name']
+            written = json.loads((model / 'model.json').read_text(encoding='utf-8'))['model_name']
             assert result.returncode == (0 if ok else 1) and report['ok'] == ok, (result.returncode, report)
             assert set(report) == keys
             assert report['model_name'] == written == model_name
@@ -1007,7 +1002,7 @@ def platform_launch(cli, root):
         print('PASS default Python: real venv without --strata-python')
         assert request(server.port, 'POST', '/v1/chat/completions', {'messages': [{'role': 'user', 'content': 'hi'}]})[0] == 200
         print('PASS space paths: model and engine directories')
-        config = json.loads((record / 'config.json').read_text())
+        config = json.loads((record / 'config.json').read_text(encoding='utf-8'))
         expected_dirs = [cuda / 'bin' / 'x64', cuda / 'bin'] if os.name == 'nt' else []
         assert [Path(p) for p in config['lib_dirs']] == expected_dirs, config
         prefix = ''.join(str(p) + os.pathsep for p in expected_dirs)
@@ -1192,7 +1187,7 @@ def launch_handshake(cli, root):
     wrapper = root / 'python-wrapper'
     # Exercise continuation reads too: the prefix inside a long unrelated line must not be accepted.
     noise = 'wrapper banner ' + 'x' * 300 + 'edge0-launcher-pid 1'
-    wrapper.write_text('#!/bin/sh\nprintf "%s\\n" ' + shlex.quote(noise) + '\nexec ' + shlex.quote(sys.executable) + ' "$@"\n')
+    wrapper.write_text('#!/bin/sh\nprintf "%s\\n" ' + shlex.quote(noise) + '\nexec ' + shlex.quote(sys.executable) + ' "$@"\n', encoding='utf-8')
     wrapper.chmod(0o755)
     record = root / 'handshake-banner'
     server = Running(cli, model, engine, record, ['--strata-python', str(wrapper)])
@@ -1201,7 +1196,7 @@ def launch_handshake(cli, root):
     finally:
         assert server.stop() == 0
     assert_no_leftovers(record)
-    wrapper.write_text('#!/bin/sh\nprintf "wrapper did not start python\\n"\nexit 7\n')
+    wrapper.write_text('#!/bin/sh\nprintf "wrapper did not start python\\n"\nexit 7\n', encoding='utf-8')
     record = root / 'handshake-no-python'
     result = subprocess.run([str(cli), 'serve', '--model', str(model), '--port', '0',
                              '--strata-dir', str(engine), '--strata-python', str(wrapper)],
@@ -1229,11 +1224,11 @@ def mac_prepare(cli, root):
     try:
         assert 'preparing' in server.text() and 'mtp-q2_0.gguf' in server.text() and '(one time)' in server.text()
         assert (model / 'mtp-q2_0.gguf').read_bytes() == b'mtp-q2_0'
-        calls = [json.loads(line) for line in (model / 'prepare-calls.jsonl').read_text().splitlines()]
+        calls = [json.loads(line) for line in (model / 'prepare-calls.jsonl').read_text(encoding='utf-8').splitlines()]
         assert len(calls) == 1 and calls[0]['api_key'] is None, calls
         assert Path(calls[0]['cwd']).resolve() == engine.resolve()
         assert calls[0]['argv'][:2] == ['--rt', str(model / 'mtp')]
-        config = json.loads((record / 'config.json').read_text())
+        config = json.loads((record / 'config.json').read_text(encoding='utf-8'))
         assert 'prepare' not in config
         status = json.loads(request(server.port, 'GET', '/status')[2])
         assert status['engine']['devices'][0]['name'] == 'metal'
@@ -1247,7 +1242,7 @@ def mac_prepare(cli, root):
     rel_server = Running(cli, rel_model, engine, rel_record, extra=['--strata-python', os.path.relpath(sys.executable)])
     try:
         assert (rel_model / 'mtp-q2_0.gguf').read_bytes() == b'mtp-q2_0'
-        rel_calls = [json.loads(line) for line in (rel_model / 'prepare-calls.jsonl').read_text().splitlines()]
+        rel_calls = [json.loads(line) for line in (rel_model / 'prepare-calls.jsonl').read_text(encoding='utf-8').splitlines()]
         assert Path(rel_calls[0]['cwd']).resolve() == engine.resolve()
     finally:
         assert rel_server.stop() == 0
@@ -1256,7 +1251,7 @@ def mac_prepare(cli, root):
     server = Running(cli, model, engine, record)
     try:
         assert 'preparing' not in server.text(), server.text()
-        assert len((model / 'prepare-calls.jsonl').read_text().splitlines()) == 1
+        assert len((model / 'prepare-calls.jsonl').read_text(encoding='utf-8').splitlines()) == 1
     finally:
         assert server.stop() == 0
     assert_no_leftovers(record)
@@ -1287,12 +1282,12 @@ def mac_prepare(cli, root):
         result = rejected(name, extra, message)
         assert result.returncode == 2, (name, result.returncode, result.stderr)
         assert not (root / name / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
-    # An fp4 folder and du=q8 start on Metal, each with its own mtp-q2_0.gguf written once.
+    # An fp4 folder and du=q4 start on Metal, each with its own mtp-q2_0.gguf written once.
     for name, model_name, extra, du in (
             ('mac-fp4', 'edge0-145b-fp4', [], 'q8'),
             ('mac-fp4-q4', 'edge0-145b-fp4', ['--model-option', 'du=q4'], 'q4'),
-            ('mac-fp4-120', 'edge0-120b-fp4', [], 'q4'),
-            ('mac-q8', 'edge0-145b-q3k', ['--model-option', 'du=q8'], 'q8')):
+            ('mac-fp4-120', 'edge0-120b-fp4', [], 'q8'),
+            ('mac-q4', 'edge0-145b-q3k', ['--model-option', 'du=q4'], 'q4')):
         directory = make_model(root / name, model_name=model_name)
         log = root / (name + '-record')
         accepted = Running(cli, directory, engine, log, extra=extra)
@@ -1318,7 +1313,7 @@ def mac_prepare(cli, root):
             raise AssertionError(process.stderr.read())
         time.sleep(0.05)
     assert calls.exists(), 'prepare script did not start'
-    pid = json.loads(calls.read_text().splitlines()[0])['pid']
+    pid = json.loads(calls.read_text(encoding='utf-8').splitlines()[0])['pid']
     process.send_signal(signal.SIGINT)
     try:
         _, stderr = process.communicate(timeout=15)
@@ -1329,7 +1324,7 @@ def mac_prepare(cli, root):
     assert process.returncode == 1 and 'interrupted while preparing' in stderr, (process.returncode, stderr)
     assert not log.exists() and not (sleeping / 'mtp-q2_0.gguf').exists()
     assert gone(pid), 'prepare script outlived Ctrl-C'
-    print('PASS macOS prepare: once, then skipped; failure and exit 0 leave no file or service; ple-io=ram and cuda rejected; fp4 and du=q8 start; Ctrl-C kills the script')
+    print('PASS macOS prepare: once, then skipped; failure and exit 0 leave no file or service; ple-io=ram and cuda rejected; fp4 and du=q4 start; Ctrl-C kills the script')
 
 
 def main():

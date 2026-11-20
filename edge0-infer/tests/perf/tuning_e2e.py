@@ -16,7 +16,7 @@ def main():
     if args.out.exists():
         parser.error('Refusing to overwrite evidence')
     args.raw.mkdir(parents=True, exist_ok=False)
-    prompt = Path('tests/fixtures/bench/edge0-long-prompt.txt').read_text()
+    prompt = Path('tests/fixtures/bench/edge0-long-prompt.txt').read_text(encoding='utf-8')
     lines = ['# 4.2 End-to-end chunking record', '',
              'Metal; temperature 0; max_tokens 128; expert_read=' + args.read + '; prefill_read=used.',
              'Answer quality is reserved for the independent verifier.', '']
@@ -34,12 +34,12 @@ def main():
             if chunk:
                 command += ['--prefill-chunk', str(chunk)]
             result = subprocess.run(command, capture_output=True, text=True)
-            (args.raw / f'{repetitions}-{label}.stdout').write_text(result.stdout)
-            (args.raw / f'{repetitions}-{label}.stderr').write_text(result.stderr)
+            (args.raw / f'{repetitions}-{label}.stdout').write_text(result.stdout, encoding='utf-8')
+            (args.raw / f'{repetitions}-{label}.stderr').write_text(result.stderr, encoding='utf-8')
             if result.returncode:
                 raise RuntimeError(f'Run {repetitions}-{label} failed: {result.stderr}')
-            summary = json.loads((folder / 'result.json').read_text())
-            tokens = json.loads((folder / 'tokens.json').read_text())
+            summary = json.loads((folder / 'result.json').read_text(encoding='utf-8'))
+            tokens = json.loads((folder / 'tokens.json').read_text(encoding='utf-8'))
             assert summary['loading']['prefill_chunk'] == (chunk or 4096)
             runs.append((label, summary, tokens, result.stdout))
         prefix = 0
@@ -57,7 +57,7 @@ def main():
         for label, summary, tokens, answer in runs:
             fence = '`' * max(4, max((len(part) for part in answer.split() if set(part) == {'`'}), default=0) + 1)
             lines += ['', f'### Answer: {label}', '', fence + 'text', answer, fence, '']
-        args.out.write_text('\n'.join(lines))
+        args.out.write_text('\n'.join(lines), encoding='utf-8')
     if args.out.stat().st_size > 256 * 1024:
         raise ValueError('Evidence exceeds 256 KiB')
 
