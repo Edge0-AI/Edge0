@@ -12,7 +12,9 @@
 //
 // and takes the lookup window only when its best E/cost beats the MTP's by `margin`. Costs are the measured round
 // times per window size (EMA; sizes not seen yet are scaled from seen ones by a prior shape), so the policy adapts
-// to the machine and the context length. It only chooses which drafts to verify: the output is unchanged.
+// to the machine and the context length. It only chooses which drafts to verify, but verify windows of different sizes
+// round differently in the last bits, so a slower or faster round (another machine or load, experts streamed from the SSD
+// or resident) can pick other windows and a long greedy output can then differ in a few words.
 #pragma once
 
 #include <array>
@@ -80,7 +82,7 @@ public:
     /// is the expected tokens of the window of j + 2 rows, worth E_j / cost(j + 2) tokens per ms (cost() = the measured round time of
     /// that window size, which includes the draft).  The window is the best of the widths seen; the chain goes on only while one or two
     /// more drafts could still beat it (the cost is not convex: on a card with experts in RAM a window of 3 costs about a window of 2).
-    /// It only chooses which rows are verified; the output is unchanged.
+    /// It only chooses which rows are verified; the rounding of those rows depends on the window's size (see above).
     struct ChainState {
         double q = 1.0, e = 1.0;
         double best_v = 0.0;
