@@ -34,6 +34,9 @@
 #define GGML_COMMON_DECL_CUDA
 #define GGML_COMMON_IMPL_CUDA
 #include "ggml-common.h"   // kvalues_iq4nl, block_q8_1
+#if defined(__HIPCC__)
+#include "strata/prefill/lat_q3k_w11.hpp"   // the latent A stage on the gfx11 matrix cores
+#endif
 
 #include <algorithm>
 #include <cstdio>
@@ -1523,6 +1526,13 @@ void group_latent(const int32_t* cnt, const int32_t* off, int n_expert, void* ho
 void experts_latent_q3k(const WideBatch& b, const LatentGeom& g, int n_expert, int64_t n, const void* scratch,
                     const void* xa, const int32_t* src, void* hbuf, float* dm, void* stream) {
     if (b.e1 <= b.e0 || n <= 0) return;
+#if defined(__HIPCC__)
+    {
+        const Tables tb = tables(const_cast<void*>(scratch), n_expert);
+        q3k_w11::experts(b, g, tb.cnt, tb.off, tb.ts, tb.tiles, n, xa, src, hbuf, dm, stream);
+        return;
+    }
+#endif
     const LatentDevInfo& d = lat_dev();
     if (!d.ok) {
         std::fprintf(stderr, "prefill fused experts (latent): the kernels are not available on this device\n");
