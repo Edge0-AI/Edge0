@@ -250,6 +250,13 @@ def set_needs_info(repo: str, number: int, token: str, wanted: bool) -> None:
             raise
 
 
+def http_status(exc: BaseException) -> int | None:
+    match = re.search(r"-> (\d{3})\b", str(exc))
+    if not match:
+        return None
+    return int(match.group(1))
+
+
 def comment_body(problems: list[str]) -> str:
     lines = [
         MARKER,
@@ -259,6 +266,13 @@ def comment_body(problems: list[str]) -> str:
     ]
     lines.extend(f"- {item}" for item in problems)
     return "\n".join(lines) + "\n"
+
+
+def passed_comment_body() -> str:
+    return (
+        f"{MARKER}\n"
+        "This pull request passes the intake check.\n"
+    )
 
 
 def sync_comment(repo: str, number: int, token: str, problems: list[str]) -> None:
@@ -274,14 +288,40 @@ def sync_comment(repo: str, number: int, token: str, problems: list[str]) -> Non
                 existing = comment
                 break
     if not problems:
-        if existing:
-            github_request("DELETE", f"{url}/{existing['id']}", token)
+        clear_passed_comment(url, existing, token)
         return
     payload = {"body": comment_body(problems)}
     if existing:
         github_request("PATCH", f"{url}/{existing['id']}", token, payload)
     else:
         github_request("POST", url, token, payload)
+
+
+def clear_passed_comment(comments_url: str, existing: dict | None, token: str) -> None:
+    """Remove the needs-info comment once the pull request passes.
+
+    The Actions token can edit its own comment, and GitHub often answers
+    DELETE with 404 even while the comment is still there. A 404 must not
+    fail the check. Fall back to rewriting the comment.
+    """
+    if not existing:
+        return
+    comment_url = f"{comments_url}/{existing['id']}"
+    try:
+        github_request("DELETE", comment_url, token)
+        return
+    except RuntimeError as exc:
+        if http_status(exc) != 404:
+            raise
+    try:
+        github_request("PATCH", comment_url, token, {"body": passed_comment_body()})
+    except RuntimeError as exc:
+        if http_status(exc) != 404:
+            raise
+        print(
+            "warning: the previous hygiene comment could not be updated",
+            file=sys.stderr,
+        )
 
 
 def problems_for(pr: dict, pulls: list[dict] | None) -> list[str]:
@@ -427,6 +467,12 @@ def self_test() -> int:
     if cap_status(pulls[0], [old, pulls[0]]) != (1, False):
         failed += 1
         print("FAIL grandfathered pull requests must not count toward the cap")
+    if http_status(RuntimeError("DELETE https://example -> 404 {\"message\": \"Not Found\"}")) != 404:
+        failed += 1
+        print("FAIL http status parse")
+    if MARKER not in passed_comment_body():
+        failed += 1
+        print("FAIL passed comment lost its marker")
     if failed:
         print(f"{failed} self-test case(s) failed")
         return 1
