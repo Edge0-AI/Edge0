@@ -273,9 +273,11 @@ function Invoke-Build {
 
     Step "edge0-strata (CUDA $($C.CudaArchs))"
     $bstrata = "$work\b\strata"
-    $cudaFlags = '--use-local-env -D_WINDOWS -Xcompiler=/EHsc -Xcompiler=/GR -Xcompiler=/Brepro ' + (($trim | ForEach-Object { "-Xcompiler=$_" }) -join ' ')
+    # Let nvcc use cl from PATH. Trailing backslashes in host flags break CMake's CUDA link detection.
+    $cudaTrim = $maps.Keys | ForEach-Object { "-Xcompiler=/d1trimfile:$($_.Replace('\', '/'))" }
+    $cudaFlags = '--use-local-env -D_WINDOWS -Xcompiler=/EHsc -Xcompiler=/GR -Xcompiler=/Brepro ' + ($cudaTrim -join ' ')
     Invoke-Logged 'strata-configure' 'cmake' (@('-S', "$src\edge0-strata", '-B', $bstrata, '-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release',
-        "-DCMAKE_CUDA_COMPILER=$((Get-Command nvcc).Source)", "-DCMAKE_CUDA_HOST_COMPILER=$cl", "-DCMAKE_CUDA_FLAGS=$cudaFlags",
+        "-DCMAKE_CUDA_COMPILER=$((Get-Command nvcc).Source)", "-DCMAKE_CUDA_FLAGS=$cudaFlags",
         "-DCMAKE_C_FLAGS=$cflags", "-DCMAKE_CXX_FLAGS=$cxxflags",
         '-DCMAKE_EXE_LINKER_FLAGS=/Brepro /PDBALTPATH:%_PDB%', '-DCMAKE_SHARED_LINKER_FLAGS=/Brepro /PDBALTPATH:%_PDB%',
         "-DCMAKE_CUDA_ARCHITECTURES=$($C.CudaArchs)", '-DSTRATA_ENABLE_CUDA=ON', '-DSTRATA_PORTABLE=ON',
