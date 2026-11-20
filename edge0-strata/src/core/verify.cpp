@@ -1063,18 +1063,14 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
             hq_dev_ = b.take<uint8_t>(T * K * (LELL / 32) * 36);
             lat_xl_ = b.take<float>(T * LG * LELL);
             lat_yl_ = b.take<float>(T * K * LELL);
-            // every layer's D and U, resident: the graph covers all layers and touches them per layer
-            // (the shared pair from set_shared_latent: no own copy, read-only for every verifier)
-            if (lat_d_shared_ == nullptr) {   // the session-level pair (LatentTab::load) when nobody passed it in
-                lat_d_shared_ = strata::core::latent_shared_d();
-                lat_u_shared_ = strata::core::latent_shared_u();
+            if (!shared_du_.d) {
+                shared_du_ = {latent_shared_d(), latent_shared_u(), 0};
             }
-            if (lat_d_shared_ == nullptr) {
-                lat_d_ = b.take<uint8_t>((uint64_t) g.n_layers * lat_dense_.d_bytes());
-                lat_u_ = b.take<uint8_t>((uint64_t) g.n_layers * lat_dense_.u_bytes());
+            if (!shared_du_.d) {
+                lat_du_.d = b.take<uint8_t>((uint64_t) g.n_layers * lat_dense_.d_bytes());
+                lat_du_.u = b.take<uint8_t>((uint64_t) g.n_layers * lat_dense_.u_bytes());
             } else {
-                lat_d_ = const_cast<uint8_t*>(lat_d_shared_);
-                lat_u_ = const_cast<uint8_t*>(lat_u_shared_);
+                lat_du_ = shared_du_;
             }
             // Q3_K colscale: allocate every layer's device 1/s vector NOW, in plain stream
             // context - the D stage's first call can otherwise land inside the verify
@@ -1136,12 +1132,12 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
     Bump real;
     real.base = (uint8_t*) arena_;
     carve(real);
-    if (latent_ && lat_d_shared_ == nullptr) {   // the carved pointers are real now: one blocking init-time
+    if (latent_ && !shared_du_.d) {   // the carved pointers are real now: one blocking init-time
         // upload, before any graph capture (with a shared pair there is nothing to upload)
         for (int64_t l = 0; l < g.n_layers; ++l) {
-            const cudaError_t cd = cudaMemcpy(lat_d_ + (size_t) l * lat_dense_.d_bytes(), lat_dense_.d(l),
+            const cudaError_t cd = cudaMemcpy(lat_du_.d_at(l, lat_dense_), lat_dense_.d(l),
                                               lat_dense_.d_bytes(), cudaMemcpyHostToDevice);
-            const cudaError_t cu = cd == cudaSuccess ? cudaMemcpy(lat_u_ + (size_t) l * lat_dense_.u_bytes(),
+            const cudaError_t cu = cd == cudaSuccess ? cudaMemcpy(lat_du_.u_at(l, lat_dense_),
                                                                   lat_dense_.u(l), lat_dense_.u_bytes(),
                                                                   cudaMemcpyHostToDevice) : cd;
             if (cu != cudaSuccess) {
@@ -1152,7 +1148,7 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
         }
     }
     // the labels upload must not ride on the shared D/U pair: serve hands the pair to every verifier
-    // (set_shared_latent), in which case lat_d_shared_ != nullptr and the block above is skipped -
+    // (set_shared_latent), in which case the block above is skipped -
     // the labels device copy is still required by latent_plan_rows / latent_u_grouped
     if (latent_) {
         const size_t lb = lat_labels_.size() * sizeof(int32_t);
@@ -2179,7 +2175,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
             // stretch (~0.6 ms) of head start instead of starting when the pool is already waiting.
             quantize_q8_1_rows(mixed_, T, (int) N, lat_xq_, cs);
             iq_mmvq(strata::kernels::lat_dense_fmt_to_type(lat_fmt_),
-                    lat_d_ + (size_t) l * lat_dense_.d_bytes(), lat_xq_, lat_xl_, (int) N,
+                    lat_du_.d_at(l, lat_dense_), lat_xq_, lat_xl_, (int) N,
                     (int) (lat_G_ * lat_ELL_), T, cs);   // Q4DU: fmt->ggml type (8 Q8_0 / 2 Q4_0)
             // Q3_K shared column scales: the pack's A rows are A*diag(s), so scale x by 1/s HERE - once, before
             // every consumer below (the GPU experts' q8_1, the act0 q8_0, the CPU pool's f32 doorbell) reads
@@ -2458,7 +2454,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
                                   lat_yl_grp, cs, kPcieGroupRows);   // the PCIe share
             // U: route r reads yl[r] and U[labels[ids[r]]]; the result is parts_ (one K*N block per group, route order)
             quantize_q8_1_rows(lat_yl_grp, cap, (int) lat_ELL_, lat_uq_, cs);
-            latent_u_grouped(lat_u_ + (size_t) l * lat_dense_.u_bytes(), (const uint8_t*) lat_uq_, ids_ + (size_t) tb * K,
+            latent_u_grouped(lat_du_.u_at(l, lat_dense_), (const uint8_t*) lat_uq_, ids_ + (size_t) tb * K,
                              lat_labels_dev_ + (size_t) l * (size_t) lat_E_, lat_E_, cap, (int) lat_ELL_, (int) N,
                              hit_out, cs, lat_fmt_);
             // The CPU pool's share: its full N-dim contributions land in the mapped rows (m_ymiss_); copy them into
@@ -2477,7 +2473,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
                 // bytes with no host CUDA call (the engine's own remedy for this path, generate.cpp:10329-10333).
                 strata::kernels::copy_bytes_from_mapped(hq_dev_, m_ymiss_ + (size_t) tb * K * N,
                                                         (size_t) cap * ((size_t) lat_ELL_ / 32 * 36), cs);
-                strata::kernels::latent_u_matvec(lat_u_ + (size_t) l * lat_dense_.u_bytes(),
+                strata::kernels::latent_u_matvec(lat_du_.u_at(l, lat_dense_),
                                                  (const uint8_t*) hq_dev_,
                                                  ids_ + (size_t) tb * K, lat_labels_dev_ + (size_t) l * (size_t) lat_E_,
                                                  p_dst, p_counts + 1, (int64_t) lat_E_, cap,

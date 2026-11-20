@@ -16,6 +16,7 @@
 #include "strata/core/expert_source.hpp"
 #include "strata/core/layer.hpp"
 #include "strata/core/session.hpp"
+#include "strata/core/latent_dense.hpp"
 #include "strata/core/latent_share.hpp"
 #include "strata/core/weights.hpp"
 
@@ -192,7 +193,7 @@ public:
     void set_shared_latent(uint8_t* d, uint8_t* u) { strata::core::latent_shared_d() = d; strata::core::latent_shared_u() = u; }
     /// A layer split: this stage's OWN D/U pair, on this stage's device.  Like set_shared_latent but per-instance, so
     /// stage k never dereferences stage 0's device pointers.  Set before init; the pair stays owned by the caller.
-    void set_latent_dev(uint8_t* d, uint8_t* u);
+    void set_latent_dev(core::LatentDeviceDU du);
 
     /// Plan v0.3 P6: called after every chunk with the chunk's final multi-stream residual rows (device,
     /// T x hc*n_embd, valid until the next chunk) and the chunk's first position; the MTP draft layer builds its

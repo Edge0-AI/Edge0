@@ -36,6 +36,8 @@ From the fork:
 In this directory:
 
 - `edge0/`: the launch contract with `edge0-infer` (below).
+- On a CUDA or HIP layer split across distinct devices, each stage uploads only its layers' latent D/U
+  weights before sizing the expert cache. `--split-device 0` on a single card still shares one full pair.
 - Build changes for Windows on an Arm64 CPU, all in the CPU and build layer; the CPU path itself is the
   one the Linux aarch64 build uses:
   - `CMakeLists.txt` asks the compiler which processor it targets instead of trusting
