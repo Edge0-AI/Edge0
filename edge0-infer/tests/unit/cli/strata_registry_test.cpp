@@ -300,7 +300,7 @@ int main() {
                "STRATA_LATENT_U_GPU":"1","STRATA_LAT_FUSED_Q3K":"${LAT_FUSED_Q3K}"},
         "gpus_asked":true,"lib_dirs":["${CUDA_LIB_DIR}"]})");
     for (const auto& entry : registry()) {
-        const std::string default_du = entry.id == "edge0_145b" ? "q8" : "q4";
+        const std::string default_du = "q8";   // both models, every platform
         CHECK(resolve_options(entry, {}).at("du") == default_du);
         for (const auto& named : entry.names) {
             complete(model);
@@ -411,7 +411,7 @@ int main() {
             const bool windows = platform == Platform::windows;
             CHECK(launch.device == default_device(platform));
             CHECK(launch.gpu == 0);
-            CHECK(launch.model_options.at("du") == (platform == Platform::macos ? "q4" : "q8"));
+            CHECK(launch.model_options.at("du") == "q8");
             CHECK(launch.model_options.at("ple-io") == "direct");
             CHECK(launch.python == engine / ".venv" / (windows ? fs::path("Scripts") / "python.exe" : fs::path("bin") / "python"));
             const auto expanded = expand_template(platform_template, registration, launch, platform);
@@ -480,20 +480,20 @@ int main() {
             CHECK(launch.device == default_device(platform));
             CHECK(load_template(engine, registration, launch.device)["exe"] == (platform == Platform::macos ? "metal-template" : "cuda-template"));
             if (platform == Platform::macos) {
-                CHECK(launch.model_options.at("du") == "q4" && launch.model_options.at("ple-io") == "direct");
+                CHECK(launch.model_options.at("du") == "q8" && launch.model_options.at("ple-io") == "direct");
                 write(model / "model.json", R"({"model_name":"edge0-120b-q3k"})");
-                CHECK(resolve(bare, *detect(model), installed_exe, platform, "").model_options.at("du") == "q4");
-                // Both D/U formats run on Metal: a q3k folder keeps q4 as its default and may choose q8.
+                CHECK(resolve(bare, *detect(model), installed_exe, platform, "").model_options.at("du") == "q8");
+                // Both D/U formats run on Metal: q8 by default, q4 when chosen.
                 write(model / "model.json", R"({"model_name":"edge0-145b-q3k"})");
                 CommonArgs chosen = bare;
-                chosen.model_options = {{"du", "q8"}};
-                CHECK(resolve(chosen, *detect(model), installed_exe, platform, "").model_options.at("du") == "q8");
-                auto result = run_inspect(platform, {{"du", "q8"}});
+                chosen.model_options = {{"du", "q4"}};
+                CHECK(resolve(chosen, *detect(model), installed_exe, platform, "").model_options.at("du") == "q4");
+                auto result = run_inspect(platform, {{"du", "q4"}});
                 CHECK(result.code == 0 && result.report["ok"] == true && result.message.empty());
-                // An fp4 folder runs on Metal with the model's own D/U default (145B: q8, 120B: q4) and has no scales/.
+                // An fp4 folder runs on Metal with q8 by default as well and has no scales/.
                 fs::remove_all(model / "scales");
                 write(model / "model.json", R"({"model_name":"edge0-120b-fp4"})");
-                CHECK(resolve(bare, *detect(model), installed_exe, platform, "").model_options.at("du") == "q4");
+                CHECK(resolve(bare, *detect(model), installed_exe, platform, "").model_options.at("du") == "q8");
                 write(model / "model.json", R"({"model_name":"edge0-145b-fp4"})");
                 const auto fp4 = resolve(bare, *detect(model), installed_exe, platform, "");
                 CHECK(fp4.experts == "fp4" && fp4.model_options.at("du") == "q8" && fp4.model_options.at("ple-io") == "direct");

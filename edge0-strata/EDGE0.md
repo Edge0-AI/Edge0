@@ -383,8 +383,7 @@ quality on this build has only been checked by hand.
   | `${PLE_IO}` | `direct` or `ram`, chosen with `--model-option ple-io=...` |
 
   The templates are `edge0-145b.json` (Edge0 145B, 1792 latent dimensions) and `edge0-120b.json`
-  (Edge0 120B, 1280 latent dimensions). `edge0-infer` chooses the D/U default (Q8 for Edge0 145B,
-  Q4 for Edge0 120B) and the expert format, which it reads from `model_name` in the folder's `model.json`.
+  (Edge0 120B, 1280 latent dimensions). `edge0-infer` chooses the D/U default (Q8) and the expert format, which it reads from `model_name` in the folder's `model.json`.
 
   On macOS the device is `metal`. `edge0-infer` then loads `edge0-145b-metal.json` or
   `edge0-120b-metal.json` instead of the CUDA template. Those files use the same placeholders. Their
@@ -417,9 +416,7 @@ quality on this build has only been checked by hand.
   `server.py`. The shipped entries run `tools/mtp_gguf.py` to write `mtp-q2_0.gguf` into the model
   directory, so that directory must be writable. An `output` that already exists is left as it is.
 
-  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. A Q3_K folder
-  (`model_name` ending in `-q3k`) defaults to `du=q4`; an NVFP4 folder keeps the model's own
-  default. `ple-io=ram` is rejected before any process starts.
+  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. `ple-io=ram` is rejected before any process starts.
 
   `edge0-infer` also sets `gpu` from `--device` (`cuda:<n>` on Linux and Windows, `metal` on macOS),
   `model_name` from `--alias`, and the `--max-context` argument from `--context`.

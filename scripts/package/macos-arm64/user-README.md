@@ -17,7 +17,7 @@ Built from commit [`{{COMMIT}}`](https://github.com/Edge0-AI/Edge0/tree/{{COMMIT
 ## Requirements
 
 - **A Mac with Apple Silicon and macOS {{MACOS_MIN}} or later.** Every executable and library in this package is an arm64 binary built for macOS {{MACOS_MIN}} or later.
-- **Edge0 145B and Edge0 120B** run on Metal from their `q3k` or NVFP4 folders, with `ple-io=direct`; a `q3k` folder uses `du=q4` and an NVFP4 folder the model's own default. They were run on a Mac Studio (Apple M2 Ultra, 192 GB) with macOS {{MACOS_BUILD}}.
+- **Edge0 145B and Edge0 120B** run on Metal from their `q3k` or NVFP4 folders, with `ple-io=direct` and `du=q8`. They were run on a Mac Studio (Apple M2 Ultra, 192 GB) with macOS {{MACOS_BUILD}}.
 - **The app is signed ad hoc and not notarized.** macOS blocks it on first start (see [First launch](#first-launch)).
 
 ## First launch

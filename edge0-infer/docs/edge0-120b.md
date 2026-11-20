@@ -53,7 +53,7 @@ build/cpu/bin/edge0-infer inspect --model "$EDGE0_120B" --json
 
 The report lists files with `exists` and `bytes`; `ok` is `true` (exit code 0) when the selected configuration is complete.
 The expert format comes from `model_name` and is not a model option; `--model-option experts=` is rejected.
-D/U defaults to `q4`; add `--model-option du=q8` to check the other choice.
+D/U defaults to `q8`; add `--model-option du=q4` to check the other choice.
 Only Q3_K folders list or require `scales/` (in the report its `required` value is `experts=q3k`).
 
 When files are missing, standard output remains valid JSON and standard error lists the missing files.
@@ -108,7 +108,7 @@ The commands are those of the native chat (`/file`, `"""`, `/think on|off`, `/ne
 | Option | Values | Default |
 | --- | --- | --- |
 | `--device` | `metal` on macOS; `cuda` or `cuda:<n>` on Linux and Windows | `metal` on macOS, `cuda:0` otherwise |
-| `--model-option du=` | `q8` or `q4` | `q4` |
+| `--model-option du=` | `q8` or `q4` | `q8` |
 | `--model-option ple-io=` | `direct` (read the embedding table from disk as needed) or `ram` (load it into memory; to keep it locked there, raise the locked-memory limit, e.g. `ulimit -l unlimited`) | `direct` |
 | `--context` | tokens | 131072 (`32768` on macOS) |
 | `--strata-arg` | one word of edge0-strata's engine command line; repeat it for each word, e.g. `--strata-arg --pool-workers --strata-arg 24` | none |

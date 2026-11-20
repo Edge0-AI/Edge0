@@ -801,7 +801,7 @@ def parameters(cli, root):
     mac = sys.platform == 'darwin'
     config = config_of([])
     assert config['gpu'] == 0 and config['model_name'] == ALIAS and 'prepare' not in config
-    default_du = 'q4' if mac else 'q8'
+    default_du = 'q8'
     assert config['env']['STRATA_LATENT_DENSE'] == str(model / f'latent_dense_{default_du}.bin')
     assert config['env']['STRATA_LATENT_DENSE_FMT'] == default_du[1:]
     assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '131072']
@@ -810,12 +810,12 @@ def parameters(cli, root):
         config = config_of(['--device', 'metal', '--context', '8192', '--alias', 'big'])
         assert config['gpu'] == 0 and config['model_name'] == 'big' and 'prepare' not in config
         assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '8192']
-        config = config_of(['--model-option', 'du=q8'])
-        assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q8.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '8'
+        config = config_of(['--model-option', 'du=q4'])
+        assert config['env']['STRATA_LATENT_DENSE'] == str(model / 'latent_dense_q4.bin') and config['env']['STRATA_LATENT_DENSE_FMT'] == '4'
         rejected = ((['--device', 'cpu'], 'must be metal'), (['--device', 'cuda'], 'must be metal'),
                     (['--device', 'cuda:0'], 'must be metal'), (['--device', 'cuda:1'], 'must be metal'),
                     (['--device', 'vulkan'], 'must be metal'), (['--prefill-device', 'cuda:0'], 'must be metal'),
-                    (['--model-option', 'du=q5'], 'must be q4|q8'),
+                    (['--model-option', 'du=q5'], 'must be q8|q4'),
                     (['--model-option', 'ple-io=ram'], 'only supports ple-io=direct'),
                     (['--model-option', 'ple-io=mmap'], 'must be direct'))
     else:
@@ -894,11 +894,9 @@ def model_formats(cli, root):
                        '--native-dense-gguf', '${MODEL_DIR}/model-skeleton.gguf',
                        '--expert-profile', '${MODEL_DIR}/profile.bin']
     write_templates(engine, release)
-    mac = sys.platform == 'darwin'
-    for identifier, default_du in (('edge0_145b', 'q8'), ('edge0_120b', 'q4')):
+    for identifier in ('edge0_145b', 'edge0_120b'):
         for experts in ('q3k', 'fp4'):
-            # Metal: a q3k folder defaults to q4; an fp4 folder keeps the model's own default.
-            du = 'q4' if mac and experts == 'q3k' else default_du
+            du = 'q8'   # every model, expert format and platform
             name = identifier.replace('_', '-') + '-' + experts
             model = make_model(root / name, model_name=name)
             record = root / (name + '-record')
@@ -946,12 +944,9 @@ def model_formats(cli, root):
 
 def inspect_defaults(cli, root):
     import shutil
-    mac = sys.platform == 'darwin'
     keys = {'adapter', 'delegated', 'engine', 'directory', 'ok', 'files', 'model_name'}
     file_keys = {'filename', 'required', 'exists', 'bytes'}
-    for identifier, default_du, other_du in (('edge0_145b', 'q8', 'q4'), ('edge0_120b', 'q4', 'q8')):
-        if mac:
-            default_du, other_du = 'q4', 'q8'
+    for identifier, default_du, other_du in (('edge0_145b', 'q8', 'q4'), ('edge0_120b', 'q8', 'q4')):
         model_name = identifier.replace('_', '-') + '-q3k'
         model = make_model(root / ('inspect-' + identifier), model_name=model_name)
         base = [str(cli), 'inspect', '--model', str(model), '--json']
@@ -1287,12 +1282,12 @@ def mac_prepare(cli, root):
         result = rejected(name, extra, message)
         assert result.returncode == 2, (name, result.returncode, result.stderr)
         assert not (root / name / 'edge0-145b' / 'mtp-q2_0.gguf').exists()
-    # An fp4 folder and du=q8 start on Metal, each with its own mtp-q2_0.gguf written once.
+    # An fp4 folder and du=q4 start on Metal, each with its own mtp-q2_0.gguf written once.
     for name, model_name, extra, du in (
             ('mac-fp4', 'edge0-145b-fp4', [], 'q8'),
             ('mac-fp4-q4', 'edge0-145b-fp4', ['--model-option', 'du=q4'], 'q4'),
-            ('mac-fp4-120', 'edge0-120b-fp4', [], 'q4'),
-            ('mac-q8', 'edge0-145b-q3k', ['--model-option', 'du=q8'], 'q8')):
+            ('mac-fp4-120', 'edge0-120b-fp4', [], 'q8'),
+            ('mac-q4', 'edge0-145b-q3k', ['--model-option', 'du=q4'], 'q4')):
         directory = make_model(root / name, model_name=model_name)
         log = root / (name + '-record')
         accepted = Running(cli, directory, engine, log, extra=extra)
@@ -1329,7 +1324,7 @@ def mac_prepare(cli, root):
     assert process.returncode == 1 and 'interrupted while preparing' in stderr, (process.returncode, stderr)
     assert not log.exists() and not (sleeping / 'mtp-q2_0.gguf').exists()
     assert gone(pid), 'prepare script outlived Ctrl-C'
-    print('PASS macOS prepare: once, then skipped; failure and exit 0 leave no file or service; ple-io=ram and cuda rejected; fp4 and du=q8 start; Ctrl-C kills the script')
+    print('PASS macOS prepare: once, then skipped; failure and exit 0 leave no file or service; ple-io=ram and cuda rejected; fp4 and du=q4 start; Ctrl-C kills the script')
 
 
 def main():
