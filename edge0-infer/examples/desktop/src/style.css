@@ -194,6 +194,9 @@ button, input, textarea, select { color: inherit; }
 .network-help { margin: 0 0 var(--sp-3); font-size: var(--fs-md); color: var(--text-2); }
 .request-table { padding: var(--sp-2); overflow-x: auto; }
 .request-table td, .request-table th { white-space: nowrap; }
+.request-table tr.has-reason td { border-bottom: none; padding-bottom: 0; }
+.request-table tr.request-reason td { white-space: normal; padding-top: var(--size-2); font-size: var(--fs-xs); color: var(--text-2); overflow-wrap: anywhere; }
+.request-table tr.request-reason.err td { color: var(--err); } .request-table tr.request-reason.warn td { color: var(--warn); }
 .unavailable { opacity: .8; }
 .unavailable .mi { background: var(--err-soft); color: var(--err); }
 .model-card > div { min-width: 0; }
