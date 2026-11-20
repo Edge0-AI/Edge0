@@ -146,6 +146,24 @@ bool conversation_session_sizes(const ModelGeometry& g, const SessionState& ss, 
     return true;
 }
 
+bool conversation_checkpoint_host_bytes(const SessionState& ss, const ModelGeometry& g, size_t tokens,
+                                        size_t images, size_t& bytes, std::string& error) {
+    bytes = 0;
+    ConversationStateSizes z;
+    if (!checkpoint_targets(ss, g, tokens, z, error)) return false;
+    size_t ids = 0, keys = 0, tails = 0, dead = 0, positions = 0;
+    const size_t layers = owned_qsa(ss);
+    if (!product(ids, {tokens, sizeof(int32_t)}) ||
+        !product(keys, {images, sizeof(ConversationImageKey)}) ||
+        !product(tails, {layers, z.tail}) ||
+        !product(dead, {layers, z.dead}) ||
+        !product(positions, {layers, z.block_pos}))
+        return fail(error, "checkpoint host byte count overflow");
+    for (size_t n : {ids, keys, z.gdn, ss.ple_hist ? z.ple : 0, tails, dead, positions})
+        if (!add(bytes, n)) return fail(error, "checkpoint host byte count overflow");
+    return true;
+}
+
 bool conversation_checkpoint_validate(const ConversationCheckpoint& c, const SessionState& ss,
                                       const ModelGeometry& g, std::string& error) {
     ConversationStateSizes z;

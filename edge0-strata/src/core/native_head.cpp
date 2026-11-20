@@ -122,7 +122,8 @@ NativeEmbed::~NativeEmbed() {
     else if (dev_) cudaFree(const_cast<void*>(dev_));   // the VRAM fallback below
 }
 
-bool NativeEmbed::load(const std::vector<std::string>& shards, int64_t n_embd, int64_t n_vocab, std::string& err) {
+bool NativeEmbed::load(const std::vector<std::string>& shards, int64_t n_embd, int64_t n_vocab, std::string& err,
+                       bool mapped_only) {
     try {
         const strata::GgufModel model(shards);
         // --embd-gguf's one-tensor file (tools/embd_bf16_pack.py) says "strata-embd": only its tensor is checked
@@ -153,7 +154,14 @@ bool NativeEmbed::load(const std::vector<std::string>& shards, int64_t n_embd, i
         // prompt's scattered row reads go: over a PCIe Gen2 x4 link they cost more than the table's size in VRAM
         // is worth. Taken only with the table plus 512 MiB free; otherwise, or when the upload fails, the mapped
         // placement below is used as before (and the fallback is said).
-        if (const char* ev = std::getenv("STRATA_EMBED_VRAM"); ev != nullptr && ev[0] == '1') {
+        const char* embed_vram = mapped_only ? nullptr : std::getenv("STRATA_EMBED_VRAM");
+        if (mapped_only) {
+            const char* ev = std::getenv("STRATA_EMBED_VRAM");
+            if (ev != nullptr && ev[0] == '1')
+                std::fprintf(stderr, "strata: native embedding: STRATA_EMBED_VRAM=1 is off for a layer split: the draft "
+                                     "layer reads this table from another card, so it stays in mapped host memory\n");
+        }
+        if (embed_vram != nullptr && embed_vram[0] == '1') {
             size_t free_b = 0, total_b = 0;
             const bool have_free = cudaMemGetInfo(&free_b, &total_b) == cudaSuccess;
             void* d = nullptr;
@@ -195,6 +203,11 @@ bool NativeEmbed::load(const std::vector<std::string>& shards, int64_t n_embd, i
             std::fprintf(stderr, "strata: native embedding: cannot pin %llu MiB, kept in VRAM instead\n",
                          (unsigned long long) (bytes_ >> 20));
             dev_ = d;
+            if (mapped_only) {
+                err = "native embedding: the table cannot be pinned (" + std::string(cudaGetErrorString(host_err)) +
+                      "), and a layer split's draft layer reads it from another card";
+                return false;
+            }
         } else {
             std::memcpy(host_, gguf.tensor_data(*t), bytes_);
             void* d = nullptr;

@@ -118,7 +118,7 @@ class AndroidApp(Android):
 
 def manifest_files(directory):
     directory = Path(directory)
-    text = (directory / 'assets.tsv').read_text()
+    text = (directory / 'assets.tsv').read_text(encoding='utf-8')
     result = {}
     for row in csv.DictReader(io.StringIO(text), delimiter='\t'):
         name = row['filename']

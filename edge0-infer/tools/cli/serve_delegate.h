@@ -38,6 +38,7 @@ struct Registration {
     bool thinking = false, thinking_default = false;
     std::map<std::string, std::string> names;  // model_name -> expert format
     // Allowed values for one device name. A device that is absent uses `options`. The first value is the default.
+    // A key "<device>/<expert format>" is that format's list on the device and is looked up before "<device>".
     std::map<std::string, std::vector<std::pair<std::string, std::vector<std::string>>>> device_options;
 };
 const std::vector<Registration>& registry();
@@ -122,9 +123,10 @@ struct ParsedDevice {
 // macOS accepts only "metal". Every other platform accepts "cuda" and "cuda:<n>".
 ParsedDevice parse_device(const std::string& value, Platform platform = Platform::posix);
 std::string default_device(Platform platform);  // macos: metal; otherwise cuda:0
-// Validates names and values against the registration (or that device's list) and fills defaults.
+// Validates names and values against the registration (or that device's list, which may depend on the expert
+// format) and fills defaults.
 std::map<std::string, std::string> resolve_options(const Registration&, const std::map<std::string, std::string>& given,
-                                                   const std::string& device = "cuda:0");
+                                                   const std::string& device = "cuda:0", const std::string& experts = "");
 // The engine directory: --strata-dir, then EDGE0_STRATA_DIR, then an edge0-strata/ beside an ancestor of the executable.
 std::filesystem::path locate_engine(const std::optional<std::string>& given, const std::filesystem::path& executable);
 std::filesystem::path executable_path(const std::string& argv0);

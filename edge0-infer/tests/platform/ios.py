@@ -41,7 +41,7 @@ class IOS:
                 if check:
                     raise RuntimeError(f'devicectl {args[0]} {args[1]} failed (exit {result.returncode})')
                 return None
-            return json.loads(output.read_text())['result']
+            return json.loads(output.read_text(encoding='utf-8'))['result']
 
     def reachable(self):
         details = self.call('device', 'info', 'details', '--device', self.device, check=False)

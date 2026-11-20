@@ -53,7 +53,7 @@ build/cpu/bin/edge0-infer inspect --model "$EDGE0_145B" --json
 
 The report lists files with `exists` and `bytes`; `ok` is `true` (exit code 0) when the selected configuration is complete.
 The expert format comes from `model_name` and is not a model option; `--model-option experts=` is rejected.
-On Linux and Windows, D/U defaults to `q8`; add `--model-option du=q4` to check the other choice. On macOS the only accepted value is `q4`.
+D/U defaults to `q8`; add `--model-option du=q4` to check the other choice.
 Only Q3_K folders list or require `scales/` (in the report its `required` value is `experts=q3k`).
 
 When files are missing, standard output remains valid JSON and standard error lists the missing files.
@@ -92,7 +92,7 @@ The commands are those of the native chat (`/file`, `"""`, `/think on|off`, `/ne
 | Option | Values | Default |
 | --- | --- | --- |
 | `--device` | `metal` on macOS; `cuda` or `cuda:<n>` on Linux and Windows | `metal` on macOS, `cuda:0` otherwise |
-| `--model-option du=` | `q8` or `q4` | `q8` (`q4` on macOS) |
+| `--model-option du=` | `q8` or `q4` | `q8` |
 | `--model-option ple-io=` | `direct` (read the embedding table from disk as needed) or `ram` (load it into memory; to keep it locked there, raise the locked-memory limit, e.g. `ulimit -l unlimited`) | `direct` |
 | `--context` | tokens | 131072 (`32768` on macOS) |
 | `--strata-arg` | one word of edge0-strata's engine command line; repeat it for each word, e.g. `--strata-arg --pool-workers --strata-arg 24` | none |
@@ -106,7 +106,9 @@ build/cpu/bin/edge0-infer serve --model "$EDGE0_145B" \
   --strata-arg --kv-resident --strata-arg 32768
 ```
 
-The words are appended in the order given, after the template's arguments; write each option and its value as two words (not `--option=value`). An option the template already sets (such as `--kv` or `--pack`), `--max-context` (use `--context`) and an empty value are rejected before anything starts. Other words are not checked by `edge0-infer`: edge0-strata decides, and since the engine process's own output is not shown, a word it does not accept appears as a failed start (run edge0-strata directly to see why). On macOS, `--device` accepts only `metal`. An `fp4` folder is rejected. `du` accepts only `q4`, and `ple-io` accepts only `direct`. The Metal template `edge0-145b-metal.json` sets the context length to 32768. If `mtp-q2_0.gguf` is absent, the first start runs `tools/mtp_gguf.py` with edge0-strata's Python and writes that file into the model folder, which must be writable; a later start leaves the file in place. The file is not part of the released folder listing above.
+The words are appended in the order given, after the template's arguments; write each option and its value as two words (not `--option=value`). An option the template already sets (such as `--kv` or `--pack`), `--max-context` (use `--context`) and an empty value are rejected before anything starts. Other words are not checked by `edge0-infer`: edge0-strata decides, and since the engine process's own output is not shown, a word it does not accept appears as a failed start (run edge0-strata directly to see why). On macOS, `--device` accepts only `metal` and `ple-io` accepts only `direct`. Both expert formats and both D/U formats run on Metal. The Metal template `edge0-145b-metal.json` sets the context length to 32768. If `mtp-q2_0.gguf` is absent, the first start runs `tools/mtp_gguf.py` with edge0-strata's Python and writes that file into the model folder, which must be writable; a later start leaves the file in place. The file is not part of the released folder listing above.
+
+`--device` names one card, and that card becomes the config's `gpu`: the engine may use only it. A second graphics card (an expert tier for the experts the first one cannot hold) is therefore not reachable through `edge0-infer` yet — add `"gpu": [0, 1]` and the second card's flags to the engine's config and start `serve/server.py` directly, as `edge0-strata/EDGE0.md` describes under *Two GPUs*.
 
 The template requires launch contract version 5; an older engine template is rejected with both versions in the error.
 
@@ -128,4 +130,4 @@ the DLL. A missing runtime DLL can produce exit code `0xC0000135`.
 - The native API does not support this model: `inspect_assets`, `resolve_load_configuration` and `load_model` return an `unsupported` error for a `model.json` that has no `format_version`, before reading any other file. Of the commands, only `serve`, `chat` and `inspect` (with or without `--json`, without `--digest`) accept it; `run`, `bench`, `describe`, `tokenize`, `prompt` and `forward` refuse it.
 - Concurrent requests wait in edge0-strata's queue instead of receiving 429 as with the native server.
 - `/status` holds no memory breakdown or expert statistics for this model; those fields are null. Progress of a request in flight is counted by `edge0-infer serve` from the text fragments it forwards (one token per fragment), and only for streaming requests; the finished records use the engine's own numbers (see the `Delegated` column of the [status fields](local-server.md#status-and-lan-authentication)).
-- Identical requests at temperature 0 can produce different answers: edge0-strata's decoding is not bit-for-bit repeatable.
+- Identical requests at temperature 0 can produce different answers: edge0-strata's decoding is not bit-for-bit repeatable. Its suffix draft (prompt lookup) sizes the verify windows from measured round times, and windows of different sizes round differently, so a long answer can differ in a few words between machines or runs.

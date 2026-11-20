@@ -86,7 +86,7 @@ The [asset tools guide](../tools/assets/README.md) describes the asset directory
 
 ### Edge0 145B and Edge0 120B (edge0-strata)
 
-These models come as released model folders, one model and one expert format per folder (for example `Edge0-145B-q3k`); the asset tools above do not make them. They need an NVIDIA GPU with CUDA 13 on Linux or Windows, or Apple Silicon with Metal on macOS. On macOS only the `q3k` folder is accepted, with `du=q4` and `ple-io=direct`. The first start writes `mtp-q2_0.gguf` into the model folder, so that folder must be writable.
+These models come as released model folders, one model and one expert format per folder (for example `Edge0-145B-q3k`); the asset tools above do not make them. They need an NVIDIA GPU with CUDA 13 on Linux or Windows, or Apple Silicon with Metal on macOS. On macOS both expert formats are accepted, with `ple-io=direct`. The first start writes `mtp-q2_0.gguf` into the model folder, so that folder must be writable.
 
 1. **Build edge0-strata**, the `edge0-strata/` directory beside `edge0-infer/` in the Edge0 repository, as its `EDGE0.md` describes (sections "Build (Linux, NVIDIA)", "Build (Windows, NVIDIA)" and "Build (macOS, Apple Silicon)"). `edge0-infer` finds it there and uses the engine and the Python environment that the build produces. On macOS the engine is `build-metal/strata`.
 

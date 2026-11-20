@@ -25,7 +25,7 @@ class AppTokensTest(unittest.TestCase):
     def write(self, path, text):
         file = self.root / path
         file.parent.mkdir(parents=True, exist_ok=True)
-        file.write_text(text)
+        file.write_text(text, encoding='utf-8')
 
     def run_check(self):
         output = io.StringIO()

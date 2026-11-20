@@ -14,7 +14,7 @@ if args[:1] == ['-s']:
 if os.environ.get('FAKE_ADB_READ_CONTROL_STDIN') and args[:2] != ['shell', '-T']:
     if sys.stdin.buffer.read():
         raise SystemExit('Auxiliary adb command consumed user stdin')
-with open(os.environ['FAKE_ADB_LOG'], 'a') as log:
+with open(os.environ['FAKE_ADB_LOG'], 'a', encoding='utf-8') as log:
     log.write(json.dumps(args) + '\n')
 if os.environ.get('FAKE_ADB_OFFLINE'):
     print('offline', file=sys.stderr)

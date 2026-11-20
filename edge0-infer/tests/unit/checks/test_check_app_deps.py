@@ -21,8 +21,8 @@ class AppDepsTest(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.write('tools/checks/app_dependencies.toml', (ROOT / 'tools/checks/app_dependencies.toml').read_text())
-        self.manifest = tomllib.loads((self.root / 'tools/checks/app_dependencies.toml').read_text())
+        self.write('tools/checks/app_dependencies.toml', (ROOT / 'tools/checks/app_dependencies.toml').read_text(encoding='utf-8'))
+        self.manifest = tomllib.loads((self.root / 'tools/checks/app_dependencies.toml').read_text(encoding='utf-8'))
         npm = copy.deepcopy(self.manifest['desktop']['npm'])
         self.write_json('examples/desktop/package.json', npm)
         packages = {'': copy.deepcopy(npm)}
@@ -57,7 +57,7 @@ class AppDepsTest(unittest.TestCase):
     def write(self, path, text):
         file = self.root / path
         file.parent.mkdir(parents=True, exist_ok=True)
-        file.write_text(text)
+        file.write_text(text, encoding='utf-8')
 
     def write_json(self, path, value):
         self.write(path, json.dumps(value))
@@ -87,19 +87,19 @@ class AppDepsTest(unittest.TestCase):
 
     def test_npm_lock(self):
         path = 'examples/desktop/package-lock.json'
-        value = json.loads((self.root / path).read_text())
+        value = json.loads((self.root / path).read_text(encoding='utf-8'))
         value['packages']['node_modules/react']['version'] = '0.0.0'
         self.write_json(path, value)
         self.run_check('react: locked version')
 
     def test_cargo_lock(self):
         path = self.root / 'examples/desktop/src-tauri/Cargo.lock'
-        path.write_text(path.read_text().replace('version = "2.12.5"', 'version = "0.0.0"'))
+        path.write_text(path.read_text(encoding='utf-8').replace('version = "2.12.5"', 'version = "0.0.0"'), encoding='utf-8')
         self.run_check('locked direct version')
 
     def test_cargo_range(self):
         path = self.root / 'examples/desktop/src-tauri/Cargo.toml'
-        path.write_text(path.read_text().replace('=2.12.5', '2.12.5'))
+        path.write_text(path.read_text(encoding='utf-8').replace('=2.12.5', '2.12.5'), encoding='utf-8')
         self.run_check('un-pinned:2.12.5')
 
     def test_gradle_coordinate(self):

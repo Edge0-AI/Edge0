@@ -1,7 +1,7 @@
 import type { DeviceMemory } from './format';
 export interface Experts { demand: number; hits: number; loads: number; bytes: number; }
 export interface Totals { requests: number; rejected_busy: number; rejected_invalid: number; unauthorized: number; input_tokens: number; reused_tokens: number; computed_tokens: number; generated_tokens: number; checkpoint_restores: number; continued_turns: number; decode_seconds: number; first_token_seconds_mean?: number; prefill_tokens_per_second?: number; decode_tokens_per_second?: number; experts?: Experts; }
-export interface RequestRecord { time: string; endpoint: string; source: string; http_status: number; total_seconds: number; input_tokens?: number | null; reused_tokens?: number | null; generated_tokens?: number | null; first_token_seconds?: number | null; prefill_tokens_per_second?: number | null; decode_tokens_per_second?: number | null; decode_seconds?: number | null; stop_reason?: string; ended_at?: string; }
+export interface RequestRecord { time: string; endpoint: string; source: string; http_status: number; total_seconds: number; input_tokens?: number | null; reused_tokens?: number | null; generated_tokens?: number | null; first_token_seconds?: number | null; prefill_tokens_per_second?: number | null; decode_tokens_per_second?: number | null; decode_seconds?: number | null; stop_reason?: string; ended_at?: string; code?: string; message?: string; param?: string; }
 export interface Progress { phase: 'prefill' | 'decode' | null; input_tokens: number | null; reused_tokens: number | null; computed_tokens: number | null; pending_tokens: number | null; generated_tokens: number | null; elapsed_seconds: number; first_token_seconds?: number; prefill_tokens_per_second?: number | null; decode_elapsed_seconds?: number; decode_tokens_per_second?: number | null; }
 interface Measurement { values: { current_bytes: number | null; peak_bytes: number | null } | null; source: string; reason: string; }
 export interface EngineStatus {
@@ -13,7 +13,7 @@ export interface EngineStatus {
   memory: { ledger: { limit_bytes: number; current_bytes: number; peak_bytes: number; by_purpose: { resident_weights: number; experts: number; session_state: number; workspace: number; transfer: number; staging: number; metadata: number }; by_device: Record<string, DeviceMemory> }; physical: Measurement; resident: Measurement };
   system: { memory: { total: { bytes: number | null }; available: { bytes: number | null } }; thermal: { state: string | null; source: string; reason: string } };
 }
-export interface Inspection { path: string; location?: string; ok: boolean; detail: string; model_id: string | null; total_bytes?: number | null; file_count?: number | null; }
+export interface Inspection { path: string; location?: string; ok: boolean; detail: string; model_id: string | null; total_bytes?: number | null; file_count?: number | null; model_name?: string | null; }
 export interface Info { version?: string; commit?: string; devices: { backend: string; name: string; description: string }[]; }
 export function parseInfo(text: string): Info {
   const read = (key: string) => text.split('\n').find(line => line.startsWith(key + ': '))?.slice(key.length + 2);
@@ -32,6 +32,16 @@ export function deviceLabel(name: string, devices?: EngineStatus['engine']['devi
     case 'vulkan': return 'Vulkan';
     default: return backend;
   }
+}
+/** How a recent request is shown: the status tag's tone and text, and the line under the row that says why, if any. */
+export interface RequestOutcome { tone: 'ok' | 'warn' | 'err'; label: string; reason?: string; }
+export function requestOutcome(r: RequestRecord): RequestOutcome {
+  if (r.http_status >= 400) {
+    const reason = [r.code, r.message].filter(Boolean).join(': ');
+    return { tone: r.http_status === 429 ? 'warn' : 'err', label: String(r.http_status), reason: reason || undefined };
+  }
+  if (r.stop_reason === 'length') return { tone: 'warn', label: `${r.http_status} · length`, reason: 'The reply reached its token limit and may be cut off.' };
+  return { tone: 'ok', label: String(r.http_status) };
 }
 export function stopReason(reason?: string): string {
   switch (reason) {

@@ -104,8 +104,8 @@ They run on edge0-strata through `edge0-infer serve` and `edge0-infer chat`, on 
 
 | Tier | Released checkpoint | Inference profile | Engine |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K or NVFP4 latent experts (1792), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU; macOS Apple Silicon, Metal, Q3_K) |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K or NVFP4 latent experts (1280), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU; macOS Apple Silicon, Metal, Q3_K) |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K or NVFP4 latent experts (1792), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU; macOS Apple Silicon, Metal) |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K or NVFP4 latent experts (1280), 48 layers, 512 experts, K=10 | edge0-strata ✅ (Linux or Windows, NVIDIA GPU; macOS Apple Silicon, Metal) |
 
 <details open>
 <summary><h3>Model overview · 145B Q3_K</h3></summary>
@@ -304,11 +304,59 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
+<summary>Two GPUs · a second card's expert tier</summary>
+
+A second NVIDIA card holds the experts that do not fit in the first one's VRAM, and decoding uses it
+for both expert formats. The cards need no NVLink or P2P.
+
+`edge0-infer` runs the engine on one card (its `--device` is one card), so for two cards start the
+engine with the config `serve/server.py --config` reads (it holds `exe`, `args`, `cwd`, `env`):
+
+- set `"gpu": [0, 1]` — the engine's device 0 is the first card, device 1 the second;
+- append to `"args"`: `"--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"`.
+
+```bash
+cd /path/to/Edge0-145B-q3k
+/path/to/edge0-strata/.venv/bin/python /path/to/edge0-strata/serve/server.py \
+  --engine strata --config ./model-two-gpus.json
+```
+
+The startup log prints the second card's tier (`peer GPU 1: … experts, … GiB`), and the server serves
+the same endpoints as on one card. `--peer-device` cannot be combined with `--layer-split` or
+`--expert-cache-device1..3`. More: [Two GPUs](edge0-strata/EDGE0.md#two-gpus-linux-nvidia).
+
+</details>
+
+<details>
 <summary>Desktop app · Windows · macOS</summary>
 
 ⬇️ **Download:** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Open **Edge0 Chat** on Windows or macOS (Apple Silicon) and choose a model folder, such as `Edge0-145B-q3k`, to run the model locally. To build the app from source, follow the [Edge0 Chat](edge0-infer/examples/desktop/README.md) guide.
+Open **Edge0 Chat** on Windows or macOS (Apple Silicon). Under **Models**, download a model from Hugging Face or ModelScope, or add a model folder you already have, such as `Edge0-145B-q3k`, then load it to run the model locally. On macOS the app offers all four folders and runs them on Metal; the NVFP4 folders keep the whole expert pool in unified memory. To build the app from source, follow the [Edge0 Chat](edge0-infer/examples/desktop/README.md) guide.
+
+</details>
+
+<details>
+<summary>Images · vision</summary>
+
+`mmproj-BF16.gguf` in the model folder is the vision encoder. Add this to the model's `model.json`, next to `args`:
+
+```json
+"vision": {"exe": "/path/to/strata-vision", "mmproj": "./mmproj-BF16.gguf",
+           "model": "./model-skeleton.gguf", "gpu": false}
+```
+
+and `--vision` to `"args"`. `strata-vision` comes with the engine archive that `setup.py --setup --vision yes` fetches.
+Its source is also in this repository, at `edge0-strata/tools/vision/`: a separate CMake project that the main build does not
+compile, built against a llama.cpp checkout at the engine's pinned commit (`third_party/llama.cpp` is not vendored; a tree
+whose main CMake fetched it has one under `build/_deps/strata_llamacpp-src`):
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+The log then says `images on`; send a picture with `/image` in the chat, or an `image_url` part over the OpenAI API.
 
 </details>
 
@@ -444,13 +492,10 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-For changes under `edge0-infer/`, open issues and PRs in this repository
-as usual; the directory is developed in a separate repository, and an
-accepted change is applied there first by the maintainers and arrives here
-with the next sync. See [CONTRIBUTING](CONTRIBUTING.md).
-
 Workflow: fork → feature branch → PR against `main`. Please keep the
-tests passing and add tests for new behavior.
+tests passing and add tests for new behavior. Agree on a behavior change
+in an issue first, put related fixes in one PR, and keep at most two of
+your PRs open.
 
 </details>
 

@@ -22,7 +22,7 @@ def run(*args, code=0):
 def tokenize(text, *flags):
     return run("tokenize", "--model", model, *flags, text).stdout
 
-corpus = json.loads((fixtures / "tokenize_golden.json").read_text())
+corpus = json.loads((fixtures / "tokenize_golden.json").read_text(encoding='utf-8'))
 
 # Exercise both parse-special policies, raw non-NFC input, and escaped pieces.
 rows = corpus["rows"]
@@ -58,7 +58,7 @@ assert tokenize("<|im_end|>", "--parse-special", "--pieces").endswith(b"\t<|im_e
 assert tokenize("") == b"\n"
 assert tokenize("", "--pieces") == b""
 
-templates = json.loads((fixtures / "template_golden.json").read_text())["rows"]
+templates = json.loads((fixtures / "template_golden.json").read_text(encoding='utf-8'))["rows"]
 for row in templates:
     # CLI represents the specified system + single user input; richer histories use the API.
     messages = row["messages"]

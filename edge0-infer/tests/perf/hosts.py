@@ -565,7 +565,7 @@ class IOSHost:
                 code, stdout, stderr = self._runner(self.transport, list(map(str, argv[1:])), b'', probe)
                 if code >= 128:
                     raise SystemExit(f'iOS App terminated by signal {code - 128}; stop and report without retry')
-                data = json.loads(probe.read_text()) if probe.exists() else {}
+                data = json.loads(probe.read_text(encoding='utf-8')) if probe.exists() else {}
                 if self._before is not None:
                     self._before.update(self._snapshot(data.get('before', {})))
                 self._after = self._snapshot(data.get('after', {}))

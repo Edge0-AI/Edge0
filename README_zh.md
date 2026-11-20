@@ -114,8 +114,8 @@
 
 | 型号 | 已发布检查点 | 推理配置 | 引擎 |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1792），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal，Q3_K） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1280），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal，Q3_K） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1792），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K 或 NVFP4 潜空间专家（1280），48 层，512 个专家，K=10 | edge0-strata ✅（Linux 或 Windows，NVIDIA GPU；macOS Apple Silicon，Metal） |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -315,11 +315,52 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
+<summary>双卡 · 第二张卡的专家层</summary>
+
+第二张 NVIDIA 卡存第一张卡显存放不下的专家，两种专家格式的解码都会用到它。两张卡不需要 NVLink 或 P2P。
+
+`edge0-infer` 只用一张卡跑引擎（`--device` 是单张卡），所以双卡要自己启动引擎，用 `serve/server.py --config` 读的那份配置（含 `exe`、`args`、`cwd`、`env`）：
+
+- 设为 `"gpu": [0, 1]` —— 引擎的 device 0 是第一张卡，device 1 是第二张；
+- 在 `"args"` 末尾追加：`"--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"`。
+
+```bash
+cd /path/to/Edge0-145B-q3k
+/path/to/edge0-strata/.venv/bin/python /path/to/edge0-strata/serve/server.py \
+  --engine strata --config ./model-two-gpus.json
+```
+
+启动日志会打印第二张卡的专家层（`peer GPU 1: … experts, … GiB`），之后接口与单卡相同。`--peer-device` 不能与 `--layer-split` 或 `--expert-cache-device1..3` 同用。更多见 [双卡](edge0-strata/EDGE0.md#two-gpus-linux-nvidia)。
+
+</details>
+
+<details>
 <summary>桌面应用 · Windows · macOS</summary>
 
 ⬇️ **下载：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-在 Windows 或 macOS（Apple Silicon）上打开 **Edge0 Chat**，选择模型文件夹（如 `Edge0-145B-q3k`）即可本地运行。如需从源码构建应用，请参阅 [Edge0 Chat](edge0-infer/examples/desktop/README.md) 指南。
+在 Windows 或 macOS（Apple Silicon）上打开 **Edge0 Chat**，在 **Models** 中从 Hugging Face 或 ModelScope 下载模型，或添加已有的模型文件夹（如 `Edge0-145B-q3k`），加载后即可本地运行。macOS 上应用提供全部四个文件夹，并在 Metal 上运行；NVFP4 文件夹需要把整个专家池放进统一内存。如需从源码构建应用，请参阅 [Edge0 Chat](edge0-infer/examples/desktop/README.md) 指南。
+
+</details>
+
+<details>
+<summary>图片 · 视觉</summary>
+
+模型文件夹里的 `mmproj-BF16.gguf` 是视觉编码器。在模型的 `model.json` 里、`args` 同级加：
+
+```json
+"vision": {"exe": "/path/to/strata-vision", "mmproj": "./mmproj-BF16.gguf",
+           "model": "./model-skeleton.gguf", "gpu": false}
+```
+
+再在 `"args"` 里加 `--vision`。`strata-vision` 由 `setup.py --setup --vision yes` 下载的引擎归档一并提供。它的源码也在这个仓库里，在 `edge0-strata/tools/vision/`：这是一个独立的 CMake 工程，主构建不编译它，编译时要用引擎钉住的那个 llama.cpp 提交（仓库里没有 `third_party/llama.cpp`；由主 CMake 自动拉取的构建树里，它在 `build/_deps/strata_llamacpp-src`）：
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+日志出现 `images on` 后即可发图：聊天里用 `/image`，或走 OpenAI 接口的 `image_url`。
 
 </details>
 
@@ -388,9 +429,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-修改 `edge0-infer/` 时，仍在本仓库提交 issue 和 PR；该目录在独立仓库中开发，获接受的修改由维护者先应用到该仓库，再随下一次同步进入此处。详见 [CONTRIBUTING](CONTRIBUTING.md)。
-
-流程：fork → 功能分支 → 向 `main` 提交 PR。请确保测试通过，并为新行为添加测试。
+流程：fork → 功能分支 → 向 `main` 提交 PR。请确保测试通过，并为新行为添加测试。行为改动请先在 issue 里和维护者对齐；同一区域的相关修复放进一个 PR；每人最多同时打开两个 PR。
 
 </details>
 

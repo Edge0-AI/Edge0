@@ -103,21 +103,32 @@ static void start_cli() {
     }
 }
 
-@interface MoEDelegate : UIResponder <UIApplicationDelegate>
+@interface MoESceneDelegate : UIResponder <UIWindowSceneDelegate>
 @property(nonatomic, strong) UIWindow* window;
 @end
-@implementation MoEDelegate
-- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)options {
-    (void)application; (void)options;
-    self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
+@implementation MoESceneDelegate
+- (void)scene:(UIScene*)scene willConnectToSession:(UISceneSession*)session options:(UISceneConnectionOptions*)options {
+    (void)session; (void)options;
+    if (![scene isKindOfClass:UIWindowScene.class]) return;
+    self.window = [[UIWindow alloc] initWithWindowScene:(UIWindowScene*)scene];
     const bool command_mode = cli_argc > 1 || std::getenv("MOE_HOST_CLEAN_ONLY");
     UIViewController* view = command_mode ? [UIViewController new] : [MoEChatController new];
     view.view.backgroundColor = UIColor.systemBackgroundColor;
     self.window.rootViewController = view;
     [self.window makeKeyAndVisible];
-    if (cli_argc > 1 || std::getenv("MOE_HOST_CLEAN_ONLY")) {
-        start_cli();
+    if (command_mode) {
+        UIApplication.sharedApplication.idleTimerDisabled = YES;
+        static dispatch_once_t started;
+        dispatch_once(&started, ^{ start_cli(); });
     }
+}
+@end
+
+@interface MoEDelegate : UIResponder <UIApplicationDelegate>
+@end
+@implementation MoEDelegate
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)options {
+    (void)application; (void)options;
     return YES;
 }
 @end

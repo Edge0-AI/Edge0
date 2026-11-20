@@ -1,0 +1,95 @@
+name: metal
+
+# Nothing in ci.yml compiles edge0-strata: its three jobs build edge0-infer presets and, by design,
+# "read nothing outside edge0-infer/". So the Metal engine - kernels, window, operator checks - was
+# never compiled on a pull request, and a change that breaks it surfaced only on a user's Mac. This
+# workflow builds it on every change under edge0-strata/, and runs the two checks that catch a wrong
+# decode without a model: the host reference against ggml, and the latent windows for both expert
+# formats.
+#
+# It does not run the engine on a model: the runner has no Edge0 pack, and a compile plus the parity
+# checks are what a kernel change can actually break.
+
+on:
+  push:
+    branches: [main]
+    paths: ['edge0-strata/**', '.github/workflows/metal.yml']
+  pull_request:
+    paths: ['edge0-strata/**', '.github/workflows/metal.yml']
+
+concurrency:
+  group: metal-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LLAMA_COMMIT: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+
+jobs:
+  metal:
+    name: edge0-strata (macOS, metal)
+    runs-on: macos-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: edge0-strata
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install ninja ccache
+      # The same pinned ggml source and metal-cpp headers EDGE0.md asks for, cached between runs:
+      # together they are the slow part of the setup, not the build.
+      - name: Restore the pinned ggml source
+        id: ggml
+        uses: actions/cache@v4
+        with:
+          path: edge0-strata/third_party/llama.cpp
+          key: llama-${{ env.LLAMA_COMMIT }}
+      - name: Fetch the pinned ggml source
+        if: steps.ggml.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p third_party/llama.cpp
+          curl -fsSL "https://github.com/ggml-org/llama.cpp/archive/$LLAMA_COMMIT.tar.gz" \
+            | tar -xz --strip-components=1 -C third_party/llama.cpp
+      - name: Restore metal-cpp
+        id: metalcpp
+        uses: actions/cache@v4
+        with:
+          path: edge0-strata/third_party/metal-cpp
+          key: metal-cpp-26
+      - name: Fetch metal-cpp 26
+        if: steps.metalcpp.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p third_party
+          curl -fsSL -o third_party/metal-cpp_26.zip https://developer.apple.com/metal/cpp/files/metal-cpp_26.zip
+          echo "4df3c078b9aadcb516212e9cb03004cbc5ce9a3e9c068fa3144d021db585a3a4  third_party/metal-cpp_26.zip" | shasum -a 256 -c
+          rm -rf third_party/metal-cpp
+          unzip -q third_party/metal-cpp_26.zip -d third_party
+          test -f third_party/metal-cpp/Metal/Metal.hpp
+      - name: Restore compiler cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-metal-${{ github.sha }}
+          restore-keys: ccache-metal-
+      - name: Configure
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        run: |
+          cmake -S metal -B build-metal -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DMETAL_CPP_DIR="$PWD/third_party/metal-cpp" \
+            -DSTRATA_GGML_DIR="$PWD/third_party/llama.cpp"
+      # strata itself, then the two checks below: a kernel that stops compiling fails here.
+      - name: Build the engine and the checks
+        run: |
+          cmake --build build-metal --target strata
+          cmake --build build-metal --target moe_mm_parity latent_routed_parity
+          cmake --build build-metal --target dsu_ref_vs_ggml
+      - name: The host reference agrees with ggml
+        run: ./build-metal/dsu_ref_vs_ggml
+      - name: The latent decode windows, both expert formats
+        run: |
+          ./build-metal/latent_routed_parity --experts q3k --du q4
+          ./build-metal/latent_routed_parity --experts q3k --du q8
+          ./build-metal/latent_routed_parity --experts fp4 --du q4
+          ./build-metal/latent_routed_parity --experts fp4 --du q8

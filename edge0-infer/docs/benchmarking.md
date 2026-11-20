@@ -64,6 +64,21 @@ build\windows-vulkan\bin\edge0-infer.exe bench --model $env:MOE_ASSETS_35B --dev
 
 `--breakdown` adds a per-step split of decode time. One process is easily disturbed by heat and background work; use the standard measurement for figures you want to keep or compare.
 
+The fixed-window `bench` run and summary records include `generation`, the effective
+generation configuration used by the measurement. It records sampling, seed (null
+when unset), thinking, penalties, stop settings, and their configuration sources.
+This differs from `model.recommended`, which describes model recommendations, and
+`model.loading`, which describes the effective load configuration. Keep the complete
+JSON Lines output when sharing a result: memory snapshots and per-run timing windows
+are in the run records. A missing `generation` field in an older record means the
+effective generation settings were not recorded; do not fill them from current
+model recommendations. The sweep and paired measurement tools preserve observed
+generation settings in their effective configuration, so the existing configuration
+comparison refuses different settings and also refuses a recorded-versus-missing
+configuration. Two older reports that both lack these settings retain the existing
+legacy behavior; their comparison does not establish that sampling matched. This
+additive metadata does not change the timing protocol or report format version.
+
 ## Standard measurement (recommended)
 
 `tests/perf/sweep.py` runs several short processes with a cool-down in between, checks the measurement conditions before each one, records system snapshots, and writes a report (`<out>.json` and `<out>.md`) with medians and ranges. Without options it measures the recommended configuration of the platform:

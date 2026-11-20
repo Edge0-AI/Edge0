@@ -38,7 +38,7 @@ class SubprojectTest(unittest.TestCase):
                    f'-DPROBE_OUTPUT={probes}', *arguments]
         result = subprocess.run(command, capture_output=True, text=True, env=env)
         self.assertEqual(result.returncode, 0, result.stdout[-4000:] + result.stderr[-4000:])
-        values = dict(line.split('=', 1) for line in probes.read_text().splitlines() if '=' in line)
+        values = dict(line.split('=', 1) for line in probes.read_text(encoding='utf-8').splitlines() if '=' in line)
         return build, values
 
     def build_consumer(self, build, env=None):

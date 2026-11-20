@@ -4,6 +4,9 @@
 //
 //   moe_mm_parity [--gu Q2_0] [--dn Q2_0] [--T 256] [--tile 32,64,64,4]          parity (64 experts)
 //   moe_mm_parity --bench [--gu ..] [--dn ..] [--T 2048] [--tile ..]            per-layer time, 512 experts
+//
+// NVFP4 (--gu NVFP4 --dn NVFP4, the latent packs' other expert format) has no column scale: every expert's blob ends
+// in {s_gate, s_up, s_down, 0} (float32), which scale the three projections' outputs.
 #include "coop_probe.h"
 #include "mtl_rt.h"
 #include "ref_quant.h"
@@ -24,7 +27,7 @@ struct MmPlanArgs { uint32_t n_ent, topk, n_expert, tm, n_blocks; };
 struct MmArgs { uint64_t gate_off, up_off, down_off, gu_stride, d_stride; uint32_t gu_row, d_row, n_embd, n_ff; };
 double median(std::vector<double> v) { std::sort(v.begin(), v.end()); return v[v.size() / 2]; }
 int type_of(const std::string& s) {
-    for (int t : {ref::TQ2_T, ref::TQK6, ref::TQK7, ref::Q2_0, ref::IQ3_XXS, ref::IQ2_XXS, ref::IQ2_XS, ref::IQ2_S, ref::IQ3_S, ref::IQ4_NL, ref::IQ4_XS, ref::Q3_K, ref::Q4_K, ref::Q5_K, ref::Q6_K, ref::Q8_0, ref::Q5_1})
+    for (int t : {ref::TQ2_T, ref::TQK6, ref::TQK7, ref::Q2_0, ref::IQ3_XXS, ref::IQ2_XXS, ref::IQ2_XS, ref::IQ2_S, ref::IQ3_S, ref::IQ4_NL, ref::IQ4_XS, ref::Q3_K, ref::Q4_K, ref::Q5_K, ref::Q6_K, ref::Q8_0, ref::Q5_1, ref::NVFP4})
         if (s == ref::type_name(t)) return t;
     std::exit(2);
 }
@@ -53,8 +56,13 @@ int main(int argc, char** argv) {
     }
     if (bench && T == 256) T = 2048;
     if (v4) TM = 16 * MS;   // the plan's tile height; mm_gu4's name carries MS instead
-    if (stage_gu && (bench || !v2 || v3 || gu != ref::Q3_K || TM != 32 || TN != 64 || TK != 32 || SG != 2)) {
-        std::fprintf(stderr, "--stage-gu requires the Q3_K v2 parity case with tile 32,64,32,2\n");
+    const bool nv = gu == ref::NVFP4;
+    if (nv != (dn == ref::NVFP4) || (nv && !v2) || (nv && v3)) {
+        std::fprintf(stderr, "NVFP4 is the v2 case with both --gu NVFP4 and --dn NVFP4 (one scalar tail per expert)\n");
+        return 2;
+    }
+    if (stage_gu && (bench || !v2 || v3 || (gu != ref::Q3_K && !nv) || TM != 32 || TN != 64 || TK != 32 || SG != 2)) {
+        std::fprintf(stderr, "--stage-gu requires the Q3_K or NVFP4 v2 parity case with tile 32,64,32,2\n");
         return 2;
     }
     mtl::Context cx;
@@ -63,7 +71,8 @@ int main(int argc, char** argv) {
     const int lib = cx.compile(sources);
     const int NE = bench ? 512 : 64, LAYERS = bench ? 4 : 1;
     const size_t gu_row = ref::row_bytes(gu, N_EMBD), d_row = ref::row_bytes(dn, N_FF);
-    const size_t up_off = (size_t)N_FF * gu_row, down_off = 2 * up_off, blob = down_off + (size_t)N_EMBD * d_row;
+    const size_t up_off = (size_t)N_FF * gu_row, down_off = 2 * up_off, tail_off = down_off + (size_t)N_EMBD * d_row;
+    const size_t blob = tail_off + (nv ? 4 * sizeof(float) : 0);
     std::printf("device %s; %s/%s, T %d, %d experts, tile TM %d TN %d TK %d SG %d\n", cx.device_name().c_str(),
                 ref::type_name(gu), ref::type_name(dn), T, NE, TM, TN, TK, SG);
     mtl::Buffer W = cx.alloc(blob * NE * LAYERS);
@@ -72,6 +81,11 @@ int main(int argc, char** argv) {
         for (int e = 0; e < 16; ++e) {
             ref::random_blocks(gu, tmp.data() + e * blob, 2 * N_FF, N_EMBD, 100 + e, 0.02f);
             ref::random_blocks(dn, tmp.data() + e * blob + down_off, N_EMBD, N_FF, 200 + e, 0.02f);
+            if (nv) {
+                ref::Rng rt(300 + e);
+                const float tail[4] = {0.5f + rt.uni(), 0.5f + rt.uni(), 0.5f + rt.uni(), 0.0f};
+                std::memcpy(tmp.data() + e * blob + tail_off, tail, sizeof(tail));
+            }
         }
         for (size_t e = 0; e < (size_t)NE * LAYERS; ++e) std::memcpy(W.as<uint8_t>() + e * blob, tmp.data() + (e % 16) * blob, blob);
     }
@@ -101,6 +115,7 @@ int main(int argc, char** argv) {
                   pclear = cx.pipeline(lib, "mm_clear"), pcomb = cx.pipeline(lib, "mm_combine");
     if (DTN < 0) { DTN = TN; DTK = TK; DSG = SG; }
     if (dn == ref::IQ4_NL && DTK < 32) DTK = 32;
+    if (dn == ref::NVFP4) DTK = 32;   // the down tiles NVFP4 has
     const std::string tl = std::to_string(TM) + "_" + std::to_string(TN) + "_" + std::to_string(TK) + "_" + std::to_string(SG);
     const std::string dtl = std::to_string(TM) + "_" + std::to_string(DTN) + "_" + std::to_string(DTK) + "_" + std::to_string(DSG);
     mtl::Constants probe;
@@ -111,9 +126,9 @@ int main(int argc, char** argv) {
     mtl::Pipeline pstage;
     if (stage_gu) {
         w16 = cx.alloc(2ull * NE * 2 * N_FF * N_EMBD);
-        pstage = cx.pipeline(lib, "latent_prompt_q3_stage");
+        pstage = cx.pipeline(lib, nv ? "latent_prompt_nv_stage" : "latent_prompt_q3_stage");
     }
-    mtl::Pipeline pgu = stage_gu ? cx.pipeline(lib, "latent_prompt_gu_f16")
+    mtl::Pipeline pgu = stage_gu ? cx.pipeline(lib, nv ? "latent_prompt_gu_f16_nv" : "latent_prompt_gu_f16")
                       : v5 ? cx.pipeline(lib, "mm_gu5_" + std::to_string(gu) + "_" + std::to_string(TN) + "_" + std::to_string(SG),
                                          mtl::Constants().b(7, k4))
                       : v4 ? cx.pipeline(lib, "mm_gu4_" + std::to_string(gu) + "_" + std::to_string(MS) + tl.substr(tl.find('_')),
@@ -154,6 +169,7 @@ int main(int argc, char** argv) {
             mtl::Dispatch g; g.p = &pgu;
             if (v2 || v3) g.args = {mtl::Arg::B(stage_gu ? w16 : W), mtl::Arg::B(XS), mtl::Arg::B(HS), mtl::Arg::B(tiles), mtl::Arg::V(ma)};
             else g.args = {mtl::Arg::B(W), mtl::Arg::B(x), mtl::Arg::B(H), mtl::Arg::B(stok), mtl::Arg::B(tiles), mtl::Arg::V(ma)};
+            if (stage_gu && nv) g.args.push_back(mtl::Arg::B(W));   // the experts' tails
             g.grid[0] = N_FF / (v3 ? TN * SG : TN); g.grid[1] = meta.as<uint32_t>()[0]; g.tg[0] = 32 * SG; ds.push_back(g);
             mtl::Dispatch d; d.p = &pdn; d.args = {mtl::Arg::B(W), mtl::Arg::B(v2 || v3 ? HS : H), mtl::Arg::B(YE), mtl::Arg::B(tiles), mtl::Arg::V(ma)};
             d.grid[0] = N_EMBD / (v3 ? DTN * DSG : v2 ? DTN : TN); d.grid[1] = meta.as<uint32_t>()[0]; d.tg[0] = 32 * ((v2 || v3) ? DSG : SG); ds.push_back(d);
@@ -194,6 +210,8 @@ int main(int argc, char** argv) {
             ref::dequant(gu, b, wg.data(), wg.size());
             ref::dequant(gu, b + up_off, wu.data(), wu.size());
             ref::dequant(dn, b + down_off, wd.data(), wd.size());
+            float tail[4] = {1.0f, 1.0f, 1.0f, 0.0f};
+            if (nv) std::memcpy(tail, b + tail_off, sizeof(tail));
             for (int i = 0; i < nent; ++i) {
                 if (ids.as<int>()[i] != e) continue;
                 const int t = i / TOPK;
@@ -208,6 +226,7 @@ int main(int argc, char** argv) {
                         g16 += (double)h16(wg[(size_t)f * N_EMBD + k]) * xh;
                         u16 += (double)h16(wu[(size_t)f * N_EMBD + k]) * xh;
                     }
+                    g *= tail[0]; u *= tail[1]; g16 *= tail[0]; u16 *= tail[1];
                     hv[f] = g / (1 + std::exp(-g)) * u;
                     h16v[f] = h16((float)(g16 / (1 + std::exp(-g16)) * u16));
                 }
@@ -218,8 +237,8 @@ int main(int argc, char** argv) {
                         s += (double)wd[(size_t)d * N_FF + f] * hv[f];
                         s16 += (double)h16(wd[(size_t)d * N_FF + f]) * h16v[f];
                     }
-                    yr[(size_t)t * N_EMBD + d] += wt * s;
-                    yr16[(size_t)t * N_EMBD + d] += wt * s16;
+                    yr[(size_t)t * N_EMBD + d] += wt * s * tail[2];
+                    yr16[(size_t)t * N_EMBD + d] += wt * s16 * tail[2];
                 }
             }
         }

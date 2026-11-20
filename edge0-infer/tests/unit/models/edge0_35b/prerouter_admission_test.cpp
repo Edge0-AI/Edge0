@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "models/edge0_35b/assets.h"
 #include "model/loading.h"
 #include "tests/support/model_fixture.h"

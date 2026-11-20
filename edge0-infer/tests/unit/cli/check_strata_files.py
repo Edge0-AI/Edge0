@@ -9,7 +9,7 @@ import sys
 
 root = Path(sys.argv[1])
 docs = Path(sys.argv[2]) if len(sys.argv) > 2 else root / 'docs'
-source = (root / 'tools' / 'cli' / 'serve_delegate_registry.cpp').read_text()
+source = (root / 'tools' / 'cli' / 'serve_delegate_registry.cpp').read_text(encoding='utf-8')
 # Drop // and /* */ comments (string literals are kept as they are), so a commented-out entry does not count.
 source = re.sub(r'("(?:\\.|[^"\\\n])*")|//[^\n]*|/\*.*?\*/', lambda m: m.group(1) or ' ', source, flags=re.S)
 
@@ -53,7 +53,7 @@ HEADER = '| Path | Content | Required |'
 
 
 def read_table(doc):
-    lines = doc.read_text().splitlines()
+    lines = doc.read_text(encoding='utf-8').splitlines()
     headers = [number for number, line in enumerate(lines) if line == HEADER]
     if len(headers) != 1:
         errors.append(f'{doc.name}: the model directory table header must appear exactly once, found {len(headers)} '

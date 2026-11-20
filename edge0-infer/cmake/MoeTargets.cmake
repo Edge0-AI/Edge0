@@ -31,7 +31,7 @@ function(moe_warnings target)
 endfunction()
 
 function(moe_add_test)
-    cmake_parse_arguments(TEST "DEVICE" "NAME;LEVEL" "COMMAND" ${ARGN})
+    cmake_parse_arguments(TEST "DEVICE;LOCAL_ONLY" "NAME;LEVEL" "COMMAND" ${ARGN})
     if(TEST_UNPARSED_ARGUMENTS OR NOT TEST_NAME OR NOT TEST_COMMAND OR
        NOT TEST_LEVEL MATCHES "^L[0-4]$")
         message(FATAL_ERROR "moe_add_test requires NAME, one LEVEL (L0-L4), and COMMAND")
@@ -40,6 +40,11 @@ function(moe_add_test)
     set(labels ${TEST_LEVEL})
     if(TEST_DEVICE)
         list(APPEND labels device)
+    endif()
+    # Slow tests whose behavior other tests mostly cover, or which check development tools:
+    # the full level runs them, the hosted CI runner skips them to stay within ten minutes.
+    if(TEST_LOCAL_ONLY)
+        list(APPEND labels local-only)
     endif()
     set_tests_properties(${TEST_NAME} PROPERTIES LABELS "${labels}" SKIP_RETURN_CODE 77
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")

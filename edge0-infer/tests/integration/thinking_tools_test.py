@@ -72,7 +72,7 @@ def main():
         turns = [{"user": "hello", "thinking": False}, {"user": "again", "thinking": True},
                  {"user": "next", "thinking": False}, {"regenerate": True, "thinking": False},
                  {"reset": True}, {"user": "last", "thinking": False}]
-        script = root / "turns.json"; script.write_text(json.dumps({"turns": turns}))
+        script = root / "turns.json"; script.write_text(json.dumps({"turns": turns}), encoding='utf-8')
         _, oracle = run("oracle", ["--turns", str(script)])
         chat = root / "chat"
         result = invoke([args.cli, "chat", *common, "--out", str(chat)],
@@ -107,7 +107,7 @@ def main():
         assert (stopped / "answer.txt").read_text(encoding="utf-8") == answer[:answer.index(stop)]
         generated = tokens(stopped)["generated"]
         assert generated == tokens(original)["generated"][:len(generated)]
-        script.write_text(json.dumps({"turns": [{"user": "hello", "stop": [stop]}, {"user": "again"}]}))
+        script.write_text(json.dumps({"turns": [{"user": "hello", "stop": [stop]}, {"user": "again"}]}), encoding='utf-8')
         _, stopped_turns = run("stopped-turns", ["--turns", str(script)])
         for i in [1, 2]:
             folder = stopped_turns / str(i)

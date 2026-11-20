@@ -33,7 +33,7 @@ def main():
                 base += ['--model-option', 'lora=off']
             for name in ['plain-mixed', 'chat-intro', 'long-mixed']:
                 answer = ANSWERS / f'tiny-{role}-{args.backend}-flash-split/{name}'
-                expected = json.loads((answer / 'tokens.json').read_text())
+                expected = json.loads((answer / 'tokens.json').read_text(encoding='utf-8'))
                 output = root / f'{role}-{name}'
                 command = base + ['--tokens', str(answer / 'tokens.json'), '--max-tokens', str(len(expected['generated']))]
                 a = subprocess.run(command + ['--out', str(output)], capture_output=True, text=True)
@@ -48,14 +48,14 @@ def main():
                 b = subprocess.run(command + ['--out', str(fresh), '--fresh-graphs'], capture_output=True, text=True)
                 assert b.returncode == 0, b.stderr
                 assert (output / 'tokens.json').read_bytes() == (fresh / 'tokens.json').read_bytes()
-                actual = json.loads((output / 'tokens.json').read_text())
+                actual = json.loads((output / 'tokens.json').read_text(encoding='utf-8'))
                 a_logits = own_logits(output, actual)
-                b_logits = own_logits(fresh, json.loads((fresh / 'tokens.json').read_text()))
+                b_logits = own_logits(fresh, json.loads((fresh / 'tokens.json').read_text(encoding='utf-8')))
                 same = (output / 'logits.f32').read_bytes() == (fresh / 'logits.f32').read_bytes()
                 print(json.dumps(dict(role=role, case=name, bitwise=same,
                     max_abs=float(np.max(np.abs(a_logits.astype(float)-b_logits.astype(float)), initial=0)))), flush=True)
                 failed |= not same
-                summary = json.loads((output / 'result.json').read_text())
+                summary = json.loads((output / 'result.json').read_text(encoding='utf-8'))
                 count = len(actual['generated'])
                 assert summary['decode_plan_builds'] == int(count > 1) and summary['decode_plan_reuses'] == max(0, count - 2)
                 assert summary['e'] == len(expected['input']) + count - 1
@@ -64,7 +64,7 @@ def main():
                     demo = subprocess.run(base + ['--user', '\u7528\u4e00\u53e5\u8bdd\u4ecb\u7ecd\u4f60\u81ea\u5df1\u3002',
                                           '--max-tokens', '16', '--out', str(demo_out)], capture_output=True, text=True)
                     assert demo.returncode == 0, demo.stderr
-                    own_logits(demo_out, json.loads((demo_out / 'tokens.json').read_text()))
+                    own_logits(demo_out, json.loads((demo_out / 'tokens.json').read_text(encoding='utf-8')))
                     comparison = judge_generation(demo_out, answer, args.backend, model,
                                                   cross_kernel=args.cross_kernel, record_only=True)
                     print(json.dumps(dict(role=role, case='chat-intro-demo', record_only=True, **comparison)), flush=True)

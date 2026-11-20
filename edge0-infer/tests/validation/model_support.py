@@ -330,7 +330,7 @@ def main(argv=None):
         if args.command == 'review':
             print('reviewed: ' + ', '.join(review(args.results, args.verdicts)))
             return EXIT_DONE
-        reports = [json.loads(p.read_text()) for p in args.perf_report]
+        reports = [json.loads(p.read_text(encoding='utf-8')) for p in args.perf_report]
         text, code = render(args.results, reports)
         if args.out:
             args.out.write_text(text, encoding='utf-8')

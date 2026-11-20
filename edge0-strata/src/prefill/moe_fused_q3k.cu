@@ -34,6 +34,9 @@
 #define GGML_COMMON_DECL_CUDA
 #define GGML_COMMON_IMPL_CUDA
 #include "ggml-common.h"   // kvalues_iq4nl, block_q8_1
+#if defined(__HIPCC__)
+#include "strata/prefill/lat_q3k_w11.hpp"   // the latent A stage on the gfx11 matrix cores
+#endif
 
 #include <algorithm>
 #include <cstdio>
@@ -1523,6 +1526,13 @@ void group_latent(const int32_t* cnt, const int32_t* off, int n_expert, void* ho
 void experts_latent_q3k(const WideBatch& b, const LatentGeom& g, int n_expert, int64_t n, const void* scratch,
                     const void* xa, const int32_t* src, void* hbuf, float* dm, void* stream) {
     if (b.e1 <= b.e0 || n <= 0) return;
+#if defined(__HIPCC__)
+    {
+        const Tables tb = tables(const_cast<void*>(scratch), n_expert);
+        q3k_w11::experts(b, g, tb.cnt, tb.off, tb.ts, tb.tiles, n, xa, src, hbuf, dm, stream);
+        return;
+    }
+#endif
     const LatentDevInfo& d = lat_dev();
     if (!d.ok) {
         std::fprintf(stderr, "prefill fused experts (latent): the kernels are not available on this device\n");
@@ -1536,11 +1546,13 @@ void experts_latent_q3k(const WideBatch& b, const LatentGeom& g, int n_expert, i
     const int64_t nfb_d = (int64_t) std::max<int64_t>(1, (int64_t) (g.ell >> 8));
     const unsigned g_gu = (unsigned) std::min<int64_t>(tiles * nfb_gu, (int64_t) d.sms * d.occ_gu);
     const unsigned g_d = (unsigned) std::min<int64_t>(tiles * nfb_d, (int64_t) d.sms * d.occ_d);
+#if !defined(__HIPCC__)   // amd-hip port: the latent A kernels are CUDA-only (lat_dev().ok is false on HIP, so this is not reached)
     latent_kernel_q3k<true><<<g_gu, LTHREADS, lat_smem_bytes(), s>>>(b, tb, g, (const uint8_t*) xa, src,
                                                                  (uint8_t*) hbuf, nullptr);
     ck(cudaGetLastError(), "experts_latent_q3k gu");
     latent_kernel_q3k<false><<<g_d, LTHREADS, lat_smem_bytes(), s>>>(b, tb, g, (const uint8_t*) hbuf, src, nullptr, dm);
     ck(cudaGetLastError(), "experts_latent_q3k down");
+#endif   // !__HIPCC__ (amd-hip port)
     ck(cudaGetLastError(), "experts_latent_q3k");
 }
 

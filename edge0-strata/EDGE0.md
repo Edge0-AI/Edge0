@@ -49,10 +49,11 @@ In this directory:
     `_MSC_VER` there too, so the existing guard was not enough.
   - `src/core/latent_dense.cpp` maps the D/U file with `CreateFileMappingW` and `MapViewOfFile` on
     Windows; it was POSIX `mmap` only.
-  - `src/core/verify.cpp` keeps the all-resident (zero-doorbell) verify path opt-in on aarch64. On an RTX
-    Spark N1X with every expert resident, that path hung the first decode window ("verify window: 6
-    tokens at position 0, host at layer step 1, the GPU rang 0", no progress for 85 s, then
-    `0xC0000409`). A 24 GB card never reaches it, because its experts do not all fit.
+  - `src/core/verify.cpp` keeps the all-resident (zero-doorbell) verify path opt-in on every platform.
+    With every expert resident, that path hung the first decode window ("verify window: 6 tokens at
+    position 0, host at layer step 1, the GPU rang 0") on an RTX Spark N1X (no progress for 85 s, then
+    `0xC0000409`) and on a 96 GB RTX PRO 6000 Blackwell under Linux (the watchdog's exit -6, #200). A
+    24 GB card never reaches it, because its experts do not all fit.
     `STRATA_VERIFY_ALL_RESIDENT=1` turns it back on for debugging; that path is not tested.
 - This file.
 - Removed because neither the Linux CUDA build nor the server uses them (each was checked against
@@ -242,16 +243,181 @@ Requirements: an Apple Silicon Mac, the Xcode Command Line Tools, CMake 3.24 or 
    cmake --build build-metal --target moe_mm_parity
    ```
 
-   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; both of
+   The engine is `build-metal/strata`. The operator check is `build-metal/moe_mm_parity`; all of
    these print `PASS`:
 
    ```
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
    ./build-metal/moe_mm_parity --gu Q3_K --dn IQ4_NL --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64
+   ./build-metal/moe_mm_parity --gu NVFP4 --dn NVFP4 --latent --v2 --stage-gu --tile 32,64,32,2 --T 64 --latent1792
+   ```
+
+   The decode windows' latent kernels have their own check (`cmake --build build-metal --target
+   latent_routed_parity`). It takes `--experts q3k|fp4`, `--du q4|q8`, `--latent1792` and `--ntok 1..8`,
+   and prints `PASS` for each of the three window tilings:
+
+   ```
+   ./build-metal/latent_routed_parity --experts q3k --du q4 --latent1792
+   ./build-metal/latent_routed_parity --experts fp4 --du q8 --latent1792
    ```
 
 `edge0-infer` on macOS starts `build-metal/strata` through `.venv/bin/python` and `serve/server.py`.
 The device is `metal`, which is also the default, and the only accepted value.
+
+## Two GPUs (Linux, NVIDIA)
+
+A second card can hold an expert tier for the experts that do not fit on the first one. Both latent
+formats use it: the second card runs the `A` stage of the experts it holds and returns their `q8_1`
+latent rows, and the first card runs `U` for them, exactly as it does for the CPU's share. The two
+cards therefore need no P2P or NVLink: the rows travel through portable mapped host memory, so a PCIe
+pair behaves the same way (measured with `canAccessPeer` = 0).
+
+**Start the engine directly.** `edge0-infer` sets the config's `gpu` from `--device`, which is one
+card, and the cards the engine may use are that list; a second card has to be in it:
+
+1. Give the engine both cards: add `"gpu": [0, 1]` to the model's server config (`serve/server.py`
+   passes it on as `CUDA_VISIBLE_DEVICES=0,1`, so the engine's device 0 is the first card and its
+   device 1 the second).
+
+2. Add the peer tier to that config's `args` — these four pairs, appended to the arguments already
+   there. `--peer-device 1` names the engine's device 1; `--peer-reserve-mib` is VRAM left free on
+   that card; `--peer-slots 0` fills it with as many experts as fit:
+
+   ```json
+   "--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"
+   ```
+
+3. Start the server as usual (`serve/server.py --engine strata --config <file>`), or run the engine
+   with the same arguments. Build with `-DCMAKE_CUDA_ARCHITECTURES=native`, or list both cards'
+   capabilities when they differ (`86;120` for an RTX 30 beside an RTX 50).
+
+The startup log then names the tier and the reach of the two caches:
+
+```
+strata generate: peer GPU 1: 11900 experts, 21.45 GiB (filled in 3.9 s); with the primary's 5955
+                 that is 17855 of 24576 on the GPUs
+```
+
+Measured with Edge0 145B on two RTX 5090 D (24 GB each, PCIe, no P2P), 200-token answers:
+NVFP4 391 for `17*23` at 92-104 tok/s decode and 1223 tok/s prefill on a 2732-token prompt; Q3_K 391
+at 101-114 tok/s decode and 1456 tok/s prefill. The same packs run at about 60-80 and 80-130 tok/s
+on one card, so the gain is the share of the expert set that stops crossing the PCIe bus.
+
+Notes:
+
+- The prompt stays on the first card for a latent pack; only the decode windows use the second one.
+- `--peer-device` cannot be combined with `--layer-split` or `--expert-cache-device1..3`.
+- `STRATA_LATENT_U_GPU` (the first card's `U` stage) is switched on automatically when a peer serves
+  latent experts; do not turn it off.
+- With 24 GB cards and Edge0 145B the second card needs about 21.5 GiB for its tier; lower
+  `--peer-reserve-mib` or give fewer slots with `--peer-slots` when something else uses that card.
+- The two other second-card modes are adapted for latent packs as well but are not measured yet:
+  `--expert-cache-device1 N` (a helper cache; it runs the same `A`-only share) and `--layer-split K`
+  (each stage uploads its own `D`/`U` to its own card).
+
+## Build (Windows, AMD, experimental)
+
+Edge0 145B (Q3_K) has been run on one AMD card with the HIP backend this fork inherits from Strata: a Radeon RX 7900
+XTX (gfx1100, 24 GB) under Windows 11, ROCm 10.2.0a20260930. Other Radeon cards, Linux, Edge0 120B and the NVFP4
+folders have not been tried. `edge0-infer` does not start this build on Windows (it expects CUDA there), so the server is
+started by hand; on Linux it was reported to start it when `--strata-dir` points at this build and the ROCm libraries are
+on `LD_LIBRARY_PATH` (#196).
+
+Requirements: Visual Studio 2022 Build Tools with the C++ workload, Python 3.10 or newer, Git, and a current AMD
+display driver. No ROCm or HIP SDK installation: the build script installs ROCm from AMD's wheels into `.rocm-win`
+(about 7 GB).
+
+1. Build and package the engine for the card's architecture, in this directory:
+
+   ```bat
+   set STRATA_HIP_ARCHS=gfx1100
+   set STRATA_NO_VISION=1
+   tools\hip\build_windows.bat
+   ```
+
+   The result is `dist\strata-windows-x64-hip.zip` (`strata.exe`, the ROCm DLLs in `rocm\bin`, the hipBLASLt tuning
+   table in `tuning\`). Unpack it into a folder, for example `engine-hip\`.
+2. Create the server's Python environment as in step 3 of [Build (Windows, NVIDIA)](#build-windows-nvidia).
+3. Write a server configuration from `edge0/models/edge0-145b.json`: replace the placeholders by hand, set `exe` to
+   the unpacked `strata.exe`, add `"backend": "hip"`, and set `lib_dirs` to the unpacked `rocm\bin`. In `env`:
+
+   | Variable | Value | Why |
+   | --- | --- | --- |
+   | `STRATA_LATENT_FUSED`, `STRATA_LATENT_FUSED_DU`, `STRATA_LAT_FUSED_Q3K` | `0` | the fused latent kernels are CUDA-only; the engine exits if they are selected on HIP |
+   | `STRATA_LATENT_MMQ` | `1` (optional) | the latent A stage of the prompt on MMQ; about a third faster than the default path on this card |
+   | `STRATA_LATENT_DENSE_FMT` | `8` or `4` | the engine reads the number, not `q8` / `q4` |
+   | `STRATA_LATENT_A`, `STRATA_LATENT_DENSE` | paths with `/` | `labels.bin` is looked up beside `STRATA_LATENT_A` by its last `/`, so a path with only `\` is not found |
+   | `STRATA_HIPBLASLT_TUNING` | the table in `tuning\` | as in upstream Strata's AMD configurations |
+
+4. Start it: `.venv\Scripts\python.exe serve\server.py --engine strata --config <file> --port 8000`.
+
+Measured with `tools\strata_bench.py` on the card above (Ryzen 7 5800X3D, 64 GB RAM, `--vram-reserve-mib 3072`, about
+4100 experts resident; medians):
+
+| A stage of the prompt | Chat decode tok/s | 4K prompt tok/s | 16K prompt tok/s | Agent decode tok/s |
+| --- | ---: | ---: | ---: | ---: |
+| default (`native_expert_grouped`) | 37.9 | 243.6 | 241.3 | 43.6 |
+| `STRATA_LATENT_MMQ=1` | 40.4 | 335.0 | 319.3 | 47.2 |
+
+The prompt speed is far below the NVIDIA figures because the fused latent kernels have no HIP version yet. Answer
+quality on this build has only been checked by hand.
+
+## Build (Linux, AMD gfx11, experimental)
+
+The HIP backend has gfx11 matrix-core kernels for the latent prompt path on Edge0 145B Q3_K:
+
+- `lat_dense_w11.cu` runs the Q8_0 D and U projections. The Q4 dense file keeps the generic kernels.
+- `lat_q3k_w11.cu` runs Q3_K gate/up, SwiGLU, and IQ4_NL down for the routed expert stage.
+
+These kernels were tested on a Radeon RX 7900 XTX (gfx1100, 24 GB) with ROCm 7.2.4. Other AMD architectures and
+the Windows HIP build have not been tested with them.
+
+Requirements: ROCm 7 with the HIP compiler, hipBLAS and hipBLASLt (the commands below were run in the
+`docker.io/rocm/dev-ubuntu-24.04:7.2.4-complete` image), CMake 3.24 or newer, Ninja, and Python 3.10 or newer.
+
+1. Unpack llama.cpp into `third_party/llama.cpp` as in step 1 of [Build (Linux, NVIDIA)](#build-linux-nvidia).
+2. Build for gfx1100. `STRATA_PREFILL_MMQ=ON` is required because it supplies the HIP implementations and links the
+   latent prefill entry points.
+
+   ```sh
+   export HIP_PATH="$(hipconfig -R)"
+   cmake -S . -B build-hip -G Ninja -DCMAKE_BUILD_TYPE=Release \
+     -DSTRATA_ENABLE_HIP=ON -DSTRATA_ENABLE_CUDA=OFF -DCMAKE_HIP_ARCHITECTURES=gfx1100 \
+     -DCMAKE_HIP_COMPILER="$(hipconfig -l)/clang++" -DCMAKE_PREFIX_PATH=/opt/rocm \
+     -DSTRATA_PREFILL_MMQ=ON -DSTRATA_NATIVE_EXPERTS=ON \
+     -DSTRATA_GGML_DIR="$PWD/third_party/llama.cpp"
+   cmake --build build-hip --target strata
+   ```
+
+3. Copy the tuning table matching the card and hipBLASLt version into `tuning/` beside the engine. ROCm 7.2.4 uses
+   hipBLASLt 1.2.2, represented by table version `100202`:
+
+   ```sh
+   mkdir -p build-hip/tuning
+   cp tools/hip/gfx1100-hipblaslt-100202.txt build-hip/tuning/
+   ```
+
+   The engine prints `hipBLASLt tuning enabled` when it loads the table. On the machine below, a 5.3K-token prompt
+   ran at 724.9 tok/s without the table and 1157.2 to 1202.0 tok/s with it while using the MMQ expert stage.
+4. Use the Edge0 145B Q3_K configuration with `STRATA_LATENT_DENSE_FMT=8`,
+   `STRATA_LATENT_FUSED_DU=1`, `STRATA_LATENT_FUSED=1`, and `STRATA_LAT_FUSED_Q3K=1`.
+   `STRATA_LATENT_FUSED_DU=0` keeps the generic D/U kernels; setting both A-stage flags to `0` and
+   `STRATA_LATENT_MMQ=1` keeps the MMQ expert stage.
+
+Measured on a Ryzen 5 5600X with 64 GB RAM and one RX 7900 XTX on PCIe 4.0 x16, `--vram-reserve-mib 700`, ROCm
+7.2.4, one fresh prompt of each size:
+
+| Configuration | 5.3K prompt tok/s | 21K prompt tok/s |
+| --- | ---: | ---: |
+| gfx11 D/U and expert stage, hipBLASLt tuning | 1181.8 | 1302.1 |
+| gfx11 D/U, MMQ expert stage, hipBLASLt tuning | 1157.2-1202.0 | 1285.3-1316.1 |
+| generic D/U, MMQ expert stage, no tuning | 269.1 | 280.2 |
+
+The gfx11 and MMQ expert-stage measurements overlap within run-to-run variation; these results do not establish an
+expert-stage speedup. The D projection matched 99.9987% of the generic path's q8_1 codes, with every mismatch off by
+one, and dumped U rows agreed to 2e-7. Across four prompts, first-token top-8 log-probabilities moved by at most 0.48
+for the gfx11 expert stage against MMQ and 0.57 for the gfx11 projections against the generic D/U path.
 
 ## Launch contract with edge0-infer
 
@@ -273,8 +439,7 @@ The device is `metal`, which is also the default, and the only accepted value.
   | `${PLE_IO}` | `direct` or `ram`, chosen with `--model-option ple-io=...` |
 
   The templates are `edge0-145b.json` (Edge0 145B, 1792 latent dimensions) and `edge0-120b.json`
-  (Edge0 120B, 1280 latent dimensions). `edge0-infer` chooses the D/U default (Q8 for Edge0 145B,
-  Q4 for Edge0 120B) and the expert format, which it reads from `model_name` in the folder's `model.json`.
+  (Edge0 120B, 1280 latent dimensions). `edge0-infer` chooses the D/U default (Q8) and the expert format, which it reads from `model_name` in the folder's `model.json`.
 
   On macOS the device is `metal`. `edge0-infer` then loads `edge0-145b-metal.json` or
   `edge0-120b-metal.json` instead of the CUDA template. Those files use the same placeholders. Their
@@ -282,6 +447,22 @@ The device is `metal`, which is also the default, and the only accepted value.
   `--spec` to `4`, and they keep `STRATA_DECODE_TIMING=1`. They do not set `STRATA_METAL_MTP_GGUF`:
   the engine reads `<model>/mtp-q2_0.gguf`. `STRATA_METAL_DRAFT_VOCAB` points at
   `${MODEL_DIR}/mtp/draft_vocab.bin`.
+
+  On Metal the routed experts (`experts.bin`) stay in memory when the Mac has room for them, and are
+  read from the SSD as they are needed when it does not. The engine decides at start and logs
+  `strata metal: latent experts resident` or `strata metal: latent experts streamed from the SSD`
+  with the sizes and the limit it compared. When streaming, the experts live in a slot arena that
+  is filled first from `STRATA_METAL_EXPERT_PROFILE` (the templates set it to
+  `${MODEL_DIR}/profile.bin`); the decode window and the prompt chain both read from that arena, and
+  a prompt's buffers are placed in it while the prompt runs. If the configured prompt chunk
+  (`STRATA_METAL_PROMPT_CHUNK`) does not fit, the chunk is halved, down to 1024 rows, and the engine
+  logs the chunk size it uses. These variables change the choice:
+
+  | Variable | Effect |
+  | --- | --- |
+  | `STRATA_METAL_STREAM` | `1` always streams the experts, `0` always keeps them in memory |
+  | `STRATA_METAL_ARENA_GB` | the arena size in GB instead of the size the engine computes |
+  | `STRATA_METAL_KEEP_FREE_GB` | memory in GB the engine leaves free when it sizes the arena |
 
   A Metal template may contain `prepare`, an array of files to create before the server starts. Each
   entry has `output`, `script` (a path relative to this directory) and `args`, and those strings use
@@ -291,8 +472,7 @@ The device is `metal`, which is also the default, and the only accepted value.
   `server.py`. The shipped entries run `tools/mtp_gguf.py` to write `mtp-q2_0.gguf` into the model
   directory, so that directory must be writable. An `output` that already exists is left as it is.
 
-  Metal accepts only Q3_K expert folders (`model_name` ending in `-q3k`), `du=q4` and
-  `ple-io=direct`. An NVFP4 folder, `du=q8` or `ple-io=ram` is rejected before any process starts.
+  Metal accepts both expert formats and both D/U formats, with `ple-io=direct`. `ple-io=ram` is rejected before any process starts.
 
   `edge0-infer` also sets `gpu` from `--device` (`cuda:<n>` on Linux and Windows, `metal` on macOS),
   `model_name` from `--alias`, and the `--max-context` argument from `--context`.

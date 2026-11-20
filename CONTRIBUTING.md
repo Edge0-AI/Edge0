@@ -25,10 +25,6 @@ platform/backend work.
 | [`docs/`](docs/) | Model design docs: MoE routing, the prerouter, and the model tiers |
 | [`paper/`](paper/) | The technical report |
 
-`edge0-infer/` is developed in a separate repository and synced here. Open
-issues and pull requests for it in this repository as usual: an accepted change
-is applied there first and arrives here with the next sync.
-
 ## Development setup
 
 Build the engine and get the model assets as described in
@@ -46,6 +42,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"     # no model assets needed
 ```
 
+Continuous integration runs `L0`, `L1` and most of `L2` on every pull request.
 [Testing](edge0-infer/docs/testing.md) describes every level, what each needs
 (the tiny test fixtures, the real assets, a device) and the full regression
 commands.
@@ -62,21 +59,70 @@ PR.
 
 ## Pull request workflow
 
-1. **Fork** the repo and create a feature branch off `main`
-   (e.g. `fix/expert-slot-oob`, `docs/clarify-memory`, `feat/tool-calling`).
-2. Make your change; **add or update tests** for new behavior.
-3. Run the tests for the levels your change touches (at least `L0` and `L1`)
-   locally.
-4. Open a PR against `Edge0-AI/Edge0:main` and fill in the
-   [PR template](.github/PULL_REQUEST_TEMPLATE.md). Link the issue it closes
-   (`Fixes #NN`).
-5. Keep PRs focused — one logical change per PR is easier to review and merge.
+Fork the repo, branch off `main` (for example `fix/expert-slot-oob` or
+`feat/tool-calling`), and open the PR against `Edge0-AI/Edge0:main`. Fill in
+the [PR template](.github/PULL_REQUEST_TEMPLATE.md).
 
-### Commit / PR style
+`edge0-strata/CONTRIBUTING.md` describes the evidence expected for changes in
+that directory. The rules on this page decide whether a pull request is
+reviewed.
 
-This repo uses conventional-commit-style prefixes, e.g.
-`fix(experts): ...`, `feat(server): ...`, `docs(readme): ...`,
-`perf(decode): ...`, `chore: ...`. Please follow the same convention.
+The **PR hygiene** check enforces the items marked below. A failing check is
+labeled `needs-info` and is not reviewed. A `needs-info` pull request that
+stays inactive is closed. Pull requests opened before 2026-11-19 08:00 UTC
+keep the previous terms: the check does not apply to them, and they do not
+count toward the two-open limit.
+
+1. **Agree on behavior changes before writing code.** Open an issue and wait
+   for a maintainer to confirm the change is wanted. A documentation-only PR
+   may skip this. A one-line fix for an obvious bug may go straight to a PR,
+   and should still link the issue when one exists.
+   **Enforced:** the body contains `Fixes #123`, `Closes #123`, or
+   `Related to #123`, unless the title type is `docs`.
+2. **Batch related fixes.** Put related changes in the same area (`serve`,
+   `text`, `desktop`, `assets`, `strata`, and so on) in one pull request, with
+   one commit per fix. Do not open a separate pull request for each finding.
+3. **Keep at most two pull requests open.** Wait for review on those before
+   opening another. Maintainers are not counted.
+   **Enforced** for everyone else.
+4. **Add or update tests** for new behavior, and run the levels the change
+   touches (at least `L0` and `L1`) locally.
+5. **Show what you actually ran.** Fill in "How was it tested?" with commands,
+   platform, and results. A performance change also needs an `edge0-infer bench`
+   summary, or the community benchmark report for a model that runs through
+   `edge0-strata`.
+   **Enforced:** the section is not empty, and a `perf` title mentions a bench
+   result.
+6. **Use a conventional title.** Optional `[Area]` prefix, then
+   `type(scope): summary`. `type` is one of `fix`, `feat`, `perf`, `docs`,
+   `chore`, `test`, `tests`, `ci`, `build`, `refactor`, `revert`. The scope
+   may be omitted (`ci: run L0 on pull requests`).
+   **Enforced.**
+
+### Closed without a full review
+
+- A behavior change with no agreed issue.
+- Micro-optimizations or refactors that do not report a measured problem.
+- Style-only sweeps, drive-by cleanups, and a second pull request for a
+  change that is already open.
+- More than two open pull requests from the same contributor. The oldest two
+  stay in the queue; the rest stay `needs-info` until some are closed.
+
+You must be able to explain the diff and answer review questions about it.
+Model-assisted edits are fine on those terms. A tree-wide scan split into many
+pull requests is closed.
+
+### Review order
+
+Correctness bugs with a reproduction come first, then work on an issue a
+maintainer already accepted, then performance changes that include numbers.
+Everything else waits. Reviews run on the existing queue; new pull requests
+do not jump it.
+
+### Commit style
+
+Use the same prefixes as the title, for example `fix(experts): ...`,
+`feat(server): ...`, `docs(readme): ...`, `perf(decode): ...`.
 
 ## Reporting security issues
 

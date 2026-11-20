@@ -157,6 +157,25 @@ template <> struct DW<T_Q3_K> {
         p1 = p0 + 16;
     }
 };
+// NVFP4: kvalue * the sub-block's scale, two 16-value sub-blocks, contiguous 32
+template <> struct DW<T_NVFP4> {
+    static inline void run(device const uchar* row, int u, int k0, thread float* w, thread int& p0, thread int& p1,
+                           threadgroup const uint*) {
+        device const uchar* b = row + (u >> 1) * 36;
+        const int s = (u & 1) * 2;
+        device const uchar* q = b + 4 + 8 * s;
+        const float d0 = nv_scale(b[s]), d1 = nv_scale(b[s + 1]);
+        for (int j = 0; j < 8; ++j) {
+            const uint c0 = q[j], c1 = q[8 + j];
+            w[j] = NV_K[c0 & 15u] * d0;
+            w[8 + j] = NV_K[c0 >> 4] * d0;
+            w[16 + j] = NV_K[c1 & 15u] * d1;
+            w[24 + j] = NV_K[c1 >> 4] * d1;
+        }
+        p0 = 32 * u - k0;
+        p1 = p0 + 16;
+    }
+};
 
 struct MmaArgs {
     uint n_in;

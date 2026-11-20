@@ -112,6 +112,15 @@ void fixture(int format, int experts, bool zero_qsa, bool ple) {
         return c;
     };
     image.live = checkpoint(9); image.checkpoints.push_back(checkpoint(5));
+    const auto& live = image.live;
+    size_t checkpoint_bytes = 0;
+    check(conversation_checkpoint_host_bytes(ss, g, live.ids.size(), live.imgs.size(), checkpoint_bytes, error),
+          "fresh checkpoint size without CUDA");
+    check(checkpoint_bytes == live.ids.size() * sizeof(int32_t) + live.imgs.size() * sizeof(ConversationImageKey) +
+          live.gdn.size() + live.ple.size() + live.tails.size() + live.dead.size() + live.block_pos.size(),
+          "fresh checkpoint estimate matches its host payload");
+    check(!conversation_checkpoint_host_bytes(ss, g, live.ids.size(), std::numeric_limits<size_t>::max(),
+                                              checkpoint_bytes, error), "checkpoint image size overflow rejected");
     image.kv.reserve((size_t) g.n_qsa_layers() + 1);
     if (!zero_qsa) { image.kv.push_back(first.image(g, true)); image.kv.push_back(last.image(g, true)); }
     image.kv.push_back(draft.image(g, false));

@@ -77,7 +77,7 @@ def _value(f: BinaryIO, type: int) -> Value:
     if type == 9:
         et = _unpack(f, 'I')
         n = _unpack(f, 'Q')
-        if et == 9 or n > 10_000_000:
+        if et not in (*SCALARS, 8) or n > 10_000_000:
             raise ValueError('unsupported or oversized GGUF array')
         return Value(type, [_value(f, et).data for _ in range(n)], et)
     raise ValueError(f'unsupported metadata type {type}')
@@ -119,8 +119,9 @@ class Reader:
                 if k in self.metadata:
                     raise ValueError(f'duplicate metadata key {k}')
                 self.metadata[k] = _value(f, _unpack(f, 'I'))
-            self.alignment = self.metadata.get('general.alignment', Value(4, 32)).data
-            if not isinstance(self.alignment, int) or self.alignment <= 0 or self.alignment & (self.alignment - 1):
+            alignment = self.metadata.get('general.alignment', Value(4, 32))
+            self.alignment = alignment.data
+            if alignment.type != 4 or self.alignment <= 0 or self.alignment & (self.alignment - 1):
                 raise ValueError('invalid GGUF alignment')
             for _ in range(nt):
                 name = _string(f)
@@ -161,9 +162,10 @@ class Reader:
 
 def write(path: str | Path, metadata: dict[str, Value],
           tensors: list[tuple[str, tuple[int, ...], int, bytes]]) -> None:
-    alignment = metadata.get('general.alignment', Value(4, 32)).data
-    if alignment != 32:
-        raise ValueError('writer requires alignment 32')
+    alignment_value = metadata.get('general.alignment', Value(4, 32))
+    alignment = alignment_value.data
+    if alignment_value.type != 4 or alignment != 32:
+        raise ValueError('writer requires uint32 alignment 32')
     names = [t[0] for t in tensors]
     if len(names) != len(set(names)):
         raise ValueError('duplicate tensor names')
@@ -203,11 +205,15 @@ def pack_q4_1(values: np.ndarray) -> bytes:
         raise ValueError('Q4_1 needs finite, complete blocks')
     x = x.reshape(-1, 32)
     m = x.min(axis=1)
-    d = (x.max(axis=1) - m) / 15
+    with np.errstate(over='ignore', invalid='ignore'):
+        d = (x.max(axis=1) - m) / 15
+        stored_d, stored_m = d.astype('<f2'), m.astype('<f2')
+    if not np.isfinite(stored_d).all() or not np.isfinite(stored_m).all():
+        raise ValueError('Q4_1 scale and minimum must be representable in F16')
     inv = np.divide(1, d, out=np.zeros_like(d), where=d != 0)
     q = np.floor((x - m[:, None]) * inv[:, None] + 0.5).clip(0, 15).astype(np.uint8)
     result = np.empty((len(x), 20), dtype=np.uint8)
-    result[:, :2] = d.astype('<f2').view(np.uint8).reshape(-1, 2)
-    result[:, 2:4] = m.astype('<f2').view(np.uint8).reshape(-1, 2)
+    result[:, :2] = stored_d.view(np.uint8).reshape(-1, 2)
+    result[:, 2:4] = stored_m.view(np.uint8).reshape(-1, 2)
     result[:, 4:] = q[:, :16] | (q[:, 16:] << 4)
     return result.tobytes()

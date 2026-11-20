@@ -525,24 +525,37 @@ void test_cgroup_memory_budget() {
             "valid oversized inactive-file counter was rejected");
     require(bytes == 12 * GiB - 12 * GiB / 64, "inactive-file accounting exceeded charged current usage");
 
-    // 149: the ACTIVE page cache is reclaimable too (memory.stat "file" = active + inactive), as MemAvailable counts
+    // 149: the active disk page cache is reclaimable too, as MemAvailable counts
     // it: a 32 GiB group whose own reads left 26 GiB of cache, 25 GiB of it active, and 4.5 GiB of anonymous memory
-    CgroupMemoryStat active_cache{30 * GiB + GiB / 2, 1 * GiB, 0, 0, true, 26 * GiB};
+    CgroupMemoryStat active_cache{30 * GiB + GiB / 2, 1 * GiB, 0, 0, true, 26 * GiB, 0};
     require(cgroup_available_bytes(32 * GiB, active_cache, bytes), "a memory.stat with file was rejected");
     require(bytes == 32 * GiB - (4 * GiB + GiB / 2) - 32 * GiB / 64, "the active page cache was not credited");
     // without "file" (an old kernel's stat): inactive_file alone, as before
     CgroupMemoryStat no_file{30 * GiB + GiB / 2, 1 * GiB, 0, 0, true};
     require(cgroup_available_bytes(32 * GiB, no_file, bytes) && bytes == 32 * GiB - (29 * GiB + GiB / 2) - GiB / 2,
             "a stat without file did not fall back to inactive_file");
+    auto no_shmem = active_cache;
+    no_shmem.shmem.reset();
+    require(cgroup_available_bytes(32 * GiB, no_shmem, bytes) && bytes == 2 * GiB,
+            "a stat without shmem credited the full file counter");
+    CgroupMemoryStat only_shmem{5 * GiB, 0, 0, 0, true, 5 * GiB, 5 * GiB};
+    require(cgroup_available_bytes(29 * GiB, only_shmem, bytes) && bytes == 24 * GiB,
+            "shared memory alone must remain charged under the cap");
+    CgroupMemoryStat mixed_cache{16 * GiB, GiB, 0, 0, true, 12 * GiB, 5 * GiB};
+    require(cgroup_available_bytes(32 * GiB, mixed_cache, bytes) && bytes == 23 * GiB - GiB / 2,
+            "active disk cache must still be credited with shmem present");
+    CgroupMemoryStat racy_shmem{5 * GiB, 0, 0, 0, true, 10 * GiB, 5 * GiB};
+    require(cgroup_available_bytes(29 * GiB, racy_shmem, bytes) && bytes == 24 * GiB,
+            "racy file counter credited charged shmem");
     // dirty and writeback pages of the active cache stay charged; a small cache keeps half of itself
-    CgroupMemoryStat dirty_active{20 * GiB, 1 * GiB, 2 * GiB, 1 * GiB, true, 10 * GiB};
+    CgroupMemoryStat dirty_active{20 * GiB, 1 * GiB, 2 * GiB, 1 * GiB, true, 10 * GiB, 0};
     require(cgroup_available_bytes(32 * GiB, dirty_active, bytes) && bytes == 32 * GiB - (20 * GiB - 7 * GiB) - GiB / 2,
             "dirty / writeback pages of the active cache were counted as reclaimable");
-    CgroupMemoryStat tiny_cache{8 * GiB, 0, 0, 0, true, 256ull << 20};
+    CgroupMemoryStat tiny_cache{8 * GiB, 0, 0, 0, true, 256ull << 20, 0};
     require(cgroup_available_bytes(32 * GiB, tiny_cache, bytes) && bytes == 32 * GiB - 8 * GiB + (128ull << 20),
             "a small clean cache was not kept at half");
     // "file" larger than what is charged (a racy read) is bounded by memory.current
-    CgroupMemoryStat racy{4 * GiB, 1 * GiB, 0, 0, true, 9 * GiB};
+    CgroupMemoryStat racy{4 * GiB, 1 * GiB, 0, 0, true, 9 * GiB, 0};
     require(cgroup_available_bytes(32 * GiB, racy, bytes) && bytes == 32 * GiB - GiB / 2,
             "a file counter above memory.current escaped the bound");
 
@@ -662,12 +675,28 @@ void test_host_memory() {
     put("fs/box/memory.max", std::to_string(48 * GiB) + "\n");
     put("fs/box/memory.current", std::to_string(16 * GiB) + "\n");
     put("fs/box/memory.stat", "inactive_file " + std::to_string(4 * GiB) + "\nfile_dirty 0\nfile_writeback 0\n");
-    require(probe("0::/box\n") && m.available == 36 * GiB - 48 * GiB / 64 && m.cgroup_limit == 48 * GiB, "v2 limit");
+    require(probe("0::/box\n") && m.available == 36 * GiB - 48 * GiB / 64 && m.cgroup_limit == 48 * GiB &&
+            m.cgroup_available == m.available, "v2 limit and remaining capacity");
+    put("meminfo", "MemTotal: 134217728 kB\nMemAvailable: 1048576 kB\n");
+    require(probe("0::/box\n") && m.available == GiB && m.cgroup_available == 36 * GiB - 48 * GiB / 64,
+            "host pressure must not overwrite cgroup remaining capacity");
+    put("meminfo", "MemTotal: 134217728 kB\nMemAvailable: 104857600 kB\n");
+    put("fs/memory.max", std::to_string(64 * GiB) + "\n");
+    put("fs/memory.current", std::to_string(60 * GiB) + "\n");
+    put("fs/memory.stat", "inactive_file 0\nfile_dirty 0\nfile_writeback 0\n");
+    require(probe("0::/box\n") && m.cgroup_limit == 48 * GiB && m.cgroup_available == 4 * GiB,
+            "a larger ancestor limit can have less remaining capacity than the child");
+    fs::remove(t.path / "fs/memory.max");
+    fs::remove(t.path / "fs/memory.current");
     // 149: with "file" (active + inactive cache) the active part counts too: 12 GiB of cache, 4 GiB anonymous
     put("fs/box/memory.stat", "file " + std::to_string(12 * GiB) + "\ninactive_file " + std::to_string(4 * GiB) +
-                              "\nfile_dirty 0\nfile_writeback 0\n");
+                              "\nshmem 0\nfile_dirty 0\nfile_writeback 0\n");
     require(probe("0::/box\n") && m.available == 44 * GiB - 48 * GiB / 64 && m.cgroup_limit == 48 * GiB,
             "v2 limit, the active page cache credited");
+    put("fs/box/memory.stat", "file " + std::to_string(12 * GiB) + "\nshmem " + std::to_string(12 * GiB) +
+                              "\ninactive_file 0\nfile_dirty 0\nfile_writeback 0\n");
+    require(probe("0::/box\n") && m.cgroup_available == 32 * GiB,
+            "v2 shmem is parsed and stays charged");
     put("fs/box/memory.stat", "inactive_file " + std::to_string(4 * GiB) + "\nfile_dirty 0\nfile_writeback 0\n");
     put("fs/box/memory.max", "max\n");
     require(probe("0::/box\n") && m.available == 100 * GiB && m.cgroup_limit == ~0ull, "v2 max");
@@ -681,7 +710,7 @@ void test_host_memory() {
     put("fs/memory/memory.limit_in_bytes", "9223372036854771712\n");   // the root: unlimited
     put("fs/memory/memory.usage_in_bytes", std::to_string(50 * GiB) + "\n");
     require(probe("12:cpu,cpuacct:/docker/abc\n4:memory:/docker/abc\n1:name=systemd:/docker/abc\n") &&
-            m.available == 22 * GiB && m.cgroup_limit == 32 * GiB, "v1 limit");
+            m.available == 22 * GiB && m.cgroup_limit == 32 * GiB && m.cgroup_available == 22 * GiB, "v1 limit");
     put("fs/memory/docker/abc/memory.limit_in_bytes", "9223372036854771712\n");
     require(probe("4:memory:/docker/abc\n") && m.available == 100 * GiB && m.cgroup_limit == ~0ull, "v1 unlimited");
     // a v1 group not visible here (another namespace): MemAvailable alone
