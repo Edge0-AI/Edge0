@@ -292,6 +292,9 @@ KEEPALIVE_S = 10.0          # a held-back tool argument leaves the stream quiet:
 # setup) makes them post /v1/v1/messages; these two paths mean the same as the real ones. Nothing else is aliased.
 V1_V1_ALIASES = {"/v1/v1/messages": "/v1/messages", "/v1/v1/messages/count_tokens": "/v1/messages/count_tokens"}
 CTX_SLACK = 8               # `strata --serve` rejects prompt + max_new + 8 > context: keep the same margin here
+# A request with no max tokens, or one that is shortened to the room left, needs at least this much room to answer;
+# with less it is a 400, so that an agent compacts its history instead of getting a reply cut off after a few tokens.
+MIN_ANSWER_ROOM = 2048
 # The live tok/s is a rate over a window, not a mean since the first token: a mean reads ~1/elapsed at the first
 # token (the Monitor showed five-digit numbers) and then undershoots for the first second of every answer.
 RATE_WINDOW_S = 2.0
@@ -412,6 +415,33 @@ class MockEngine:
 
 class EngineDied(RuntimeError):
     """The engine process ended in the middle of a request (issue #27: on Linux, the out-of-memory killer)."""
+
+
+class ContextOverflow(ValueError):
+    """A request that does not fit the context: a 400 that each API answers in its own overflow shape (OpenAI's
+    `context_length_exceeded` code, Anthropic's "prompt is too long").  `prompt` is the prompt's tokens, `limit` the
+    longest prompt this request could have had."""
+
+    def __init__(self, message, prompt, limit):
+        super().__init__(message)
+        self.prompt, self.limit = prompt, limit
+
+
+def invalid_request_body(path, error) -> dict:
+    """The 400 body of a request refused before it ran, in the shape of the API it was sent to: Anthropic's
+    {"type": "error", "error": {...}} for /v1/messages (a context overflow reads "prompt is too long: N tokens > M
+    maximum", what Anthropic answers and its clients compact on), OpenAI's {"error": {...}} otherwise (with the
+    `context_length_exceeded` code for an overflow).  /v1/responses has its own (serve/responses.py)."""
+    message = str(error)
+    overflow = isinstance(error, ContextOverflow)
+    if path.startswith("/v1/messages"):
+        if overflow:
+            message = f"prompt is too long: {error.prompt} tokens > {max(0, error.limit)} maximum; {message}"
+        return {"type": "error", "error": {"type": "invalid_request_error", "message": message}}
+    body = {"type": "invalid_request_error", "message": message}
+    if overflow:
+        body["code"] = "context_length_exceeded"
+    return {"error": body}
 
 
 class EngineStarting(RuntimeError):
@@ -5287,26 +5317,35 @@ class Service:
             if ctx <= 0:
                 raise EngineStarting("the engine is starting (a minute or two); try again shortly")
         room = ctx - CTX_SLACK - len(ids)
-        if max_new is None or max_new <= 0 or (self.fit_max_tokens and room < 1):
+        unset = max_new is None or max_new <= 0
+        if (unset or (max_new > room and self.fit_max_tokens)) and room < MIN_ANSWER_ROOM:
+            # A prompt refused for the context is not kept (#567): the client cannot resend it unchanged.  The
+            # other refusals (engine starting, images) keep it: the same prompt comes back and its encode is reused.
+            self.forget_prompt(encoded_ids)
             if room < 1:
-                # A prompt refused for the context is not kept (#567): the client cannot resend it unchanged.  The
-                # other refusals (engine starting, images) keep it: the same prompt comes back and its encode is reused.
-                self.forget_prompt(encoded_ids)
-                raise ValueError("request exceeds the context window: "
-                                 f"prompt ({len(ids)} tokens) leaves no room to answer in the context "
-                                 f"({ctx}); requests are never truncated")
+                raise ContextOverflow("request exceeds the context window: "
+                                      f"prompt ({len(ids)} tokens) leaves no room to answer in the context "
+                                      f"({ctx}); requests are never truncated", len(ids), ctx - CTX_SLACK - 1)
+            # a max tokens that fits is answered however small the room; one to be filled or shortened needs a
+            # useful answer's room, or the reply is cut off after a few tokens with nothing to tell the client why
+            raise ContextOverflow("request exceeds the context window: "
+                                  f"prompt ({len(ids)} tokens) leaves only {room} tokens to answer in the context "
+                                  f"({ctx}), less than the {MIN_ANSWER_ROOM} an answer needs; requests are never "
+                                  "truncated", len(ids), ctx - CTX_SLACK - MIN_ANSWER_ROOM)
+        if unset:
             max_new = room
         elif max_new > room:
             if not self.fit_max_tokens:
                 self.forget_prompt(encoded_ids)
-                raise ValueError("request exceeds the context window: "
-                                 f"prompt ({len(ids)} tokens) + max tokens ({max_new}) exceeds the context "
-                                 f"({ctx}); requests are never truncated. Send a smaller "
-                                 f"max_tokens (at most {max(0, room)} here), or add \"fit_max_tokens\": true to the "
-                                 "model's strata-<model>.json to shorten it to the room left (#545)")
-            print(f"[strata] max_tokens {max_new} shortened to {max(1, room)}: the prompt ({len(ids)} tokens) leaves that much "
+                raise ContextOverflow("request exceeds the context window: "
+                                      f"prompt ({len(ids)} tokens) + max tokens ({max_new}) exceeds the context "
+                                      f"({ctx}); requests are never truncated. Send a smaller "
+                                      f"max_tokens (at most {max(0, room)} here), or add \"fit_max_tokens\": true to the "
+                                      "model's strata-<model>.json to shorten it to the room left (#545)",
+                                      len(ids), ctx - CTX_SLACK - max_new)
+            print(f"[strata] max_tokens {max_new} shortened to {room}: the prompt ({len(ids)} tokens) leaves that much "
                   f"of the context ({ctx}); \"fit_max_tokens\": false answers 400 instead", flush=True)
-            max_new = max(1, room)          # a shorter completion beats a 400 (the default)
+            max_new = room                  # a shorter completion beats a 400 (the default)
         if images:
             # The request's images in one file for GENI (~10 MB a picture), written once nothing above refuses the
             # request: one refused after it (the engine starting, no room) left it in the vision directory for good,
@@ -7415,7 +7454,8 @@ def make_handler(svc: Service):
             try:
                 self._post()
             except BadBody as e:                              # #893: a malformed or oversized chunked body
-                self._json(e.status, {"error": {"type": "invalid_request_error", "message": str(e)}})
+                path = V1_V1_ALIASES.get(self.path.split("?")[0].rstrip("/"), self.path.split("?")[0].rstrip("/"))
+                self._json(e.status, invalid_request_body(path, e))
 
         def _post(self):
             if not self._authorized():
@@ -7551,7 +7591,7 @@ def make_handler(svc: Service):
                 if path == "/v1/responses":
                     self._json(400, responses_error_body(str(e)))
                 else:
-                    self._json(400, {"error": {"type": "invalid_request_error", "message": str(e)}})
+                    self._json(400, invalid_request_body(path, e))
             except ModelBusy as e:
                 self._json(409, {"error": {"type": "model_busy", "message": str(e)}})
             except QueueWaitExpired as e:
@@ -7575,9 +7615,9 @@ def make_handler(svc: Service):
                 import traceback
                 print(f"[strata] 400 malformed request ({type(e).__name__}: {e}):\n" + traceback.format_exc(),
                       flush=True)
-                body = {"error": {"type": "invalid_request_error",
-                                  "message": f"the request is malformed ({type(e).__name__}: {e})"}}
-                self._json(400, responses_error_body(body["error"]["message"]) if path == "/v1/responses" else body)
+                message = f"the request is malformed ({type(e).__name__}: {e})"
+                self._json(400, responses_error_body(message) if path == "/v1/responses"
+                           else invalid_request_body(path, message))
             except EngineDied as e:                          # before the answer started (not streamed)
                 self._json(503, {"error": {"type": "server_error", "message": f"{e}; the next request restarts it"}})
             except EngineStuck as e:                         # an unload or restart that could not end the engine
