@@ -9360,7 +9360,14 @@ int main(int argc, char** argv) {
             }
             src.set_extra_drop_files(std::move(drop));
         }
-        const std::vector<std::pair<int32_t, int32_t>>& rank_all = profile_all.empty() ? profile : profile_all;
+        // A peer GPU's experts are left out of the RAM copy, as a helper GPU's are (stage_pairs below): the RAM that
+        // duplication takes goes to colder experts instead.
+        std::vector<std::pair<int32_t, int32_t>> rank_np;
+        const auto& rank_src = profile_all.empty() ? profile : profile_all;
+        if (peer.valid())
+            for (const auto& pr : rank_src)
+                if (!peer.has(pr.first, pr.second)) rank_np.push_back(pr);
+        const std::vector<std::pair<int32_t, int32_t>>& rank_all = peer.valid() ? rank_np : rank_src;
         bool resident_ok = src.pin_cache_complement(xcache, err, o.resident_pin, stage_pairs, lend_from,
                                                     o.resident_headroom, o.resident_budget, &rank_all);
         std::string whole_err;
