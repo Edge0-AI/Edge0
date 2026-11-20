@@ -366,11 +366,7 @@ function Invoke-Build {
         $compilerText = "clang-cl $($Matches[1]) with the MSVC libraries and linker"
         $pathFlags = '`-ffile-prefix-map` (C/C++), `/d1trimfile` (CUDA host code)'
     } else {
-        $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
-        $banner = (& cl 2>&1 | ForEach-Object { "$_" }) -join ' '
-        $ErrorActionPreference = $old
-        if ($banner -notmatch 'Version (\S+)') { Die 'cannot read the MSVC version' }
-        $compilerText = "MSVC $($Matches[1])"
+        $compilerText = "MSVC $((Get-Item -LiteralPath $cl).VersionInfo.FileVersionRaw.ToString(3))"
         $pathFlags = '`/d1trimfile` (C/C++ and CUDA host code)'
     }
     $wheelList = (Get-ChildItem $sp -Directory -Filter '*.dist-info' | Sort-Object Name | ForEach-Object {
