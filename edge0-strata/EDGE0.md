@@ -363,6 +363,62 @@ Measured with `tools\strata_bench.py` on the card above (Ryzen 7 5800X3D, 64 GB 
 The prompt speed is far below the NVIDIA figures because the fused latent kernels have no HIP version yet. Answer
 quality on this build has only been checked by hand.
 
+## Build (Linux, AMD gfx11, experimental)
+
+The HIP backend has gfx11 matrix-core kernels for the latent prompt path on Edge0 145B Q3_K:
+
+- `lat_dense_w11.cu` runs the Q8_0 D and U projections. The Q4 dense file keeps the generic kernels.
+- `lat_q3k_w11.cu` runs Q3_K gate/up, SwiGLU, and IQ4_NL down for the routed expert stage.
+
+These kernels were tested on a Radeon RX 7900 XTX (gfx1100, 24 GB) with ROCm 7.2.4. Other AMD architectures and
+the Windows HIP build have not been tested with them.
+
+Requirements: ROCm 7 with the HIP compiler, hipBLAS and hipBLASLt (the commands below were run in the
+`docker.io/rocm/dev-ubuntu-24.04:7.2.4-complete` image), CMake 3.24 or newer, Ninja, and Python 3.10 or newer.
+
+1. Unpack llama.cpp into `third_party/llama.cpp` as in step 1 of [Build (Linux, NVIDIA)](#build-linux-nvidia).
+2. Build for gfx1100. `STRATA_PREFILL_MMQ=ON` is required because it supplies the HIP implementations and links the
+   latent prefill entry points.
+
+   ```sh
+   export HIP_PATH="$(hipconfig -R)"
+   cmake -S . -B build-hip -G Ninja -DCMAKE_BUILD_TYPE=Release \
+     -DSTRATA_ENABLE_HIP=ON -DSTRATA_ENABLE_CUDA=OFF -DCMAKE_HIP_ARCHITECTURES=gfx1100 \
+     -DCMAKE_HIP_COMPILER="$(hipconfig -l)/clang++" -DCMAKE_PREFIX_PATH=/opt/rocm \
+     -DSTRATA_PREFILL_MMQ=ON -DSTRATA_NATIVE_EXPERTS=ON \
+     -DSTRATA_GGML_DIR="$PWD/third_party/llama.cpp"
+   cmake --build build-hip --target strata
+   ```
+
+3. Copy the tuning table matching the card and hipBLASLt version into `tuning/` beside the engine. ROCm 7.2.4 uses
+   hipBLASLt 1.2.2, represented by table version `100202`:
+
+   ```sh
+   mkdir -p build-hip/tuning
+   cp tools/hip/gfx1100-hipblaslt-100202.txt build-hip/tuning/
+   ```
+
+   The engine prints `hipBLASLt tuning enabled` when it loads the table. On the machine below, a 5.3K-token prompt
+   ran at 724.9 tok/s without the table and 1157.2 to 1202.0 tok/s with it while using the MMQ expert stage.
+4. Use the Edge0 145B Q3_K configuration with `STRATA_LATENT_DENSE_FMT=8`,
+   `STRATA_LATENT_FUSED_DU=1`, `STRATA_LATENT_FUSED=1`, and `STRATA_LAT_FUSED_Q3K=1`.
+   `STRATA_LATENT_FUSED_DU=0` keeps the generic D/U kernels; setting both A-stage flags to `0` and
+   `STRATA_LATENT_MMQ=1` keeps the MMQ expert stage.
+
+Measured on a Ryzen 5 5600X with 64 GB RAM and one RX 7900 XTX on PCIe 4.0 x16, `--vram-reserve-mib 700`, ROCm
+7.2.4, one fresh prompt of each size:
+
+| Configuration | 5.3K prompt tok/s | 21K prompt tok/s |
+| --- | ---: | ---: |
+| gfx11 D/U and expert stage, hipBLASLt tuning | 1181.8 | 1302.1 |
+| gfx11 D/U, MMQ expert stage, hipBLASLt tuning | 1157.2-1202.0 | 1285.3-1316.1 |
+| generic D/U, MMQ expert stage, no tuning | 269.1 | 280.2 |
+
+The gfx11 and MMQ expert-stage measurements overlap within run-to-run variation; these results do not establish an
+expert-stage speedup. The D projection matched 99.9987% of the generic path's q8_1 codes, with every mismatch off by
+one, and dumped U rows agreed to 2e-7. Across four prompts, first-token top-8 log-probabilities moved by at most 0.48
+for the gfx11 expert stage against MMQ and 0.57 for the gfx11 projections against the generic D/U path.
+
 ## Launch contract with edge0-infer
 
 - `edge0/CONTRACT` holds one integer, the contract version (currently 5). `edge0-infer` refuses to start an

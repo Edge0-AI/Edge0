@@ -2516,7 +2516,9 @@ if(STRATA_NATIVE_EXPERTS)
       src/prefill/lat_q3k_gu.cu
       src/prefill/lat_q3k_swiglu.cu
       src/prefill/lat_q3k_fused.cu
-      src/prefill/moe_fused_q3k.cu)
+      src/prefill/moe_fused_q3k.cu
+      src/prefill/lat_dense_w11.cu    # the latent D / U projections on the gfx11 matrix cores
+      src/prefill/lat_q3k_w11.cu)     # the latent A stage (Q3_K gate/up, IQ4_NL down) on the gfx11 matrix cores
     list(APPEND _strata_mmq_sources ${_strata_lat_hip_sources})
     if(STRATA_MMQ_KQUANTS)
       # the same K-quant instances as the CUDA branch: on HIP they serve the dense GGUF projections
