@@ -27,7 +27,7 @@
 <a href="https://huggingface.co/Edge0/Edge0-35B-A3B-preview"><img src="assets/edge0-release/badges/Edge0-35B-A3B-preview-hf-badge.svg" alt="Hugging Face / Edge0-35B-A3B-preview" height="18"></a> <a href="https://huggingface.co/Edge0/Edge0-8B-A1B-preview"><img src="assets/edge0-release/badges/Edge0-8B-A1B-preview-hf-badge.svg" alt="Hugging Face / Edge0-8B-A1B-preview" height="18"></a> <a href="https://www.modelscope.cn/models/Edge0/Edge0-35B-A3B-preview"><img src="assets/edge0-release/badges/Edge0-35B-A3B-preview-modelscope-badge.svg" alt="ModelScope / Edge0-35B-A3B-preview" height="18"></a> <a href="https://www.modelscope.cn/models/Edge0/Edge0-8B-A1B-preview"><img src="assets/edge0-release/badges/Edge0-8B-A1B-preview-modelscope-badge.svg" alt="ModelScope / Edge0-8B-A1B-preview" height="18"></a>
 </p>
 
-<p align="center"><a href="README.md">English</a> · <a href="README_zh.md">中文</a> · 日本語 · <a href="README_es.md">Español</a> · <a href="README_fr.md">Français</a></p>
+<p align="center"><a href="README.md">English</a> · <a href="README_zh.md">中文</a> · 日本語 · <a href="README_es.md">Español</a> · <a href="README_fr.md">Français</a> · <a href="README_ko.md">한국어</a></p>
 
 <p align="center"><a href="#news">ニュース</a> · <a href="#about">概要</a> · <a href="#models">モデル</a> · <a href="#quality">性能評価</a> · <a href="#benchmark">速度測定</a> · <a href="#getting-started">はじめに</a></p>
 
