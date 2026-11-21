@@ -811,7 +811,20 @@ bool Window::init(const strata::core::ModelGeometry& g, strata::core::SessionSta
         if (st_pred_) predL_ = A(4 * (size_t) 48 * MAXT * 512);
         if (st_pred_ && st_->ahead2() > 0) predL2_ = A(4 * (size_t) 48 * MAXT * 512);
     }
-    ple_on_ = ss.ple.ready() && f_.find("blk.1.ple_key.weight") != nullptr;
+    // A pack whose weights carry per-layer embeddings must not run without them: PLE off used to be a silent
+    // degradation - the model answered, fluently and wrongly - with only "PLE OFF" in the startup line.  The PLE
+    // table comes from the pack's PLE file (ple-fp8.gguf) and the block needs every ple_* tensor, so this is either
+    // an incomplete model folder or a mismatch between the folder and the config that named it.
+    const bool pack_has_ple = f_.find("blk.1.ple_key.weight") != nullptr;
+    ple_on_ = ss.ple.ready() && pack_has_ple;
+    if (pack_has_ple && !ple_on_) {
+        err = "the model has per-layer embeddings (blk.1.ple_key.weight) but they are not usable: the PLE table is "
+              "not open or one of its projection tensors is missing.  Serving it would run the model without PLE, "
+              "so it is refused instead.  Check that the pack's PLE file (ple-fp8.gguf) sits in the model folder, "
+              "is complete, and belongs to this model.";
+        std::fprintf(stderr, "strata metal: PLE is off, refusing to run: %s\n", err.c_str());
+        return false;
+    }
     if (ple_on_ && T("blk.1.ple_conv1d.weight").type == ref::F32) {
         const gguf::Tensor& k = T("blk.1.ple_conv1d.weight");
         const size_t ne = k.bytes / 4;
