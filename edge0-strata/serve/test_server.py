@@ -5300,6 +5300,25 @@ class SilentEngine(unittest.TestCase):
             engine.proc.poll.return_value = -6
             self.assertIn("a hang it caught", engine.death_note())
 
+    def test_death_note_surfaces_a_metal_command_buffer_failure(self):
+        # #248: the Metal refusal is the engine's last line but has no "strata"/"ERR" prefix. Without matching it the
+        # note on a Mac falls through to the Linux dmesg hint, which names the wrong cause and the wrong command.
+        import tempfile
+        engine = self.bare(0.3)
+        engine.last_err = None
+        with tempfile.TemporaryDirectory() as d:
+            engine.log_path = os.path.join(d, "e.log")
+            with open(engine.log_path, "w", encoding="utf-8") as f:
+                f.write("strata metal: prompt kernels for chunks of 8192 rows\n")
+                f.write("mtl: command buffer failed: Insufficient Memory "
+                        "(00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)\n")
+            engine.proc.poll.return_value = 5
+            note = engine.death_note()
+            self.assertIn("mtl: command buffer failed", note)    # its own words, not the generic hint
+            self.assertIn("Metal memory limit", note)            # and what to do about them
+            self.assertIn("STRATA_METAL_PROMPT_CHUNK=1024", note)
+            self.assertNotIn("dmesg", note)
+
     def test_death_note_names_a_finite_rttime_limit_on_signal_9(self):
         # #3238: a hard RLIMIT_RTTIME of 0 (PipeWire without rtkit) kills with -9 and no OOM; say so, not "out of RAM"
         import sys
