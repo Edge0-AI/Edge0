@@ -1,6 +1,6 @@
 # Strata standard benchmark protocol
 
-**Status: draft, implemented in `strata bench run`; pilot validation pending.** Protocol ID: `strata-qwen38-thinking-v1-draft.1`.
+**Status: draft, implemented in the Terminal's `strata bench run`; pilot validation pending.** Protocol ID: `strata-qwen38-thinking-v1-draft.1`.
 Result format: `strata-standard-benchmark`, schema version `1`.
 
 This document specifies a repeatable community benchmark and the data a future website can consume. The
@@ -27,12 +27,14 @@ output or add a protocol ID to make it appear standard. The draft becomes final 
 
 ## Run it
 
-Install Strata, set up the Flash-Next model you want to measure, and close other programs that use the GPU. Then:
+Install Strata, set up the Flash-Next model you want to measure, and close other programs that use the GPU. Then, with the Terminal launcher (`bin/strata` from a source checkout, or `strata` from the Terminal archive):
 
 ```sh
 strata bench run --profile NAME --track default --track-notes "0.2.1 release, setup defaults"
 strata bench run --url http://127.0.0.1:8080          # a server that is already running
 ```
+
+The engine binary (`strata.exe`) has no `bench` subcommand, so running these against it fails with `unknown argument: bench`.
 
 With `--profile` the runner starts that profile's engine, waits for the model to load, runs the protocol, and stops
 the engine it started. If the profile is already serving, the runner uses that server and leaves it running; a
