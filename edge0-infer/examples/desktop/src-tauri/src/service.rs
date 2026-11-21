@@ -53,6 +53,9 @@ pub struct Settings {
     #[serde(default)]
     pub context: Option<u32>,
     pub theme: String,
+    /// Interface language: `system` follows the OS, `en` and `ru` pin one. Added after 0.3.x, so it defaults.
+    #[serde(default)]
+    pub language: String,
     pub generation_style: String,
     pub system_prompt: String,
     pub lan_access: bool,
@@ -82,6 +85,7 @@ impl Default for Settings {
             port: None,
             context: None,
             theme: "system".into(),
+            language: "system".into(),
             generation_style: "precise".into(),
             system_prompt: String::new(),
             lan_access: false,

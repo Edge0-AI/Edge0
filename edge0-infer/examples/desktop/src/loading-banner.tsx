@@ -1,5 +1,8 @@
+import { useT } from './i18n';
+
 /** The status line while a model loads or unloads. Only a load can be cancelled. */
 export function LoadingBanner({ unloading, cancel }: { unloading: boolean; cancel: () => void }) {
-  if (unloading) return <div className="loading" role="status">Unloading model…</div>;
-  return <div className="loading" role="status">Loading model… First load can take several minutes. <button className="btn sm" onClick={cancel}>Cancel</button></div>;
+  const t = useT();
+  if (unloading) return <div className="loading" role="status">{t('loading.unloading')}</div>;
+  return <div className="loading" role="status">{t('loading.firstLoad')} <button className="btn sm" onClick={cancel}>{t('common.cancel')}</button></div>;
 }
