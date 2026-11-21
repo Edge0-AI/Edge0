@@ -731,7 +731,10 @@ class CodexCompactionOverHttp(Server):
         self.engine.turns, self.engine.script = 0, self.engine.scripts[0]
         user = {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "what is in a.txt?"}]}
         turn = {"model": "m", "instructions": "You are a coding agent.", "input": [user], "tools": self.tools,
-                "include": ["reasoning.encrypted_content"], "client_metadata": codex_meta("turn")}
+                "include": ["reasoning.encrypted_content"], "client_metadata": codex_meta("turn"),
+                # a budget that fits: in the context cut to the compaction below, an unset one is refused
+                # (less room than MIN_ANSWER_ROOM), and the turn's tool calls need more than the compaction's 64
+                "max_output_tokens": 1024}
         code, r = self.post(turn)
         self.assertEqual(code, 200, r)
         self.first_prompt = self.tok.decode(self.engine.last_prompt)

@@ -2,6 +2,7 @@
 
 #include "strata/core/expert_cache.hpp"
 #include "strata/core/expert_source.hpp"
+#include "strata/core/latent_dense.hpp"
 
 #include <cuda_runtime.h>
 
@@ -38,6 +39,14 @@ public:
     bool begin(int64_t layer, const float* x, const int32_t* ids, int64_t n_tok,
                int64_t k, const int32_t* kind, const int32_t* primary_res,
                std::string& err);
+    /// Latent MoE: bind the session D/U (mmap) + group labels and geometry; begin_latent then computes A-only and
+    /// packs q8_1 hq rows for the primary's U stage (latent_u_matvec), mirroring PeerExperts::launch_latent.
+    void bind_latent(strata::core::LatentDense* dense, const int32_t* host_labels, int64_t n_layers, int64_t E,
+                     int64_t ELL, int64_t I, int64_t H, int G);
+    bool latent() const { return latent_; }
+    /// The latent A-only share of one layer, for the entries this helper takes (kind == -1, in cache, not primary).
+    bool begin_latent(int64_t layer, const float* xl, const uint32_t* xlseq, const int32_t* ids, int64_t n_tok,
+                      int64_t k, const int32_t* kind, const int32_t* primary_res, std::string& err);
     bool owns(int64_t index) const { return owned_[(size_t) index] != 0; }
     /// This helper's cache holds (layer, expert): begin() will take its rows unless the plan gave them away.
     bool holds(int64_t layer, int32_t expert) const { return cache_.slot_of(layer, expert) >= 0; }
@@ -102,6 +111,17 @@ private:
     std::vector<int32_t> group_of_, group_id_;
     std::vector<int32_t> start_, dst_, tok_, original_row_;
     std::vector<unsigned long long> ptr_;
+
+    // Latent MoE (bind_latent): A-only + q8_1 hq packing; U runs on the primary.
+    bool latent_ = false;
+    bool launched_hq_ = false;
+    int64_t lat_ELL_ = 0, lat_I_ = 0, lat_H_ = 0, lat_E_ = 0;
+    int lat_G_ = 8;
+    const int32_t* host_labels_ = nullptr;
+    float* d_xl_ = nullptr;      // kWindowMaxT * G rows x ELL floats
+    uint8_t* d_xlq_ = nullptr;   // q8_1 of the xl rows
+    float* d_yl_ = nullptr;      // CAP x ELL f32 (A output)
+    uint8_t* d_uq_ = nullptr;    // q8_1 of yl (hq)
 };
 
 /// STRATA_PREFILL_HELPER_SOURCE (opt-in): the prompt path's view of the expert tiers, where a blob a helper

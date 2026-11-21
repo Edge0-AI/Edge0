@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest import mock
 
 from serve.frontend import ChatTemplate
-from serve.server import CTX_SLACK, ByteTokenizer, MockEngine, Service, serve
+from serve.server import CTX_SLACK, MIN_ANSWER_ROOM, ByteTokenizer, MockEngine, Service, serve
 
 ROOT = Path(__file__).resolve().parents[1]
 CTX = 131072
@@ -82,8 +82,14 @@ class ContextOverflow(unittest.TestCase):
                         if path == "/v1/responses":
                             self.assertEqual(error["code"], "context_length_exceeded")
                             self.assertEqual(error["param"], "input")
+                        elif path == "/v1/chat/completions":
+                            self.assertEqual(set(error), {"type", "message", "code"})
+                            self.assertEqual(error["code"], "context_length_exceeded")
                         else:
+                            # Anthropic's shape and wording: its clients compact on "prompt is too long"
+                            self.assertEqual(body["type"], "error")
                             self.assertEqual(set(error), {"type", "message"})
+                            self.assertTrue(message.startswith(f"prompt is too long: {prompt} tokens > "), message)
 
     def test_default_service_shortens_an_overshooting_budget_in_every_dialect(self):
         # the Service default (fit_max_tokens on): a prompt that fits is answered, streaming or not; the prompt that
@@ -112,6 +118,63 @@ class ContextOverflow(unittest.TestCase):
                     status, _, body = self.post(path, key, CTX - CTX_SLACK, 1)
                     self.assertEqual(status, 400, body)
                     self.assertIn("exceeds the context window", body["error"]["message"])
+
+    def test_a_filled_or_shortened_budget_needs_room_for_an_answer(self):
+        # An agent near the end of the context got replies cut off after ~100 tokens (finish "length", nothing shown)
+        # and kept going; a 400 makes it compact.  Below MIN_ANSWER_ROOM an unset or shortened budget is refused.
+        just_short = CTX - CTX_SLACK - MIN_ANSWER_ROOM + 1          # leaves MIN_ANSWER_ROOM - 1
+        enough = CTX - CTX_SLACK - MIN_ANSWER_ROOM                  # leaves exactly MIN_ANSWER_ROOM
+        for path, key in APIS:
+            with self.subTest(path=path):
+                self.svc.fit_max_tokens = True
+                for budget in (None, CTX):                          # unset: fill the room; CTX: shortened to it
+                    with mock.patch.object(self.engine, "generate") as generate:
+                        status, _, body = self.post(path, key, just_short, budget)
+                    generate.assert_not_called()
+                    self.assertEqual(status, 400, body)
+                    message = body["error"]["message"]
+                    self.assertIn("exceeds the context window", message)
+                    self.assertIn(f"leaves only {MIN_ANSWER_ROOM - 1} tokens to answer", message)
+                    if path == "/v1/messages":
+                        self.assertTrue(message.startswith(
+                            f"prompt is too long: {just_short} tokens > {enough} maximum; "), message)
+                    else:
+                        self.assertEqual(body["error"]["code"], "context_length_exceeded")
+                    with mock.patch.object(self.engine, "generate", wraps=self.engine.generate) as generate:
+                        status, _, body = self.post(path, key, enough, budget)
+                    self.assertEqual(status, 200, body)
+                    self.assertEqual(generate.call_args.args[1], MIN_ANSWER_ROOM)
+                # a budget that fits is answered however little room is left (a provider probe asks for 1 token)
+                status, _, body = self.post(path, key, just_short, MIN_ANSWER_ROOM - 1)
+                self.assertEqual(status, 200, body)
+                # strict (fit_max_tokens off): an explicit budget keeps its own 400, unset ones the room check
+                self.svc.fit_max_tokens = False
+                status, _, body = self.post(path, key, just_short, MIN_ANSWER_ROOM)
+                self.assertEqual(status, 400, body)
+                self.assertIn(f"+ max tokens ({MIN_ANSWER_ROOM})", body["error"]["message"])
+                status, _, body = self.post(path, key, just_short, None)
+                self.assertEqual(status, 400, body)
+                self.assertIn("leaves only", body["error"]["message"])
+
+    def test_other_refusals_answer_in_the_api_shape(self):
+        # a body that is not JSON: Anthropic's error shape on /v1/messages, OpenAI's (no overflow code) on chat
+        for path, anthropic in (("/v1/chat/completions", False), ("/v1/messages", True)):
+            with self.subTest(path=path):
+                c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+                try:
+                    c.request("POST", path, b"{not json", {"Content-Type": "application/json"})
+                    r = c.getresponse()
+                    status, body = r.status, json.loads(r.read())
+                finally:
+                    c.close()
+                self.assertEqual(status, 400, body)
+                self.assertEqual(body["error"]["type"], "invalid_request_error")
+                self.assertNotIn("code", body["error"])
+                if anthropic:
+                    self.assertEqual(body["type"], "error")
+                    self.assertFalse(body["error"]["message"].startswith("prompt is too long"))
+                else:
+                    self.assertNotIn("type", body)
 
     def test_prepare_preserves_prompt_and_budget_limits(self):
         ids = [ord("x")] * 1024

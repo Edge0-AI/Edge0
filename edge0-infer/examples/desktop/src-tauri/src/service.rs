@@ -30,9 +30,18 @@ fn trace(message: &str) {
 pub fn trace_line(message: &str) {
     trace(message);
 }
+/// The settings format this build writes (`settings_version`). A file without it was written by 0.3.0 or
+/// earlier and is migrated once when it is read (`Manager::load_settings_unlocked`).
+pub const SETTINGS_VERSION: u32 = 1;
+/// Where the engine comes from: the edge0-infer shipped with this app (no path is stored) or a path the user chose.
+pub const ENGINE_BUILTIN: &str = "builtin";
+pub const ENGINE_CUSTOM: &str = "custom";
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Settings {
+    /// `builtin` or `custom`.
+    pub engine_source: String,
+    /// The edge0-infer of `custom`; saved only then. `settings` fills in the built-in one for `builtin`, in memory.
     pub executable: String,
     pub assets: Vec<String>,
     pub device: String,
@@ -40,29 +49,51 @@ pub struct Settings {
     pub prefill_device: String,
     #[serde(default)]
     pub port: Option<u16>,
+    /// Context length in tokens passed to `serve --context`; `None` keeps the model's own length.
+    #[serde(default)]
+    pub context: Option<u32>,
     pub theme: String,
     pub generation_style: String,
     pub system_prompt: String,
     pub lan_access: bool,
+    /// Last folder chosen in the download dialog. The Settings page does not show it.
+    #[serde(default)]
+    pub download_directory: String,
+    /// Unfinished `<folder>.partial` directories. The Settings page does not show them.
+    #[serde(default)]
+    pub partial_downloads: Vec<PartialDownload>,
+    /// The format of the file; missing (0) in files written by 0.3.0 and earlier.
+    #[serde(default)]
+    pub settings_version: u32,
+}
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+pub struct PartialDownload {
+    pub id: String,
+    pub directory: String,
 }
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            engine_source: ENGINE_BUILTIN.into(),
             executable: String::new(),
             assets: vec![],
             device: platform::default_device().into(),
             prefill_device: String::new(),
             port: None,
+            context: None,
             theme: "system".into(),
             generation_style: "precise".into(),
             system_prompt: String::new(),
             lan_access: false,
+            download_directory: String::new(),
+            partial_downloads: vec![],
+            settings_version: SETTINGS_VERSION,
         }
     }
 }
 impl Settings {
     fn validate(&self) -> Result<(), String> {
-        const WHERE: &str = "Set it under Settings > Engine > Executable, or under Other location… on Choose a model.";
+        const WHERE: &str = "Choose Custom under Settings > Engine and select an edge0-infer executable, or use Built-in.";
         if self.executable.trim().is_empty() {
             return Err(format!("No edge0-infer executable is configured. {WHERE}"));
         }
@@ -75,6 +106,9 @@ impl Settings {
         self.validate_options()
     }
     fn validate_options(&self) -> Result<(), String> {
+        if ![ENGINE_BUILTIN, ENGINE_CUSTOM].contains(&self.engine_source.as_str()) {
+            return Err("Unknown engine source".into());
+        }
         if !["cpu", "metal", "vulkan"].contains(&self.device.as_str())
             || !["", "cpu", "metal", "vulkan"].contains(&self.prefill_device.as_str())
         {
@@ -82,6 +116,12 @@ impl Settings {
         }
         if self.port == Some(0) {
             return Err("Server port must be blank or an integer from 1 to 65535".into());
+        }
+        if self
+            .context
+            .is_some_and(|tokens| tokens < 4 * 1024 || tokens % 1024 != 0)
+        {
+            return Err("Context length must be a whole number of K, 4K or more".into());
         }
         Ok(())
     }
@@ -100,6 +140,8 @@ pub struct Inspection {
     model_id: Option<String>,
     total_bytes: Option<u64>,
     file_count: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    model_name: Option<String>,
 }
 #[derive(Serialize)]
 pub struct Service {
@@ -134,18 +176,31 @@ const RESERVES_FILE: &str = "memory-reserve.json";
 /// The reserve that brings a load with `memory` free up to RELOAD_BELOW, a quarter more since leaving 1 GiB of VRAM
 /// free was measured to free ~0.75 GiB of commit memory; None when it is enough already or would pass MAX_RESERVE_MIB.
 fn next_reserve(memory: CommitMemory, current: Option<u32>) -> Option<u32> {
-    let short_mib = RELOAD_BELOW.checked_sub(memory.available).filter(|short| *short > 0)? >> 20;
+    let short_mib = RELOAD_BELOW
+        .checked_sub(memory.available)
+        .filter(|short| *short > 0)?
+        >> 20;
     let base = current.filter(|mib| *mib > 0).unwrap_or(ENGINE_RESERVE_MIB);
     let added = (short_mib * 5 / 4).div_ceil(256) * 256;
-    (base < MAX_RESERVE_MIB).then(|| (u64::from(base) + added).min(u64::from(MAX_RESERVE_MIB)) as u32)
+    (base < MAX_RESERVE_MIB)
+        .then(|| (u64::from(base) + added).min(u64::from(MAX_RESERVE_MIB)) as u32)
 }
 fn reserve_arguments(mib: u32) -> [String; 4] {
-    ["--strata-arg".into(), "--vram-reserve-mib".into(), "--strata-arg".into(), mib.to_string()]
+    [
+        "--strata-arg".into(),
+        "--vram-reserve-mib".into(),
+        "--strata-arg".into(),
+        mib.to_string(),
+    ]
 }
 /// The committed bytes of the last STEADY_SAMPLES samples stay within STEADY_TOLERANCE of each other.
 fn steady(committed: &VecDeque<u64>) -> bool {
     committed.len() >= STEADY_SAMPLES
-        && committed.iter().max().zip(committed.iter().min()).is_some_and(|(max, min)| max - min <= STEADY_TOLERANCE)
+        && committed
+            .iter()
+            .max()
+            .zip(committed.iter().min())
+            .is_some_and(|(max, min)| max - min <= STEADY_TOLERANCE)
 }
 pub fn commit_warning(memory: CommitMemory) -> Option<String> {
     (memory.available < LOW_COMMIT).then(|| {
@@ -178,6 +233,10 @@ pub struct Manager {
     epoch: AtomicU64,
     closing: AtomicBool,
     start_lock: Mutex<()>,
+    settings_lock: Mutex<()>,
+    /// The edge0-infer shipped with this app, found once at start-up. Used for this run only and never saved:
+    /// on macOS an app opened from where it was downloaded runs from a different temporary path each launch.
+    bundled: Option<String>,
     // Whether `inspect --json` reported each model directory as delegated (run by an external engine).
     delegated: Mutex<BTreeMap<PathBuf, bool>>,
     #[cfg(test)]
@@ -190,6 +249,7 @@ struct PublicationGate {
     entered: std::sync::Barrier,
     resume: std::sync::Barrier,
 }
+#[cfg(test)]
 pub fn arguments(settings: &Settings, model: &str) -> Vec<String> {
     arguments_for(settings, model, false)
 }
@@ -203,7 +263,16 @@ pub fn arguments_for(settings: &Settings, model: &str, delegated: bool) -> Vec<S
     if !delegated && !settings.prefill_device.is_empty() {
         args.extend(["--prefill-device".into(), settings.prefill_device.clone()]);
     }
+    // Both kinds of model take it: a delegated one passes it on as its engine's maximum context.
+    if let Some(tokens) = settings.context {
+        args.extend(["--context".into(), tokens.to_string()]);
+    }
     args
+}
+fn directory_name_is_partial(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.ends_with(".partial"))
 }
 fn is_delegated(report: Option<&serde_json::Value>) -> bool {
     report
@@ -271,13 +340,27 @@ fn record_matches(record: &PidRecord, actual: Option<PathBuf>) -> bool {
 }
 impl Manager {
     pub fn new(directory: PathBuf) -> Result<Self, String> {
+        let bundled = std::env::current_exe()
+            .ok()
+            .as_deref()
+            .and_then(Path::parent)
+            .and_then(bundled_executable);
+        Self::with_bundled(directory, bundled)
+    }
+    /// `new` with the bundled edge0-infer given instead of looked up next to the running executable.
+    pub(crate) fn with_bundled(
+        directory: PathBuf,
+        bundled: Option<String>,
+    ) -> Result<Self, String> {
         fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
         Ok(Self {
             directory,
+            bundled,
             process: Mutex::new(None),
             epoch: AtomicU64::new(0),
             closing: AtomicBool::new(false),
             start_lock: Mutex::new(()),
+            settings_lock: Mutex::new(()),
             delegated: Mutex::new(BTreeMap::new()),
             #[cfg(test)]
             publication_gate: Mutex::new(None),
@@ -288,38 +371,149 @@ impl Manager {
     pub(crate) fn record_path(&self) -> PathBuf {
         self.directory.join("serve-pid.json")
     }
-    pub fn settings(&self) -> Result<Settings, String> {
+    /// Reads `settings.json`. A file without `settings_version` was written by 0.3.0 or earlier, whose
+    /// `executable` may be a path an older app found by itself (an older package's edge0-infer): it is migrated
+    /// once, whatever the path is - `executable` cleared, the engine source set to Built-in, the version written -
+    /// and the file as it was is kept beside it as `settings.json.before-engine-source`.
+    fn load_settings_unlocked(&self) -> Result<Settings, String> {
         let path = self.directory.join("settings.json");
-        let mut settings: Settings = if path.exists() {
-            serde_json::from_slice(&fs::read(path).map_err(|e| e.to_string())?)
-                .map_err(|e| format!("Cannot read settings: {e}"))?
-        } else {
-            Settings::default()
-        };
-        // No executable chosen yet: use the edge0-infer that the release package ships with this app.
-        if settings.executable.trim().is_empty() {
-            if let Some(found) = std::env::current_exe()
-                .ok()
-                .as_deref()
-                .and_then(Path::parent)
-                .and_then(bundled_executable)
-            {
-                settings.executable = found;
-            }
+        if !path.exists() {
+            return Ok(Settings::default());
+        }
+        let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+        let mut settings: Settings =
+            serde_json::from_slice(&bytes).map_err(|e| format!("Cannot read settings: {e}"))?;
+        if settings.settings_version < SETTINGS_VERSION {
+            fs::write(
+                self.directory.join("settings.json.before-engine-source"),
+                &bytes,
+            )
+            .map_err(|e| format!("Cannot keep the old settings: {e}"))?;
+            settings.executable.clear();
+            settings.engine_source = ENGINE_BUILTIN.into();
+            settings.settings_version = SETTINGS_VERSION;
+            self.store_settings_unlocked(&settings)?;
+            trace("settings: migrated a file without settings_version to the built-in engine");
         }
         Ok(settings)
     }
+    fn store_settings_unlocked(&self, settings: &Settings) -> Result<(), String> {
+        write_json(&self.directory.join("settings.json"), settings)
+    }
+    /// Built-in: the edge0-infer that the release package ships with this app, in memory only (never saved).
+    /// Without one (a development build) `executable` is left empty and `resolve` reports it. Custom: as saved.
+    fn fill_executable(&self, settings: &mut Settings) {
+        if settings.engine_source != ENGINE_CUSTOM {
+            settings.executable = self.bundled.clone().unwrap_or_default();
+        }
+    }
+    /// The settings to start or inspect with: the engine of their source, checked.
+    fn resolve(&self, settings: &Settings) -> Result<Settings, String> {
+        let mut resolved = settings.clone();
+        if resolved.engine_source != ENGINE_CUSTOM {
+            match &self.bundled {
+                Some(found) => resolved.executable = found.clone(),
+                None => {
+                    return Err(
+                        "This build of the app has no built-in edge0-infer. Choose Custom under \
+                                Settings > Engine and select an edge0-infer executable."
+                            .into(),
+                    )
+                }
+            }
+        }
+        resolved.validate()?;
+        Ok(resolved)
+    }
+    pub fn settings(&self) -> Result<Settings, String> {
+        let _guard = self.settings_lock.lock().map_err(|e| e.to_string())?;
+        let mut settings = self.load_settings_unlocked()?;
+        let kept: Vec<_> = settings
+            .partial_downloads
+            .iter()
+            .filter(|item| Path::new(&item.directory).is_dir())
+            .cloned()
+            .collect();
+        if kept.len() != settings.partial_downloads.len() {
+            settings.partial_downloads = kept;
+            self.store_settings_unlocked(&settings)?;
+        }
+        self.fill_executable(&mut settings);
+        Ok(settings)
+    }
     pub fn save_settings(&self, settings: &Settings) -> Result<(), String> {
+        let _guard = self.settings_lock.lock().map_err(|e| e.to_string())?;
+        let existing = self.load_settings_unlocked()?;
+        let mut settings = settings.clone();
+        // The model page saves the whole settings object and can be holding a copy from before a download
+        // updated these fields. Keep the on-disk download bookkeeping.
+        settings.download_directory = existing.download_directory.clone();
+        settings.partial_downloads = existing.partial_downloads.clone();
+        settings.settings_version = SETTINGS_VERSION;
         settings.validate_options()?;
-        if !settings.executable.is_empty() {
-            settings.validate()?;
+        // Only Custom stores a path. Built-in stores none (the page holds the path `settings` filled in for this
+        // run). A Custom path that is unchanged stays even when it is missing for now (an unplugged drive); a new
+        // one must exist.
+        if settings.engine_source == ENGINE_CUSTOM {
+            let unchanged = existing.engine_source == ENGINE_CUSTOM
+                && settings.executable == existing.executable;
+            if !settings.executable.is_empty() && !unchanged {
+                settings.validate()?;
+            }
+        } else {
+            settings.executable.clear();
         }
         if !["system", "light", "dark"].contains(&settings.theme.as_str())
             || !["precise", "balanced", "creative"].contains(&settings.generation_style.as_str())
         {
             return Err("Invalid appearance or generation setting".into());
         }
-        write_json(&self.directory.join("settings.json"), settings)
+        self.store_settings_unlocked(&settings)
+    }
+    fn with_settings<T>(
+        &self,
+        update: impl FnOnce(&mut Settings) -> Result<T, String>,
+    ) -> Result<T, String> {
+        let _guard = self.settings_lock.lock().map_err(|e| e.to_string())?;
+        let mut settings = self.load_settings_unlocked()?;
+        let result = update(&mut settings)?;
+        self.store_settings_unlocked(&settings)?;
+        Ok(result)
+    }
+    /// Records the `.partial` directory of a download. `chosen` is the save location picked for a new download;
+    /// resuming passes `None` and keeps the last chosen location.
+    pub fn note_download_started(
+        &self,
+        chosen: Option<&str>,
+        id: &str,
+        partial: &str,
+    ) -> Result<(), String> {
+        self.with_settings(|settings| {
+            if let Some(save_dir) = chosen {
+                settings.download_directory = save_dir.to_owned();
+            }
+            settings.partial_downloads.retain(|item| item.id != id);
+            settings.partial_downloads.push(PartialDownload {
+                id: id.to_owned(),
+                directory: partial.to_owned(),
+            });
+            Ok(())
+        })
+    }
+    pub fn note_download_finished(&self, save_dir: &str, id: &str) -> Result<(), String> {
+        self.with_settings(|settings| {
+            if !settings.assets.iter().any(|asset| asset == save_dir) {
+                settings.assets.push(save_dir.to_owned());
+            }
+            settings.partial_downloads.retain(|item| item.id != id);
+            Ok(())
+        })
+    }
+    pub fn forget_download(&self, id: &str) -> Result<(), String> {
+        self.with_settings(|settings| {
+            settings.partial_downloads.retain(|item| item.id != id);
+            Ok(())
+        })
     }
     pub fn recover(&self) -> Result<(), String> {
         // The process lock covers all PID-file reads, publication and removal.
@@ -368,13 +562,16 @@ impl Manager {
         Ok(())
     }
     pub fn inspect(&self, settings: &Settings) -> Result<Vec<Inspection>, String> {
-        settings.validate()?;
+        let settings = &self.resolve(settings)?;
         let executable = Path::new(&settings.executable)
             .canonicalize()
             .map_err(|e| e.to_string())?;
         let mut candidates = vec![];
         for location in &settings.assets {
             let root = Path::new(location);
+            if directory_name_is_partial(root) {
+                continue;
+            }
             let mut children = vec![];
             if root.is_dir()
                 && !root.join("assets.tsv").exists()
@@ -384,7 +581,7 @@ impl Manager {
                     children = entries
                         .filter_map(Result::ok)
                         .map(|entry| entry.path())
-                        .filter(|path| path.is_dir())
+                        .filter(|path| path.is_dir() && !directory_name_is_partial(path))
                         .collect();
                     children.sort();
                 }
@@ -440,6 +637,13 @@ impl Manager {
                 let file_count = report
                     .as_ref()
                     .and_then(|report| Some(report.get("files")?.as_array()?.len()));
+                let model_name = report.as_ref().and_then(|report| {
+                    report
+                        .get("model_name")
+                        .and_then(|value| value.as_str())
+                        .filter(|value| !value.is_empty())
+                        .map(str::to_owned)
+                });
                 let model_id = if ok {
                     match serde_json::from_slice::<serde_json::Value>(&output.stdout)
                         .ok()
@@ -468,6 +672,7 @@ impl Manager {
                     model_id,
                     total_bytes,
                     file_count,
+                    model_name,
                 })
             })
             .collect()
@@ -480,7 +685,7 @@ impl Manager {
         if self.closing.load(Ordering::SeqCst) {
             return Err("The application is shutting down".into());
         }
-        settings.validate().map_err(|e| {
+        let settings = &self.resolve(settings).map_err(|e| {
             trace(&format!("validate failed: {e}"));
             e
         })?;
@@ -535,12 +740,21 @@ impl Manager {
             return Err("Model loading cancelled".into());
         }
         let key = canonical(model).to_string_lossy().into_owned();
-        let mut reserve = if delegated { self.reserves().get(&key).copied() } else { None };
+        let mut reserve = if delegated {
+            self.reserves().get(&key).copied()
+        } else {
+            None
+        };
         let mut reloads = 0;
         // the commit memory free and the reserve of the load before a reload
         let mut previous: Option<(u64, u32)> = None;
         loop {
-            let mut args = network_arguments(settings, model, &self.directory.join("api-token"), delegated);
+            let mut args = network_arguments(
+                settings,
+                model,
+                &self.directory.join("api-token"),
+                delegated,
+            );
             if let Some(mib) = reserve.filter(|mib| *mib > 0) {
                 args.extend(reserve_arguments(mib));
             }
@@ -561,17 +775,33 @@ impl Manager {
             let (Some(memory), Some(next)) = (memory, next) else {
                 let memory_warning = memory.and_then(commit_warning);
                 trace(&format!("ready: {url} memory_warning={memory_warning:?}"));
-                return Ok(Service { url, pid, memory_warning });
+                return Ok(Service {
+                    url,
+                    pid,
+                    memory_warning,
+                });
             };
-            trace(&format!("reloading with --vram-reserve-mib {next}: {} bytes of commit memory free", memory.available));
+            trace(&format!(
+                "reloading with --vram-reserve-mib {next}: {} bytes of commit memory free",
+                memory.available
+            ));
             self.remember_reserve(&key, next);
-            previous = Some((memory.available, reserve.filter(|mib| *mib > 0).unwrap_or(ENGINE_RESERVE_MIB)));
+            previous = Some((
+                memory.available,
+                reserve.filter(|mib| *mib > 0).unwrap_or(ENGINE_RESERVE_MIB),
+            ));
             reserve = Some(next);
             reloads += 1;
         }
     }
     /// Starts edge0-infer with `args` in place of any running one and waits for its ready line: the URL and pid.
-    fn launch(&self, epoch: u64, settings: &Settings, executable: &Path, args: Vec<String>) -> Result<(String, u32), String> {
+    fn launch(
+        &self,
+        epoch: u64,
+        settings: &Settings,
+        executable: &Path,
+        args: Vec<String>,
+    ) -> Result<(String, u32), String> {
         self.stop_process(None).map_err(|e| {
             trace(&format!("stop_process failed: {e}"));
             e
@@ -614,7 +844,10 @@ impl Manager {
             }
         };
         let pid = child.id();
-        let record = PidRecord { pid, executable: executable.to_path_buf() };
+        let record = PidRecord {
+            pid,
+            executable: executable.to_path_buf(),
+        };
         if let Err(e) = write_json(&self.record_path(), &record) {
             trace(&format!(
                 "write_json({}) failed: {e}",
@@ -802,26 +1035,36 @@ impl Manager {
             return Ok(());
         }
         if let Some(mut process) = current.take() {
-            let _ = platform::graceful(process.child.id());
-            let deadline = Instant::now() + Duration::from_secs(15);
-            loop {
-                match process.child.try_wait() {
-                    Ok(Some(_)) => break,
-                    Ok(None) if Instant::now() < deadline => {
-                        thread::sleep(Duration::from_millis(50))
-                    }
-                    _ => {
-                        process.child.kill().map_err(|e| e.to_string())?;
-                        process.child.wait().map_err(|e| e.to_string())?;
-                        break;
-                    }
-                }
-            }
+            end_child(&mut process.child, STOP_GRACE)?;
         }
         if self.record_path().exists() {
             fs::remove_file(self.record_path()).map_err(|e| e.to_string())?;
         }
         Ok(())
+    }
+}
+/// How long `serve` may take to stop after it was asked to before it is killed.
+const STOP_GRACE: Duration = Duration::from_secs(15);
+/// How a child process ended: on the stop request, or killed once `grace` ran out.
+#[derive(Debug, PartialEq)]
+enum Ending {
+    Requested,
+    Killed,
+}
+/// Ask the child to stop, give it `grace` to exit, then kill it; returns once it has exited.
+fn end_child(child: &mut Child, grace: Duration) -> Result<Ending, String> {
+    let _ = platform::graceful(child.id());
+    let deadline = Instant::now() + grace;
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => return Ok(Ending::Requested),
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(50)),
+            _ => {
+                child.kill().map_err(|e| e.to_string())?;
+                child.wait().map_err(|e| e.to_string())?;
+                return Ok(Ending::Killed);
+            }
+        }
     }
 }
 impl Drop for Manager {
@@ -836,7 +1079,10 @@ pub(crate) fn bundled_executable(app_dir: &Path) -> Option<String> {
     let name = format!("edge0-infer{}", std::env::consts::EXE_SUFFIX);
     let mut candidates = vec![app_dir.join(&name)];
     if app_dir.file_name().is_some_and(|n| n == "MacOS") {
-        if let Some(contents) = app_dir.parent().filter(|c| c.file_name().is_some_and(|n| n == "Contents")) {
+        if let Some(contents) = app_dir
+            .parent()
+            .filter(|c| c.file_name().is_some_and(|n| n == "Contents"))
+        {
             candidates.push(contents.join("Resources").join(&name));
         }
     }
@@ -884,11 +1130,17 @@ mod tests {
         assert_eq!(bundled_executable(&macos), None);
         let inside = resources.join(&name);
         fs::write(&inside, b"").unwrap();
-        assert_eq!(bundled_executable(&macos), Some(inside.to_string_lossy().into_owned()));
+        assert_eq!(
+            bundled_executable(&macos),
+            Some(inside.to_string_lossy().into_owned())
+        );
         // The one beside the executable comes first.
         let beside = macos.join(&name);
         fs::write(&beside, b"").unwrap();
-        assert_eq!(bundled_executable(&macos), Some(beside.to_string_lossy().into_owned()));
+        assert_eq!(
+            bundled_executable(&macos),
+            Some(beside.to_string_lossy().into_owned())
+        );
         // Resources is only looked at from Contents/MacOS.
         let other = root.join("bin");
         fs::create_dir_all(&other).unwrap();
@@ -905,24 +1157,47 @@ mod tests {
         committed.push_back(gb(90.2));
         assert!(steady(&committed));
         // the expert cache filling: 40 GB in a few samples
-        let filling: VecDeque<u64> = (0..STEADY_SAMPLES).map(|i| gb(61.0 + 3.5 * i as f64)).collect();
+        let filling: VecDeque<u64> = (0..STEADY_SAMPLES)
+            .map(|i| gb(61.0 + 3.5 * i as f64))
+            .collect();
         assert!(!steady(&filling));
     }
     #[test]
     fn warns_only_when_little_commit_memory_is_left() {
         // measured on a 128 GB RTX Spark N1X with Edge0 145B loaded: 0.6 GB left of 104.5 GB
-        let low = commit_warning(CommitMemory { limit: 104_500_000_000, available: 600_000_000 }).unwrap();
+        let low = commit_warning(CommitMemory {
+            limit: 104_500_000_000,
+            available: 600_000_000,
+        })
+        .unwrap();
         assert!(low.starts_with("Low memory:"), "{low}");
         assert!(low.contains("0.6 GB of the 104.5 GB"), "{low}");
         assert!(low.contains("page file"), "{low}");
         // the same PC with the development model: 24 GB left
-        assert_eq!(commit_warning(CommitMemory { limit: 102_500_000_000, available: 24_000_000_000 }), None);
-        assert!(commit_warning(CommitMemory { limit: 100 * GIB, available: LOW_COMMIT - 1 }).is_some());
-        assert!(commit_warning(CommitMemory { limit: 100 * GIB, available: LOW_COMMIT }).is_none());
+        assert_eq!(
+            commit_warning(CommitMemory {
+                limit: 102_500_000_000,
+                available: 24_000_000_000
+            }),
+            None
+        );
+        assert!(commit_warning(CommitMemory {
+            limit: 100 * GIB,
+            available: LOW_COMMIT - 1
+        })
+        .is_some());
+        assert!(commit_warning(CommitMemory {
+            limit: 100 * GIB,
+            available: LOW_COMMIT
+        })
+        .is_none());
     }
     #[test]
     fn reloads_with_a_reserve_covering_the_commit_memory_short_of_the_target() {
-        let free = |available| CommitMemory { limit: 100 * GIB, available };
+        let free = |available| CommitMemory {
+            limit: 100 * GIB,
+            available,
+        };
         assert_eq!(next_reserve(free(RELOAD_BELOW), None), None);
         // 0.5 GiB free is 9728 MiB short: 12160 MiB at the measured ratio, 12288 in whole 256 MiB, on top of the engine's 700
         assert_eq!(next_reserve(free(GIB / 2), None), Some(700 + 12288));
@@ -941,7 +1216,10 @@ mod tests {
         manager.remember_reserve("/models/a", 9000);
         manager.remember_reserve("/models/b", 0);
         manager.remember_reserve("/models/a", 12000);
-        assert_eq!(manager.reserves(), BTreeMap::from([("/models/a".into(), 12000), ("/models/b".into(), 0)]));
+        assert_eq!(
+            manager.reserves(),
+            BTreeMap::from([("/models/a".into(), 12000), ("/models/b".into(), 0)])
+        );
     }
     #[test]
     fn parses_only_local_ready_lines() {
@@ -1063,6 +1341,7 @@ mod tests {
             assert!(status.success());
             let manager = Arc::new(Manager::new(directory.join("config")).unwrap());
             let settings = Settings {
+                engine_source: ENGINE_CUSTOM.into(),
                 executable: executable.to_string_lossy().into(),
                 assets: ["ready", "second", "pending", "error", "missing"]
                     .map(str::to_string)
@@ -1166,6 +1445,117 @@ mod tests {
             .start(&fixture.settings, &fixture.directory.to_string_lossy())
             .is_err());
     }
+    #[test]
+    fn scan_skips_partial_directories() {
+        let mut fixture = Fixture::new();
+        let root = fixture.directory.join("models");
+        let ready = root.join("X");
+        let partial = root.join("X.partial");
+        fs::create_dir_all(&ready).unwrap();
+        fs::create_dir_all(partial.join("nested")).unwrap();
+        fs::write(
+            partial.join("model.json"),
+            r#"{"model_name":"edge0-145b-q3k"}"#,
+        )
+        .unwrap();
+        fixture.settings.assets = vec![root.to_string_lossy().into_owned()];
+        let found = fixture.manager.inspect(&fixture.settings).unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].path, ready.to_string_lossy());
+        fixture.settings.assets = vec![partial.to_string_lossy().into_owned()];
+        assert!(fixture
+            .manager
+            .inspect(&fixture.settings)
+            .unwrap()
+            .is_empty());
+    }
+    #[test]
+    fn save_settings_keeps_download_bookkeeping() {
+        let fixture = Fixture::new();
+        let save = fixture
+            .directory
+            .join("Edge0-models")
+            .to_string_lossy()
+            .into_owned();
+        let partial_path = fixture.directory.join("Edge0-145B-q3k.partial");
+        fs::create_dir_all(&partial_path).unwrap();
+        let partial = partial_path.to_string_lossy().into_owned();
+        fixture
+            .manager
+            .note_download_started(Some(&save), "edge0-145b-q3k", &partial)
+            .unwrap();
+        let mut wiped = fixture.settings.clone();
+        wiped.download_directory.clear();
+        wiped.partial_downloads.clear();
+        wiped.theme = "dark".into();
+        fixture.manager.save_settings(&wiped).unwrap();
+        let loaded = fixture.manager.settings().unwrap();
+        assert_eq!(loaded.download_directory, save);
+        assert_eq!(
+            loaded.partial_downloads,
+            vec![PartialDownload {
+                id: "edge0-145b-q3k".into(),
+                directory: partial
+            }]
+        );
+        assert_eq!(loaded.theme, "dark");
+    }
+    #[test]
+    fn missing_partial_directory_is_dropped_without_persisting_a_bundled_executable() {
+        let fixture = Fixture::new();
+        let gone = fixture
+            .directory
+            .join("gone.partial")
+            .to_string_lossy()
+            .into_owned();
+        fixture
+            .manager
+            .note_download_started(
+                Some(&fixture.directory.to_string_lossy()),
+                "edge0-120b-q3k",
+                &gone,
+            )
+            .unwrap();
+        let loaded = fixture.manager.settings().unwrap();
+        assert!(loaded.partial_downloads.is_empty());
+        let disk: Settings = serde_json::from_slice(
+            &fs::read(fixture.directory.join("config").join("settings.json")).unwrap(),
+        )
+        .unwrap();
+        assert!(disk.executable.is_empty());
+        assert!(disk.partial_downloads.is_empty());
+    }
+    #[test]
+    fn first_finished_download_adds_the_save_location_once() {
+        let fixture = Fixture::new();
+        let save = fixture.directory.join("Edge0-models");
+        fs::create_dir_all(&save).unwrap();
+        let path = save.to_string_lossy().into_owned();
+        fixture
+            .manager
+            .note_download_finished(&path, "edge0-145b-q3k")
+            .unwrap();
+        fixture
+            .manager
+            .note_download_finished(&path, "edge0-145b-q3k")
+            .unwrap();
+        let settings = fixture.manager.settings().unwrap();
+        assert_eq!(
+            settings
+                .assets
+                .iter()
+                .filter(|asset| *asset == &path)
+                .count(),
+            1
+        );
+        fixture.manager.forget_download("edge0-145b-q3k").unwrap();
+        assert!(fixture
+            .manager
+            .settings()
+            .unwrap()
+            .partial_downloads
+            .is_empty());
+    }
     fn check_delegated_directory(model_name: &str, identifier: &str) {
         let mut fixture = Fixture::new();
         let root = fixture.directory.join("models");
@@ -1201,6 +1591,13 @@ mod tests {
                 .all(|p| !p.ends_with("mtp") && !p.ends_with("tokenizer")));
             let entry = found.iter().find(|a| a.path == big_path).unwrap();
             assert!(entry.ok && entry.model_id.as_deref() == Some(identifier));
+            assert_eq!(entry.model_name.as_deref(), Some(model_name));
+            if let Some(native_entry) = found
+                .iter()
+                .find(|item| item.path == native.to_string_lossy())
+            {
+                assert!(native_entry.model_name.is_none());
+            }
         }
         assert!(fixture.manager.delegated.lock().unwrap()[&big.canonicalize().unwrap()]);
         assert!(!fixture.manager.delegated.lock().unwrap()[&native.canonicalize().unwrap()]);
@@ -1376,6 +1773,56 @@ mod tests {
         // Remove the synthetic self-PID record before Fixture's normal shutdown.
         fs::remove_file(fixture.manager.record_path()).unwrap();
     }
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn stop_asks_first_and_kills_only_after_the_grace_period() {
+        use std::os::unix::process::ExitStatusExt;
+        // Exits on the stop request: never killed, and ended by that request (SIGTERM).
+        let mut obeys = Command::new("sh")
+            .args(["-c", "while :; do sleep 0.05; done"])
+            .spawn()
+            .unwrap();
+        thread::sleep(Duration::from_millis(100));
+        assert_eq!(
+            end_child(&mut obeys, Duration::from_secs(10)).unwrap(),
+            Ending::Requested
+        );
+        assert_eq!(obeys.wait().unwrap().signal(), Some(libc::SIGTERM));
+        // Ignores it: killed, and only after the grace period.
+        let mut ignores = Command::new("sh")
+            .args(["-c", "trap '' TERM; while :; do sleep 0.05; done"])
+            .spawn()
+            .unwrap();
+        thread::sleep(Duration::from_millis(100));
+        let started = Instant::now();
+        let grace = Duration::from_millis(500);
+        assert_eq!(end_child(&mut ignores, grace).unwrap(), Ending::Killed);
+        assert!(started.elapsed() >= grace);
+        assert_eq!(ignores.wait().unwrap().signal(), Some(libc::SIGKILL));
+    }
+    #[cfg(windows)]
+    #[test]
+    fn serve_ends_when_the_app_is_killed() {
+        // Killing the app closes every handle it holds, which is what dropping its Lifetime does here.
+        let fixture = Fixture::new();
+        let mut command = Command::new(&fixture.settings.executable);
+        command.args(["serve", "--model", "ready"]);
+        platform::configure(&mut command).unwrap();
+        let mut child = command.spawn().unwrap();
+        let lifetime = platform::attach(&child).unwrap();
+        assert!(lifetime.in_job(), "the engine was not put into a job");
+        thread::sleep(Duration::from_millis(200));
+        assert!(child.try_wait().unwrap().is_none());
+        drop(lifetime);
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while child.try_wait().unwrap().is_none() {
+            assert!(
+                Instant::now() < deadline,
+                "serve still running after the app's handles closed"
+            );
+            thread::sleep(Duration::from_millis(50));
+        }
+    }
     #[test]
     fn shutdown_reaps_the_child_and_rejects_a_previously_queued_start() {
         let fixture = Fixture::new();
@@ -1427,6 +1874,179 @@ mod tests {
         assert!(!fixture.manager.status().running);
         assert!(!fixture.manager.record_path().exists());
     }
+    /// A manager whose bundled edge0-infer is the one `bundled_executable` finds in `<root>/app`, if any.
+    fn bundled_manager(root: &Path, ship: bool) -> (Manager, Option<String>) {
+        let app = root.join("app");
+        fs::create_dir_all(&app).unwrap();
+        if ship {
+            fs::write(
+                app.join(format!("edge0-infer{}", std::env::consts::EXE_SUFFIX)),
+                b"",
+            )
+            .unwrap();
+        }
+        let bundled = bundled_executable(&app);
+        assert_eq!(bundled.is_some(), ship);
+        let manager = Manager::with_bundled(root.join("config"), bundled.clone()).unwrap();
+        (manager, bundled)
+    }
+    fn settings_on_disk(manager: &Manager) -> Vec<u8> {
+        fs::read(manager.directory.join("settings.json")).unwrap()
+    }
+    fn disk(manager: &Manager) -> Settings {
+        serde_json::from_slice(&settings_on_disk(manager)).unwrap()
+    }
+    /// A settings.json as 0.3.0 and earlier wrote it: no `settings_version`, no `engine_source`.
+    fn write_old_settings(manager: &Manager, executable: &str) {
+        let mut value = serde_json::to_value(Settings {
+            executable: executable.into(),
+            theme: "dark".into(),
+            ..Settings::default()
+        })
+        .unwrap();
+        let object = value.as_object_mut().unwrap();
+        object.remove("settings_version");
+        object.remove("engine_source");
+        fs::write(
+            manager.directory.join("settings.json"),
+            serde_json::to_vec_pretty(&value).unwrap(),
+        )
+        .unwrap();
+    }
+    #[test]
+    fn old_settings_are_migrated_once_to_the_built_in_engine() {
+        let root = directory();
+        let (manager, bundled) = bundled_manager(&root, true);
+        // An older package's edge0-infer that still exists: the path is not looked at.
+        let old = root.join("old-package").join("edge0-infer");
+        fs::create_dir_all(old.parent().unwrap()).unwrap();
+        fs::write(&old, b"").unwrap();
+        write_old_settings(&manager, &old.to_string_lossy());
+        let before = settings_on_disk(&manager);
+        let loaded = manager.settings().unwrap();
+        assert_eq!(loaded.engine_source, ENGINE_BUILTIN);
+        assert_eq!(Some(loaded.executable.clone()), bundled);
+        let migrated = disk(&manager);
+        assert!(migrated.executable.is_empty());
+        assert_eq!(migrated.engine_source, ENGINE_BUILTIN);
+        assert_eq!(migrated.settings_version, SETTINGS_VERSION);
+        assert_eq!(migrated.theme, "dark");
+        assert_eq!(
+            fs::read(manager.directory.join("settings.json.before-engine-source")).unwrap(),
+            before
+        );
+        // The engine that starts is the bundled one.
+        assert_eq!(
+            manager.resolve(&loaded).unwrap().executable,
+            bundled.clone().unwrap()
+        );
+        fs::remove_dir_all(&root).unwrap();
+    }
+    #[test]
+    fn settings_with_the_version_are_not_migrated_again() {
+        let root = directory();
+        let (manager, _) = bundled_manager(&root, true);
+        let chosen = root.join("chosen-edge0-infer");
+        fs::write(&chosen, b"").unwrap();
+        let custom = Settings {
+            engine_source: ENGINE_CUSTOM.into(),
+            executable: chosen.to_string_lossy().into_owned(),
+            ..Settings::default()
+        };
+        manager.save_settings(&custom).unwrap();
+        let saved = settings_on_disk(&manager);
+        assert_eq!(manager.settings().unwrap().executable, custom.executable);
+        assert_eq!(settings_on_disk(&manager), saved);
+        assert!(!manager
+            .directory
+            .join("settings.json.before-engine-source")
+            .exists());
+        fs::remove_dir_all(&root).unwrap();
+    }
+    #[test]
+    fn custom_is_saved_used_and_kept_while_missing() {
+        let root = directory();
+        let (manager, bundled) = bundled_manager(&root, true);
+        let chosen = root.join("unplugged").join("edge0-infer");
+        fs::create_dir_all(chosen.parent().unwrap()).unwrap();
+        fs::write(&chosen, b"").unwrap();
+        let mut custom = manager.settings().unwrap();
+        custom.engine_source = ENGINE_CUSTOM.into();
+        custom.executable = chosen.to_string_lossy().into_owned();
+        manager.save_settings(&custom).unwrap();
+        assert_eq!(disk(&manager).executable, custom.executable);
+        assert_eq!(disk(&manager).engine_source, ENGINE_CUSTOM);
+        assert_eq!(
+            manager.resolve(&custom).unwrap().executable,
+            custom.executable
+        );
+        // The file goes away for now: the path stays, it is reported, and the bundled engine is not used instead.
+        fs::remove_file(&chosen).unwrap();
+        let held = manager.settings().unwrap();
+        assert_eq!(held.executable, custom.executable);
+        assert_ne!(Some(&held.executable), bundled.as_ref());
+        let message = manager.resolve(&held).unwrap_err();
+        assert!(message.contains("moved or deleted"), "{message}");
+        let mut changed = held;
+        changed.theme = "light".into();
+        manager.save_settings(&changed).unwrap();
+        assert_eq!(disk(&manager).executable, custom.executable);
+        assert_eq!(disk(&manager).theme, "light");
+        // A new path must exist.
+        let mut other = changed.clone();
+        other.executable = root.join("absent").to_string_lossy().into_owned();
+        assert!(manager
+            .save_settings(&other)
+            .unwrap_err()
+            .contains("edge0-infer executable was not found"));
+        fs::remove_dir_all(&root).unwrap();
+    }
+    #[test]
+    fn built_in_saves_no_path() {
+        let root = directory();
+        let (manager, bundled) = bundled_manager(&root, true);
+        let loaded = manager.settings().unwrap();
+        assert_eq!(loaded.engine_source, ENGINE_BUILTIN);
+        assert_eq!(Some(loaded.executable.clone()), bundled);
+        // The page saves back the whole object it loaded, the filled-in path included.
+        manager.save_settings(&loaded).unwrap();
+        assert!(disk(&manager).executable.is_empty());
+        // Back from Custom to Built-in: the chosen path is dropped.
+        let chosen = root.join("chosen-edge0-infer");
+        fs::write(&chosen, b"").unwrap();
+        let mut custom = loaded.clone();
+        custom.engine_source = ENGINE_CUSTOM.into();
+        custom.executable = chosen.to_string_lossy().into_owned();
+        manager.save_settings(&custom).unwrap();
+        let mut back = manager.settings().unwrap();
+        back.engine_source = ENGINE_BUILTIN.into();
+        manager.save_settings(&back).unwrap();
+        assert!(disk(&manager).executable.is_empty());
+        assert_eq!(Some(manager.settings().unwrap().executable), bundled);
+        let mut unknown = back.clone();
+        unknown.engine_source = "auto".into();
+        assert!(manager
+            .save_settings(&unknown)
+            .unwrap_err()
+            .contains("engine source"));
+        fs::remove_dir_all(&root).unwrap();
+    }
+    #[test]
+    fn built_in_without_a_bundled_engine_is_reported() {
+        let root = directory();
+        let (manager, bundled) = bundled_manager(&root, false);
+        assert_eq!(bundled, None);
+        let loaded = manager.settings().unwrap();
+        assert!(loaded.executable.is_empty());
+        let message = manager.resolve(&loaded).unwrap_err();
+        assert!(message.contains("no built-in edge0-infer"), "{message}");
+        assert!(
+            message.contains("Custom under Settings > Engine"),
+            "{message}"
+        );
+        assert!(manager.start(&loaded, "ready").is_err());
+        fs::remove_dir_all(&root).unwrap();
+    }
     #[test]
     fn executable_errors_say_where_to_fix_the_path() {
         let fixture = Fixture::new();
@@ -1439,7 +2059,7 @@ mod tests {
             "{message}"
         );
         assert!(
-            message.contains("Settings > Engine > Executable"),
+            message.contains("Custom under Settings > Engine"),
             "{message}"
         );
         let mut missing = fixture.settings.clone();
@@ -1450,10 +2070,6 @@ mod tests {
         let message = missing.validate().unwrap_err();
         assert!(message.contains(&missing.executable), "{message}");
         assert!(message.contains("moved or deleted"), "{message}");
-        assert!(
-            message.contains("Other location… on Choose a model"),
-            "{message}"
-        );
         let mut folder = fixture.settings.clone();
         folder.executable = std::env::temp_dir().to_string_lossy().into_owned();
         assert!(folder.validate().unwrap_err().contains("was not found at"));
@@ -1492,5 +2108,46 @@ mod tests {
         explicit.port = Some(12345);
         fixture.manager.save_settings(&explicit).unwrap();
         assert_eq!(fixture.manager.settings().unwrap().port, Some(12345));
+    }
+    #[test]
+    fn without_a_context_setting_no_context_argument_is_passed() {
+        let fixture = Fixture::new();
+        let mut legacy = serde_json::to_value(&fixture.settings).unwrap();
+        legacy.as_object_mut().unwrap().remove("context");
+        let decoded: Settings = serde_json::from_value(legacy).unwrap();
+        assert_eq!(decoded.context, None);
+        for delegated in [false, true] {
+            assert!(!arguments_for(&decoded, "model", delegated).contains(&"--context".into()));
+        }
+        fixture.manager.save_settings(&decoded).unwrap();
+        let saved = fixture.manager.settings().unwrap();
+        assert_eq!(saved.context, None);
+        assert!(!arguments(&saved, "model").contains(&"--context".into()));
+    }
+    #[test]
+    fn a_context_setting_is_passed_to_native_and_delegated_models() {
+        let fixture = Fixture::new();
+        let mut settings = fixture.settings.clone();
+        settings.context = Some(16384);
+        fixture.manager.save_settings(&settings).unwrap();
+        let saved = fixture.manager.settings().unwrap();
+        assert_eq!(saved.context, Some(16384));
+        for delegated in [false, true] {
+            let args = arguments_for(&saved, "model", delegated);
+            let index = args.iter().position(|arg| arg == "--context").unwrap();
+            assert_eq!(args[index + 1], "16384");
+            assert_eq!(args.iter().filter(|arg| *arg == "--context").count(), 1);
+        }
+        for invalid in [0, 1000, 2048, 16385] {
+            settings.context = Some(invalid);
+            assert!(fixture
+                .manager
+                .save_settings(&settings)
+                .unwrap_err()
+                .contains("Context length"));
+        }
+        assert_eq!(fixture.manager.settings().unwrap().context, Some(16384));
+        settings.context = Some(200 * 1024);
+        fixture.manager.save_settings(&settings).unwrap();
     }
 }

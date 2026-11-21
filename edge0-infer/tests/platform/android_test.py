@@ -32,14 +32,14 @@ class AndroidTest(unittest.TestCase):
         self.device = Android()
 
     def commands(self):
-        return [json.loads(line) for line in self.log.read_text().splitlines()]
+        return [json.loads(line) for line in self.log.read_text(encoding='utf-8').splitlines()]
 
     def asset(self):
         local = self.root / 'assets'; local.mkdir()
         (local / 'weight.bin').write_bytes(b'weight')
         digest = hashlib.sha256(b'weight').hexdigest()
-        (local / 'assets.tsv').write_text(f'role\tbytes\tsha256\tfilename\nbase\t6\t{digest}\tweight.bin\n')
-        (local / 'model.json').write_text('{}')
+        (local / 'assets.tsv').write_text(f'role\tbytes\tsha256\tfilename\nbase\t6\t{digest}\tweight.bin\n', encoding='utf-8')
+        (local / 'model.json').write_text('{}', encoding='utf-8')
         return local
 
     def test_push_check_and_mismatch(self):
@@ -47,11 +47,11 @@ class AndroidTest(unittest.TestCase):
         self.device.reachable()
         self.assertTrue(sync_assets(self.device, local, remote))
         self.assertFalse(sync_assets(self.device, local, remote, check=True))
-        self.log.write_text('')
+        self.log.write_text('', encoding='utf-8')
         self.assertFalse(sync_assets(self.device, local, remote))
         self.assertFalse(any(c[0] == 'push' for c in self.commands()))
-        (Path(remote) / 'weight.bin').write_text('bad')
-        self.log.write_text('')
+        (Path(remote) / 'weight.bin').write_text('bad', encoding='utf-8')
+        self.log.write_text('', encoding='utf-8')
         self.assertEqual(sync_assets(self.device, local, remote, check=True), ['weight.bin'])
         self.assertFalse(any(c[0] == 'push' for c in self.commands()))
         self.assertEqual(sync_assets(self.device, local, remote), ['weight.bin'])
@@ -63,16 +63,16 @@ class AndroidTest(unittest.TestCase):
         self.device.env['MOE_ASSETS_35B'] = str(local)
         with Invocation(self.device) as invocation:
             self.assertEqual(invocation.path(str(local)), remote)
-            temporary = self.root / 'input file'; temporary.write_text('hello')
+            temporary = self.root / 'input file'; temporary.write_text('hello', encoding='utf-8')
             mapped = invocation.path(str(temporary))
-            self.assertEqual(Path(mapped).read_text(), 'hello')
+            self.assertEqual(Path(mapped).read_text(encoding='utf-8'), 'hello')
             argv = invocation.arguments(['run', '--model', str(local), '--user-file', str(temporary), '--user', str(temporary)])
             self.assertEqual(argv[2], remote)
             self.assertEqual(argv[4], mapped)
             self.assertEqual(argv[6], str(temporary))
             work = Path(invocation.remote)
         self.assertFalse(work.exists())
-        (Path(remote) / 'assets.tsv').write_text('different')
+        (Path(remote) / 'assets.tsv').write_text('different', encoding='utf-8')
         with Invocation(self.device) as invocation:
             with self.assertRaisesRegex(RuntimeError, 'manifest differs'):
                 invocation.path(str(local))
@@ -90,7 +90,7 @@ class AndroidTest(unittest.TestCase):
         self.assertFalse(any(c[0] == 'push' or (c[0] == 'shell' and 'mkdir' in c[-1]) for c in self.commands()))
         installed = subprocess.run(command, env=env, capture_output=True, text=True)
         self.assertEqual(installed.returncode, 0, installed.stderr)
-        self.log.write_text('')
+        self.log.write_text('', encoding='utf-8')
         checked = subprocess.run(command + ['--check'], env=env, capture_output=True, text=True)
         self.assertEqual(checked.returncode, 0, checked.stderr)
         self.assertFalse(any(c[0] == 'push' for c in self.commands()))
@@ -141,7 +141,7 @@ class AndroidTest(unittest.TestCase):
                 self.assertEqual(android_push.main(), 0)
             self.assertEqual((private / 'files/assets/35b/weight.bin').read_bytes(), b'weight')
             self.assertFalse(list(self.remote.glob('app-transfer-*')))
-            self.log.write_text('')
+            self.log.write_text('', encoding='utf-8')
             with patch.object(sys, 'argv', ['android_push.py', '--app', 'example.synthetic', '--check']):
                 self.assertEqual(android_push.main(), 0)
             self.assertFalse(any(c[0] == 'push' or (c[0] == 'shell' and 'mkdir' in c[-1]) for c in self.commands()))

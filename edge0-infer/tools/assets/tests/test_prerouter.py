@@ -70,8 +70,8 @@ def assets_dir(tmp_path):
     assets.mkdir()
     safetensors(source / prerouter.SOURCE, [2, 3])
     for name in ['base.gguf', 'assets.tsv']:
-        (assets / name).write_text(name)
-    (assets / 'provenance.json').write_text('{}')
+        (assets / name).write_text(name, encoding='utf-8')
+    (assets / 'provenance.json').write_text('{}', encoding='utf-8')
     lock = {'files': {prerouter.SOURCE: sha256(source / prerouter.SOURCE)}}
     return source, assets, lock
 
@@ -79,7 +79,7 @@ def assets_dir(tmp_path):
 def test_add_failure_restores_directory(tmp_path, monkeypatch):
     source, assets, lock = assets_dir(tmp_path)
     before = {p.name: p.read_bytes() for p in assets.iterdir()}
-    monkeypatch.setattr(prerouter, 'write_catalog', lambda root: (root / 'assets.tsv').write_text('rewritten'))
+    monkeypatch.setattr(prerouter, 'write_catalog', lambda root: (root / 'assets.tsv').write_text('rewritten', encoding='utf-8'))
     monkeypatch.setattr(prerouter, 'check', lambda root: {'status': 'failed'})
     with pytest.raises(ValueError, match='asset check failed'):
         prerouter.add(assets, source, lock)
@@ -91,8 +91,8 @@ def test_add_keeps_other_payloads_and_refuses_twice(tmp_path, monkeypatch):
     monkeypatch.setattr(prerouter, 'write_catalog', lambda root: None)
     monkeypatch.setattr(prerouter, 'check', lambda root: {'status': 'passed'})
     prerouter.add(assets, source, lock)
-    assert (assets / 'base.gguf').read_text() == 'base.gguf'
-    record = json.loads((assets / 'provenance.json').read_text())['prerouter']
+    assert (assets / 'base.gguf').read_text(encoding='utf-8') == 'base.gguf'
+    record = json.loads((assets / 'provenance.json').read_text(encoding='utf-8'))['prerouter']
     assert record['source_sha256'] == lock['files'][prerouter.SOURCE] and record['tensors'] == 6
     with pytest.raises(ValueError, match='already present'):
         prerouter.add(assets, source, lock)
@@ -113,3 +113,48 @@ def test_accepts_nested_published_metadata(tmp_path):
     record = prerouter.pack(source, tmp_path / 'prerouter.gguf')
     assert record['source_metadata'] == inner
     assert Reader(tmp_path / 'prerouter.gguf').metadata['prerouter.owners'].data == [2, 3]
+
+
+def test_reader_keeps_one_copy_of_large_tensor_payloads(tmp_path):
+    import tracemalloc
+
+    size, count = 2 * 1024 * 1024, 8
+    source = tmp_path / 'large.safetensors'
+    # Reverse header order verifies that streaming follows validated offsets.
+    header = {f'tensor.{i}': {'dtype': 'F16', 'shape': [size // 2],
+                              'data_offsets': [i * size, (i + 1) * size]}
+              for i in reversed(range(count))}
+    header['__metadata__'] = {'source': 'synthetic'}
+    encoded = json.dumps(header).encode()
+    with source.open('wb') as file:
+        file.write(struct.pack('<Q', len(encoded)))
+        file.write(encoded)
+        for i in range(count):
+            file.write(bytes([i]) * size)
+    tracemalloc.start()
+    try:
+        metadata, tensors = prerouter.read_safetensors(source)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert metadata == {'source': 'synthetic'}
+    assert len(tensors) == count
+    for i in range(count):
+        assert tensors[f'tensor.{i}'] == ((size // 2,), bytes([i]) * size)
+    # Returned payloads alone require count * size bytes. The reader must not
+    # also retain both a complete-file buffer and a copied payload section.
+    assert peak < count * size * 2, f'peak allocation: {peak}'
+
+
+@pytest.mark.parametrize('offsets, shape, payload', [
+    ([0, 2**61], [2**60], b''),
+    ([1, 3], [1], b'abc'),
+    ([0, 4], [2], b'ab'),
+    ([0, 2], [1], b'abc'),
+])
+def test_reader_rejects_inconsistent_payload_extent(tmp_path, offsets, shape, payload):
+    source = tmp_path / 'invalid.safetensors'
+    header = json.dumps({'t': {'dtype': 'F16', 'shape': shape, 'data_offsets': offsets}}).encode()
+    source.write_bytes(struct.pack('<Q', len(header)) + header + payload)
+    with pytest.raises(ValueError):
+        prerouter.read_safetensors(source)

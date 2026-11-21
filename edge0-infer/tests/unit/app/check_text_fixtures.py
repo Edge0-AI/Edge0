@@ -9,10 +9,10 @@ import subprocess
 def check(root):
     def read(name):return json.loads((root/name).read_bytes())
     corpus=read('corpus.json');assert len(corpus)>=400
-    assert (root/'corpus.tsv').read_text()==''.join(r['id']+'\t'+r['text'].encode().hex()+'\n' for r in corpus)
+    assert (root/'corpus.tsv').read_text(encoding='utf-8')==''.join(r['id']+'\t'+r['text'].encode().hex()+'\n' for r in corpus)
     golden=read('tokenize_golden.json');rows=golden['rows']
     assert len(rows)==2*len(corpus)
-    assert (root/'tokenize_golden.tsv').read_text()==''.join(f"{r['id']}\t{int(r['parse_special'])}\t{r['text'].encode().hex()}\t{' '.join(map(str,r['llama']))}\n" for r in rows)
+    assert (root/'tokenize_golden.tsv').read_text(encoding='utf-8')==''.join(f"{r['id']}\t{int(r['parse_special'])}\t{r['text'].encode().hex()}\t{' '.join(map(str,r['llama']))}\n" for r in rows)
     diffs=[]
     for r in rows:
         assert r['llama']==r['hf_no_normalizer'],r['id']
@@ -22,7 +22,7 @@ def check(root):
         else:assert r['attribution']=='none'
     assert golden['differences']==diffs and golden['difference_count']==len(diffs)
     assert golden['equal_count']==len(rows)-len(diffs)
-    pieces=read('pieces_golden.json');lines=(root/'pieces_golden.tsv').read_text().splitlines()
+    pieces=read('pieces_golden.json');lines=(root/'pieces_golden.tsv').read_text(encoding='utf-8').splitlines()
     assert len(lines)==pieces['count']==248320
     for special in [0,1]:
         # Per-group digests only: any byte change in the TSV changes its group's digest.
@@ -35,10 +35,10 @@ def check(root):
         assert pieces['group_size']==1024 and groups==pieces['groups'][special]
         assert eog==pieces['eog']
     utf=read('utf8_golden.json');assert len(utf)>=40
-    assert (root/'utf8_golden.tsv').read_text()==''.join(r['input']+'\t'+r['output']+'\n' for r in utf)
+    assert (root/'utf8_golden.tsv').read_text(encoding='utf-8')==''.join(r['input']+'\t'+r['output']+'\n' for r in utf)
     for r in utf:assert bytes.fromhex(r['input']).decode('utf-8','replace').encode().hex()==r['output']
     templates=read('template_golden.json')['rows']
-    assert (root/'template_golden.tsv').read_text()==''.join(r['id']+'\t'+r['text'].encode().hex()+'\t'+' '.join(map(str,r['tokens']))+'\t'+';'.join(m['role']+':'+m['content'].encode().hex() for m in r['messages'])+'\n' for r in templates)
+    assert (root/'template_golden.tsv').read_text(encoding='utf-8')==''.join(r['id']+'\t'+r['text'].encode().hex()+'\t'+' '.join(map(str,r['tokens']))+'\t'+';'.join(m['role']+':'+m['content'].encode().hex() for m in r['messages'])+'\n' for r in templates)
     for r in templates:
         assert ''.join(f['text'] for f in r['fragments'])==r['text']
         if r['hf_no_normalizer'] is not None:assert r['tokens']==r['hf_no_normalizer']

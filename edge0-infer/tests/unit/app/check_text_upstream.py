@@ -9,7 +9,7 @@ def blob(data):
     return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
 
 def check(root):
-    for line in (root/'src/app/text/UPSTREAM').read_text().splitlines():
+    for line in (root/'src/app/text/UPSTREAM').read_text(encoding='utf-8').splitlines():
         if not line or line.startswith('#'):continue
         local,upstream,commit,expected,mode,current=line.split('\t')
         data=(root/local).read_bytes()

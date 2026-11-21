@@ -11,7 +11,7 @@ from serve_support import Server
 
 
 def check_schema(snapshots):
-    document = (Path(__file__).resolve().parents[2] / 'docs/local-server.md').read_text()
+    document = (Path(__file__).resolve().parents[2] / 'docs/local-server.md').read_text(encoding='utf-8')
     table = document.split('<!-- status-fields-begin -->')[1].split('<!-- status-fields-end -->')[0]
     fields = {}
     for line in table.splitlines():
@@ -53,7 +53,7 @@ def check_schema(snapshots):
 
 def run(cli, model, root, backend):
     snapshots = []
-    key = root / 'api-key'; key.write_text('  PRIVATE_AUTH_SECRET_731\n')
+    key = root / 'api-key'; key.write_text('  PRIVATE_AUTH_SECRET_731\n', encoding='utf-8')
     hold = root / 'status-hold'
     addresses = socket.gethostbyname_ex(socket.gethostname())[2]
     address = next((value for value in addresses if not value.startswith(('127.','169.254.'))), None)
@@ -172,7 +172,7 @@ def run(cli, model, root, backend):
         assert value['instance']['id'] != instance and not value['listen']['auth']
         assert 'experts' not in value['totals'] and 'experts' not in value['last']
         assert json.loads(server.request('/v1/models')[1])['data'][0]['context_length'] == 1024
-    empty = root/'empty-key'; empty.write_text(' \n')
+    empty = root/'empty-key'; empty.write_text(' \n', encoding='utf-8')
     for extra in (['--host','0.0.0.0'],['--api-key-file',str(empty)],['--api-key-file',str(root/'missing-key')]):
         failed = subprocess.run([cli,'serve','--model',str(root/'missing-model'),*extra],capture_output=True,text=True)
         assert failed.returncode != 0 and 'Listening:' not in failed.stderr

@@ -23,7 +23,7 @@ def generate(source, output):
     result = subprocess.run([CMAKE, f'-DSOURCE_DIR={source}', f'-DOUTPUT={output}', '-P', str(SCRIPT)],
                             capture_output=True, text=True, env=GIT_ENV)
     assert result.returncode == 0, result.stderr
-    text = Path(output).read_text()
+    text = Path(output).read_text(encoding='utf-8')
     fields = dict(re.findall(r'#define MOE_BUILD_SOURCE_(COMMIT|MODIFIED|REASON) (.*)', text))
     return dict(commit=fields['COMMIT'].strip('"'), modified=int(fields['MODIFIED']), reason=fields['REASON'].strip('"'))
 
@@ -39,7 +39,7 @@ class BuildIdentityTest(unittest.TestCase):
         directory = self.root / 'source'
         directory.mkdir()
         git(directory, 'init', '-q')
-        (directory / 'a.txt').write_text('one\n')
+        (directory / 'a.txt').write_text('one\n', encoding='utf-8')
         git(directory, 'add', 'a.txt')
         git(directory, 'commit', '-q', '-m', 'initial')
         return directory
@@ -52,14 +52,14 @@ class BuildIdentityTest(unittest.TestCase):
 
     def test_tracked_change(self):
         directory = self.repository()
-        (directory / 'a.txt').write_text('two\n')
+        (directory / 'a.txt').write_text('two\n', encoding='utf-8')
         identity = generate(directory, self.output)
         self.assertEqual((identity['commit'], identity['modified'], identity['reason']),
                          (git(directory, 'rev-parse', 'HEAD'), 1, ''))
 
     def test_untracked_file_counts_as_modified(self):
         directory = self.repository()
-        (directory / 'new.txt').write_text('new\n')
+        (directory / 'new.txt').write_text('new\n', encoding='utf-8')
         self.assertEqual(generate(directory, self.output)['modified'], 1)
 
     def test_not_a_repository(self):
@@ -72,7 +72,7 @@ class BuildIdentityTest(unittest.TestCase):
     def test_untracked_subdirectory_does_not_take_the_enclosing_commit(self):
         directory = self.repository()
         (directory / 'sub').mkdir()
-        (directory / 'sub' / 'b.txt').write_text('untracked\n')
+        (directory / 'sub' / 'b.txt').write_text('untracked\n', encoding='utf-8')
         identity = generate(directory / 'sub', self.output)
         self.assertEqual((identity['commit'], identity['modified']), ('', 2))
         self.assertNotEqual(identity['reason'], '')
@@ -80,7 +80,7 @@ class BuildIdentityTest(unittest.TestCase):
     def tracked_subdirectory(self):
         directory = self.repository()
         (directory / 'sub').mkdir()
-        (directory / 'sub' / 'b.txt').write_text('one\n')
+        (directory / 'sub' / 'b.txt').write_text('one\n', encoding='utf-8')
         git(directory, 'add', 'sub/b.txt')
         git(directory, 'commit', '-q', '-m', 'sub')
         return directory
@@ -92,13 +92,13 @@ class BuildIdentityTest(unittest.TestCase):
 
     def test_tracked_subdirectory_counts_only_its_own_changes(self):
         directory = self.tracked_subdirectory()
-        (directory / 'a.txt').write_text('outside\n')
-        (directory / 'outside.txt').write_text('outside\n')
+        (directory / 'a.txt').write_text('outside\n', encoding='utf-8')
+        (directory / 'outside.txt').write_text('outside\n', encoding='utf-8')
         self.assertEqual(generate(directory / 'sub', self.output)['modified'], 0)
-        (directory / 'sub' / 'b.txt').write_text('two\n')
+        (directory / 'sub' / 'b.txt').write_text('two\n', encoding='utf-8')
         self.assertEqual(generate(directory / 'sub', self.output)['modified'], 1)
-        (directory / 'sub' / 'b.txt').write_text('one\n')
-        (directory / 'sub' / 'new.txt').write_text('new\n')
+        (directory / 'sub' / 'b.txt').write_text('one\n', encoding='utf-8')
+        (directory / 'sub' / 'new.txt').write_text('new\n', encoding='utf-8')
         self.assertEqual(generate(directory / 'sub', self.output)['modified'], 1)
 
     def test_unchanged_content_is_not_rewritten(self):
@@ -114,7 +114,7 @@ class BuildIdentityTest(unittest.TestCase):
         self.assertEqual(generate(directory, self.output)['modified'], 0)
         old = 1_000_000_000
         os.utime(self.output, (old, old))
-        (directory / 'a.txt').write_text('three\n')
+        (directory / 'a.txt').write_text('three\n', encoding='utf-8')
         self.assertEqual(generate(directory, self.output)['modified'], 1)
         self.assertNotEqual(self.output.stat().st_mtime, old)
 

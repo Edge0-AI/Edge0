@@ -10,7 +10,7 @@ import time
 
 args = sys.argv[1:]
 root = Path(os.environ['FAKE_IOS_ROOT'])
-with (root / 'calls.jsonl').open('a') as log:
+with (root / 'calls.jsonl').open('a', encoding='utf-8') as log:
     log.write(json.dumps(dict(args=args, env={k:v for k,v in os.environ.items() if k.startswith('DEVICECTL_CHILD_')}))+'\n')
 def option(name): return args[args.index(name)+1]
 
@@ -59,9 +59,9 @@ elif args[:3] == ['device','process','launch']:
                     if p.is_dir():shutil.rmtree(p)
                     else:p.unlink()
         if env('MOE_STDERR_FILE'):remote('Documents/'+env('MOE_STDERR_FILE')).write_bytes(b'example stderr\n')
-        if env('MOE_HOST_PROBE'):remote('Documents/'+env('MOE_HOST_PROBE')).write_text('{"before": {}, "after": {}}')
+        if env('MOE_HOST_PROBE'):remote('Documents/'+env('MOE_HOST_PROBE')).write_text('{"before": {}, "after": {}}', encoding='utf-8')
         if '--out' in args:
-            out=remote('Documents/'+option('--out'));out.mkdir(parents=True);(out/'result.txt').write_text('result')
+            out=remote('Documents/'+option('--out'));out.mkdir(parents=True);(out/'result.txt').write_text('result', encoding='utf-8')
             (out/'nested').mkdir();(out/'nested/bytes.bin').write_bytes(bytes(range(256)))
     print('12:34:56  Acquired tunnel connection to device.')
     print('Launched application example')
@@ -74,4 +74,4 @@ elif args[:3] == ['device','process','launch']:
         print('Application exited with exit code '+os.environ.get('FAKE_IOS_EXIT','0'))
     raise SystemExit(0)
 elif args[:3] != ['device','install','app']: raise SystemExit(1)
-if '--json-output' in args:Path(option('--json-output')).write_text(json.dumps(dict(result=result)))
+if '--json-output' in args:Path(option('--json-output')).write_text(json.dumps(dict(result=result)), encoding='utf-8')

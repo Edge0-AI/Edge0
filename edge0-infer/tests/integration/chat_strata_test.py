@@ -24,7 +24,7 @@ def stats_lines(stderr):
 def chat(cli, model, engine, record, text, extra=(), **fake):
     result = subprocess.run([str(cli), 'chat', '--model', str(model), *strata_args(engine), *extra], input=text,
                             capture_output=True, encoding='utf-8', env=environment(record, **fake), timeout=120)
-    sent = [json.loads(line) for line in (Path(record) / 'requests.jsonl').read_text().splitlines()] \
+    sent = [json.loads(line) for line in (Path(record) / 'requests.jsonl').read_text(encoding='utf-8').splitlines()] \
         if (Path(record) / 'requests.jsonl').exists() else []
     return result, [json.loads(item['body']) for item in sent if item['path'] == '/v1/chat/completions']
 
@@ -36,7 +36,7 @@ def kept_log(record, stderr):
     log = Path(named[0])
     assert log.is_file() and log.parent.parent == temp_dir(record), (log, stderr)
     assert [p.name for p in temp_dir(record).iterdir()] == [log.parent.name], list(temp_dir(record).iterdir())
-    text = log.read_text()
+    text = log.read_text(encoding='utf-8')
     log.unlink()
     log.parent.rmdir()
     return text
@@ -81,7 +81,7 @@ def turns(cli, root, engine, model):
     # /new keeps only the system message.
     assert bodies[5]['messages'] == [system, user('fresh start')] and bodies[5]['chat_template_kwargs'] == {'enable_thinking': False}
     # Bodies of 1 KiB or more go out at once, without "Expect: 100-continue" (edge0-strata never answers it).
-    seen = [json.loads(line) for line in (record / 'requests.jsonl').read_text().splitlines()]
+    seen = [json.loads(line) for line in (record / 'requests.jsonl').read_text(encoding='utf-8').splitlines()]
     assert len(seen[4]['body']) > 3000 and all(item['expect'] is None for item in seen)
     assert result.stdout.count(ANSWER) == 6
     # Reasoning goes to stderr, marked, only while thinking is on.
@@ -91,6 +91,18 @@ def turns(cli, root, engine, model):
     assert 'Ready: load ' in result.stderr
     assert_no_leftovers(record)
     print('PASS turns: history, /regen, /think off, """ block, /file, /new, /quit, no process left')
+
+
+def multiline_events(cli, root, engine, model):
+    for eol in ('lf', 'crlf', 'cr'):
+        record = root / ('multiline-' + eol)
+        result, bodies = chat(cli, model, engine, record, 'hello\nand again\n', sse_format=eol, chunk_delay=0)
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.count(ANSWER) == 2, (eol, result.stdout, result.stderr)
+        assert bodies[1]['messages'][1] == {'role': 'assistant', 'content': ANSWER}, bodies[1]
+        assert all(line.endswith(', end_of_generation') and 'tok/s' in line for line in stats_lines(result.stderr))
+        assert_no_leftovers(record)
+    print('PASS multiline SSE: LF, CRLF and CR retain the answer, usage and conversation history')
 
 
 def cancel(cli, root, engine, model):
@@ -105,7 +117,7 @@ def cancel(cli, root, engine, model):
     # A cancelled turn with text keeps the partial answer in the history.
     assert bodies[1]['messages'] == [{'role': 'user', 'content': 'tell me'}, {'role': 'assistant', 'content': partial},
                                      {'role': 'user', 'content': 'and then?'}], bodies[1]
-    events = [json.loads(line) for line in (record / 'events.jsonl').read_text().splitlines()]
+    events = [json.loads(line) for line in (record / 'events.jsonl').read_text(encoding='utf-8').splitlines()]
     assert any(e['event'] == 'client_closed' for e in events), 'the cancelled stream was not closed upstream'
     assert_no_leftovers(record)
     if os.name == 'nt':
@@ -170,7 +182,7 @@ def failures(cli, root, engine, model):
     assert 'edge0-strata has exited (exit code 3); restart chat' in stderr, stderr
     log = kept_log(record, stderr)
     assert log.strip() and log.strip().splitlines()[-1] in stderr, (log, stderr)
-    assert len((record / 'requests.jsonl').read_text().splitlines()) == 1
+    assert len((record / 'requests.jsonl').read_text(encoding='utf-8').splitlines()) == 1
     assert_no_leftovers(record)
     # Exiting while turns are queued: whichever turn finds it gone (before or during its request) ends the chat.
     record = root / 'exited-queued'
@@ -197,7 +209,7 @@ def passthrough(cli, root, engine, model):
     record = root / 'passthrough'
     result, bodies = chat(cli, model, engine, record, 'hi\n', given)
     assert result.returncode == 0 and len(bodies) == 1, (result.returncode, result.stderr)
-    config = json.loads((record / 'config.json').read_text())
+    config = json.loads((record / 'config.json').read_text(encoding='utf-8'))
     assert config['args'] == ['--pack', str(model), '--ple-io', 'direct', '--max-context', '131072', *tuning], config
     assert_no_leftovers(record)
     for name, words, message in (('empty', ['--pool-workers', ''], 'invalid_argument: --strata-arg needs a value'),
@@ -221,6 +233,7 @@ def main():
         engine = make_engine(root / 'engine')
         model = make_model(root / 'model')
         turns(args.cli, root, engine, model)
+        multiline_events(args.cli, root, engine, model)
         cancel(args.cli, root, engine, model)
         failures(args.cli, root, engine, model)
         passthrough(args.cli, root, engine, model)
@@ -236,23 +249,19 @@ def main():
             assert 'log kept at' not in failed.stderr
             assert not (failed_model / 'mtp-q2_0.gguf').exists()
             assert not list(temp_dir(failed_record).iterdir()), list(temp_dir(failed_record).iterdir())
-            assert len((model / 'prepare-calls.jsonl').read_text().splitlines()) == 1
+            assert len((model / 'prepare-calls.jsonl').read_text(encoding='utf-8').splitlines()) == 1
             again, _ = chat(args.cli, model, engine, root / 'chat-again', 'hi\n')
             assert again.returncode == 0 and 'preparing' not in again.stderr, again.stderr
-            assert len((model / 'prepare-calls.jsonl').read_text().splitlines()) == 1
+            assert len((model / 'prepare-calls.jsonl').read_text(encoding='utf-8').splitlines()) == 1
             assert_no_leftovers(root / 'chat-again')
         fp4 = make_model(root / 'fp4', model_name='edge0-120b-fp4')
         record = root / 'fp4-chat'
         result, bodies = chat(args.cli, fp4, engine, record, 'hi\n')
-        if sys.platform == 'darwin':
-            assert result.returncode == 2 and 'uses fp4 experts' in result.stderr and not record.exists(), result.stderr
-            assert bodies == [] and not (fp4 / 'mtp-q2_0.gguf').exists()
-        else:
-            assert result.returncode == 0 and bodies[0]['model'] == 'edge0_120b', result.stderr
-            config = json.loads((record / 'config.json').read_text())
-            assert config['env']['STRATA_LAT_FUSED_Q3K'] == '0' and not (fp4 / 'scales').exists()
-            assert config['args'][1] == str(fp4)
-            assert_no_leftovers(record)
+        assert result.returncode == 0 and bodies[0]['model'] == 'edge0_120b', result.stderr
+        config = json.loads((record / 'config.json').read_text(encoding='utf-8'))
+        assert config['env']['STRATA_LAT_FUSED_Q3K'] == '0' and not (fp4 / 'scales').exists()
+        assert config['args'][1] == str(fp4)
+        assert_no_leftovers(record)
     print('PASS chat strata')
 
 

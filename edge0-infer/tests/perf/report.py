@@ -89,6 +89,16 @@ def build_consistency(engine, workspace):
 
 # ---------------------------------------------------------------- cells
 
+def effective_configuration(summary):
+    """Preserve observed configuration, without reconstructing absent legacy metadata."""
+    configuration = copy.deepcopy(summary['model']['loading'])
+    if 'runtime' in summary:
+        configuration['runtime'] = copy.deepcopy(summary['runtime'])
+    if 'generation' in summary:
+        configuration['generation'] = copy.deepcopy(summary['generation'])
+    return configuration
+
+
 def memory_from_snapshot(snapshot):
     def peak(group):
         values = snapshot[group].get('values')
@@ -138,7 +148,7 @@ class ReportWriter:
         self.partial_path.parent.mkdir(parents=True, exist_ok=True)
 
     def _append(self, record):
-        with self.partial_path.open('a') as f:
+        with self.partial_path.open('a', encoding='utf-8') as f:
             f.write(sanitize(json.dumps(record)) + '\n')
             f.flush()
 
@@ -153,15 +163,15 @@ class ReportWriter:
 
     def finish(self, report):
         text = sanitize(json.dumps(report, indent=2)) + '\n'
-        self.json_path.write_text(text)
-        self.md_path.write_text(sanitize(render(report)))
+        self.json_path.write_text(text, encoding='utf-8')
+        self.md_path.write_text(sanitize(render(report)), encoding='utf-8')
         self.partial_path.unlink()
 
 
 def load_partial(path):
     """The report as far as it was written: header, identity updates and the cells so far."""
     report = None
-    for line in Path(path).read_text().splitlines():
+    for line in Path(path).read_text(encoding='utf-8').splitlines():
         record = json.loads(line)
         if record['type'] == 'header':
             report = dict(format=record['format'], identity=record['identity'], protocol=record['protocol'],
@@ -179,7 +189,7 @@ def load_partial(path):
 
 def load(path):
     try:
-        report = json.loads(Path(path).read_text())
+        report = json.loads(Path(path).read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as error:
         raise ReportError(f'Cannot read report {path}: {error}')
     return report
@@ -501,16 +511,16 @@ def main(argv=None):
             print(f'Refusing to overwrite {args.out}', file=sys.stderr)
             return EXIT_INPUT
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(sanitize(json.dumps(baseline, indent=1, sort_keys=True)) + '\n')
+        args.out.write_text(sanitize(json.dumps(baseline, indent=1, sort_keys=True)) + '\n', encoding='utf-8')
         return 0
     try:
         parts = [f'# {args.title}', ''] + [render(load(p)) for p in args.reports]
-        parts += [p.read_text() for p in args.append]
+        parts += [p.read_text(encoding='utf-8') for p in args.append]
         text = '\n'.join(parts)
     except (ReportError, KeyError, OSError) as error:
         print(f'Cannot render: {error}', file=sys.stderr)
         return EXIT_INPUT
-    args.out.write_text(sanitize(text))
+    args.out.write_text(sanitize(text), encoding='utf-8')
     return 0
 
 

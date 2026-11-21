@@ -82,7 +82,7 @@ def memory_bytes():
         status.length = ctypes.sizeof(status)
         return status.total if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)) else None
     try:
-        for line in Path('/proc/meminfo').read_text().splitlines():
+        for line in Path('/proc/meminfo').read_text(encoding='utf-8').splitlines():
             if line.startswith('MemTotal:'):
                 return int(line.split()[1]) * 1024
     except OSError:
@@ -94,7 +94,7 @@ def cpu_name():
     if os.name == 'nt':
         return os.environ.get('PROCESSOR_IDENTIFIER') or platform.processor()
     try:
-        for line in Path('/proc/cpuinfo').read_text().splitlines():
+        for line in Path('/proc/cpuinfo').read_text(encoding='utf-8').splitlines():
             if line.startswith('model name'):
                 return line.split(':', 1)[1].strip()
     except OSError:

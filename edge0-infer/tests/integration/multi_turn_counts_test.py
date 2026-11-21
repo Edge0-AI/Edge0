@@ -17,8 +17,8 @@ class CountsTest(unittest.TestCase):
     def evidence(self, index, tokens, result):
         folder = self.root / str(index)
         folder.mkdir()
-        (folder / 'tokens.json').write_text(tokens)
-        (folder / 'result.json').write_text(result)
+        (folder / 'tokens.json').write_text(tokens, encoding='utf-8')
+        (folder / 'result.json').write_text(result, encoding='utf-8')
 
     def first(self, early=False):
         if early:
@@ -54,11 +54,11 @@ class CountsTest(unittest.TestCase):
     def test_invalid_stop_or_accounting_is_rejected(self):
         self.first(early=True)
         path = self.root / '1/result.json'
-        original = json.loads(path.read_text())
+        original = json.loads(path.read_text(encoding='utf-8'))
         for key, value in [('stop_reason','length'), ('tail_is_end',False), ('e',4),
                            ('input_count',4), ('generated_count',1)]:
             with self.subTest(key=key):
-                path.write_text(json.dumps({**original, key:value}))
+                path.write_text(json.dumps({**original, key:value}), encoding='utf-8')
                 with self.assertRaises(AssertionError):
                     derive_counts(self.root, [('first',0,6,True)])
 

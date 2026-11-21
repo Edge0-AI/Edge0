@@ -1,5 +1,6 @@
 #include "serve_delegate_status.h"
 #include "serve_protocol.h"
+#include <cmath>
 #include <limits>
 
 #include <exception>
@@ -8,12 +9,35 @@ namespace delegate {
 namespace {
 using Json = StatusJson;
 std::optional<std::int64_t> integer(const Json& object, const char* key) {
-    if (!object.is_object() || !object.contains(key) || !object[key].is_number()) return std::nullopt;
-    return object[key].get<std::int64_t>();
+    if (!object.is_object() || !object.contains(key)) return std::nullopt;
+    const auto& value = object[key];
+    if (!value.is_number_integer() || value < 0 || value > std::numeric_limits<std::int64_t>::max()) return std::nullopt;
+    return value.get<std::int64_t>();
+}
+std::optional<std::int64_t> input_total(std::optional<std::int64_t> uncached,
+                                      std::optional<std::int64_t> created, std::optional<std::int64_t> read) {
+    if (!uncached && !created && !read) return std::nullopt;
+    std::int64_t total = 0;
+    for (const auto& part : {uncached, created, read}) {
+        if (part.value_or(0) > std::numeric_limits<std::int64_t>::max() - total) return std::nullopt;
+        total += part.value_or(0);
+    }
+    return total;
 }
 std::optional<double> number(const Json& object, const char* key) {
     if (!object.is_object() || !object.contains(key) || !object[key].is_number()) return std::nullopt;
     return object[key].get<double>();
+}
+std::optional<std::int64_t> memory_bytes(std::optional<double> amount, double unit) {
+    if (!amount) return std::nullopt;
+    const double bytes = *amount * unit;
+    // INT64_MAX rounds up to 2^63 as a double: the upper bound must be exclusive.
+    if (!std::isfinite(bytes) || bytes < 0 || bytes >= 0x1p63) return std::nullopt;
+    return static_cast<std::int64_t>(bytes);
+}
+std::optional<std::int64_t> memory_available(std::optional<double> total, std::optional<double> used, double unit) {
+    if (!memory_bytes(total, unit) || !memory_bytes(used, unit)) return std::nullopt;
+    return memory_bytes(*total - *used, unit);
 }
 template <class T> void take(std::optional<T>& target, const std::optional<T>& value) {
     if (value) target = value;
@@ -49,15 +73,19 @@ void account(Accounting& a, const Json& body) {
             const auto uncached = integer(usage, "input_tokens");
             const auto created = integer(usage, "cache_creation_input_tokens");
             const auto read = integer(usage, "cache_read_input_tokens");
-            if (uncached || created || read) a.input_tokens = uncached.value_or(0) + created.value_or(0) + read.value_or(0);
+            take(a.input_tokens, input_total(uncached, created, read));
         } else if (type != "message_delta") {
             // message_delta repeats input counts; the one in message_start stands, the delta only adds the output.
             take(a.input_tokens, integer(usage, "input_tokens"));
         }
         take(a.generated_tokens, integer(usage, "completion_tokens"));
         take(a.generated_tokens, integer(usage, "output_tokens"));
+        if (type == "message" || type == "message_delta")
+            take(a.reused_tokens, integer(usage, "cache_read_input_tokens"));
         if (usage.contains("prompt_tokens_details") && !a.reused_tokens)
             take(a.reused_tokens, integer(usage["prompt_tokens_details"], "cached_tokens"));
+        if (usage.contains("input_tokens_details") && !a.reused_tokens)
+            take(a.reused_tokens, integer(usage["input_tokens_details"], "cached_tokens"));
     }
     if (body.contains("timings") && body["timings"].is_object()) {
         const auto& t = body["timings"];
@@ -83,6 +111,14 @@ void account(Accounting& a, const Json& body) {
             account(a, body[key]);
             if (std::string(key) == "response") responses_status(a, body[key]);
         }
+    // A protocol error can arrive after HTTP 200 headers have already been sent.
+    if (body.contains("error") && body["error"].is_object()) {
+        const auto& error = body["error"];
+        a.finish = "failed";
+        a.error_code = error.contains("code") && error["code"].is_string() ? text(error, "code") : text(error, "type");
+        a.error_message = text(error, "message");
+        a.error_param = text(error, "param");
+    }
 }
 
 std::int64_t content_fragments(const Json& event) {
@@ -112,24 +148,14 @@ std::int64_t content_fragments(const Json& event) {
     return fragments;
 }
 
-void account_sse(Accounting& a, std::string& pending, const char* data, std::size_t size, double elapsed) {
-    pending.append(data, size);
-    std::size_t start = 0;
-    for (;;) {
-        const auto end = pending.find('\n', start);
-        if (end == std::string::npos) break;
-        std::string line = pending.substr(start, end - start);
-        start = end + 1;
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.compare(0, 5, "data:") != 0) continue;
-        auto payload = line.substr(5);
-        if (!payload.empty() && payload.front() == ' ') payload.erase(0, 1);
+void account_sse(Accounting& a, SseDecoder& pending, const char* data, std::size_t size, double elapsed) {
+    pending.push(data, size, [&](const std::string& payload) {
         if (payload == "[DONE]") {
             if (a.endpoint == "/v1/chat/completions") a.complete = true;
-            continue;
+            return;
         }
         const auto value = Json::parse(payload, nullptr, false);
-        if (value.is_discarded()) continue;
+        if (value.is_discarded()) return;
         try {
             const auto type = text(value, "type");
             if (a.endpoint == "/v1/responses") {
@@ -155,8 +181,7 @@ void account_sse(Accounting& a, std::string& pending, const char* data, std::siz
         } catch (const std::exception&) {
             // Accounting never affects forwarding: an event that cannot be read is left out of the record.
         }
-    }
-    pending.erase(0, start);
+    });
 }
 
 StatusJson proxy_error(int status, const std::string& path) {
@@ -224,13 +249,13 @@ Json system_memory(const Json& portal_system, const Json& external) {
     Json system = portal_system;
     const Json ram = external.is_object() && external.contains("machine") && external["machine"].is_object() &&
                              external["machine"].contains("ram") ? external["machine"]["ram"] : Json(nullptr);
-    auto value = [&](std::optional<double> gib) {
-        if (!gib) return Json{{"bytes", nullptr}, {"source", "edge0-strata"}, {"reason", "not reported by edge0-strata"}};
-        return Json{{"bytes", static_cast<std::int64_t>(*gib * 1073741824.0)}, {"source", "edge0-strata"}, {"reason", ""}};
+    auto value = [&](std::optional<std::int64_t> bytes) {
+        if (!bytes) return Json{{"bytes", nullptr}, {"source", "edge0-strata"}, {"reason", "not available from edge0-strata"}};
+        return Json{{"bytes", *bytes}, {"source", "edge0-strata"}, {"reason", ""}};
     };
     const auto total = number(ram, "total_gib"), used = number(ram, "used_gib");
-    system["memory"] = {{"total", value(total)},
-                        {"available", value(total && used ? std::optional<double>(*total - *used) : std::nullopt)}};
+    system["memory"] = {{"total", value(memory_bytes(total, 1073741824.0))},
+                        {"available", value(memory_available(total, used, 1073741824.0))}};
     return system;
 }
 
@@ -246,8 +271,8 @@ Json status_json(const DelegateStatusInput& s) {
         devices = Json::array({Json{{"name", s.device},
                                     {"backend", s.device == "metal" ? "metal" : "cuda"},
                                     {"description", gpu.contains("name") && gpu["name"].is_string() ? gpu["name"] : Json(nullptr)},
-                                    {"memory_total_bytes", total ? Json(static_cast<std::int64_t>(*total * 1048576.0)) : Json(nullptr)},
-                                    {"memory_free_bytes", total && used ? Json(static_cast<std::int64_t>((*total - *used) * 1048576.0)) : Json(nullptr)}}});
+                                    {"memory_total_bytes", nullable(memory_bytes(total, 1048576.0))},
+                                    {"memory_free_bytes", nullable(memory_available(total, used, 1048576.0))}}});
     }
     Json version = external.is_object() && external.contains("engine") && external["engine"].is_string() ? external["engine"] : Json(nullptr);
     Json engine{{"version", version},          {"source_commit", nullptr}, {"source_modified", nullptr},

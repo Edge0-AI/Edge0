@@ -28,16 +28,16 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         if args.long:
             prompt = Path(__file__).resolve().parents[1] / 'fixtures/bench/edge0-long-prompt.txt'
-            rendered = subprocess.run([args.a, 'prompt', '--model', str(assets), '--user', prompt.read_text(), '--tokens'],
+            rendered = subprocess.run([args.a, 'prompt', '--model', str(assets), '--user', prompt.read_text(encoding='utf-8'), '--tokens'],
                                       capture_output=True, text=True, check=True)
             ids = [int(token) for token in rendered.stdout.splitlines()[-1].split()]
             assert len(ids) == 3282
             tokens = Path(directory) / 'long-input.json'
-            tokens.write_text(json.dumps({'input': ids}))
+            tokens.write_text(json.dumps({'input': ids}), encoding='utf-8')
             cases = [('long-prompt', tokens, 8)]
         else:
             cases = [(case, answers / case / 'tokens.json',
-                      len(json.loads((answers / case / 'tokens.json').read_text())['generated']))
+                      len(json.loads((answers / case / 'tokens.json').read_text(encoding='utf-8'))['generated']))
                      for case in ['chat-intro', 'plain-mixed', 'long-mixed']]
         configurations = [('a', args.a, json.loads(args.a_options)), ('b', args.b, json.loads(args.b_options))]
         if args.matrix:

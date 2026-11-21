@@ -21,7 +21,7 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         tokens = root / 'input.json'
-        tokens.write_text(json.dumps(dict(input=[1, 2, 3], generated=[])))
+        tokens.write_text(json.dumps(dict(input=[1, 2, 3], generated=[])), encoding='utf-8')
         for model in models:
             cases = ['chat-intro', 'plain-mixed', 'long-mixed'] if args.profile == '35b' else ['tiny']
             for case in cases:

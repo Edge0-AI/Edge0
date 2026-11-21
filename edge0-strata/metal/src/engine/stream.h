@@ -38,6 +38,11 @@ public:
     // with room to spare.  =0: never (the whole GGUF wrapped, as on the M5 Max).
     static bool wanted(const gguf::File& f, const mtl::Context& cx);
     bool open(const gguf::File& f, std::string& err);
+    // The latent layout: the routed experts are experts.bin (no header; expert e of layer l is the blob at
+    // (l * 512 + e) * blob, gate rows at 0, up rows at up_off, down rows at down_off), read with one request per expert
+    // into the slots; `f` (the skeleton GGUF) stays the source of read() and load_dense().
+    bool open_latent(const gguf::File& f, const std::string& experts, uint64_t blob, uint64_t up_off, uint64_t down_off,
+                     std::string& err);
     // pread `len` bytes at file offset `off` (F_NOCACHE)
     bool read(void* dst, uint64_t len, uint64_t off) const;
     // The dense tensors into one buffer; every tensor's offset in `f` is rewritten to its offset in `out`.
@@ -68,11 +73,14 @@ public:
     // slots while a prompt runs and gives them back after
     uint8_t* region(uint64_t bytes);
     void hold_region(bool hold);
+    // would region(bytes) place the buffers among the arena's slots (true), or give them their own allocation?
+    bool region_fits(uint64_t bytes) const;
     void report(FILE* f) const;
     void reset_stats();
 
 private:
     uint64_t shrink_to_ = 0;
+    bool finish_open(std::string& err);   // the size classes and the I/O settings, once lay_ is known
     struct Lay { uint64_t g, gs, u, us, d, ds; int cls; };
     struct Slot { int16_t layer = -1; int16_t e = -1; int prev = -1, next = -1; bool pre = false; int left = 0; uint64_t pin = 0; std::atomic<int> state{0}; };  // 0 idle, 1 queued, 2 reading
     struct Cls { uint64_t pages = 0; int n = 0; int base = 0; int head = -1, tail = -1; };  // slot range [base, base+n)

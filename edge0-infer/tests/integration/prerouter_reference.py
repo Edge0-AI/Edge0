@@ -37,14 +37,14 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         tokens = root / 'tokens.json'
-        tokens.write_text(json.dumps(dict(input=[1, 2, 3], generated=list(range(10, 10+steps)))))
+        tokens.write_text(json.dumps(dict(input=[1, 2, 3], generated=list(range(10, 10+steps)))), encoding='utf-8')
         command = [args.cli, 'forward', '--model', str(model), '--device', args.backend, '--tokens', str(tokens),
                    '--out', str(root / 'out'), '--model-option', 'routing=predicted', '--observe', '--observe-steps', str(steps)]
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode == 77:
             return 77
         assert result.returncode == 0, result.stderr
-        records = json.loads((root / 'out/layers/index.json').read_text())
+        records = json.loads((root / 'out/layers/index.json').read_text(encoding='utf-8'))
         def tensor(step, name):
             record = next(r for r in records if r['step'] == step and r['name'] == name)
             dtype = '<i4' if record['type'] == 26 else '<f4'

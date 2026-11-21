@@ -40,6 +40,20 @@ def test_q41_hand_computed():
     assert pack_q4_1(np.full(32, 2, dtype=np.float32)) == struct.pack('<ee', 0, 2) + bytes(16)
 
 
+@pytest.mark.parametrize('element_type', [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12])
+def test_empty_array_supported_types(tmp_path, element_type):
+    path = tmp_path / 'empty.gguf'
+    metadata = {'empty': Value(9, [], element_type)}
+    write(path, metadata, [])
+    assert Reader(path).metadata == metadata
+
+
+@pytest.mark.parametrize('metadata_type', [5, 10, 11])
+def test_writer_rejects_non_uint32_alignment(tmp_path, metadata_type):
+    with pytest.raises(ValueError, match='alignment'):
+        write(tmp_path / 'alignment.gguf', {'general.alignment': Value(metadata_type, 32)}, [])
+
+
 def test_truncation(tmp_path):
     path = tmp_path / 'valid.gguf'
     write(path, {'name': Value(8, 'hello')}, [('t', (32,), Q4_1, bytes(20))])
@@ -58,3 +72,23 @@ def test_invalid_payloads(tmp_path):
         pack_q4_1(np.full(32, np.nan))
     with pytest.raises(ValueError):
         pack_q4_1(np.zeros(31))
+
+
+@pytest.mark.parametrize('values', [
+    np.full(32, 65520, dtype=np.float32),
+    np.full(32, -65520, dtype=np.float32),
+    np.tile(np.array([0, 2_000_000], dtype=np.float32), 16),
+    np.tile(np.array([-np.finfo(np.float32).max, np.finfo(np.float32).max]), 16),
+])
+def test_q41_rejects_unrepresentable_block_metadata(values):
+    assert np.isfinite(values).all()
+    with pytest.raises(ValueError, match='representable in F16'):
+        pack_q4_1(values)
+
+
+def test_q41_accepts_finite_f16_boundary():
+    for value in (65504, -65504):
+        payload = pack_q4_1(np.full(32, value, dtype=np.float32))
+        scale, minimum = struct.unpack('<ee', payload[:4])
+        assert scale == 0 and minimum == value
+        assert payload[4:] == bytes(16)

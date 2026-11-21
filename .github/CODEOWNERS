@@ -1,0 +1,17 @@
+# Last matching pattern wins. A match requests a review; it is not a
+# required approval. Add yourself only if you will review that path.
+#
+# People with write access who are not listed can add a path when they
+# start reviewing it.
+
+*                                  @shuk777 @linyubupa
+/*.md                              @linyubupa @chenbin11200 @shuk777
+/CONTRIBUTING.md                   @shuk777 @linyubupa
+/docs/                             @linyubupa @chenbin11200
+/paper/                            @linyubupa
+/.github/                          @shuk777 @linyubupa
+
+/edge0-strata/                     @linyubupa
+/edge0-infer/                      @shuk777 @hattori7243
+/edge0-infer/examples/             @shuk777 @hattori7243
+/edge0-infer/tools/assets/         @shuk777 @hattori7243

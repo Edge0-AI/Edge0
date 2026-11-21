@@ -83,7 +83,7 @@ def export_case(cli: str, model: Path, spec: dict, case: dict, work: Path) -> di
     prompt = [int(t) for t in call(tokenize + [case['text']]).stdout.split()]
     if not prompt:
         raise ValueError(f'empty input for case {case["id"]}')
-    (work / 'input.json').write_text(json.dumps({'input': prompt}))
+    (work / 'input.json').write_text(json.dumps({'input': prompt}), encoding='utf-8')
     run = work / 'run'
     call([cli, 'run', *common, '--tokens', str(work / 'input.json'), '--temperature', '0', '--presence-penalty', '0',
           '--max-tokens', str(case['decode_steps']), '--out', str(run)])
@@ -91,7 +91,7 @@ def export_case(cli: str, model: Path, spec: dict, case: dict, work: Path) -> di
     if generated_record['input'] != prompt:
         raise ValueError(f'run changed the input of case {case["id"]}')
     generated = generated_record['generated']
-    (work / 'sequence.json').write_text(json.dumps({'input': prompt, 'generated': generated}))
+    (work / 'sequence.json').write_text(json.dumps({'input': prompt, 'generated': generated}), encoding='utf-8')
     outputs = {}
     for name, extra in [('plain', []), ('observed', ['--observe'])]:
         command = [cli, 'forward', *common, '--tokens', str(work / 'sequence.json'), '--out', str(work / name), *extra]
@@ -132,7 +132,7 @@ def export_case(cli: str, model: Path, spec: dict, case: dict, work: Path) -> di
 def write_case(target: Path, result: dict, probes: list[int]) -> None:
     target.mkdir(parents=True)
     tokens = result['tokens']
-    (target / 'tokens.json').write_text(json.dumps(tokens, sort_keys=True) + '\n')
+    (target / 'tokens.json').write_text(json.dumps(tokens, sort_keys=True) + '\n', encoding='utf-8')
     fmt.encode_logits(result['logits'], probes).tofile(target / 'logits.bin')
     layers = result['dimensions']['route_layers']
     (target / 'routes.bin').write_bytes(fmt.encode_routes(result['ids'], tokens['route_steps'], layers))
@@ -173,9 +173,9 @@ def export(cli: str, model: Path, suite: str, out: Path, cases_file: Path = CASE
                                                    observation_bitwise_equal=result['observation_bitwise_equal'])
                 shutil.rmtree(work)
         fmt.validate_identity(identity)
-        (staging / 'identity.json').write_text(json.dumps(identity, indent=1, sort_keys=True) + '\n')
+        (staging / 'identity.json').write_text(json.dumps(identity, indent=1, sort_keys=True) + '\n', encoding='utf-8')
         fmt.write_sums(staging)
-        (staging / 'run.json').write_text(json.dumps(record, indent=1, sort_keys=True) + '\n')
+        (staging / 'run.json').write_text(json.dumps(record, indent=1, sort_keys=True) + '\n', encoding='utf-8')
         fmt.suite_identity(staging)
         replace(staging, out)
     except BaseException:

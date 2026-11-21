@@ -155,9 +155,9 @@ class CompareTest(unittest.TestCase):
     def test_command_line_exit_codes(self):
         with tempfile.TemporaryDirectory(prefix='moe-report-') as directory:
             base, good, bad = (Path(directory) / n for n in ('base.json', 'good.json', 'bad.json'))
-            base.write_text(json.dumps(make()))
-            good.write_text(json.dumps(make(decode=(19.9,) * 4)))
-            bad.write_text(json.dumps(make(decode=(18,) * 4)))
+            base.write_text(json.dumps(make()), encoding='utf-8')
+            good.write_text(json.dumps(make(decode=(19.9,) * 4)), encoding='utf-8')
+            bad.write_text(json.dumps(make(decode=(18,) * 4)), encoding='utf-8')
             run = lambda cand: subprocess.run([sys.executable, '-I', str(HERE / 'report.py'), 'compare', '--baseline', str(base),
                                                '--candidate', str(cand)], capture_output=True, text=True).returncode
             self.assertEqual((run(good), run(bad), run(Path(directory) / 'missing.json')), (0, 1, 2))
@@ -228,7 +228,7 @@ class FixedThresholdTest(unittest.TestCase):
     def test_baseline_cli_and_compare_cli(self):
         with tempfile.TemporaryDirectory(prefix='moe-report-') as directory:
             source, out = Path(directory) / 's.json', Path(directory) / 'b' / 'base.json'
-            source.write_text(json.dumps(make_sweep()))
+            source.write_text(json.dumps(make_sweep()), encoding='utf-8')
             run = lambda *a: subprocess.run([sys.executable, '-I', str(HERE / 'report.py'), *a], capture_output=True, text=True).returncode
             self.assertEqual(run('baseline', '--report', str(source), '--sides', 'predicted', 'actual', '--threshold', '0.05', '--out', str(out)), 0)
             self.assertEqual(run('baseline', '--report', str(source), '--sides', 'predicted', '--threshold', '0.05', '--out', str(out)), 2)  # exists
@@ -248,14 +248,14 @@ class WriterTest(unittest.TestCase):
             self.assertEqual(report.load_partial(writer.partial_path)['identity']['engine'], {'version': '2'})
             writer.finish(full)
             self.assertFalse(writer.partial_path.exists())
-            self.assertEqual(json.loads(writer.json_path.read_text())['format'], report.FORMAT)
-            self.assertIn('Per-side summary', writer.md_path.read_text())
+            self.assertEqual(json.loads(writer.json_path.read_text(encoding='utf-8'))['format'], report.FORMAT)
+            self.assertIn('Per-side summary', writer.md_path.read_text(encoding='utf-8'))
             with self.assertRaises(FileExistsError):
                 report.ReportWriter(Path(directory) / 'r')
 
     def test_existing_partial_is_not_overwritten(self):
         with tempfile.TemporaryDirectory(prefix='moe-report-') as directory:
-            Path(directory, 'r.partial.jsonl').write_text('')
+            Path(directory, 'r.partial.jsonl').write_text('', encoding='utf-8')
             with self.assertRaises(FileExistsError):
                 report.ReportWriter(Path(directory) / 'r')
 
@@ -264,13 +264,13 @@ class RenderTest(unittest.TestCase):
     def test_render_does_not_change_inputs_and_copies_numbers(self):
         with tempfile.TemporaryDirectory(prefix='moe-report-') as directory:
             source, extra, out = (Path(directory) / n for n in ('r.json', 'extra.md', 'out.md'))
-            source.write_text(json.dumps(make(decode=(21.5,) * 4)))
-            extra.write_text('## Appended\n')
+            source.write_text(json.dumps(make(decode=(21.5,) * 4)), encoding='utf-8')
+            extra.write_text('## Appended\n', encoding='utf-8')
             before = source.read_bytes()
             code = report.main(['render', '--out', str(out), '--append', str(extra), str(source)])
             self.assertEqual(code, 0)
             self.assertEqual(source.read_bytes(), before)
-            text = out.read_text()
+            text = out.read_text(encoding='utf-8')
             self.assertIn('21.500', text)
             self.assertTrue(text.rstrip().endswith('## Appended'))
 

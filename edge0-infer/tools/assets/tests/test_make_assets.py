@@ -31,10 +31,10 @@ def setup(tmp_path, monkeypatch):
     source, out = tmp_path / 'source', tmp_path / 'out'
     source.mkdir()
     for name in ['config.json', 'lora_edge0_35b.safetensors']:
-        (source / name).write_text('{}')
+        (source / name).write_text('{}', encoding='utf-8')
     converter = tmp_path / 'converter/convert_mlx_to_gguf.py'
     converter.parent.mkdir()
-    converter.write_text(FAILING)
+    converter.write_text(FAILING, encoding='utf-8')
     probe = tmp_path / 'probe.json'
     monkeypatch.setenv('PROBE_FILE', str(probe))
     lock = {'files': {p.name: sha256(p) for p in source.iterdir()}}
@@ -43,7 +43,7 @@ def setup(tmp_path, monkeypatch):
 
 def test_digest_stops_before_conversion(setup):
     source, out, lock, converter, probe = setup
-    (source / 'config.json').write_text('changed')
+    (source / 'config.json').write_text('changed', encoding='utf-8')
     with pytest.raises(ValueError, match='source digest mismatch'):
         maker.make_assets(source, out, lock, converter)
     assert not out.with_name('out.partial').exists()
@@ -79,10 +79,10 @@ def test_converter_failure_preserves_partial_and_input(setup):
 def test_refuse_existing_output(setup):
     source, out, lock, converter, probe = setup
     out.mkdir()
-    (out / 'keep').write_text('preserve')
+    (out / 'keep').write_text('preserve', encoding='utf-8')
     with pytest.raises(ValueError, match='output already exists'):
         maker.make_assets(source, out, lock, converter)
-    assert (out / 'keep').read_text() == 'preserve'
+    assert (out / 'keep').read_text(encoding='utf-8') == 'preserve'
 
 
 def test_converter_sees_only_repository_and_python_paths(setup, monkeypatch, tmp_path):
@@ -92,7 +92,7 @@ def test_converter_sees_only_repository_and_python_paths(setup, monkeypatch, tmp
     monkeypatch.setenv('PYTHONPATH', str(foreign))
     with pytest.raises(maker.MakeError):
         maker.make_assets(source, out, lock, converter)
-    seen = json.loads(probe.read_text())
+    seen = json.loads(probe.read_text(encoding='utf-8'))
     assert seen['pythonpath'] is None
     allowed = [REPO, Path(sys.prefix).resolve(), Path(sys.base_prefix).resolve(), converter.parent.resolve()]
     for entry in seen['sys_path']:
@@ -133,10 +133,10 @@ def succeeding(tmp_path, monkeypatch):
     source = tmp_path / 'source'
     source.mkdir()
     for name in ['config.json', *TEXT]:
-        (source / name).write_text(name)
+        (source / name).write_text(name, encoding='utf-8')
     converter = tmp_path / 'converter/convert_mlx_to_gguf.py'
     converter.parent.mkdir()
-    converter.write_text(SUCCEEDING)
+    converter.write_text(SUCCEEDING, encoding='utf-8')
 
     def pack(_, target):
         target.write_bytes(b'prerouter')
@@ -155,12 +155,30 @@ def test_success_removes_partial_and_records_no_local_paths(succeeding, tmp_path
         maker.make_assets(source, out, lock, converter)
         assert (out / 'assets.tsv').is_file()
         assert not out.with_name('assets.partial').exists()
-        text = (out / 'provenance.json').read_text()
+        text = (out / 'provenance.json').read_text(encoding='utf-8')
         assert str(tmp_path) not in text and str(tmp_path.resolve()) not in text
         records.append(json.loads(text))
     assert records[0] == records[1]
     assert records[0]['arguments'] == ['<outside-repository>/convert_mlx_to_gguf.py', '--dir', '<partial>/staging/edge0-35b',
                                        '--out', '<partial>/converted']
+
+
+def test_success_publishes_every_file_listed_and_text_files_unchanged(succeeding, tmp_path):
+    source, _, converter = succeeding
+    # Bytes a re-serialization would change: key order, spacing, CRLF and non-ASCII text.
+    (source / 'generation_config.json').write_bytes(b'{"top_p": 0.95,  "temperature":0.6}\r\n')
+    (source / 'chat_template.jinja').write_bytes('{{ messages }}\u2014\r\n'.encode())
+    lock = {'files': {p.name: sha256(p) for p in source.iterdir()}}
+    out = tmp_path / 'assets'
+    maker.make_assets(source, out, lock, converter)
+    published = {p.name for p in out.iterdir()}
+    assert published == {'assets.tsv', 'base.gguf', 'lora.gguf', 'prerouter.gguf', 'model.json', 'provenance.json', *TEXT}
+    rows = [line.split('\t') for line in (out / 'assets.tsv').read_text(encoding='utf-8').splitlines()[1:]]
+    assert {name for *_, name in rows} == published - {'assets.tsv'}
+    for _, size, digest, name in rows:
+        assert int(size) == (out / name).stat().st_size and digest == sha256(out / name), name
+    for name in TEXT:
+        assert (out / name).read_bytes() == (source / name).read_bytes(), name
 
 
 def test_repository_converter_is_recorded_relative(tmp_path):

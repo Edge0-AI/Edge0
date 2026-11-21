@@ -1,0 +1,43 @@
+# Area labels applied by .github/workflows/labeler.yml.
+# A pull request can carry more than one label.
+
+engine:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "edge0-infer/src/**"
+          - "edge0-infer/include/**"
+          - "edge0-infer/tests/**"
+          - "edge0-infer/cmake/**"
+          - "edge0-infer/third_party/**"
+          - "edge0-infer/tools/checks/**"
+          - "edge0-infer/tools/cli/**"
+          - "edge0-infer/tools/*.py"
+          - "edge0-infer/CMakeLists.txt"
+          - "edge0-infer/CMakePresets.json"
+
+assets:
+  - changed-files:
+      - any-glob-to-any-file: "edge0-infer/tools/assets/**"
+
+examples:
+  - changed-files:
+      - any-glob-to-any-file: "edge0-infer/examples/**"
+
+desktop:
+  - changed-files:
+      - any-glob-to-any-file: "edge0-infer/examples/desktop/**"
+
+strata:
+  - changed-files:
+      - any-glob-to-any-file: "edge0-strata/**"
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "docs/**"
+          - "paper/**"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"

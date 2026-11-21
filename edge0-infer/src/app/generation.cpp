@@ -967,9 +967,20 @@ Result<GenerationCheckResult> replay_check(const SessionReference& session, cons
     }
     struct FinishReplay {
         SessionReference session;
-        bool success=false;
+        bool drained=false;
+        exec::Status drain(models::FinishReason reason) {
+            if (drained) return {};
+            drained=true;
+            const auto result=session->model->compute->finish_pending_weights(session->model->loaded,session->state->states(),reason);
+            if (!result) {
+                session->weights_failed=true;
+                session->state->invalidate();
+                return result.error();
+            }
+            return {};
+        }
         ~FinishReplay() {
-            session->model->compute->finish_pending_weights(session->model->loaded, session->state->states(), success?models::FinishReason::normal:models::FinishReason::failure);
+            drain(models::FinishReason::failure);
             {
                 std::lock_guard<std::mutex> lock(session->model->registry->progress_mutex);
                 session->model->registry->progress = {};
@@ -1007,10 +1018,10 @@ Result<GenerationCheckResult> replay_check(const SessionReference& session, cons
         output.result.generated.push_back(greedy.value().token);
         output.result.computed_tokens += block.length;
     }
+    if (auto error=finish.drain(models::FinishReason::normal)) return *error;
     session->blocks = input.blocks; output.replay = input;
     output.result.e = session->state->query().e; output.result.input_complete = true;
     output.result.stop_reason = StopReason::length;
-    finish.success=true;
     return output;
 }
 }

@@ -22,7 +22,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from serve.frontend import ChatTemplate, literal_tags, mark_think_literals, unmark_think_literals  # noqa: E402
-from serve.server import (ANSWER_RESERVE_MIN, CTX_SLACK, ByteTokenizer, EngineDied, EngineNonFinite, GpuBusy, MockEngine,  # noqa: E402
+from serve.server import (ANSWER_RESERVE_MIN, CTX_SLACK, MIN_ANSWER_ROOM, ByteTokenizer, EngineDied, EngineNonFinite, GpuBusy, MockEngine,  # noqa: E402
                           PP_DONE_TAIL, Service,
                           StrataEngine, api_key_of, engine_args, key_matches, layer_split_value, prompt_progress,
                           prompt_tokens_seen,
@@ -223,12 +223,16 @@ class MaxTokens(unittest.TestCase):
         for api in ("openai", "anthropic"):
             _, _, pa, _ = self.call(api, max_tokens=1)
             over = pa - pt0                          # the Anthropic template may differ slightly
-            with self.subTest(api=api, room=5):     # a few tokens left: the budget is exactly those
-                text = "y" * (CTX - CTX_SLACK - overhead - over - 5)
+            with self.subTest(api=api, room=MIN_ANSWER_ROOM):   # room for an answer: the budget is exactly that
+                text = "y" * (CTX - CTX_SLACK - overhead - over - MIN_ANSWER_ROOM)
                 s, b, pt, ct = self.call(api, text=text, max_tokens=-1)
                 self.assertEqual(s, 200, b)
-                self.assertEqual(self.engine.last_max_new, 5)
-                self.assertEqual(ct, 5)
+                self.assertEqual(self.engine.last_max_new, MIN_ANSWER_ROOM)
+            with self.subTest(api=api, room=5):     # a few tokens left: rejected, not an answer cut off after 5
+                text = "y" * (CTX - CTX_SLACK - overhead - over - 5)
+                s, b, _, _ = self.call(api, text=text, max_tokens=-1)
+                self.assertEqual(s, 400, b)
+                self.assertIn("leaves only 5 tokens to answer", b["error"]["message"])
             with self.subTest(api=api, room=0):     # nothing left: rejected, not truncated
                 text = "y" * (CTX - CTX_SLACK - overhead - over)
                 s, b, _, _ = self.call(api, text=text)

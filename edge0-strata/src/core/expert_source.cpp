@@ -110,9 +110,13 @@ bool cgroup_available_bytes(uint64_t limit, const CgroupMemoryStat& stat, uint64
     bytes = 0;
     if (!stat.valid) return false;
 
-    // memory.stat's counters can race memory.current, so bound them to charged usage first.  The whole clean page
-    // cache is reclaimable (149: MemAvailable counts active file pages too); the kernel keeps a low-watermark share.
-    uint64_t reclaimable = std::min(std::max(stat.file, stat.inactive_file), stat.current);
+    // "file" includes tmpfs and shared mappings, which cannot be reclaimed as disk cache. If "shmem"
+    // is absent, use only the file LRU counter. The counters can race current, so cap the credit by the
+    // charged usage other than shmem.
+    const uint64_t shmem = stat.shmem.value_or(0);
+    const uint64_t disk_file = stat.shmem && stat.file > shmem ? stat.file - shmem : 0;
+    uint64_t reclaimable = std::min(std::max(disk_file, stat.inactive_file),
+                                    stat.current - std::min(shmem, stat.current));
     reclaimable = stat.file_dirty >= reclaimable ? 0 : reclaimable - stat.file_dirty;
     reclaimable = stat.file_writeback >= reclaimable ? 0 : reclaimable - stat.file_writeback;
     reclaimable -= std::min(reclaimable / 2, limit / 64);
@@ -390,6 +394,9 @@ bool read_cgroup_memory_stat(const std::filesystem::path& path, uint64_t current
             if (file) return false;
             file = true;
             stat.file = value;
+        } else if (key == "shmem") {
+            if (stat.shmem) return false;
+            stat.shmem = value;
         }
     }
     if (!input.eof() || !inactive_file || !file_dirty || !file_writeback) return false;
@@ -465,6 +472,7 @@ bool host_available_memory(HostMemory& m, const std::string& meminfo, const std:
                     uint64_t cgroup_available = 0;
                     if (!cgroup_available_bytes(cap, stat, cgroup_available)) return false;
                     bytes = std::min(bytes, cgroup_available);
+                    m.cgroup_available = std::min(m.cgroup_available, cgroup_available);
                     m.cgroup_limit = std::min(m.cgroup_limit, cap);
                 } catch (...) { return false; }
             }
@@ -483,6 +491,7 @@ bool host_available_memory(HostMemory& m, const std::string& meminfo, const std:
             uint64_t cap = 0, usage = 0;
             if (limit_file >> cap && usage_file >> usage && cap < (1ull << 62)) {
                 bytes = std::min(bytes, usage < cap ? cap - usage : 0);
+                m.cgroup_available = std::min(m.cgroup_available, usage < cap ? cap - usage : 0);
                 m.cgroup_limit = std::min(m.cgroup_limit, cap);
             }
             if (path == mroot) break;
@@ -5404,7 +5413,11 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
     }
     if (d.peer != nullptr) {                 // multi-GPU: start the second GPU's share before the CPU's own work
         std::string perr;
-        if (!d.peer->launch(d.layers, x_f, ids, n_tok, k, kind, perr, out)) {
+        const bool ok = d.peer->latent()
+                            ? d.peer->launch_latent(d.layers, (const float*) d.lat_xlq, d.lat_xlseq, ids, n_tok, k, kind,
+                                                    perr, out)
+                            : d.peer->launch(d.layers, x_f, ids, n_tok, k, kind, perr, out);
+        if (!ok) {
             std::fprintf(stderr, "strata: %s (layer %lld)\n", perr.c_str(), (long long) d.layers);
             d.failed = true;
             d.fail = "the peer GPU's experts could not be launched";
@@ -5415,7 +5428,11 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
     if (d.remote_count > 0) {
         static thread_local std::string remote_error;
         for (int r = 0; r < d.remote_count; ++r) {
-            if (!d.remote[r]->begin(d.layers, x_f, ids, n_tok, k, kind, d.host_res, remote_error)) {
+            const bool ok = d.remote[r]->latent()
+                                ? d.remote[r]->begin_latent(d.layers, (const float*) d.lat_xlq, d.lat_xlseq, ids, n_tok,
+                                                            k, kind, d.host_res, remote_error)
+                                : d.remote[r]->begin(d.layers, x_f, ids, n_tok, k, kind, d.host_res, remote_error);
+            if (!ok) {
                 d.failed = true; d.fail = remote_error.c_str(); d.fail_layer = d.layers; return;
             }
             for (int64_t i = 0; i < n; ++i) if (d.remote[r]->owns(i)) kind[i] = 2;
@@ -5438,7 +5455,10 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
     }
     const double t_kb_ms = (double) std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count() / 1e6;   // DIAGB: K wall ends
-    if (d.latent && any_cpu) {   // latent MoE: the CPU share runs the A-blob experts on the host (D -> A -> U)
+    // latent MoE: the CPU share runs the A-blob experts on the host (D -> A -> U), and a helper's A-only rows must be
+    // collected here whether or not any CPU expert is left: they are written on the helper and land in `out` only at
+    // its finish, so entering this block only for `any_cpu` left the primary's U stage reading another pass's rows.
+    if (d.latent && (any_cpu || d.remote_count > 0 || d.peer != nullptr)) {
         static thread_local std::vector<int64_t> lmiss;
         static thread_local std::vector<uint8_t> lmiss_mark;   // one pass, no std::find scan
         lmiss.clear();
@@ -5496,6 +5516,25 @@ void expert_pool_dispatch_multi(ExpertDispatch& d, const float* x_f, const int32
         for (int64_t i = 0; i < n; ++i) {
             const int64_t e = ids[i];
             if (e >= 0 && e < d.n_expert) d.job_of[(size_t) e] = -1;
+        }
+        if (d.remote_count > 0) {   // a helper's latent rows (kind==2) likewise, before the window reads them
+            static thread_local std::string remote_error;
+            for (int r = 0; r < d.remote_count; ++r)
+                if (!d.remote[r]->finish(out, remote_error)) {
+                    d.failed = true;
+                    d.fail = remote_error.c_str();
+                    d.fail_layer = d.layers;
+                    return;
+                }
+        }
+        if (d.peer != nullptr) {   // the peer's latent rows (kind==2) must land before the window reads them
+            std::string perr;
+            if (!d.peer->finish(out, perr)) {
+                d.failed = true;
+                d.fail = perr.c_str();
+                d.fail_layer = d.layers;
+                return;
+            }
         }
         ++d.layers;
         d.experts += n_tok * k;
@@ -6279,18 +6318,23 @@ bool ArenaExpertSource::open(const std::string& pack_dir, int64_t n_layers, int6
     // #633: THE RAM BEFORE THE ALLOCATION.  On Linux the arena is an anonymous mapping that succeeds whatever the host
     // has; its pages are committed as the load writes them, so a container whose memory limit is below the arena was
     // killed by the OOM killer part-way through the load, without a message.  A hard cgroup limit below it is
-    // certain to end that way: refused, with the numbers.  Less RAM available than the arena (another program, an
-    // engine still exiting) is only a warning - the OS may make room - per the recommend-not-force rule.
+    // refused, with the numbers. Check remaining cgroup capacity too, and the serving headroom: under a cgroup
+    // limit that is a refusal too (#301) - the kernel stops the group rather than handing its pages back, so a
+    // load that fits but leaves no room for the conversation is a death part-way through, not a warning. Less
+    // physical RAM available on a bare host (another program, an engine still exiting) stays a warning - the OS
+    // may make room - per the recommend-not-force rule.
     ram_warning_.clear();
     // (a shared arena, --shared-expert-arena, may already be in RAM for another engine: not checked)
     if (detail::HostMemory hm; shared_arena_file.empty() && detail::host_available_memory(hm)) {
-        const uint64_t need = want + (uint64_t) blob;
+        const auto advised = detail::arena_headroom_target_bytes(want, (uint64_t) blob);
+        if (!advised) { err = "ArenaExpertSource: arena and serving headroom size overflow"; return false; }
+        const uint64_t need = want + (uint64_t) blob;  // the checked allocation, not the advisory headroom
         const double gib = 1073741824.0;
         char buf[512];
         if (hm.cgroup_limit < need) {
             std::snprintf(buf, sizeof buf,
                           "ArenaExpertSource: the expert arena needs %.2f GiB of RAM but this process's memory limit "
-                          "(cgroup memory.max / memory.limit_in_bytes) is %.2f GiB: it would be killed while loading. "
+                          "(cgroup memory.max / memory.limit_in_bytes) is %.2f GiB. "
                           "Raise the container's limit, or run with less RAM: --mmap-experts with "
                           "--resident-budget-gib N keeps only the hottest experts in RAM",
                           (double) need / gib, (double) hm.cgroup_limit / gib);
@@ -6300,7 +6344,7 @@ bool ArenaExpertSource::open(const std::string& pack_dir, int64_t n_layers, int6
         if (hm.available < need) {
             // #4051: the shortfall is often an engine that was still exiting (the code's own example), a few seconds
             // from giving its RAM back: wait for it, not for ever, and say so.  STRATA_ARENA_RAM_WAIT_S changes the
-            // seconds (0 loads at once, as before this wait).  The load then goes on either way - it only warns.
+            // seconds (0 skips the wait). Physical pressure only warns; a remaining cgroup shortfall refuses.
             double wait_s = 20.0;
             if (const char* w = std::getenv("STRATA_ARENA_RAM_WAIT_S"); w != nullptr && w[0] != '\0') {
                 char* end = nullptr;
@@ -6312,7 +6356,7 @@ bool ArenaExpertSource::open(const std::string& pack_dir, int64_t n_layers, int6
             if (wait_s > 0.0) {
                 const bool came = detail::wait_for_ram(
                     need, wait_s, 0.25, 5.0,
-                    [](uint64_t& a) { detail::HostMemory h; if (!detail::host_available_memory(h)) return false; a = h.available; return true; },
+                    [&](uint64_t& a) { detail::HostMemory h; if (!detail::host_available_memory(h)) return false; hm = h; a = h.available; return true; },
                     [](double s) { std::this_thread::sleep_for(std::chrono::duration<double>(s)); },
                     [&](double w, uint64_t a) {
                         std::fprintf(stderr, "strata generate: the expert arena needs %.2f GiB of RAM and %.2f GiB is "
@@ -6326,6 +6370,16 @@ bool ArenaExpertSource::open(const std::string& pack_dir, int64_t n_layers, int6
                                          "expert arena\n", (double) avail / gib, waited);
                 hm.available = avail;
             }
+            if (detail::arena_cgroup_shortfall(hm, need)) {
+                std::snprintf(buf, sizeof buf,
+                              "ArenaExpertSource: the expert arena needs %.2f GiB of RAM but only %.2f GiB remains "
+                              "under the cgroup limit. Use --mmap-experts with "
+                              "--resident-budget-gib N, stop other processes in the group, or raise its memory limit",
+                              (double) need / gib,
+                              (double) std::min(hm.cgroup_limit, hm.cgroup_available) / gib);
+                err = buf;
+                return false;
+            }
             if (hm.available < need) {
                 std::snprintf(buf, sizeof buf,
                               "the expert arena needs %.2f GiB of RAM but %.2f GiB is available (%.2f GiB short%s): the "
@@ -6337,6 +6391,31 @@ bool ArenaExpertSource::open(const std::string& pack_dir, int64_t n_layers, int6
                                                         "memory reclaim until it is restarted (#4051); on Linux a "
                                                         "systemd MemoryHigh= below the RAM keeps one program from "
                                                         "taking all of it" : "");
+                ram_warning_ = buf;
+            }
+        }
+        if (hm.available < *advised) {
+            if (detail::arena_cgroup_headroom_refusal(hm, *advised)) {
+                std::snprintf(buf, sizeof buf,
+                              "ArenaExpertSource: the expert arena needs %.2f GiB and this process's memory limit "
+                              "leaves %.2f GiB: that is %.2f GiB short of the recommended %.2f GiB serving headroom, "
+                              "and a cgroup limit is not reclaimed the way host RAM is, so the group is stopped by "
+                              "the OOM killer part-way through a conversation instead (#301). Run with a smaller "
+                              "arena (--mmap-experts with --resident-budget-gib N), raise the limit, or set "
+                              "STRATA_ARENA_HEADROOM_MIB=0 to load anyway",
+                              (double) need / gib, (double) hm.available / gib,
+                              (double) (*advised - hm.available) / gib,
+                              (double) detail::arena_serving_headroom() / gib);
+                err = buf;
+                return false;
+            }
+            if (ram_warning_.empty()) {
+                std::snprintf(buf, sizeof buf,
+                              "the expert arena needs %.2f GiB and only %.2f GiB is available: it fits without the "
+                              "recommended %.2f GiB serving headroom. Requests may need more RAM than loading; "
+                              "consider --mmap-experts with --resident-budget-gib N",
+                              (double) need / gib, (double) hm.available / gib,
+                              (double) detail::arena_serving_headroom() / gib);
                 ram_warning_ = buf;
             }
         }

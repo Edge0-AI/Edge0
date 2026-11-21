@@ -47,6 +47,28 @@ foreach(src ${STRATA_METAL_TESTS})
   target_link_libraries(${t} PRIVATE mtl_rt)
 endforeach()
 
+# Keep the latent decode parity matrix reachable without the full engine's
+# metal-cpp/ggml dependencies. These programs execute on the physical GPU.
+include(CTest)
+if(BUILD_TESTING)
+  foreach(experts q3k fp4)
+    foreach(du q4 q8)
+      foreach(width 1280 1792)
+        foreach(ntok 1 4 8)
+          set(test_name latent_routed_parity_${experts}_${du}_${width}_${ntok})
+          set(width_arg)
+          if(width EQUAL 1792)
+            set(width_arg --latent1792)
+          endif()
+          add_test(NAME ${test_name} COMMAND latent_routed_parity
+            --experts ${experts} --du ${du} ${width_arg} --ntok ${ntok})
+          set_tests_properties(${test_name} PROPERTIES LABELS "metal;parity" RUN_SERIAL TRUE TIMEOUT 120)
+        endforeach()
+      endforeach()
+    endforeach()
+  endforeach()
+endif()
+
 # ---- the device runtime and the engine (mac-design) ---------------------------------------------------------------
 set(METAL_CPP_DIR "" CACHE PATH "metal-cpp headers (https://developer.apple.com/metal/cpp/), e.g. metal-cpp_26")
 if(NOT EXISTS "${METAL_CPP_DIR}/Metal/Metal.hpp")
@@ -96,7 +118,7 @@ set(S ${STRATA_ROOT}/src)
 set(STRATA_METAL_HOST_SOURCES
   ${S}/core/device.cu ${S}/core/pinned.cu ${S}/platform/memory.cpp ${S}/core/graph.cpp ${S}/core/weights.cpp ${S}/core/layout.cpp
   ${S}/core/layer.cpp ${S}/core/session.cpp ${S}/core/expert_source.cpp ${S}/core/remote_experts.cpp ${S}/core/expert_cache.cpp
-  ${S}/core/native_head.cpp ${S}/core/native_dense.cpp ${S}/core/latent_dense.cpp ${S}/core/verify.cpp ${S}/core/mtp.cpp
+  ${S}/core/native_head.cpp ${S}/core/native_dense.cpp ${S}/core/latent_dense.cpp ${S}/core/latent_tables.cpp ${S}/core/verify.cpp ${S}/core/mtp.cpp
   ${S}/core/conversation_snapshot.cpp ${S}/core/conversation_state.cpp ${S}/core/conversation_memory.cpp
   ${S}/core/peer_experts.cpp ${S}/core/arch_defaults.cpp ${S}/core/vmm.cpp ${S}/core/conversation_file.cpp
   ${S}/kernels/ngram.cpp ${S}/ngram/ple_reader.cpp ${S}/platform/direct_file.cpp

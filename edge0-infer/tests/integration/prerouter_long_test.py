@@ -31,7 +31,7 @@ def main():
         for a, b in [('predicted', 'repeat')]:
             for name in ['tokens.json', 'logits.f32']:
                 assert (root/a/name).read_bytes() == (root/b/name).read_bytes(), (a, b, name)
-        rows = [json.loads(line) for line in (root/'route.jsonl').read_text().splitlines()]
+        rows = [json.loads(line) for line in (root/'route.jsonl').read_text(encoding='utf-8').splitlines()]
         assert len(rows) == 64
         print('35B long input: 65 generated tokens / 64 decode steps; predicted trace on/off=repeat bytewise; 64 trace rows')
     return 0

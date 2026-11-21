@@ -1,6 +1,7 @@
 """Model check for edge0_35b assets: roles, model description, GGUF metadata and tensor contract."""
 
 from pathlib import Path
+import math
 
 from asset_common import fail, read_json
 from format_gguf import Reader
@@ -35,6 +36,13 @@ def check(root: Path, rows: dict, report: dict) -> None:
     prerouter = Reader(root / 'prerouter.gguf')
     contract = manifest.load()
     try:
+        context = base.metadata['qwen3next.context_length']
+        if context.type != 4 or context.data <= 0:
+            fail('hyperparameter_mismatch', 'qwen3next.context_length: expected positive UINT32')
+        for key in ['qwen3next.rope.freq_base', 'qwen3next.attention.layer_norm_rms_epsilon']:
+            value = base.metadata[key]
+            if value.type != 6 or not math.isfinite(value.data) or value.data <= 0:
+                fail('hyperparameter_mismatch', f'{key}: expected finite positive FLOAT32')
         p = manifest.metadata_parameters(base.metadata)
         profiles = [k for k, v in contract['profiles'].items() if all(p[k] == v[k] for k in p)]
         if len(profiles) != 1:

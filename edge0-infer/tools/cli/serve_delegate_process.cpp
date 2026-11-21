@@ -15,6 +15,7 @@ extern "C" int posix_spawn_file_actions_addchdir_np(posix_spawn_file_actions_t*,
 extern char** environ;
 #endif
 #include <httplib.h>
+#include <algorithm>
 #include <csignal>
 #include <cerrno>
 #include <limits>
@@ -385,6 +386,12 @@ void Engine::start() {
         stop(10);
         throw std::runtime_error(message);
     };
+    const auto deadline = started + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+        std::chrono::duration<double>(settings_.ready_timeout));
+    auto timed_out = [&] {
+        fail("edge0-strata was not ready within " + std::to_string(static_cast<long long>(settings_.ready_timeout)) + " s" +
+             (settings_.log_file.empty() ? "" : "; see " + settings_.log_file.string()));
+    };
     for (;;) {
         if (settings_.interrupted && settings_.interrupted->load()) fail("interrupted while edge0-strata was starting");
         if (exited_)
@@ -394,21 +401,30 @@ void Engine::start() {
         if (port_ == 0 && fs::exists(settings_.ready_file, error)) {
             std::ifstream input(settings_.ready_file, std::ios::binary);
             const auto record = Json::parse(input, nullptr, false);
-            if (!record.is_discarded() && record.contains("bound_port") && record["bound_port"].is_number_integer())
+            if (!record.is_discarded()) {
+                if (!record.contains("bound_port") || !record["bound_port"].is_number_integer() ||
+                    record["bound_port"] < 1 || record["bound_port"] > 65535)
+                    fail("edge0-strata ready file has invalid bound_port (expected integer 1..65535)");
                 port_ = record["bound_port"].get<int>();
+            }
         }
         if (port_ > 0) {
+            const auto remaining = deadline - std::chrono::steady_clock::now();
+            if (remaining <= std::chrono::steady_clock::duration::zero()) timed_out();
+            const double seconds = std::chrono::duration<double>(remaining).count();
             httplib::Client client("127.0.0.1", port_);
             client.set_tcp_nodelay(true);
-            client.set_connection_timeout(2);
-            client.set_read_timeout(5);
-            if (auto response = client.Get("/health"); response && response->status == 200) return;
+            client.set_connection_timeout(std::chrono::duration<double>(std::min(2.0, seconds)));
+            client.set_read_timeout(std::chrono::duration<double>(std::min(5.0, seconds)));
+            client.set_max_timeout(std::max(std::chrono::milliseconds(1),
+                                           std::chrono::duration_cast<std::chrono::milliseconds>(remaining)));
+            const auto response = client.Get("/health");
+            if (std::chrono::steady_clock::now() >= deadline) timed_out();
+            if (response && response->status == 200) return;
         }
-        const double waited = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
-        if (waited > settings_.ready_timeout)
-            fail("edge0-strata was not ready within " + std::to_string(static_cast<long long>(settings_.ready_timeout)) + " s" +
-                 (settings_.log_file.empty() ? "" : "; see " + settings_.log_file.string()));
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        const auto now = std::chrono::steady_clock::now();
+        if (now >= deadline) timed_out();
+        std::this_thread::sleep_until(std::min(deadline, now + std::chrono::milliseconds(100)));
     }
 }
 
@@ -528,7 +544,13 @@ int run_prepare_script(const fs::path& python, const fs::path& cwd, const fs::pa
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
+#if defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__)
+    // iOS cannot run the external engine's preparation scripts. Keep the native
+    // CLI buildable without referencing this SDK-unavailable process API.
+    const int chdir_error = ENOTSUP;
+#else
     const int chdir_error = posix_spawn_file_actions_addchdir_np(&actions, directory.c_str());
+#endif
 #if defined(__APPLE__)
 #pragma clang diagnostic pop
 #endif

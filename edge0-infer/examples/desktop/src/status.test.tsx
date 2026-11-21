@@ -18,7 +18,7 @@ import { pollVisible, type PollFlight } from './state/polling';
 import { defaultSettings, generateToken, maskToken, temperatures } from './state/settings';
 import { groupHistory, title, newConversation, editAndResend, regenerate, type Conversation } from './state/history';
 import { appData, assistantState, buildRequest, type Message } from './chat';
-import { deviceLabel, stopReason, parseInfo, sourceLabel, type EngineStatus } from './status';
+import { deviceLabel, stopReason, parseInfo, requestOutcome, sourceLabel, type EngineStatus, type RequestRecord } from './status';
 const noop = () => {};
 const status = sample as EngineStatus;
 describe('canonical formatting', () => {
@@ -55,6 +55,24 @@ it('maps recent records and masks network credentials in service markup', () => 
   const unchecked = renderToStaticMarkup(createElement(Service, { status, running: true, disabled: false, lan: false, token: '', device: 'metal', health: {}, restart: noop, stop: noop, toggle: noop, newToken: noop, copy: noop, check: noop }));
   expect(unchecked).toContain('Device not checked'); expect(unchecked).not.toContain('device unavailable');
   expect(sourceLabel('127.0.0.1', 'MacIntel')).toBe('this Mac'); expect(sourceLabel('::ffff:127.0.0.2', 'Win32')).toBe('this PC'); expect(sourceLabel('192.168.1.3', 'MacIntel')).toBe('192.168.1.3');
+});
+it('says why a recent request failed or was cut off', () => {
+  const base: RequestRecord = { time: '2026-11-19T13:51:24.000Z', endpoint: '/v1/chat/completions', source: '127.0.0.1', http_status: 200, total_seconds: 1 };
+  const overflow = 'request exceeds the context window: prompt (32700 tokens) leaves no room to answer in the context (32768); requests are never truncated';
+  expect(requestOutcome({ ...base, http_status: 400, code: 'context_length_exceeded', message: overflow })).toEqual({ tone: 'err', label: '400', reason: `context_length_exceeded: ${overflow}` });
+  expect(requestOutcome({ ...base, http_status: 400, message: 'bad body' })).toEqual({ tone: 'err', label: '400', reason: 'bad body' });
+  expect(requestOutcome({ ...base, http_status: 400 })).toEqual({ tone: 'err', label: '400', reason: undefined });
+  expect(requestOutcome({ ...base, http_status: 429, code: 'model_busy' })).toEqual({ tone: 'warn', label: '429', reason: 'model_busy' });
+  expect(requestOutcome({ ...base, stop_reason: 'length' })).toEqual({ tone: 'warn', label: '200 · length', reason: 'The reply reached its token limit and may be cut off.' });
+  expect(requestOutcome({ ...base, stop_reason: 'end_of_generation' })).toEqual({ tone: 'ok', label: '200' });
+  const snapshot = structuredClone(status);
+  snapshot.recent_requests = [{ ...base, http_status: 400, code: 'context_length_exceeded', message: overflow }, { ...base, input_tokens: 32646, generated_tokens: 114, stop_reason: 'length' }, { ...base, stop_reason: 'end_of_generation' }];
+  const html = renderToStaticMarkup(createElement(Service, { status: snapshot, running: true, disabled: false, lan: false, token: '', device: 'metal', health: {}, restart: noop, stop: noop, toggle: noop, newToken: noop, copy: noop, check: noop }));
+  expect(html).toContain(`<tr class="request-reason err"><td colSpan="9">context_length_exceeded: ${overflow}</td></tr>`);
+  expect(html).toContain('<span class="tag warn">200 · length</span>');
+  expect(html).toContain('<tr class="request-reason warn"><td colSpan="9">The reply reached its token limit and may be cut off.</td></tr>');
+  expect(html).toContain('<span class="tag ok">200</span>');
+  expect(html.match(/request-reason/g)).toHaveLength(2);
 });
 it('parses the actual text info contract and selected device descriptions', () => {
   expect(parseInfo('engine.version: 0.1.0\nengine.source_commit: abc\ndevice.0: backend=metal name=Metal description="Apple M5" memory_total_bytes=1 memory_free_bytes=1\n')).toEqual({ version: '0.1.0', commit: 'abc', devices: [{ backend: 'metal', name: 'Metal', description: 'Apple M5' }] });

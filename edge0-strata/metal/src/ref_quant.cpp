@@ -26,6 +26,7 @@ const char* type_name(int t) {
         case IQ3_XXS: return "IQ3_XXS"; case IQ3_S: return "IQ3_S"; case IQ4_NL: return "IQ4_NL";
         case IQ4_XS: return "IQ4_XS"; case Q2_0: return "Q2_0"; case IQ1_S: return "IQ1_S"; case IQ1_M: return "IQ1_M";
         case TQ2_T: return "TQ2_T"; case TQK6: return "TQK6"; case TQK7: return "TQK7";
+        case NVFP4: return "NVFP4";
     }
     return "?";
 }
@@ -34,7 +35,7 @@ int block_elems(int t) {
     switch (t) {
         case F32: case F16: case BF16: return 1;
         case Q4_0: case Q5_0: case Q5_1: case Q8_0: case IQ4_NL: return 32;
-        case Q2_0: return 64;
+        case Q2_0: case NVFP4: return 64;
         case TQ2_T: case TQK6: case TQK7: return 128;
         default: return 256;
     }
@@ -48,6 +49,7 @@ int block_bytes(int t) {
         case IQ2_XXS: return 66; case IQ2_XS: return 74; case IQ2_S: return 82; case IQ3_XXS: return 98;
         case IQ3_S: return 110; case IQ4_XS: return 136; case IQ1_S: return 50; case IQ1_M: return 56;
         case TQ2_T: return 34; case TQK6: return 26; case TQK7: return 30;
+        case NVFP4: return 36;
     }
     std::fprintf(stderr, "ref: unknown type %d\n", t);
     std::exit(2);
@@ -139,6 +141,20 @@ static void deq_block(int t, const uint8_t* b, float* y) {
         case Q8_0: {
             const float d = f16_to_f32(rd16(b));
             for (int j = 0; j < 32; ++j) y[j] = (float)(int8_t)b[2 + j] * d;
+            return;
+        }
+        case NVFP4: {   // ggml dequantize_row_nvfp4: four sub-blocks of 16, each with a UE4M3 scale (ggml_ue4m3_to_fp32)
+            static const int8_t kvalues_fp4[16] = {0, 1, 2, 3, 4, 6, 8, 12, 0, -1, -2, -3, -4, -6, -8, -12};
+            for (int s = 0; s < 4; ++s) {
+                const uint8_t x = b[s];
+                const int exp = (x >> 3) & 0xF, man = x & 0x7;
+                const float raw = exp == 0 ? std::ldexp((float)man, -9) : std::ldexp(1.0f + (float)man / 8.0f, exp - 7);
+                const float d = (x == 0 || x == 0x7F) ? 0.0f : raw * 0.5f;
+                for (int j = 0; j < 8; ++j) {
+                    y[16 * s + j] = (float)kvalues_fp4[b[4 + 8 * s + j] & 0x0F] * d;
+                    y[16 * s + j + 8] = (float)kvalues_fp4[b[4 + 8 * s + j] >> 4] * d;
+                }
+            }
             return;
         }
         case Q4_0: {
@@ -509,6 +525,14 @@ void random_blocks(int t, uint8_t* dst, int rows, int cols, uint64_t seed, float
             case IQ3_XXS: put16(b, f32_to_f16(scale * u / 8)); break;
             case IQ3_S: put16(b, f32_to_f16(scale * u / 64)); break;
             case TQ2_T: case TQK6: case TQK7: put16(b, f32_to_f16(scale * u / 1.5f)); break;   // codebook |point| ~ 1
+            case NVFP4:
+                // The four scale bytes: the three smallest exponents (|w| at most 0.35, typically near 0.02), with
+                // the unused top bit left random; byte 0 (a zero sub-block) comes up, and 0x7F now and then.
+                for (int s = 0; s < 4; ++s) {
+                    const uint64_t v = r.next();
+                    b[s] = (v >> 16) % 64 == 0 ? (uint8_t)0x7F : (uint8_t)((b[s] & 0x80) | ((v % 3) << 3) | ((v >> 8) & 7));
+                }
+                break;
             default: break;
         }
     }

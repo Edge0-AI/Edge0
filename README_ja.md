@@ -114,8 +114,8 @@ NVIDIA GPU と CUDA 13 を備えた Linux または Windows、あるいは Apple
 
 | モデル規模 | 公開チェックポイント | 推論構成 | エンジン |
 |---|---|---|---|
-| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1792）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal、Q3_K） |
-| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1280）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal、Q3_K） |
+| [`edge0-145b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-145B-q3k`](https://huggingface.co/Edge0/Edge0-145B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-145B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1792）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal） |
+| [`edge0-120b`](docs/models/edge0-145b.md) | [`Edge0/Edge0-120B-q3k`](https://huggingface.co/Edge0/Edge0-120B-q3k) · [NVFP4](https://huggingface.co/Edge0/Edge0-120B-NVFP4) | Q3_K または NVFP4 の潜在空間エキスパート（1280）、48層、512エキスパート、K=10 | edge0-strata ✅（Linux または Windows、NVIDIA GPU。macOS は Apple Silicon、Metal） |
 
 <a name="model-overview--145b-q3_k"></a>
 
@@ -315,11 +315,52 @@ curl localhost:8000/v1/chat/completions -H 'content-type: application/json' -d '
 </details>
 
 <details>
+<summary>2枚の GPU · 2枚目のカードのエキスパート層</summary>
+
+2枚目の NVIDIA カードに、1枚目の VRAM に収まらないエキスパートを置き、デコードでは両方のエキスパート形式でそれを使います。2枚のカードに NVLink も P2P も不要です。
+
+`edge0-infer` はエンジンを1枚のカードで動かします（`--device` は1枚）。2枚で動かすには、`serve/server.py --config` が読む設定（`exe`、`args`、`cwd`、`env` を含む）でエンジンを直接起動します。
+
+- `"gpu": [0, 1]` を設定 — エンジンの device 0 が1枚目、device 1 が2枚目です。
+- `"args"` の末尾に追加: `"--peer-device", "1", "--peer-reserve-mib", "1024", "--peer-slots", "0"`。
+
+```bash
+cd /path/to/Edge0-145B-q3k
+/path/to/edge0-strata/.venv/bin/python /path/to/edge0-strata/serve/server.py \
+  --engine strata --config ./model-two-gpus.json
+```
+
+起動ログに2枚目のカードの層（`peer GPU 1: … experts, … GiB`）が出て、以降のエンドポイントは1枚のときと同じです。`--peer-device` は `--layer-split` や `--expert-cache-device1..3` と併用できません。詳細: [2枚の GPU](edge0-strata/EDGE0.md#two-gpus-linux-nvidia)。
+
+</details>
+
+<details>
 <summary>デスクトップアプリ · Windows · macOS</summary>
 
 ⬇️ **ダウンロード：** **[GitHub Releases](https://github.com/Edge0-AI/Edge0/releases)**
 
-Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、`Edge0-145B-q3k` などのモデルフォルダーを選ぶと、ローカルで実行できます。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
+Windows または macOS（Apple Silicon）で **Edge0 Chat** を開き、**Models** で Hugging Face または ModelScope からモデルをダウンロードするか、`Edge0-145B-q3k` などの手元のモデルフォルダーを追加して読み込むと、ローカルで実行できます。macOS ではアプリは 4 つのフォルダーすべてを提供し、Metal で実行します。NVFP4 フォルダーはエキスパートプール全体をユニファイドメモリに置きます。ソースからアプリをビルドする場合は [Edge0 Chat](edge0-infer/examples/desktop/README.md) ガイドを参照してください。
+
+</details>
+
+<details>
+<summary>画像 · 視覚</summary>
+
+モデルフォルダーの `mmproj-BF16.gguf` が視覚エンコーダーです。モデルの `model.json` の `args` と同じ階層に次を追加します。
+
+```json
+"vision": {"exe": "/path/to/strata-vision", "mmproj": "./mmproj-BF16.gguf",
+           "model": "./model-skeleton.gguf", "gpu": false}
+```
+
+さらに `"args"` に `--vision` を追加します。`strata-vision` は `setup.py --setup --vision yes` が取得するエンジンのアーカイブに含まれています。ソースもこのリポジトリーの `edge0-strata/tools/vision/` にあります。メインのビルドがコンパイルしない独立した CMake プロジェクトで、エンジンが固定している llama.cpp のコミットのチェックアウトを使ってビルドします（リポジトリーには `third_party/llama.cpp` は含まれていません。メインの CMake に取得させたビルドツリーなら `build/_deps/strata_llamacpp-src` にあります）:
+
+```sh
+cmake -S edge0-strata/tools/vision -B build-vision -DLLAMA_DIR=/path/to/llama.cpp
+cmake --build build-vision --target strata-vision
+```
+
+ログに `images on` と出たら、チャットで `/image`、または OpenAI API の `image_url` で画像を送れます。
 
 </details>
 
@@ -388,9 +429,7 @@ cmake --preset cpu && cmake --build --preset cpu
 ctest --preset cpu -L "L0|L1"
 ```
 
-`edge0-infer/` の変更も通常どおりこのリポジトリに issue や PR を提出してください。このディレクトリは別のリポジトリで開発されているため、採用された変更はメンテナーが先にそちらへ適用し、次回の同期でこちらに反映されます。[CONTRIBUTING](CONTRIBUTING.md) を参照してください。
-
-流れ：fork → 機能ブランチ → `main` 宛てに PR。テストの成功を維持し、新しい動作にはテストを追加してください。
+流れ：fork → 機能ブランチ → `main` 宛てに PR。テストの成功を維持し、新しい動作にはテストを追加してください。動作の変更は先に issue でメンテナーの合意を得てください。同じ領域の関連する修正は 1 つの PR にまとめ、同時に開いている PR は 2 つまでにしてください。
 
 </details>
 
