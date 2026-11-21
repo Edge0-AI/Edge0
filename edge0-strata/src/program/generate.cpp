@@ -71,7 +71,7 @@
 #include "strata/kernels/qsa.hpp"
 #include "strata/core/native_head.hpp"
 #include "strata/core/verify.hpp"
-#include "strata/core/latent_dense.hpp"
+#include "strata/core/latent_du_upload.hpp"
 #include "strata/core/mtp.hpp"
 #include "strata/core/gated_proposal.hpp"
 #if defined(STRATA_HAVE_DFLASH2)
@@ -253,13 +253,12 @@ namespace nib = strata::core::nibble;
 // and the verify windows (Verifier::set_shared_latent); a non-latent pack leaves both pointers null and load returns true.
 struct LatentTab {
     strata::core::LatentDense dense;
-    uint8_t *d = nullptr, *u = nullptr;
+    strata::core::LatentDeviceDU du;
     std::vector<int32_t> labels;    // (n_layers * E) group labels, read from labels.bin beside the A pack
     int64_t lat_H = 0, lat_ELL = 0, lat_I = 0;
     int lat_G = 8, lat_E = 0;
     bool latent = false;
-    bool load(const strata::core::ModelGeometry& g, std::string& err) {
-        if (d != nullptr) { strata::core::latent_shared_d() = d; strata::core::latent_shared_u() = u; return true; }
+    bool load(const strata::core::ModelGeometry& g, int64_t end, std::string& err) {
         const auto& lay0 = strata::kernels::cpu::expert_layout();
         if (!(lay0.native && !lay0.fmt.empty() && lay0.fmt[0].n_embd != (int64_t) g.n_embd)) return true;
 #if defined(STRATA_GPU_METAL)
@@ -291,56 +290,13 @@ struct LatentTab {
             std::fclose(lf);
             if (got != labels.size()) { err = "latent dense: " + lp + " is too small"; return false; }
         }
-        const uint64_t db = (uint64_t) g.n_layers * dense.d_bytes(), ub = (uint64_t) g.n_layers * dense.u_bytes();
-        if (cudaMalloc((void**) &d, db) != cudaSuccess || cudaMalloc((void**) &u, ub) != cudaSuccess) {
-            const cudaError_t ce = cudaGetLastError();
-            if (d) { cudaFree(d); d = nullptr; }
-            if (u) { cudaFree(u); u = nullptr; }
-            err = std::string("the latent D/U device buffers could not be had (") + cudaGetErrorString(ce) + ")";
-            return false;
-        }
-        for (int64_t l = 0; l < g.n_layers; ++l)
-            if (cudaMemcpy(d + (size_t) l * dense.d_bytes(), dense.d(l), dense.d_bytes(), cudaMemcpyHostToDevice) != cudaSuccess ||
-                cudaMemcpy(u + (size_t) l * dense.u_bytes(), dense.u(l), dense.u_bytes(), cudaMemcpyHostToDevice) != cudaSuccess) {
-                err = "the latent D/U upload failed at layer " + std::to_string(l);
-                return false;
-            }
-        strata::core::latent_shared_d() = d;
-        strata::core::latent_shared_u() = u;
+        if (!strata::core::upload_latent_du(dense, 0, end, du, err)) return false;
+        strata::core::latent_shared_d() = du.d;
+        strata::core::latent_shared_u() = du.u;
         return true;
 #endif
     }
 } lat_tab;
-
-// Layer split: upload this stage's OWN latent D/U (all layers, layer-major) to `device` and hand back the pair.
-// The session pair (LatentTab::load) lives on device 0; a later stage dereferencing it without P2P is the IMA the
-// layer split hit ('layer N never rang').  The pair stays the caller's to free; d/u are null on failure (err set).
-bool upload_stage_latent_du(int device, const strata::core::ModelGeometry& g, uint8_t*& d, uint8_t*& u, std::string& err) {
-    d = u = nullptr;
-    if (!lat_tab.latent) return true;
-    const uint64_t db = (uint64_t) g.n_layers * lat_tab.dense.d_bytes();
-    const uint64_t ub = (uint64_t) g.n_layers * lat_tab.dense.u_bytes();
-    if (cudaMalloc((void**) &d, db) != cudaSuccess || cudaMalloc((void**) &u, ub) != cudaSuccess) {
-        const cudaError_t ce = cudaGetLastError();
-        if (d) { cudaFree(d); d = nullptr; }
-        if (u) { cudaFree(u); u = nullptr; }
-        err = "CUDA" + std::to_string(device) + " latent D/U (" + std::to_string((db + ub) >> 20) + " MiB): " +
-              cudaGetErrorString(ce);
-        return false;
-    }
-    for (int64_t l = 0; l < g.n_layers; ++l)
-        if (cudaMemcpy(d + (size_t) l * lat_tab.dense.d_bytes(), lat_tab.dense.d(l), lat_tab.dense.d_bytes(),
-                       cudaMemcpyHostToDevice) != cudaSuccess ||
-            cudaMemcpy(u + (size_t) l * lat_tab.dense.u_bytes(), lat_tab.dense.u(l), lat_tab.dense.u_bytes(),
-                       cudaMemcpyHostToDevice) != cudaSuccess) {
-            const cudaError_t ce = cudaGetLastError();
-            cudaFree(d); cudaFree(u); d = u = nullptr;
-            err = "CUDA" + std::to_string(device) + " latent D/U upload failed at layer " + std::to_string(l) + ": " +
-                  cudaGetErrorString(ce);
-            return false;
-        }
-    return true;
-}
 
 // Windows' WDDM driver model: native Windows, or WSL2 (its GPU goes through /dev/dxg to the Windows driver).  There,
 // pinning a large arena into two CUDA contexts leaves WDDM refusing every later allocation (the 5080 + 3090 rig);
@@ -1487,7 +1443,7 @@ struct GpuStage {
     strata::core::Verifier ver;
     strata::core::Verifier ver_b;                        ///< --pipeline-windows: the odd windows' verifier
     strata::prefill::Prefill sp;
-    uint8_t *lat_d = nullptr, *lat_u = nullptr;          ///< latent: this stage's OWN D/U on its device (layer split)
+    strata::core::LatentDeviceDU latent_du;   ///< device-local matrices for [lb, le)
     cudaStream_t adapt_stream = nullptr;
     cudaEvent_t adapt_ev = nullptr;
     bool adapt_live = false;                             ///< swaps of this request are in flight on it
@@ -7005,7 +6961,10 @@ int main(int argc, char** argv) {
     // later stage uploads its own copy from it (the stage loop below) and its verifier then stops allocating a
     // copy of its own inside its arena.  Without this the split allocates one pair per stage out of that stage's
     // arena, which is what refused to fit on a 10 GB card ("the device arena ... does not fit").
-    { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata generate: %s\n", le.c_str()); return 1; } }
+    if (!lat_tab.load(g, multi_gpu ? split_at.front() : g.n_layers, err)) {
+        std::fprintf(stderr, "strata generate: %s\n", err.c_str());
+        return 1;
+    }
     if (o.expert_cache < 0) {
         size_t free_b = 0, total_b = 0;
         free_b = strata::core::device_free_bytes(); (void) total_b;
@@ -7561,14 +7520,11 @@ int main(int argc, char** argv) {
         // stage_room() and the cache open after it see the memory the pair takes.  Uploaded after the cache it
         // does not fit (the card is full of slots by then).
         if (lat_tab.latent) {
-            if (st.dev == 0) {   // --split-device 0: both stages on the first card, so they share the session pair
-                st.lat_d = lat_tab.d;
-                st.lat_u = lat_tab.u;
-            } else if (!upload_stage_latent_du(st.dev, g, st.lat_d, st.lat_u, err)) {
+            if (!strata::core::upload_latent_du(lat_tab.dense, st.lb, st.le, st.latent_du, err)) {
                 std::fprintf(stderr, "strata generate: layer split, CUDA%d latent D/U: %s\n", st.dev, err.c_str());
                 return 1;
             }
-            if (st.lat_d != nullptr) st.sp.set_latent_dev(st.lat_d, st.lat_u);
+            st.sp.set_latent_dev(st.latent_du);
         }
         const int64_t room = stage_room(st.dev, true, false);
         {
@@ -10276,7 +10232,6 @@ int main(int argc, char** argv) {
             for (int st = 1; st < n_stages; ++st) {
                 bool ok_s = false;
                 if (split_same) {
-                    { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata serve: %s\n", le.c_str()); return 1; } }
                     ok_s = ver_same.init(wt, g, ss, vh, native_head.loaded() ? &native_head : nullptr, std::max(o.spec, std::min(o.batch, (int) strata::kernels::kVerifyMaxT)), err);
                 } else {
                     GpuStage& gs = *stages[(size_t) st - 1];
@@ -10289,8 +10244,7 @@ int main(int argc, char** argv) {
                     vs.slot_off = gs.cache.slot_offsets();
                     vs.n_slots = gs.cache.slots();
                     gs.ver.set_remote_expert_opt(remote_opt.get());
-                    // latent: this stage's OWN D/U (uploaded by init_prompt_paths), not device 0's session pair
-                    if (lat_tab.latent && gs.dev != 0) gs.ver.set_shared_latent(gs.lat_d, gs.lat_u);
+                    if (lat_tab.latent) gs.ver.set_shared_latent(gs.latent_du);
                     // --batch-mtp: every stage runs the same 2-rows-per-slot windows as the first (up to kVerifyMaxT
                     // rows, the hand-off's size) and bounds its captured batch layouts like the first (below)
                     if (batch_mtp) gs.ver.set_batch_graph_limit(64);
@@ -10344,7 +10298,7 @@ int main(int argc, char** argv) {
                 vs.blob = thits.blob;
                 vs.slot_off = gs.cache.slot_offsets();
                 vs.n_slots = gs.cache.slots();
-                if (lat_tab.latent && gs.dev != 0) gs.ver_b.set_shared_latent(gs.lat_d, gs.lat_u);
+                if (lat_tab.latent) gs.ver_b.set_shared_latent(gs.latent_du);
                 if (!gs.ver_b.init(gs.wt, g, gs.ss, vs, gs.head.loaded() ? &gs.head : nullptr, o.spec, err)) {
                     std::fprintf(stderr, "strata serve: --pipeline-windows: the second verifier on CUDA%d (stage %d): %s "
                                          "(raise --vram-reserve-mib by ~200, or --pipeline-windows 0)\n",
@@ -10374,7 +10328,6 @@ int main(int argc, char** argv) {
             for (int st = 0; st + 1 < n_stages; ++st) stage_ver_p(st, 1).set_next(&stage_ver_p(st + 1, 1), &split_drive_b);
         }
         ver.set_remote_expert_opt(remote_opt.get());
-        { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata serve: %s\n", le.c_str()); return 1; } }
         if (pcie_balance() && n_stages == 1) ver.set_pcie_balance(&drive.d.pcie_model);
         if (batch_mtp) ver.set_batch_graph_limit(64);   // --batch-mtp only: slot rotation makes many layouts (LRU); 0.1.39 keeps all
         if (!ver.init(wt, g, ss, vh, native_head.loaded() || prefill_head_alias_bound ? &native_head : nullptr,
@@ -17992,7 +17945,6 @@ int main(int argc, char** argv) {
         if (borrow == nullptr)
             std::fprintf(stderr, "strata generate: prompt path allocates its own buffers (no cache slots to borrow)\n");
         if (!multi_gpu && !o.no_pool) prefill.set_cpu_pool(&pool);
-        { std::string le; if (!lat_tab.load(g, le)) { std::fprintf(stderr, "strata generate: %s\n", le.c_str()); return 1; } }
         if (!prefill.init(wt, g, ss, srcp, o.expert_cache > 0 ? &xcache : nullptr,
                           host_res.empty() ? nullptr : host_res.data(), o.prefill_chunk, main_cs, err, borrow,
                           borrow_bytes)) {

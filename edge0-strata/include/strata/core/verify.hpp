@@ -87,7 +87,7 @@ public:
     void set_remote_expert_opt(RemoteExpertOpt* opt) { remote_opt_ = opt; } // before init/capture
     /// A session-level shared latent D/U pair (allocated and uploaded elsewhere, e.g. the engine): the init
     /// keeps no arena copy of its own and skips its upload; the verifiers only read the pair.  Set before `init`.
-    void set_shared_latent(const uint8_t* d, const uint8_t* u) { lat_d_shared_ = d; lat_u_shared_ = u; }
+    void set_shared_latent(LatentDeviceDU du) { shared_du_ = du; }
 
     /// The watchdog's view of the window in flight (issue #31): the layer, the GPU's sequence, the flags.
     void diag(std::FILE* f) const;
@@ -723,8 +723,8 @@ private:
     strata::core::LatentA lat_a_;
     std::vector<int32_t> lat_labels_;                     ///< [layers*E] per-layer group labels, from labels.bin
     int32_t* lat_labels_dev_ = nullptr;                   ///< device copy, uploaded once at init
-    uint8_t *lat_d_ = nullptr, *lat_u_ = nullptr;         ///< every layer's D/U Q8_0, resident (uploaded once at init)
-    const uint8_t *lat_d_shared_ = nullptr, *lat_u_shared_ = nullptr;   ///< the pair from set_shared_latent
+    LatentDeviceDU lat_du_;       ///< arena-owned or borrowed from shared_du_
+    LatentDeviceDU shared_du_;    ///< set by the stage, or taken from the session on device 0
     float *lat_xl_ = nullptr, *lat_yl_ = nullptr;         ///< [T*G, ELL] and [T*K, ELL]
     void *lat_xq_ = nullptr, *lat_xlq_ = nullptr, *lat_uq_ = nullptr, *hq_dev_ = nullptr;
     uint8_t* h_latxlq_ = nullptr;   ///< mapped host mirror of the D stage's f32 lat_xl_ rows (the CPU share's A input; row t*G + g)

@@ -51,6 +51,19 @@ private:
     int fmt_ = 8;
 };
 
+// A non-owning, layer-major device view. Only D/U use stage-local offsets;
+// the mapped file and the label table keep global layer indices.
+struct LatentDeviceDU {
+    uint8_t *d = nullptr, *u = nullptr;
+    int64_t first = 0;
+    uint8_t* d_at(int64_t layer, const LatentDense& pack) const {
+        return d + static_cast<size_t>(layer - first) * pack.d_bytes();
+    }
+    uint8_t* u_at(int64_t layer, const LatentDense& pack) const {
+        return u + static_cast<size_t>(layer - first) * pack.u_bytes();
+    }
+};
+
 
 /// A pack (experts.bin) mapped for the direct-A smoke path.
 class LatentA {
