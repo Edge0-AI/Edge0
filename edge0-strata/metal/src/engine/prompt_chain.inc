@@ -608,9 +608,22 @@ bool Window::pc_chunk(const int64_t* tokens, int nT, int64_t pos0, std::string& 
 
 bool Window::prompt(const int64_t* tokens, int64_t n, int64_t pos0,
                     const std::function<bool(const float*, int64_t, int64_t, std::string&)>& on_chunk, std::string& err) {
-    static const int C = [] {
+    static const int C0 = [] {
         const char* e = std::getenv("STRATA_METAL_PROMPT_CHUNK");
         return std::max(64, std::min(8192, e ? std::atoi(e) : 2048));
+    }();
+    // A latent pack's chunk buffers grow with the chunk's rows, beside a pack that already takes most of a smaller
+    // Mac's memory: on 64 GB a 4096-row chunk, and the Metal templates' 8192, end the first prompt with
+    // "Insufficient Memory", while the default of 2048 fits.  Under 96 GB of RAM a latent chunk is therefore the
+    // default at most, whatever the launch template asks for.
+    static const int C = [this] {
+        const int cap = 2048;
+        uint64_t phys = 0;
+        size_t len = sizeof phys;
+        if (!latent_on_ || C0 <= cap || sysctlbyname("hw.memsize", &phys, &len, nullptr, 0) != 0 || phys >= (96ull << 30))
+            return C0;
+        std::fprintf(stderr, "strata metal: prompt chunks of %d rows instead of %d (%.0f GB of RAM)\n", cap, C0, phys / 1073741824.0);
+        return cap;
     }();
     // Reserve the configured latent chunk once. The warm-up sends prompts of
     // increasing sizes, and the runtime owns these allocations until teardown.
