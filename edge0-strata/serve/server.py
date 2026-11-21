@@ -1319,10 +1319,17 @@ class StrataEngine:
         if rc is not None and rc >= 0 and self.last_err:  # its own last words on stdout: they say why
             return (f"The engine exited (code {rc}) after it reported: {self.last_err} - please report it at "
                     "github.com/Niko1221/Strata/issues with the log.")
-        last = next((x.strip() for x in reversed(tail.splitlines()) if x.strip().startswith(("strata", "ERR"))), "")
+        # #248: a Metal refusal is the engine's last line but starts "mtl:", not "strata"/"ERR": without it a Mac
+        # falls through to the Linux dmesg hint below, which names the wrong cause and the wrong command.
+        last = next((x.strip() for x in reversed(tail.splitlines())
+                     if x.strip().startswith(("strata", "ERR", "mtl:"))), "")
         if rc is not None and rc >= 0 and last:          # it ended by itself: its own last words say why (#215)
-            return (f"The engine exited (code {rc}). Its last log line: {last} - if that does not explain it, please "
-                    "report it at github.com/Niko1221/Strata/issues with the log.")
+            note = f"The engine exited (code {rc}). Its last log line: {last}"
+            if "command buffer failed" in last:           # #248: the Metal limit, not RAM exhaustion
+                note += (" - on macOS that is the Metal memory limit, not the RAM running out: lower --context, set "
+                         "STRATA_METAL_PROMPT_CHUNK=1024 below 96 GB of RAM, or close other GPU programs")
+            return (note + " - if that does not explain it, please report it at "
+                    "github.com/Niko1221/Strata/issues with the log.")
         rt_note = rttime_limit_note() if rc == -9 else ""
         if rt_note:                                       # #3238: the kernel killed it, but not for RAM
             return ("The engine was ended by signal 9. " + rt_note + " If dmesg (sudo dmesg | grep -i -E 'killed "
