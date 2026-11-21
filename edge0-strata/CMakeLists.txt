@@ -2648,7 +2648,7 @@ if(STRATA_NATIVE_EXPERTS)
     target_link_libraries(latent_cpu_verify PRIVATE strata_engine strata_kernels_cpu CUDA::cudart)
   endif()
   if(STRATA_ENABLE_HIP)   # amd-hip port: the CUDA block above adds these to the engine; HIP needs them too
-    target_sources(strata_engine PRIVATE src/core/latent_dense.cpp src/latent/latent_moe.cpp)
+    target_sources(strata_engine PRIVATE src/core/latent_dense.cpp src/core/latent_tables.cpp src/latent/latent_moe.cpp)
   endif()
   if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
     add_executable(native_expert_parity src/kernels/native_expert_parity.cpp)
