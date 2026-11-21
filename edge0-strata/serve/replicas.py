@@ -553,6 +553,7 @@ class ReplicaEngine:
         produced: list[int] = []
         held = False
         nonfinite = False
+        gen = None
         try:
             selected = getattr(cancel, "_strata_replica_selected", None)
             if selected is not None:
@@ -576,6 +577,16 @@ class ReplicaEngine:
             nonfinite = True
             raise
         finally:
+            # Close the engine's generator BEFORE the replica is free again: its finally sends STOP and drains this
+            # request's leftover lines (tokens after the stop token, its DONE).  Left to garbage collection, that ran
+            # after the lock was released, so the next request on this replica could read those lines: a stale DONE
+            # ended it with 0 tokens ("length"), and its own tokens went to the request after it, interleaved
+            # (garbled text, more tokens than max_tokens).
+            if gen is not None:
+                try:
+                    gen.close()
+                except Exception:       # noqa: BLE001 - the request's own error, if any, is already propagating
+                    pass
             if held:
                 self.run_locks[k].release()
             with self.lock:
