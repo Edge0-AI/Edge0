@@ -8880,13 +8880,15 @@ FAMILY_MODEL_NAMES = {"qwen4exp": "qwen3.8-flash-next", "qwen35moe": "qwen3.6-35
                       "deepseek41": "deepseek-v4.1-flash"}
 
 
-# The sampling each model card recommends ("Best Practices"), used when neither the request, the Chat settings nor the
-# run config's `sampling` block says otherwise.  Greedy is only for a request or config that asks for temperature 0.
+# The sampling used when neither the request, the Chat settings nor the run config's `sampling` block says otherwise.
+# The Qwen3.8 family (145B / 120B) uses temperature 1.0 in both states: the instruct 0.7 produced shorter, flatter
+# answers than the same model in thinking mode.  The other families keep their cards' values.  Greedy is only for a
+# request or config that asks for temperature 0.
 # min_p 0, repetition_penalty 1 and presence_penalty 0 are the engine's own "off", so they are not listed.
 MODEL_CARD_SAMPLING = {
     # Qwen3.8-Flash-Next (and Gyro, the same base model)
     "qwen4exp": {"thinking": {"temperature": 1.0, "top_p": 0.95, "top_k": 20},
-                 "instruct": {"temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5}},
+                 "instruct": {"temperature": 1.0, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5}},
     # Qwen3.6-35B-A3B: the general-task sets (the card's precise-coding set is temperature 0.6, presence_penalty 0)
     "qwen35moe": {"thinking": {"temperature": 1.0, "top_p": 0.95, "top_k": 20, "presence_penalty": 1.5},
                   "instruct": {"temperature": 0.7, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5}},
