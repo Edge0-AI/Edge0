@@ -30,7 +30,7 @@ EDITABLE = [
     ("anthropic_thinking", ("enum", ["model", "on_request"]),
      "Anthropic requests that do not ask for thinking: think as the model does (model) or not (on_request)"),
     ("effort_position", ("enum", ["start", "end"]),
-     "Where a non-default reasoning effort goes: start (the default) or end (keeps the cache when it changes)"),
+     "Where a non-default reasoning effort goes: end (the default; keeps the cache when it changes) or start"),
     ("aliases", "names", "Other model names the server lists and answers to (comma-separated)"),
     ("idle_unload_s", "num>=0", "Unload the model after this many seconds without requests (0 or empty: never)"),
     ("mtp", "bool", "Draft layer (MTP): off starts the engine without it (about 1 GB less graphics memory, slower words per second); "

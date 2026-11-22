@@ -3182,13 +3182,13 @@ def engine_binary(exe: str, cfg: dict | None = None) -> str:
 
 
 def effort_end_args(cfg: dict, exe: str, tok) -> list[str] | None:
-    """#458 (opt-in): the engine arguments for "effort_position": "end" - the id of "system" as --tail-role-token, so
-    the engine checkpoints in front of the trailing effort turn - or None when the config leaves it at the top (the
-    default) or the engine is too old for it (said once; the prompt stays the default one).  ValueError for a value
+    """#458: the engine arguments for "effort_position": "end" (the default) - the id of "system" as
+    --tail-role-token, so the engine checkpoints in front of the trailing effort turn - or None when the config asks
+    for "start" or the engine is too old for it (said once; the prompt stays at the top).  ValueError for a value
     other than "start" / "end"."""
-    pos = cfg.get("effort_position", "start")
+    pos = cfg.get("effort_position", "end")
     if pos not in ("start", "end"):
-        raise ValueError(f'"effort_position" must be "start" (the default) or "end", not {pos!r}')
+        raise ValueError(f'"effort_position" must be "start" or "end" (the default), not {pos!r}')
     if pos == "start":
         return None
     try:
@@ -4234,7 +4234,7 @@ class Service:
         self.slot_save_path = None                    # --slot-save-path: /slots/0?action=save|restore (off when None)
         self.embeddings = threading.local()           # the current request's image embeddings file (GENI)
         self.api_key = ""                              # when set, /v1/* needs it (Bearer or x-api-key)
-        # #458 (opt-in, the config's "effort_position": "end"): a non-default reasoning effort goes in a short system
+        # #458 (the config's "effort_position": "end", the default): a non-default reasoning effort goes in a short system
         # turn before the answer instead of the top of the prompt, so switching it keeps the cached conversation
         self.effort_end = False
         self.conv_log = ConvCacheLog()                  # #596: the parked conversations, from the engine's log
