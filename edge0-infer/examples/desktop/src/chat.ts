@@ -2,7 +2,7 @@ import shared from '../../shared/app.json';
 export const appData = shared;
 export interface Message { role: 'user' | 'assistant'; content: string; reasoning_content?: string; metrics?: Metrics; stopped?: boolean; reasoningExpanded?: boolean; }
 export interface Metrics { generated_count?: number; first_token_seconds?: number; input_tokens?: number; reused_tokens?: number; decode_tokens_per_second?: number; memory_peak_bytes?: number; }
-export function buildRequest(history: Message[], thinking: boolean, model: string, temperature = 0.2, systemPrompt = appData.system_prompt) {
+export function buildRequest(history: Message[], thinking: boolean, model: string, temperature = 1.0, systemPrompt = appData.system_prompt) {
   return { model, messages: [{ role: 'system', content: systemPrompt }, ...history.map(({ role, content, reasoning_content }) => ({ role, content, ...(role === 'assistant' && reasoning_content ? { reasoning_content } : {}) }))], stream: true, stream_options: { include_usage: true }, chat_template_kwargs: { enable_thinking: thinking }, temperature };
 }
 const valid = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x) && x >= 0;
