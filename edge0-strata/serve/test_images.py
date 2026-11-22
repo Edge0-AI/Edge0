@@ -111,6 +111,62 @@ class Command(unittest.TestCase):
                 images_api.ImageGen(image_cfg(d, gpu_policy="sometimes"))
 
 
+class ResponseStorage(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.gen = images_api.ImageGen(image_cfg(self.tmp.name, keep_files=1))
+        self.pngs = [b"\x89PNG\r\n\x1a\n" + bytes([i]) for i in range(4)]
+
+    def response_names(self, images):
+        job = images_api.parse_request({"prompt": "batch", "n": len(images), "seed": 7,
+                                        "response_format": "url"}, self.gen.cfg)
+        response = self.gen.response(images, job, {}, "http://localhost:8080")
+        self.assertEqual([item["seed"] for item in response["data"]],
+                         list(range(7, 7 + len(images))))
+        names = [item["url"].rsplit("/", 1)[1] for item in response["data"]]
+        for name, expected in zip(names, images):
+            path = self.gen.file(name)
+            self.assertIsNotNone(path, f"response image {name} was evicted")
+            self.assertEqual(path.read_bytes(), expected)
+        return names
+
+    def test_url_batch_larger_than_retention(self):
+        names = self.response_names(self.pngs[:2])
+        self.assertEqual({p.name for p in self.gen.dir.glob("*.png")}, set(names))
+
+    def test_normal_batch_keeps_configured_retention(self):
+        self.gen.keep_files = 3
+        old = [self.gen.store(png) for png in self.pngs[:3]]
+        for i, name in enumerate(old):
+            os.utime(self.gen.dir / name, (i + 1, i + 1))
+        names = self.response_names(self.pngs[:2])
+        self.assertEqual({p.name for p in self.gen.dir.glob("*.png")}, {old[-1], *names})
+
+    def test_later_oversized_batch_evicts_the_previous_batch(self):
+        old = self.response_names(self.pngs[:2])
+        names = self.response_names(self.pngs[:3])
+        self.assertTrue(all(self.gen.file(name) is None for name in old))
+        self.assertEqual({p.name for p in self.gen.dir.glob("*.png")}, set(names))
+
+    def test_current_batch_survives_older_files_with_later_mtimes(self):
+        old = self.gen.store(self.pngs[0])
+        future = time.time() + 3600
+        os.utime(self.gen.dir / old, (future, future))
+        names = self.response_names(self.pngs[:2])
+        self.assertIsNone(self.gen.file(old))
+        self.assertEqual({p.name for p in self.gen.dir.glob("*.png")}, set(names))
+
+    def test_base64_response_does_not_store_or_prune(self):
+        old = self.gen.store(self.pngs[0])
+        job = images_api.parse_request({"prompt": "batch", "n": 2, "seed": 7}, self.gen.cfg)
+        with mock.patch.object(self.gen, "_prune") as prune:
+            response = self.gen.response(self.pngs[:2], job, {}, "http://localhost:8080")
+        prune.assert_not_called()
+        self.assertEqual([base64.b64decode(item["b64_json"]) for item in response["data"]], self.pngs[:2])
+        self.assertEqual([p.name for p in self.gen.dir.glob("*.png")], [old])
+
+
 class FakeEngine:
     """An engine with the parts the GPU turn uses: alive/unload/restart, vram (elastic) and session files."""
 

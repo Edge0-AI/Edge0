@@ -204,10 +204,13 @@ class ImageGen:
             except (OSError, ValueError):
                 pass
 
-    def _prune(self) -> None:
-        """Keep the newest keep_files PNGs of response_format url (the oldest go)."""
-        files = sorted((p for p in self.dir.glob("*.png") if FILE_NAME.match(p.name)), key=lambda p: p.stat().st_mtime)
-        for p in files[:max(0, len(files) - self.keep_files)]:
+    def _prune(self, keep: tuple[str, ...] = ()) -> None:
+        """Keep the current response and fill the remaining retention slots with the newest older PNGs."""
+        files = sorted((p for p in self.dir.glob("*.png") if FILE_NAME.match(p.name) and p.name not in keep),
+                       key=lambda p: p.stat().st_mtime)
+        # A response may exceed keep_files. Its URLs must all survive, even when mtimes tie or the clock moves back.
+        older_limit = max(0, self.keep_files - len(keep))
+        for p in files[:max(0, len(files) - older_limit)]:
             with contextlib.suppress(OSError):
                 p.unlink()
 
@@ -293,22 +296,28 @@ class ImageGen:
         self.last = figures
         return images, figures
 
-    def store(self, data: bytes) -> str:
+    def store(self, data: bytes, *, prune: bool = True) -> str:
         """Keep one PNG for response_format url -> its file name (32 random hex digits: the name is the access)."""
         name = secrets.token_hex(16) + ".png"
         (self.dir / name).write_bytes(data)
-        self._prune()
+        if prune:
+            self._prune((name,))
         return name
 
     def response(self, images: list[bytes], job: dict, figures: dict, base_url: str) -> dict:
         data = []
+        names = []
         for i, png in enumerate(images):
             item = {"revised_prompt": job["prompt"], "seed": job["seed"] + i}
             if job["response_format"] == "url":
-                item["url"] = f"{base_url}/v1/images/files/{self.store(png)}"
+                name = self.store(png, prune=False)
+                names.append(name)
+                item["url"] = f"{base_url}/v1/images/files/{name}"
             else:
                 item["b64_json"] = base64.b64encode(png).decode("ascii")
             data.append(item)
+        if names:
+            self._prune(tuple(names))
         return {"created": int(time.time()), "data": data, "model": self.model,
                 "output_format": "png", "size": f"{job['width']}x{job['height']}", "strata": figures}
 
