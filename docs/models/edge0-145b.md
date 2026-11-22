@@ -137,7 +137,7 @@ Each model folder holds one model in one expert format: `Edge0-145B-q3k`, `Edge0
 
 ## Requirements
 
-Linux or Windows with an NVIDIA GPU and CUDA 13, or macOS on Apple Silicon with Metal. On macOS both the Q3_K and the NVFP4 folders are supported, with `ple-io=direct`; a Q3_K folder defaults to `du=q4`. The Metal template uses a context length of 32768, and the first start writes `mtp-q2_0.gguf` into the model folder, which must be writable. The constrained-memory results in the speed tables are measured test budgets, not general minimum requirements. A 16 GiB VRAM + 20 GiB host RAM test is available for 145B Q3_K and both 120B builds; no such result is available for 145B NVFP4.
+Linux or Windows with an NVIDIA GPU and CUDA 13, or macOS on Apple Silicon with Metal. On macOS both the Q3_K and the NVFP4 folders are supported, with `ple-io=direct` and `du=q8` (add `--model-option du=q4` to compare). The Metal template uses a context length of 32768, and the first start writes `mtp-q2_0.gguf` into the model folder, which must be writable. The constrained-memory results in the speed tables are measured test budgets, not general minimum requirements. A 16 GiB VRAM + 20 GiB host RAM test is available for 145B Q3_K and both 120B builds; no such result is available for 145B NVFP4.
 
 ## Running
 
