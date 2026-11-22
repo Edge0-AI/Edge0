@@ -915,7 +915,7 @@ class EffortAtTheEnd(unittest.TestCase):
             old.write_bytes(b"... --turn-token ID ...")
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                self.assertIsNone(effort_end_args({}, str(new), Tok()))
+                self.assertEqual(effort_end_args({}, str(new), Tok()), ["--tail-role-token", "8678"])
                 self.assertIsNone(effort_end_args({"effort_position": "start"}, str(new), Tok()))
                 self.assertEqual(effort_end_args({"effort_position": "end"}, str(new), Tok()),
                                  ["--tail-role-token", "8678"])
