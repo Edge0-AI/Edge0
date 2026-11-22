@@ -101,12 +101,12 @@ it('edit truncates all subsequent turns and regenerate retains full earlier reas
   expect(regenerate(messages)).toEqual(messages.slice(0, 3)); expect(buildRequest(regenerate(messages), true, 'model').messages[2]).toEqual({ role: 'assistant', content: 'reply', reasoning_content: 'thought' }); expect(messages).toHaveLength(4);
 });
 it('uses precise by default, each selected temperature, and fixes system prompt per conversation', () => {
-  expect(defaultSettings.generation_style).toBe('precise'); expect(buildRequest([], false, 'model').temperature).toBe(0.2);
+  expect(defaultSettings.generation_style).toBe('precise'); expect(buildRequest([], false, 'model').temperature).toBe(1.0);
   const old = newConversation('old prompt'), fresh = newConversation('changed prompt');
   for (const temperature of Object.values(temperatures)) expect(buildRequest([], false, 'model', temperature).temperature).toBe(temperature);
   expect(buildRequest([], false, 'model', .7, old.systemPrompt).messages[0].content).toBe('old prompt'); expect(fresh.systemPrompt).toBe('changed prompt'); expect(newConversation('   ').systemPrompt).toBe(appData.system_prompt);
   const html = renderToStaticMarkup(createElement(Settings, { settings: defaultSettings, port: '', disabled: false, update: noop, setPort: noop, browse: noop }));
-  expect(html).toContain('Precise · 0.2'); expect(html).toContain('System prompt');
+  expect(html).toContain('Precise · 1.0'); expect(html).toContain('System prompt');
 });
 it('generates exactly 32 cryptographic bytes in unpadded base64url', () => {
   const random = { getRandomValues: vi.fn((array: Uint8Array) => { array.fill(255); return array; }) };

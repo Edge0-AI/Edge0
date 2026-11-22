@@ -108,7 +108,7 @@ for (const thinking of [false, true]) it(`normal HTTP request changes only tempe
   const body = JSON.parse(String(init?.body));
   expect(Object.keys(body).sort()).toEqual(['chat_template_kwargs', 'messages', 'model', 'stream', 'stream_options', 'temperature']);
   for (const parameter of ['max_tokens', 'max_completion_tokens', 'top_p', 'top_k', 'seed', 'stop', 'presence_penalty', 'frequency_penalty', 'repetition_penalty']) expect(body).not.toHaveProperty(parameter);
-  expect(body.temperature).toBe(0.2);
+  expect(body.temperature).toBe(1.0);
   expect(body.messages).toEqual([{ role: 'system', content: shared.system_prompt }, ...history]);
   expect(body.chat_template_kwargs).toEqual({ enable_thinking: thinking });
 });

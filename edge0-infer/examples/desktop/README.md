@@ -331,9 +331,10 @@ colors elsewhere.
   always uses `127.0.0.1`, which needs no token. macOS may ask whether
   `edge0-infer` may accept incoming connections.
 - **Settings**: theme (System, Light, Dark); generation style, which sets only the
-  temperature of every request: Precise 0.2 (default), Balanced 0.7, Creative 1.0;
-  one system prompt for new conversations (empty uses the shared default; existing
-  conversations keep theirs); executable, device, prefill device and port.
+  temperature of every request: Precise, Balanced and Creative all send 1.0 (the
+  three names are kept for the picker); one system prompt for new conversations
+  (empty uses the shared default; existing conversations keep theirs); executable,
+  device, prefill device and port.
 
 ## Manual acceptance checklist
 
