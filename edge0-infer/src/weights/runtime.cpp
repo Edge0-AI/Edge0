@@ -16,7 +16,8 @@ struct Registry {
     std::condition_variable changed;
     std::map<std::uint64_t, std::weak_ptr<Storage>> storages;
     std::map<std::string, std::pair<std::uint64_t, std::size_t>> ids;
-    std::map<std::pair<std::string,ReadMode>,std::shared_ptr<platform::ReadFile>> files;
+    // Source file identity is checked once, when the file is opened.
+    std::map<std::pair<std::string,ReadMode>,std::pair<std::shared_ptr<platform::ReadFile>,platform::FileIdentity>> files;
 
 };
 class Usage final : public exec::Use {
@@ -145,18 +146,19 @@ Result<std::shared_ptr<Write>> Weights::begin_write(const std::shared_ptr<Storag
         std::size_t index;
         if(found==selected_files.end()) {
             std::shared_ptr<platform::ReadFile> file;
+            platform::FileIdentity identity{};
             {
                 std::lock_guard<std::mutex> lock(registry_->mutex);
                 auto cached=registry_->files.find(key);
                 if(cached==registry_->files.end()) {
                     auto opened=platform::ReadFile::open(key.first,key.second);if(!opened) return opened.error();
-                    cached=registry_->files.emplace(key,opened.value()).first;
+                    auto opened_identity=opened.value()->identity();if(!opened_identity) return opened_identity.error();
+                    cached=registry_->files.emplace(key,std::make_pair(opened.value(),opened_identity.value())).first;
                 }
-                file=cached->second;
+                file=cached->second.first;identity=cached->second.second;
             }
-            auto identity=file->identity();if(!identity) return identity.error();
             index=write->files_.size();selected_files.emplace(key,index);
-            write->files_.push_back(file);write->identities_.push_back(identity.value());write->file_keys_.push_back(key);
+            write->files_.push_back(file);write->identities_.push_back(identity);
         } else index=found->second;
         const auto& identity=write->identities_[index];
         if(item.source.offset>identity.size || item.source.bytes>identity.size-item.source.offset)
@@ -334,13 +336,6 @@ Result<std::vector<Binding>> Weights::complete(const std::shared_ptr<Write>& wri
         std::size_t end = 0;
         for (auto range : ranges) { if (range.first != end) error = invalid("Incomplete writer ranges"); end = range.second; }
         if (end != write->items_[i].source.bytes) error = invalid("Incomplete writer coverage");
-    }
-    for (std::size_t i = 0; i < write->files_.size(); ++i) {
-        auto current=write->files_[i]->identity();
-        auto path=platform::ReadFile::open(write->file_keys_[i].first,write->file_keys_[i].second);
-        auto path_identity=path?path.value()->identity():Result<platform::FileIdentity>(path.error());
-        if(!current || !(current.value()==write->identities_[i]) || !path_identity || !(path_identity.value()==write->identities_[i]))
-            if(!error) error=Error{ErrorCategory::backend_error,"Source file identity changed"};
     }
     if (error) { write->error_ = error; write->rollback(true); return *error; }
     std::lock_guard<std::mutex> lock(registry_->mutex);
