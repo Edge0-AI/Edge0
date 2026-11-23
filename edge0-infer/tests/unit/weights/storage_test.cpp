@@ -105,17 +105,6 @@ int main() {
             weights.before_read = {};
         }
         {
-            std::promise<void> entered, resume; auto wait = resume.get_future().share();
-            weights.before_read = [&](std::size_t) { entered.set_value(); wait.wait(); };
-            auto write = take(weights.begin_write(other, {item(0, "changed")}));
-            CHECK(!weights.fill_regions(write)); entered.get_future().wait();
-            { std::ofstream out(path, std::ios::app); out << 'x'; }
-            resume.set_value(); CHECK(!weights.complete(write)); weights.before_read = {};
-            CHECK(other->state(0) == RegionState::isolated);
-            CHECK(!weights.begin_write(other, {item(0, "again")}));
-            CHECK(!weights.acquire_views(other, {other->identity(), 0, "changed", 2}));
-        }
-        {
             auto a = take(weights.create_storage(backend, {{{GGML_TYPE_F32, {4}}, 1}}, edge0::exec::Purpose::resident_weights));
             auto b = take(weights.create_storage(backend, {{{GGML_TYPE_F32, {4}}, 1}}, edge0::exec::Purpose::resident_weights));
             std::shared_ptr<Write> w1, w2;

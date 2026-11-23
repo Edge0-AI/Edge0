@@ -72,7 +72,6 @@ private:
     std::vector<std::shared_ptr<platform::ReadFile>> files_;
     std::vector<platform::FileIdentity> identities_;
     std::vector<std::size_t> item_files_;
-    std::vector<std::pair<std::string,ReadMode>> file_keys_;
     std::vector<std::future<exec::Status>> futures_;
     bool started_ = false, finished_ = false;
     void rollback(bool isolate_all = false);

@@ -51,9 +51,9 @@ std::pair<std::size_t,std::size_t> group(const std::shared_ptr<exec::Backend>& b
     if(!fail) {
         std::vector<std::size_t> regions(count);std::iota(regions.begin(),regions.end(),0);
         CHECK(!weights.evict(storage,regions));
-        const auto before=scope.hooks.opens.load();
+        const auto before=scope.hooks.opens.load(),identities=scope.hooks.identities.load();
         auto again=take(weights.begin_write(storage,items));CHECK(!weights.fill_regions(again));take(weights.complete(again));
-        CHECK(scope.hooks.opens-before==((different_file||different_mode)?2:1));
+        CHECK(scope.hooks.opens==before && scope.hooks.identities==identities);
     }
     CHECK(!weights.close(storage));
     return calls;
