@@ -544,9 +544,10 @@ int run_prepare_script(const fs::path& python, const fs::path& cwd, const fs::pa
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
-#if defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__)
-    // iOS cannot run the external engine's preparation scripts. Keep the native
-    // CLI buildable without referencing this SDK-unavailable process API.
+#if defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) || defined(__ANDROID__)
+    // iOS and Android do not run the external engine's preparation scripts. Keep
+    // the native CLI buildable without referencing this process API, which the
+    // iOS SDK lacks and Android provides only from API 34.
     const int chdir_error = ENOTSUP;
 #else
     const int chdir_error = posix_spawn_file_actions_addchdir_np(&actions, directory.c_str());
