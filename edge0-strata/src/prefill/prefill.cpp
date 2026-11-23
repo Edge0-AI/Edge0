@@ -29,7 +29,7 @@
 #include "strata/kernels/native_ple_postops.hpp"
 #include "strata/kernels/iq_kernels.hpp"
 #include "strata/kernels/cpu/expert_layout.hpp"
-#include "strata/core/latent_dense.hpp"   // latent MoE: the per-layer D/U Q8_0 tables, host-side
+#include "strata/core/latent_du_upload.hpp"
 #include "strata/core/latent_share.hpp"   // latent MoE: the session-level device D/U pair, pulled in init
 #include "strata/kernels/latent.hpp"      // latent_plan_rows / latent_u_grouped (the verify soul)
 #include "strata/kernels/cpu/hadamard.hpp"
@@ -1046,7 +1046,7 @@ struct Prefill::Impl {
     int lat_fmt = 8;   // Q4DU: the dense pack's format (8 Q8_0 / 4 Q4_0)
     std::vector<int32_t> lat_labels;      // [layers * E] group labels, host
     int32_t* lat_labels_dev = nullptr;    // their device copy
-    uint8_t *lat_d_dev = nullptr, *lat_u_dev = nullptr;   // per-layer D then U, layer-major on the device
+    core::LatentDeviceDU latent_du;
     float* xl = nullptr;                  // T * G * ELL floats, the D products
     uint8_t* xlq = nullptr;               // q8_1 rows of xl (T*G rows, ELL/32*36 bytes each)
     float* yl = nullptr;                  // T * K * ELL floats, the down latents (A_dn products)
@@ -1732,33 +1732,13 @@ bool Prefill::init(const core::WeightTable& wt, const core::ModelGeometry& g, co
         }
         m.owned.push_back(m.lat_labels_dev);
     }
-    if (m.latent && m.lat_d_dev == nullptr) {   // a session-shared pair when present (latent_share.hpp), else owned below
-        m.lat_d_dev = strata::core::latent_shared_d();
-        m.lat_u_dev = strata::core::latent_shared_u();
-    }
-    if (m.latent && m.lat_d_dev == nullptr) {   // no shared pair: one owned copy, uploaded once per session
-        const uint64_t db = (uint64_t) g.n_layers * m.lat_d.d_bytes();
-        const uint64_t ub = (uint64_t) g.n_layers * m.lat_d.u_bytes();
-        if (cudaMalloc((void**) &m.lat_d_dev, db) != cudaSuccess ||
-            cudaMalloc((void**) &m.lat_u_dev, ub) != cudaSuccess) {
-            const cudaError_t ce = cudaGetLastError();
-            if (m.lat_d_dev) { cudaFree(m.lat_d_dev); m.lat_d_dev = nullptr; }
-            if (m.lat_u_dev) { cudaFree(m.lat_u_dev); m.lat_u_dev = nullptr; }
-            err = "prefill latent: the D/U device buffers could not be had (" +
-                  std::string(ce != cudaSuccess ? cudaGetErrorString(ce) : "ok") + ", bytes=" + std::to_string(db + ub) + ")";
-            return false;
+    if (m.latent && !m.latent_du.d) {
+        m.latent_du = {core::latent_shared_d(), core::latent_shared_u(), 0};
+        if (!m.latent_du.d) {
+            if (!core::upload_latent_du(m.lat_d, 0, g.n_layers, m.latent_du, err)) return false;
+            m.owned.push_back(m.latent_du.d);
+            m.owned.push_back(m.latent_du.u);
         }
-        bool up = true;
-        for (int64_t l = 0; up && l < g.n_layers; ++l) {
-            if (cudaMemcpy(m.lat_d_dev + (size_t) l * m.lat_d.d_bytes(), m.lat_d.d(l), m.lat_d.d_bytes(),
-                           cudaMemcpyHostToDevice) != cudaSuccess ||
-                cudaMemcpy(m.lat_u_dev + (size_t) l * m.lat_d.u_bytes(), m.lat_d.u(l), m.lat_d.u_bytes(),
-                           cudaMemcpyHostToDevice) != cudaSuccess)
-                up = false;
-        }
-        m.owned.push_back(m.lat_d_dev);   // pushed only after both mallocs held; the failure path freed them above
-        m.owned.push_back(m.lat_u_dev);
-        if (!up) { err = "prefill latent: the D/U upload failed"; return false; }
     }
     if (cudaStreamCreateWithFlags(&m.copy, cudaStreamNonBlocking) != cudaSuccess) { err = "prefill: copy stream"; return false; }
     const size_t T = (size_t) chunk;
@@ -2414,10 +2394,8 @@ bool Prefill::bind_stage_helper(int64_t T) {
     return true;
 }
 
-void Prefill::set_latent_dev(uint8_t* d, uint8_t* u) {
-    Impl& m = *impl_;
-    m.lat_d_dev = d;
-    m.lat_u_dev = u;
+void Prefill::set_latent_dev(core::LatentDeviceDU du) {
+    impl_->latent_du = du;
 }
 
 bool Prefill::set_peer(core::PeerExperts* peer, int64_t cap_rows, std::string& err) {
@@ -5022,19 +5000,19 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
                                     const char* v = std::getenv("STRATA_LATENT_MMQ");
                                     return v != nullptr && v[0] == '1';
                                 }();
-                                dense_w11::project_d(m.lat_d_dev + (size_t) l * m.lat_d.d_bytes(), m.lat_xq, T, (int) N,
+                                dense_w11::project_d(m.latent_du.d_at(l, m.lat_d), m.lat_xq, T, (int) N,
                                                      (int) G, ELL, m.xlq, lat_xl_f32 ? m.xl : nullptr, lat_inv, m.cs);
 #else
                                 if (lat_inv)
-                                    fused_q3k::latent_dense_d(m.lat_d_dev + (size_t) l * m.lat_d.d_bytes(), m.lat_xq, T,
+                                    fused_q3k::latent_dense_d(m.latent_du.d_at(l, m.lat_d), m.lat_xq, T,
                                                               (int) N, (int) G, ELL, m.xlq, m.cs, m.lat_fmt, lat_inv);
                                 else
-                                    fused::latent_dense_d(m.lat_d_dev + (size_t) l * m.lat_d.d_bytes(), m.lat_xq, T,
+                                    fused::latent_dense_d(m.latent_du.d_at(l, m.lat_d), m.lat_xq, T,
                                                           (int) N, (int) G, ELL, m.xlq, m.cs, m.lat_fmt);
 #endif
                             } else {
                                 strata::kernels::iq_mmvq(strata::kernels::lat_dense_fmt_to_type(m.lat_fmt),
-                                        m.lat_d_dev + (size_t) l * m.lat_d.d_bytes(), m.lat_xq, m.xl, (int) N,
+                                        m.latent_du.d_at(l, m.lat_d), m.lat_xq, m.xl, (int) N,
                                         (int) (G * ELL), T, m.cs);   // Q4DU: fmt->ggml type (8 Q8_0 / 2 Q4_0)
                                 // Q3_K shared column scales: as in verify.cpp, scale the D stage's x by 1/s once,
                                 // before the quantize below (the prefill's only consumer of the f32 m.xl rows).
@@ -5964,19 +5942,19 @@ bool Prefill::run_impl(const int64_t* tokens, int64_t n, int64_t pos0, std::stri
                                                              (int32_t*) m.lat_scratch + 32, m.cs);
                                 // the grid bound without the counts: every split fits in ceil(n / 64) + G tiles
 #if defined(STRATA_USE_HIP)
-                                dense_w11::project_u(m.lat_u_dev + (size_t) l * m.lat_d.u_bytes(), m.ylq,
+                                dense_w11::project_u(m.latent_du.u_at(l, m.lat_d), m.ylq,
                                                      (const int32_t*) m.lat_scratch + 32, (const int32_t*) m.lat_scratch,
                                                      (int) G, ((int64_t) (T * K) + 63) / 64 + G, (int64_t) (T * K),
                                                      (int) ELL, (int) N, m.Dm, m.cs);
 #else
                                 const int64_t unw = (((int64_t) (T * K) + 63) / 64 + G) * (N >> 8);
-                                fused::latent_dense_u(m.lat_u_dev + (size_t) l * m.lat_d.u_bytes(), m.ylq,
+                                fused::latent_dense_u(m.latent_du.u_at(l, m.lat_d), m.ylq,
                                                       (const int32_t*) m.lat_scratch + 32, (const int32_t*) m.lat_scratch,
                                                       (int) G, unw, (int64_t) (T * K), (int) ELL, (int) N, m.Dm, m.cs,
                                                       m.lat_fmt);
 #endif
                             } else {
-                                strata::kernels::latent_u_grouped(m.lat_u_dev + (size_t) l * m.lat_d.u_bytes(), m.ylq, m.ids_p,
+                                strata::kernels::latent_u_grouped(m.latent_du.u_at(l, m.lat_d), m.ylq, m.ids_p,
                                                  m.lat_labels_dev + (size_t) l * m.lat_E, m.lat_E, (int64_t) (T * K),
                                                  (int) ELL, (int) N, m.Dm, m.cs, m.lat_fmt);
                             }
