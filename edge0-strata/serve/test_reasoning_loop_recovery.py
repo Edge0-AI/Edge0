@@ -178,6 +178,31 @@ class ReasoningLoopRecovery(unittest.TestCase):
         self.assertLess(events[-1][1]['completion_tokens'], 5000)
         self.assertEqual(events[-1][1]['reasoning_recoveries'], 0)
 
+    def test_wrap_is_the_default_and_answers_without_a_second_prefill(self):
+        """#728: the default closes the thinking and lets the model answer; the prompt only grows by that text."""
+        engine = RecordingEngine(self.tok, [self.loop, 'Complete solution.'])
+        service = Service(engine, self.tok, None)
+        self.assertEqual(service.reasoning_loop_recovery, 'wrap')
+        service.answer_room = False      # these cases test the loop guards at the cap itself
+        events = list(service.run(self.ids, True, [], 40000, {}, threading.Event()))
+        self.assertEqual(len(engine.calls), 2)                   # one continuation, no rewritten prompt
+        first, second = engine.calls[0][0], engine.calls[1][0]
+        self.assertEqual(second[:len(first)], first)             # everything generated is still the prefix
+        self.assertIn('time to give my answer', self.tok.decode(second[len(first):]))
+        self.assertLess(events[-1][1]['completion_tokens'], 20000)
+        content = ''.join(e.text or '' for kind, e in events if kind == 'event' and e.kind == 'content')
+        self.assertIn('Complete solution.', content)
+        self.assertEqual(events[-1][1]['reasoning_recoveries'], 0)
+
+    def test_wrap_mode_is_used_once(self):
+        engine = RecordingEngine(self.tok, [self.loop, self.loop, 'Complete solution.'])
+        service = Service(engine, self.tok, None)
+        service.reasoning_loop_recovery = 'wrap'
+        service.answer_room = False      # these cases test the loop guards at the cap itself
+        events = list(service.run(self.ids, True, [], 40000, {}, threading.Event()))
+        self.assertEqual(len(engine.calls), 2)                   # the closing text is added once
+        self.assertLess(events[-1][1]['completion_tokens'], 40000)
+
     def test_disabled_is_one_pass(self):
         engine, events = self.run_case(False)
         self.assertEqual(len(engine.calls), 1)
@@ -187,6 +212,7 @@ class ReasoningLoopRecovery(unittest.TestCase):
         engine = RecordingEngine(self.tok, [self.loop])
         service = Service(engine, self.tok, None)
         service.answer_room = False      # these cases test the loop guards at the cap itself
+        service.reasoning_loop_recovery = False     # the passage check's own mode is tested below
         events = list(service.run(self.ids, True, [], 16384, {}, threading.Event()))
         self.assertEqual(service.repeat_stop_tokens, 256)
         self.assertEqual(events[-1][1]['finish'], 'length')
