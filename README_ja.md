@@ -173,7 +173,7 @@ Q3_K · RTX 5090 D 24 GB。プリフィルは 16K token の入力で測定して
 
 強調表示した行は Q3_K です。表をクリックすると原寸で表示できます。
 
-<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Edge0-145B の全7行の速度表：4K・16K プリフィル、チャット・エージェントデコード、測定した全機器と形式" width="1400"></a>
+<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Edge0-145B の全8行の速度表：4K・16K プリフィル、チャット・エージェントデコード、測定した全機器と形式" width="1400"></a>
 
 <details>
 <summary>コピー可能な 145B 速度データ</summary>
@@ -183,6 +183,7 @@ Q3_K · RTX 5090 D 24 GB。プリフィルは 16K token の入力で測定して
 | RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
 | RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
 | RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX 3090 24 GB (community-measured) | Q3_K | 1195.5 | 1481.2 | 48.6 | 52.8 |
 | RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
 | RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
 | Apple M2 Ultra (Metal) | Q3_K | 755.6 | 800.3 | 60.9 | 57.0 |
@@ -198,6 +199,8 @@ Q3_K · RTX 5090 D 24 GB。プリフィルは 16K token の入力で測定して
 `16 GiB VRAM + 20 GiB RAM` の行も同じ RTX 5090 D 24 GB です（別のカードではありません）。VRAM は `--vram-reserve-mib 8192`、システム RAM は cgroup（`MemoryMax=20G`、スワップなし）で制限しています。常駐を有効にすると、同じカードで **Q3_K**（重み 40.81 GiB）は 23.14 GiB VRAM + 31.28 GiB RAM、**NVFP4**（47.79 GiB）は 23.25 GiB VRAM + 38.27 GiB RAM を使用します。両メモリに置かれるエキスパート集合は重複せず、二重計上していません。
 
 16 GiB VRAM + 20 GiB RAM は測定時の制限であり、最小システム要件ではありません。Apple M2 Ultra の行は Metal での測定結果です。
+
+`RTX 3090 24 GB (community-measured)` の行は、RTX 3090 24 GB上で、Edge0 v0.2.0（`3203c39`）と標準の `edge0-infer serve` 設定を用いたコミュニティ測定です。出典: [MAJOR//minor, CUDA Recipes 006](https://majorminor.xyz/research/cuda-recipes-006) および [生データ](https://github.com/majorminorlabs/cuda-recipes/tree/main/006-edge0-145b)。
 
 </details>
 
