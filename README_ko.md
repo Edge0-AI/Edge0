@@ -155,7 +155,7 @@ Q3_K · RTX 5090 D 24 GB. 프리필은 16K 토큰 입력을 사용합니다. 품
 
 강조된 행은 Q3_K입니다. 표를 클릭하면 원본 크기로 볼 수 있습니다.
 
-<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="7개 행으로 구성된 Edge0-145B 속도 표 전체: 4K 및 16K 프리필, 채팅 및 에이전트 디코드, 측정된 모든 머신과 빌드" width="1400"></a>
+<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="8개 행으로 구성된 Edge0-145B 속도 표 전체: 4K 및 16K 프리필, 채팅 및 에이전트 디코드, 측정된 모든 머신과 빌드" width="1400"></a>
 
 <details>
 <summary>복사 가능한 145B 속도 데이터</summary>
@@ -165,6 +165,7 @@ Q3_K · RTX 5090 D 24 GB. 프리필은 16K 토큰 입력을 사용합니다. 품
 | RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
 | RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
 | RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX 3090 24 GB (community-measured) | Q3_K | 1195.5 | 1481.2 | 48.6 | 52.8 |
 | RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
 | RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
 | Apple M2 Ultra (Metal) | Q3_K | 755.6 | 800.3 | 60.9 | 57.0 |
@@ -184,6 +185,8 @@ Q3_K · RTX 5090 D 24 GB. 프리필은 16K 토큰 입력을 사용합니다. 품
 메모리 절약 옵션은 [사용법 및 문제 해결](#usage-help)을 참고하십시오.
 
 16 GiB VRAM + 20 GiB RAM 예산은 테스트 한도이며 최소 시스템 요구 사항이 아닙니다. Apple M2 Ultra 행은 Metal 측정값입니다.
+
+`RTX 3090 24 GB (community-measured)` 행은 RTX 3090 24 GB에서 Edge0 v0.2.0(`3203c39`)과 기본 `edge0-infer serve` 설정으로 측정한 커뮤니티 결과입니다. 출처: [MAJOR//minor, CUDA Recipes 006](https://majorminor.xyz/research/cuda-recipes-006) 및 [원시 데이터](https://github.com/majorminorlabs/cuda-recipes/tree/main/006-edge0-145b).
 
 </details>
 

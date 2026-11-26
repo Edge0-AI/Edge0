@@ -52,6 +52,7 @@ All throughput figures are in tok/s. The 4K and 16K columns denote prefill input
 | RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
 | RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
 | RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX 3090 24 GB (community-measured) | Q3_K | 1195.5 | 1481.2 | 48.6 | 52.8 |
 | RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
 | RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
 | Apple M2 Ultra (Metal) | Q3_K | 755.6 | 800.3 | 60.9 | 57.0 |
@@ -60,6 +61,8 @@ All throughput figures are in tok/s. The 4K and 16K columns denote prefill input
 </details>
 
 `16 GiB VRAM + 20 GiB RAM` rows are the RTX 5090 D 24 GB again, constrained by cgroup to a 16 GiB VRAM and 20 GiB system-RAM budget — not a different card. With residency on, the same card holds **Q3_K** (40.81 GiB of weights) as 23.14 GiB VRAM + 31.28 GiB RAM, and **NVFP4** (47.79 GiB) as 23.25 GiB VRAM + 38.27 GiB RAM — disjoint expert sets, nothing counted twice.
+
+The `RTX 3090 24 GB (community-measured)` row is a community result on an RTX 3090 24 GB, measured with Edge0 v0.2.0 (`3203c39`) and the stock `edge0-infer serve` defaults. Source: [MAJOR//minor, CUDA Recipes 006](https://majorminor.xyz/research/cuda-recipes-006) and [raw results](https://github.com/majorminorlabs/cuda-recipes/tree/main/006-edge0-145b).
 
 ### Edge0 120B
 

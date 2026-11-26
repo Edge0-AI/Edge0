@@ -155,7 +155,7 @@ All throughput figures are in tok/s. The headline uses **145B Q3_K** on RTX 5090
 
 Highlighted rows show Q3_K. Click the table to view it at full size.
 
-<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Complete seven-row Edge0-145B speed table: 4K and 16K prefill, chat and agent decode, all measured machines and builds" width="1400"></a>
+<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Complete eight-row Edge0-145B speed table: 4K and 16K prefill, chat and agent decode, all measured machines and builds" width="1400"></a>
 
 <details>
 <summary>Copyable 145B speed data</summary>
@@ -165,6 +165,7 @@ Highlighted rows show Q3_K. Click the table to view it at full size.
 | RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
 | RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
 | RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX 3090 24 GB (community-measured) | Q3_K | 1195.5 | 1481.2 | 48.6 | 52.8 |
 | RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
 | RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
 | Apple M2 Ultra (Metal) | Q3_K | 755.6 | 800.3 | 60.9 | 57.0 |
@@ -184,6 +185,8 @@ nothing counted twice.
 See [Usage & troubleshooting](#usage-help) for memory-saving options.
 
 The 16 GiB VRAM + 20 GiB RAM budget is a test limit, not a minimum system requirement. The Apple M2 Ultra row is a Metal measurement.
+
+The `RTX 3090 24 GB (community-measured)` row is a community result on an RTX 3090 24 GB, measured with Edge0 v0.2.0 (`3203c39`) and the stock `edge0-infer serve` defaults. Source: [MAJOR//minor, CUDA Recipes 006](https://majorminor.xyz/research/cuda-recipes-006) and [raw results](https://github.com/majorminorlabs/cuda-recipes/tree/main/006-edge0-145b).
 
 </details>
 

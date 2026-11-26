@@ -173,7 +173,7 @@ Tous les débits sont exprimés en tok/s. Le chiffre mis en avant correspond à 
 
 Les lignes mises en évidence correspondent à Q3_K. Cliquez sur le tableau pour l’afficher en taille réelle.
 
-<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Tableau complet de sept lignes pour Edge0-145B : préremplissage 4K et 16K, décodage chat et agent, tous les appareils et formats mesurés" width="1400"></a>
+<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Tableau complet de huit lignes pour Edge0-145B : préremplissage 4K et 16K, décodage chat et agent, tous les appareils et formats mesurés" width="1400"></a>
 
 <details>
 <summary>Données de vitesse copiables pour 145B</summary>
@@ -183,6 +183,7 @@ Les lignes mises en évidence correspondent à Q3_K. Cliquez sur le tableau pour
 | RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
 | RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
 | RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX 3090 24 GB (community-measured) | Q3_K | 1195.5 | 1481.2 | 48.6 | 52.8 |
 | RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
 | RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
 | Apple M2 Ultra (Metal) | Q3_K | 755.6 | 800.3 | 60.9 | 57.0 |
@@ -198,6 +199,8 @@ Les lignes mises en évidence correspondent à Q3_K. Cliquez sur le tableau pour
 Les lignes `16 GiB VRAM + 20 GiB RAM` utilisent la même RTX 5090 D 24 GB, pas une autre carte. La VRAM est limitée par `--vram-reserve-mib 8192` ; la RAM système par un cgroup (`MemoryMax=20G`, sans swap). Avec la résidence activée, **Q3_K** (40.81 GiB de poids) occupe 23.14 GiB VRAM + 31.28 GiB RAM, et **NVFP4** (47.79 GiB) occupe 23.25 GiB VRAM + 38.27 GiB RAM sur cette même carte. Les ensembles d’experts sont disjoints, sans double comptage.
 
 Le budget de 16 GiB VRAM + 20 GiB RAM est une limite de test, pas une configuration minimale requise. La ligne Apple M2 Ultra est une mesure sous Metal.
+
+La ligne `RTX 3090 24 GB (community-measured)` est un résultat communautaire, mesuré sur une RTX 3090 24 GB, avec Edge0 v0.2.0 (`3203c39`) et les paramètres par défaut de `edge0-infer serve`. Source : [MAJOR//minor, CUDA Recipes 006](https://majorminor.xyz/research/cuda-recipes-006) et [les données brutes](https://github.com/majorminorlabs/cuda-recipes/tree/main/006-edge0-145b).
 
 </details>
 

@@ -173,7 +173,7 @@ Todas las tasas se expresan en tok/s. La cifra destacada corresponde a **145B Q3
 
 Las filas resaltadas corresponden a Q3_K. Haz clic en la tabla para verla a tamaño completo.
 
-<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Tabla completa de siete filas de Edge0-145B: prefill de 4K y 16K, decodificación de chat y agente, todos los equipos y formatos medidos" width="1400"></a>
+<a href="assets/edge0-release/speed-145B.svg"><img src="assets/edge0-release/speed-145B.svg" alt="Tabla completa de ocho filas de Edge0-145B: prefill de 4K y 16K, decodificación de chat y agente, todos los equipos y formatos medidos" width="1400"></a>
 
 <details>
 <summary>Datos copiables de velocidad de 145B</summary>
@@ -183,6 +183,7 @@ Las filas resaltadas corresponden a Q3_K. Haz clic en la tabla para verla a tama
 | RTX 5090 D 24 GB | Q3_K | 2169.9 | 3554.9 | 99.7 | **121.2** |
 | RTX 5090 D 24 GB | NVFP4 | 1839.6 | 3165.7 | 79.6 | 98.3 |
 | RTX 4090 24 GB | Q3_K | 2042.0 | 3179.4 | 69.9 | 91.7 |
+| RTX 3090 24 GB (community-measured) | Q3_K | 1195.5 | 1481.2 | 48.6 | 52.8 |
 | RTX Spark N1X 60 GiB | Q3_K | 674.0 | 770.3 | 37.7 | 36.7 |
 | RTX Spark N1X 60 GiB | NVFP4 | 821.2 | 922.4 | 40.1 | 46.0 |
 | Apple M2 Ultra (Metal) | Q3_K | 755.6 | 800.3 | 60.9 | 57.0 |
@@ -198,6 +199,8 @@ Las filas resaltadas corresponden a Q3_K. Haz clic en la tabla para verla a tama
 Las filas `16 GiB VRAM + 20 GiB RAM` usan la misma RTX 5090 D 24 GB, no otra tarjeta. La VRAM se limita con `--vram-reserve-mib 8192`; la RAM del sistema, con un cgroup (`MemoryMax=20G`, sin swap). Con la residencia activada, **Q3_K** (40.81 GiB de pesos) ocupa 23.14 GiB VRAM + 31.28 GiB RAM, y **NVFP4** (47.79 GiB) ocupa 23.25 GiB VRAM + 38.27 GiB RAM en la misma tarjeta. Los conjuntos de expertos son disjuntos: nada se contabiliza dos veces.
 
 El presupuesto de 16 GiB VRAM + 20 GiB RAM es un límite de prueba, no un requisito mínimo del sistema. La fila Apple M2 Ultra es una medición con Metal.
+
+La fila `RTX 3090 24 GB (community-measured)` es un resultado de la comunidad, medido en una RTX 3090 24 GB, con Edge0 v0.2.0 (`3203c39`) y los valores predeterminados de `edge0-infer serve`. Fuente: [MAJOR//minor, CUDA Recipes 006](https://majorminor.xyz/research/cuda-recipes-006) y [los datos originales](https://github.com/majorminorlabs/cuda-recipes/tree/main/006-edge0-145b).
 
 </details>
 
