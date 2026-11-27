@@ -754,6 +754,12 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
     target_link_libraries(vmm_test PRIVATE strata_engine)
     add_test(NAME vmm_test COMMAND vmm_test)
     set_tests_properties(vmm_test PROPERTIES TIMEOUT 60)
+    # --prefill-head-alias: the head must come back at the addresses the verify graphs captured, even when the lend's
+    # VRAM was taken in between by another allocation
+    add_executable(native_head_alias_test tests/core/native_head_alias_test.cpp)
+    target_link_libraries(native_head_alias_test PRIVATE strata_engine)
+    add_test(NAME native_head_alias_test COMMAND native_head_alias_test)
+    set_tests_properties(native_head_alias_test PROPERTIES TIMEOUT 60)
     # The resident RAM mode with a layer split: the copy keeps each stage's lend region, and the experts the
     # prompt path borrows are served from RAM (the file source reads none of them).  The device calls are
     # wrapped - conversation_transfer_test's pattern - and `pin = false` keeps the copy pageable, so this

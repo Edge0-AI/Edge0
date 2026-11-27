@@ -1,8 +1,9 @@
 #pragma once
-// CUDA virtual memory (the elastic K/V, --kv-grow): an address range reserved once, whose physical memory is mapped and
-// unmapped in chunks of the device's granularity (2 MiB).  The K/V pools grow with the context by taking chunks the
-// expert cache gives up, and neither moves: every captured graph and stored pointer stays valid.  The driver calls
-// are reached through the runtime's entry-point query, so nothing links the driver library.  Not under HIP.
+// CUDA virtual memory (the elastic K/V, --kv-grow; the output head under --prefill-head-alias): an address range
+// reserved once, whose physical memory is mapped and unmapped in chunks of the device's granularity (2 MiB).  The K/V
+// pools grow with the context by taking chunks the expert cache gives up, and neither moves: every captured graph and
+// stored pointer stays valid.  The driver calls are reached through the runtime's entry-point query, so nothing links
+// the driver library.  HIP has the same calls (ROCm 6+, see vmm.cpp); Metal has none.
 
 #include <cstdint>
 #include <vector>
@@ -49,6 +50,56 @@ private:
     bool commit_run(int64_t lo, int64_t hi);
     unsigned long long base_ = 0;
     std::vector<VmmChunk> h_;   // per chunk: its physical chunk, 0 = unmapped
+};
+
+/// A buffer whose addresses are fixed for its whole life: `ensure` reserves them once, `map` takes physical memory
+/// there, and `unmap` gives the physical memory back while the addresses stay reserved, so the next `map` returns the
+/// same pointer.  A captured graph or a stored pointer survives an unmap/map pair.
+///
+/// That is what --prefill-head-alias needs: the head's VRAM is lent to the prompt path while a prompt is read, and the
+/// verify windows' graphs hold the head's addresses from their capture.  With cudaMalloc the head may come back at
+/// another address (any allocation in between, such as an elastic K/V growth, can take the freed block), and the
+/// engine then refuses to run those graphs.  `ensure` returns false when the device has no virtual memory, or when its
+/// reservation cannot be made: the caller then falls back to cudaMalloc, which keeps no address.
+class VmmBuffer {
+public:
+    VmmBuffer() = default;
+    ~VmmBuffer() { release(); }
+    VmmBuffer(const VmmBuffer&) = delete;
+    VmmBuffer& operator=(const VmmBuffer&) = delete;
+
+    /// Reserves whole chunks of addresses for `bytes`: on the first call, and again only when `bytes` no longer fits.
+    /// The addresses already reserved are released first when a larger range is needed.
+    bool ensure(uint64_t bytes) {
+        const uint64_t gran = vmm_granularity();
+        if (gran == 0 || bytes == 0) return false;
+        const uint64_t chunks = (bytes + gran - 1) / gran;
+        if ((uint64_t) range_.chunks() >= chunks) return true;
+        return range_.reserve(bytes);
+    }
+    /// Maps every chunk to new physical memory; false when it is not available (nothing stays mapped).
+    bool map() {
+        if (range_.chunks() == 0) return false;
+        if (!range_.map_range(0, range_.chunks(), [] { return VmmChunk(0); })) {
+            unmap();
+            return false;
+        }
+        return true;
+    }
+    /// Frees the physical memory and keeps the addresses; a no-op on an unmapped buffer.
+    void unmap() {
+        for (int64_t i = 0; i < range_.chunks(); ++i) vmm_chunk_free(range_.unmap(i));
+    }
+    /// Frees the physical memory and the addresses.
+    void release() { range_.release(); }
+    uint8_t* base() const { return range_.base(); }
+    bool reserved() const { return range_.chunks() > 0; }
+    bool mapped() const { return range_.chunks() > 0 && range_.mapped_count() == range_.chunks(); }
+    /// The reserved size in bytes (whole chunks; 0 when nothing is reserved).
+    uint64_t bytes() const { return (uint64_t) range_.chunks() * vmm_granularity(); }
+
+private:
+    VmmRange range_;
 };
 
 template <class Take> bool VmmRange::map_range(int64_t lo, int64_t hi, Take take) {

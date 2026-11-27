@@ -15,15 +15,20 @@ namespace strata::core {
 
 NativeHead::~NativeHead() {
     unload();
+    fixed_.release();
 }
 
 void NativeHead::unload() {
     if (weights_) strata::kernels::native_q6_k_unpack(weights_);
     if (weights_) strata::kernels::native_q8_0_sm60_release(weights_);
     if (scratch_) cudaFree(scratch_);
-    if (weights_) cudaFree(weights_);
+    // The fixed addresses stay reserved: the verify windows' captured graphs hold them, so the next load must return
+    // the head to the same place.  Only the physical memory goes back (that is what --prefill-head-alias lends).
+    if (fixed_backed_) fixed_.unmap();
+    else if (weights_) cudaFree(weights_);
     scratch_ = nullptr;
     weights_ = nullptr;
+    fixed_backed_ = false;
 }
 
 bool NativeHead::load(const std::vector<std::string>& shards, int64_t n_in, int64_t n_out, std::string& err) {
@@ -55,7 +60,24 @@ bool NativeHead::load(const std::vector<std::string>& shards, int64_t n_in, int6
         }
         void* weights = nullptr;
         void* scratch = nullptr;
-        cudaError_t status = cudaMalloc(&weights, bytes);
+        cudaError_t status = cudaSuccess;
+        // Where the device has virtual memory the head lives at addresses reserved once for the process: unloading
+        // frees the physical memory but keeps the addresses, so every reload returns to where the verify windows'
+        // graphs captured it.  Without virtual memory the block is a cudaMalloc one, and a reload after another
+        // allocation took it comes back elsewhere (the engine's guard then ends the request rather than run the
+        // graphs against freed memory).
+        bool addresses_fixed = false;
+        if (fixed_.ensure(bytes)) {
+            if (!fixed_.map()) {
+                fixed_.unmap();
+                err = "native head: no VRAM to map its " + std::to_string(bytes >> 20) + " MiB at the reserved addresses";
+                return false;
+            }
+            weights = fixed_.base();
+            addresses_fixed = true;
+        } else {
+            status = cudaMalloc(&weights, bytes);
+        }
         if (status == cudaSuccess)
             status = cudaMalloc(&scratch, strata::kernels::native_q8_1_bytes((int) n_in, 1));
         strata::platform::advise_willneed(gguf.tensor_data(*tensor), bytes);
@@ -63,11 +85,13 @@ bool NativeHead::load(const std::vector<std::string>& shards, int64_t n_in, int6
             status = cudaMemcpy(weights, gguf.tensor_data(*tensor), bytes, cudaMemcpyHostToDevice);
         if (status != cudaSuccess) {
             if (scratch) cudaFree(scratch);
-            if (weights) cudaFree(weights);
+            if (addresses_fixed) fixed_.unmap();
+            else if (weights) cudaFree(weights);
             err = std::string("native head upload: ") + cudaGetErrorString(status);
             return false;
         }
         weights_ = weights;
+        fixed_backed_ = addresses_fixed;
         { int d = -1; if (cudaGetDevice(&d) == cudaSuccess) device_ = d; }
         scratch_ = scratch;
         bytes_ = bytes;

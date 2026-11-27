@@ -40,10 +40,14 @@ reserve unchanged.
    2. Read the prompt.
    3. Refill the lent slots and free the prompt path's own buffers.
    4. Load the head again (median 255 ms) before the first decode window.
-3. **Graph safety.** The verify windows' CUDA graphs are captured during the first decode and hold the head's address.
-   If a later reload puts the head at a different address, the engine stops with an error, and the server starts it
-   again. It does not run graphs that point at freed memory. We never saw this happen; see
-   [Open questions](#open-questions).
+3. **A fixed address.** The head lives in a virtual-memory range reserved once for the process: an unload frees the
+   physical memory and keeps the addresses, so every reload comes back to them, even when the prompt path or an
+   elastic K/V growth took the freed range in between. The verify windows' CUDA graphs are captured during the first
+   decode and hold those addresses, so they stay valid for the life of the engine.
+
+   Where the device has no virtual memory, the head is a `cudaMalloc` block instead and the start line says so. If a
+   later reload then puts the head at a different address, the engine stops with an error and the server starts it
+   again: it does not run graphs that point at freed memory.
 
 The engine refuses the flag, with the reason, without `--serve`, with more than one GPU or a layer split, with
 `--batch`, with `--pipeline-windows`, with `--short-read` above 0, with a fixed `--expert-cache` above 1, without `--mtp`,
@@ -152,9 +156,6 @@ for the default and 0 MiB with the flag.
 
 ## Open questions
 
-- **A fixed address for the head.** The head goes back with `cudaMalloc`, which does not promise the same address. The
-  check above makes a moved head a clean engine restart. A cleaner design would keep the head's virtual range and swap
-  its backing (CUDA VMM), or lay prompt buffers directly into the head's allocation instead of freeing it.
 - **Skip the swap for short reads.** A request that reads a few dozen fresh tokens pays about 0.6 s (table above) for a
   2,048-token chunk it does not need. A threshold on fresh tokens, below which the head stays and the read goes through
   the decode windows as `--short-read` does, would remove that cost.

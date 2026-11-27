@@ -1,5 +1,7 @@
 #pragma once
 
+#include "strata/core/vmm.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -39,6 +41,10 @@ private:
     int n_in_ = 0, n_out_ = 0;
     int type_ = -1;
     int device_ = -1;
+    /// The weights' fixed addresses where the device has virtual memory: `unload` frees the physical memory and keeps
+    /// the addresses, so `load` returns the head to them (--prefill-head-alias captures the verify graphs with them).
+    VmmBuffer fixed_;
+    bool fixed_backed_ = false;   ///< weights_ is fixed_.base() (false: a cudaMalloc block that a reload may move)
 };
 
 /// Plan v0.3 P6: `token_embd.weight` in its GGUF form (the IQ model files), in mapped pinned host memory: a row
