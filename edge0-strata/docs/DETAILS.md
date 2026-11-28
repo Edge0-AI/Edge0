@@ -537,8 +537,8 @@ applies at the next start. Network, key, MCP and program keys are not editable t
   verifies, as if decoded one at a time, and make a request 1-11% slower because more drafts are rejected.
 - Sampling defaults, in order of precedence: the request, the web page's shared Chat settings, the config's `sampling` block,
   then the model card. Without a block, thinking requests get temperature 1.0, top_p 0.95, top_k 20, and non-thinking
-  requests get 1.0, 0.8, 20. The Qwen cards add presence_penalty 1.0 (Qwen3.6-35B-A3B in both modes, Qwen3.8-Flash-Next
-  when not thinking). Greedy is only for
+  requests get 1.0, 0.8, 20. Edge0 145B and 120B (Qwen3.8-Flash-Next) add presence_penalty 1.0 in both modes;
+  Qwen3.6-35B-A3B keeps 1.5 in both. Greedy is only for
   whoever asks: `temperature: 0` in the request or `"sampling": {"temperature": 0}` in the config. With the default adaptive
   tier a sampled result is not reproducible from run to run. For seed-reproducible output add `--adapt-every 100000`.
 - Sampled drafting is opt-in and not faster in a way that holds up. `STRATA_SPEC_COUPLED=1` (or `--coupled-draft`) and
