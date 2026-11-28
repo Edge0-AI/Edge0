@@ -42,6 +42,7 @@
 #include "strata/core/uma_cache.hpp"
 #include "strata/core/remote_experts.hpp"
 #include "strata/core/on_device.hpp"
+#include "strata/core/vmm.hpp"
 #include "strata/core/peer_experts.hpp"
 #include "strata/core/layer.hpp"
 #include "strata/core/layout.hpp"
@@ -6505,6 +6506,9 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "strata generate: --prefill-head-alias is unavailable: %s\n", why);
             return 2;
         }
+        if (!strata::core::vmm_available())
+            std::fprintf(stderr, "strata generate: --prefill-head-alias: this device has no virtual memory, so the output head "
+                                 "comes back from a cudaMalloc and may land elsewhere; a reload that does ends the request\n");
         if (!mtp.bind(wt, &native_head, nullptr, err)) {
             std::fprintf(stderr, "strata generate: --prefill-head-alias: %s\n", err.c_str());
             return 1;
@@ -16187,8 +16191,9 @@ int main(int argc, char** argv) {
                                 "captured verify graphs would read freed memory\n");
                     return 1;
                 }
-                std::fprintf(stderr, "strata serve: --prefill-head-alias: output head restored in %.1f ms before decode\n",
-                             std::chrono::duration<double, std::milli>(Clock::now() - head_t0).count());
+                std::fprintf(stderr, "strata serve: --prefill-head-alias: output head restored in %.1f ms before decode, at "
+                                     "%p (the verify graphs' address)\n",
+                             std::chrono::duration<double, std::milli>(Clock::now() - head_t0).count(), native_head.weights());
             }
             tr("prompt done (slots refilled)");
             if (il_parts > 0)
