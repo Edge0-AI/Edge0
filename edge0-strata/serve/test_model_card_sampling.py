@@ -1,7 +1,7 @@
 """serve/test_model_card_sampling.py - a request that sends no sampling gets the model card's, not greedy (mock engine).
 
 Both modes now default to temperature 1.0: thinking top_p 0.95 / top_k 20, non-thinking 0.8 / 20 with
-presence_penalty 1.5.  The request's own fields win, then the Chat settings shared with apps, then the config's
+presence_penalty 1.0.  The request's own fields win, then the Chat settings shared with apps, then the config's
 `sampling` block, then the card; temperature 0 asked for is still greedy.
 
     python -m unittest serve.test_model_card_sampling -v
@@ -61,8 +61,8 @@ class ModelCardSampling(unittest.TestCase):
     def test_tables(self):
         self.assertEqual(model_card_sampling("qwen4exp", True), {"temperature": 1.0, "top_p": 0.95, "top_k": 20})
         self.assertEqual(model_card_sampling("qwen4exp", False),
-                         {"temperature": 1.0, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.5})
-        self.assertEqual(model_card_sampling("qwen35moe", True)["presence_penalty"], 1.5)
+                         {"temperature": 1.0, "top_p": 0.8, "top_k": 20, "presence_penalty": 1.0})
+        self.assertEqual(model_card_sampling("qwen35moe", True)["presence_penalty"], 1.0)
         self.assertEqual(model_card_sampling(None, True), {})
         self.assertEqual(model_card_sampling("unknown", False), {})
 
@@ -77,7 +77,7 @@ class ModelCardSampling(unittest.TestCase):
         k = self.keys(reasoning_effort="none")
         self.assertIn("temperature=1.0", k)
         self.assertIn("top_p=0.8", k)
-        self.assertIn("penalty_present=1.5", k)
+        self.assertIn("penalty_present=1.0", k)
 
     def test_request_wins_and_zero_is_greedy(self):
         k = self.keys(temperature=0)
